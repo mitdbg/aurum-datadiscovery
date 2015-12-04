@@ -1,5 +1,6 @@
 from sklearn.neighbors.kde import KernelDensity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import svm 
 from scipy.stats import ks_2samp
 import numpy as np
 import nltk
@@ -14,17 +15,26 @@ def compare_num_columns_dist_ks(columnA, columnB):
         Kolmogorov-Smirnov test
     '''
     return ks_2samp(columnA, columnB)
-    
 
-def get_dist(data_list):
-    ''' 1D Kernel density estimator'''
+def compare_num_columns_dist_odsvm(svm, columnBdata):
+    Xnumpy = np.asarray(columnBdata)
+    X = Xnumpy.reshape(-1, 1)
+    prediction_vector = svm.predict(X)
+    return prediction_vector
+
+def get_dist(data_list, method):
     Xnumpy = np.asarray(data_list)
-    #print(str(X[0][0]))
-    X = Xnumpy.reshape(-1, 1) # Reshape for single dimension
-    kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(X)
-    scores = kde.score_samples(X) 
-    return scores
-
+    X = Xnumpy.reshape(-1, 1)
+    dist = None
+    if method == "kd":
+        kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(X)
+        dist = kde.score_samples(X) 
+    elif method == "odsvm":
+        svmachine = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+        svmachine.fit(X)
+        dist = svmachine 
+    return dist
+    
 def get_textual_dist(data_list):
     ''' Get TF-IDF '''
     # merge column into 1 sentence first
@@ -89,12 +99,12 @@ def is_column_num(column):
     except ValueError:
         return False
 
-def get_column_signature(column):
+def get_column_signature(column, method):
     dist = None
     if is_column_num(column):
         print('TYPE: num')
         # Get dist only for numerical columns
-        dist = get_dist(column) 
+        dist = get_dist(column, method) 
     else: # only numerical and text columns supported so far
         print('TYPE: text')
         dist = ' '.join(column)
@@ -111,7 +121,7 @@ def get_columns_signature(columns):
         if is_column_num(value):
             print('TYPE: num')
             # Get dist only for numerical columns
-            dist = get_dist(value) 
+            dist = get_dist(value, "kd") 
             ncol_dist[key] = dist 
             #print(str(dist))
         else: # only numerical and text columns supported so far

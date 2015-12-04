@@ -54,11 +54,12 @@ def get_column(filename, columname, dataset_columns):
     if key in dataset_columns:
         return dataset_columns[key]
 
-def get_signature_for(column):
+def get_signature_for(column, method):
     ''' 
-        Return the distribution for the indicated column 
+        Return the distribution for the indicated column,
+        according to the provided method
     '''
-    return da.get_column_signature(column)
+    return da.get_column_signature(column, method)
 
 def get_similarity_columns(columnA, columnB, method):
     '''
@@ -66,6 +67,8 @@ def get_similarity_columns(columnA, columnB, method):
     '''
     if method == "ks":
         return da.compare_num_columns_dist_ks(columnA, columnB)
+    elif method == "odsvm":
+        return da.compare_num_columns_dist_odsvm(columnA, columnB)
 
 #def compare_pair_columns(columnA, columnB, method):
 #    if method == "ks":
