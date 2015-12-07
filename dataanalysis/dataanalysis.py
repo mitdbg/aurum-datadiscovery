@@ -31,8 +31,7 @@ def get_dist(data_list, method):
         dist = kde.score_samples(X) 
     elif method == "odsvm":
         svmachine = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
-        svmachine.fit(X)
-        dist = svmachine 
+        dist = svmachine.fit(X)
     return dist
     
 def get_textual_dist(data_list):

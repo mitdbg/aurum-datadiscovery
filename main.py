@@ -81,14 +81,27 @@ def columns_similar_to(filename, column):
     ''' 
     key = (filename, column)
     sim_vector = None
-    if key in ncol_dist:
-        dist = ncol_dist[key] 
-        sim_vector = da.get_sim_vector_numerical(key, ncol_dist)
-    elif key in tcol_dist:
-        dist = tcol_dist[key]
+    sim_columns = []
+    if key in ncol_dist: # numerical
+        #sim_vector = da.get_sim_vector_numerical(key, ncol_dist)
+        sim_vector = da.get_sim_vector_numerical(key, dataset_columns)
+        for filekey, sim  in sim_vector.items():
+            dvalue = sim[0]
+            pvalue = sim[1]
+            print(filekey)
+            print(sim[0])
+            print(sim[1])
+            if dvalue < 0.5 and pvalue > 0.001: # need to define what is a good number
+                # TODO: we should check the pvalue as well
+                sim_columns.append(filekey)
+    elif key in tcol_dist: # text
         sim_vector = da.get_sim_vector_text(key, tcol_dist)
+        # TODO: do same for text
+        for filekey, sim in sim_vector.items():
+            if sim > 0.2: # arbitrary threshold on precision-recall
+                sim_columns.append(filekey)
     # apply filter to get only those 'similar'
-    return sim_vector
+    return sim_columns
 
 def analyze_dataset(list_path):
     ''' Gets files from directory, columns from dataset, and distribution for
@@ -123,10 +136,10 @@ def process_files(files):
     sim_matrix_text = da.get_sim_matrix_text(tcol_dist)
     print("")
     print("Similarity for numerical columns")
-    utils.print_dict(sim_matrix_num)
+    #utils.print_dict(sim_matrix_num)
     print("")
     print("Similarity for textual columns")
-    utils.print_dict(sim_matrix_text)
+    #utils.print_dict(sim_matrix_text)
 
 def main():
     # Parse input parameters
