@@ -5,10 +5,11 @@ from scipy.stats import ks_2samp
 import numpy as np
 import nltk
 
-def similar_num_columns(columnA, columnB, ncol_dist):
-    distA = ncol_dist[columnA]
-    distB = ncol_dist[columnB]
-    return True
+def compare_num_columns_dist(columnA, columnB, method):
+    if method is "ks":
+        return compare_num_columns_dist_ks(columnA, columnB)
+    if method is "odsvm":
+        return compare_num_columns_dist_odsvm(columnA, columnB)
 
 def compare_num_columns_dist_ks(columnA, columnB):
     ''' 
@@ -26,6 +27,8 @@ def get_dist(data_list, method):
     Xnumpy = np.asarray(data_list)
     X = Xnumpy.reshape(-1, 1)
     dist = None
+    if method == "raw":
+        dist = data_list # raw column data
     if method == "kd":
         kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(X)
         dist = kde.score_samples(X) 
@@ -53,19 +56,19 @@ def compare_text_columns_dist(docs):
     #pairwise_similarity = tfidf * tfidf.T
     return sim
 
-def get_sim_vector_numerical(column, ncol_dist):
+def get_sim_vector_numerical(column, ncol_dist, method):
     value_to_compare = ncol_dist[column]
     vn = dict()
     for key, value in ncol_dist.items():
-        test = compare_num_columns_dist_ks(value_to_compare, value) 
+        test = compare_num_columns_dist(value_to_compare, value, method) 
         vn[key] = test
     return vn
 
-def get_sim_matrix_numerical(ncol_dist):
+def get_sim_matrix_numerical(ncol_dist, method):
     # Pairwise comparison of all numerical column dist. keep them in matrix
     mn = dict() 
     for key, value in ncol_dist.items():
-        vn = get_sim_vector_numerical(key, ncol_dist)
+        vn = get_sim_vector_numerical(key, ncol_dist, method)
         mn[key] = vn
     return mn
 
@@ -109,7 +112,7 @@ def get_column_signature(column, method):
         dist = ' '.join(column)
     return dist
 
-def get_columns_signature(columns):
+def get_columns_signature(columns, method):
     ncol_dist = dict()
     tcol_dist = dict()
     # Get distribution for numerical columns
@@ -120,13 +123,16 @@ def get_columns_signature(columns):
         if is_column_num(value):
             print('TYPE: num')
             # Get dist only for numerical columns
-            dist = get_dist(value, "kd") 
+            dist = get_dist(value, method) 
             ncol_dist[key] = dist 
             #print(str(dist))
         else: # only numerical and text columns supported so far
             print('TYPE: text')
             column_repr = ' '.join(value)
             tcol_dist[key] = column_repr
+    # Rewrite ncol_dist in the case of RAW method
+    if method is "raw":
+        ncol_dist = columns
     return (ncol_dist, tcol_dist)
 
 if __name__ == "__main__":
