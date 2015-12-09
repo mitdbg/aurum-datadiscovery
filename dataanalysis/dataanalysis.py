@@ -6,6 +6,7 @@ import numpy as np
 import nltk
 
 import config as C
+import utils as U
 
 def compare_num_columns_dist(columnA, columnB, method):
     if method is "ks":
@@ -123,17 +124,9 @@ def get_sim_matrix_text(tcol_dist):
         mt[key] = vt
     return mt
 
-def is_column_num(column):
-    try:
-        for v in column:
-            float(v)
-        return True
-    except ValueError:
-        return False
-
 def get_column_signature(column, method):
     dist = None
-    if is_column_num(column):
+    if U.is_column_num(column):
         print('TYPE: num')
         # Get dist only for numerical columns
         dist = get_dist(column, method) 
@@ -150,7 +143,7 @@ def get_columns_signature(columns, method):
         print("")
         print("Kernel for key: " + str(key))
         # the case of non-numerical columns
-        if is_column_num(value):
+        if U.is_column_num(value):
             print('TYPE: num')
             # Get dist only for numerical columns
             dist = get_dist(value, method) 

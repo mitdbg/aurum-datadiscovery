@@ -27,3 +27,12 @@ ks =    {
 cosine= {
         "threshold":0.2
         }
+
+# Configs related to joint signatures
+all_jsignatures = ["pearson"]
+
+jsignature_samplesize = ["pearson"]
+
+pearson_sim = {
+        "threshold":0.2
+    }

@@ -5,8 +5,9 @@ from os.path import isfile, join
 
 import utils
 import config as C
-from dataanalysis import dataanalysis  as da
 from inputoutput import inputoutput as iod
+from dataanalysis import dataanalysis  as da
+from dataanalysis import jointsignatureanalysis as jsa
 
 dataset_columns = dict()
 ncol_dist = dict()
@@ -26,11 +27,22 @@ def get_dataset_columns_from_files(files):
         list of filepaths 
     '''
     #global dataset_columns
-    dataset_columns = iod.get_column_iterator_csv(files)
+    cols = iod.get_column_iterator_csv(files)
+    dataset_columns = process_columns_types(cols)
     print(  "Extracted " + 
             str(len(dataset_columns.items())) +
             " columns")
     return dataset_columns
+
+# TODO: try this, see how things change now
+def process_columns_types(cols):
+    toret = dict()
+    for key, value in cols.items():
+        if utils.is_column_num(value):
+            newvalue = utils.cast_list_to_float(value)
+            toret[key] = newvalue
+    return toret
+        
 
 def dataset_columns(path):
     '''
@@ -65,6 +77,17 @@ def get_signature_for(column, method):
     '''
     return da.get_column_signature(column, method)
 
+def get_jsignature_for(fileA, columnA, fileB, columnB, method):
+    '''
+        Return the joint signature for the indicated columns
+    '''
+    columnA = dataset_columns[(fileA, columnA)]
+    columnB = dataset_columns[(fileB, columnB)]
+    if utils.is_column_num(columnA) and utils.is_column_num(columnB): 
+        return jsa.get_jsignature(columnA, columnB, method)
+    else:
+        print("Column type mismatch")
+
 def get_similarity_columns(columnA, columnB, method):
     '''
         Return similarity metric given a method (ks)
@@ -73,6 +96,24 @@ def get_similarity_columns(columnA, columnB, method):
         return da.compare_num_columns_dist_ks(columnA, columnB)
     elif method == "odsvm":
         return da.compare_num_columns_dist_odsvm(columnA, columnB)
+
+def pairs_similar_to_jsig(jsignature, method):
+    '''
+        Return all pairs whose jsignature is similar to the provided
+    '''
+    return jsa.get_similar_pairs(jsignature, columns, method)
+
+def columns_similar_to_jsig(filename, column, jsignature):
+    '''
+        Return columns similar to the given joint signature
+    '''
+    key = (filename, column)
+    column_data = dataset_columns[key]
+    sim = jsa.get_columns_similar_to_jsignature(
+                column_data,
+                jsignature,
+                dataset_columns)
+    return sim
 
 def columns_similar_to(filename, column, similarity_method):
     '''
