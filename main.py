@@ -4,6 +4,7 @@ from os import listdir
 from os.path import isfile, join
 
 import utils
+import config as C
 from dataanalysis import dataanalysis  as da
 from inputoutput import inputoutput as iod
 
@@ -21,11 +22,14 @@ def get_dataset_files(dataset_path):
 
 def get_dataset_columns_from_files(files):
     ''' 
-        Extracts all columns from dataset provided as list of filepaths 
+        Extracts all columns from dataset provided as 
+        list of filepaths 
     '''
     #global dataset_columns
     dataset_columns = iod.get_column_iterator_csv(files)
-    print("Extracted " + str(len(dataset_columns.items())) +" columns")
+    print(  "Extracted " + 
+            str(len(dataset_columns.items())) +
+            " columns")
     return dataset_columns
 
 def dataset_columns(path):
@@ -91,12 +95,14 @@ def columns_similar_to(filename, column, similarity_method):
                 print(filekey)
                 print(sim[0])
                 print(sim[1])
-                if dvalue < 0.5 and pvalue > 0.001: # need to define what is a good number
+                if dvalue < C.ks["dvalue"] \
+                and \
+                pvalue > C.ks["pvalue"]: # need to define what is a good number
                     sim_columns.append(filekey)
     elif key in tcol_dist: # text
         sim_vector = da.get_sim_vector_text(key, tcol_dist)
         for filekey, sim in sim_vector.items():
-            if sim > 0.2: # arbitrary threshold on precision-recall
+            if sim > C.cosine["threshold"]: # arbitrary threshold on precision-recall
                 sim_columns.append(filekey)
     # apply filter to get only those 'similar'
     return sim_columns

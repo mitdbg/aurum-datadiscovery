@@ -5,6 +5,8 @@ from scipy.stats import ks_2samp
 import numpy as np
 import nltk
 
+import config as C
+
 def compare_num_columns_dist(columnA, columnB, method):
     if method is "ks":
         return compare_num_columns_dist_ks(columnA, columnB)
@@ -30,10 +32,17 @@ def get_dist(data_list, method):
     if method == "raw":
         dist = data_list # raw column data
     if method == "kd":
-        kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(X)
+        kde = KernelDensity(
+            kernel = C.kd["kernel"], 
+            bandwidth = C.kd["bandwidth"]
+        ).fit(X)
         dist = kde.score_samples(X) 
     elif method == "odsvm":
-        svmachine = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+        svmachine = svm.OneClassSVM(
+            nu = C.odsvm["nu"], 
+            kernel = C.odsvm["kernel"], 
+            gamma = C.odsvm["gamma"]
+        )
         dist = svmachine.fit(X)
     return dist
     
@@ -60,12 +69,18 @@ def get_sim_vector_numerical(column, ncol_dist, method):
     value_to_compare = ncol_dist[column]
     vn = dict()
     for key, value in ncol_dist.items():
-        test = compare_num_columns_dist(value_to_compare, value, method) 
+        test = compare_num_columns_dist(
+                value_to_compare, 
+                value, 
+                method) 
         vn[key] = test
     return vn
 
 def get_sim_matrix_numerical(ncol_dist, method):
-    # Pairwise comparison of all numerical column dist. keep them in matrix
+    '''
+         Pairwise comparison of all numerical column dist. 
+         keep them in matrix
+    '''
     mn = dict() 
     for key, value in ncol_dist.items():
         vn = get_sim_vector_numerical(key, ncol_dist, method)

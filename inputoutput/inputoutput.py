@@ -15,7 +15,7 @@ def get_files_in_dir(path):
 def get_column_iterator_csv(files):
     columns = defaultdict(list)
     for filename in files:
-        #print("Processing ... " + str(filename))
+        print("Processing ... " + str(filename))
         with open(filename) as f:
             reader = csv.DictReader(f)
             for row in reader:
