@@ -34,5 +34,5 @@ all_jsignatures = ["pearson"]
 jsignature_samplesize = ["pearson"]
 
 pearson_sim = {
-        "threshold":0.2
+        "threshold":0.05
     }

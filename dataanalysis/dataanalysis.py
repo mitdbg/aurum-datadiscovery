@@ -126,36 +126,40 @@ def get_sim_matrix_text(tcol_dist):
 
 def get_column_signature(column, method):
     dist = None
+    tcols = 0
+    ncols = 0
     if U.is_column_num(column):
-        print('TYPE: num')
+        #print('TYPE: num')
         # Get dist only for numerical columns
         dist = get_dist(column, method) 
+        ncols = ncols + 1
     else: # only numerical and text columns supported so far
-        print('TYPE: text')
+        #print('TYPE: text')
         dist = ' '.join(column)
+        tcols = tcols + 1
+    print("Num. columns: " + str(ncols))
+    print("Text columns: " + str(tcols))
     return dist
 
 def get_columns_signature(columns, method):
     ncol_dist = dict()
     tcol_dist = dict()
+    ncols = 0
+    tcols = 0
     # Get distribution for numerical columns
     for key, value in columns.items():
-        print("")
-        print("Kernel for key: " + str(key))
         # the case of non-numerical columns
         if U.is_column_num(value):
-            print('TYPE: num')
             # Get dist only for numerical columns
             dist = get_dist(value, method) 
             ncol_dist[key] = dist 
-            #print(str(dist))
+            ncols = ncols + 1
         else: # only numerical and text columns supported so far
-            print('TYPE: text')
             column_repr = ' '.join(value)
             tcol_dist[key] = column_repr
-    # Rewrite ncol_dist in the case of RAW method
-    if method is "raw":
-        ncol_dist = columns
+            tcols = tcols + 1
+    print("Num. columns: " + str(ncols))
+    print("Text columns: " + str(tcols))
     return (ncol_dist, tcol_dist)
 
 if __name__ == "__main__":

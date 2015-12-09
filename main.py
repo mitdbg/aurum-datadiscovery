@@ -34,13 +34,16 @@ def get_dataset_columns_from_files(files):
             " columns")
     return dataset_columns
 
-# TODO: try this, see how things change now
 def process_columns_types(cols):
     toret = dict()
     for key, value in cols.items():
+        # Make it numerical if possible
         if utils.is_column_num(value):
             newvalue = utils.cast_list_to_float(value)
             toret[key] = newvalue
+        # keep it as text when not possible
+        else:
+            toret[key] = value
     return toret
         
 
@@ -101,9 +104,9 @@ def pairs_similar_to_jsig(jsignature, method):
     '''
         Return all pairs whose jsignature is similar to the provided
     '''
-    return jsa.get_similar_pairs(jsignature, columns, method)
+    return jsa.get_similar_pairs(jsignature, dataset_columns, method)
 
-def columns_similar_to_jsig(filename, column, jsignature):
+def columns_similar_to_jsig(filename, column, jsignature, method):
     '''
         Return columns similar to the given joint signature
     '''
@@ -112,7 +115,8 @@ def columns_similar_to_jsig(filename, column, jsignature):
     sim = jsa.get_columns_similar_to_jsignature(
                 column_data,
                 jsignature,
-                dataset_columns)
+                dataset_columns,
+                method)
     return sim
 
 def columns_similar_to(filename, column, similarity_method):
@@ -124,20 +128,22 @@ def columns_similar_to(filename, column, similarity_method):
     sim_vector = None
     sim_columns = []
     if key in ncol_dist: # numerical
-        # TODO: refactor at this level
+        print("Numerical search")
         if similarity_method is "ks":
             sim_items = da.get_sim_items_ks(key, ncol_dist)
             sim_columns.extend(sim_items)
     elif key in tcol_dist: # text
+        print("Textual search")
         sim_vector = da.get_sim_vector_text(key, tcol_dist)
         for filekey, sim in sim_vector.items():
+            #print(str(sim) + " > " + str(C.cosine["threshold"]))
             if sim > C.cosine["threshold"]: # right threshold?
                 sim_columns.append(filekey)
     return sim_columns
 
 def analyze_dataset(list_path, signature_method):
-    ''' Gets files from directory, columns from dataset, and distribution for
-        each column 
+    ''' Gets files from directory, columns from 
+        dataset, and distribution for each column 
     '''
     all_files_in_dir = iod.get_files_in_dir(list_path)
     print("FILES:")
@@ -161,7 +167,10 @@ def process_files(files, signature_method, similarity_method):
     (ncol_dist, tcol_dist) = da.get_columns_signature(
                             dataset_columns, 
                             signature_method)
-    sim_matrix_num = da.get_sim_matrix_numerical(ncol_dist, similarity_method)
+    sim_matrix_num = da.get_sim_matrix_numerical(
+                ncol_dist, 
+                similarity_method
+    )
     sim_matrix_text = da.get_sim_matrix_text(tcol_dist)
     print("")
     print("Similarity for numerical columns")

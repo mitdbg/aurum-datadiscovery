@@ -15,7 +15,8 @@ def print_dict(dictionary):
 def cast_list_to_float(l):
     newlist = []
     for el in l:
-        newlist.append(float(el)) 
+        newel = float(el)
+        newlist.append(newel) 
     return newlist
 
 if __name__ == "__main__":
