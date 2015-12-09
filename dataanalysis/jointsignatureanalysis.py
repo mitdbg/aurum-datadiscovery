@@ -1,5 +1,6 @@
 from scipy.stats.stats import pearsonr
 
+import kerneldensitymethod as KD
 import config as C
 import utils as U
 
@@ -24,6 +25,8 @@ def get_jsignature(columnA, columnB, method):
         if same_type_num(columnA, columnB):
             return pearsonr(columnA, columnB)
         return False
+    elif method is "kernel-density":
+        return KD.kerndens(columnA, columnB)
 
 def same_type_num(a, b):
     if U.is_column_num(a) and U.is_column_num(b):

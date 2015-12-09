@@ -29,10 +29,14 @@ cosine= {
         }
 
 # Configs related to joint signatures
-all_jsignatures = ["pearson"]
+all_jsignatures = ["pearson", "kernel-density"]
 
 jsignature_samplesize = ["pearson"]
 
 pearson_sim = {
         "threshold":0.05
+    }
+
+kernel_density = {
+    "kernels" : 4
     }

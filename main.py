@@ -207,7 +207,8 @@ if __name__ == "__main__":
         print("-f  <path> to CSV file")
         print("USAGE")
         print("python main.py -p/-f <path> " +
-               "<numerical_signature_method> <numerical_similarity_method>")
+               "<numerical_signature_method> 
+                <numerical_similarity_method>")
         exit()
     main()
 
