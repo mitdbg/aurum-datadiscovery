@@ -25,6 +25,21 @@ def compare_num_columns_dist_odsvm(svm, columnBdata):
     prediction_vector = svm.predict(X)
     return prediction_vector
 
+def get_sim_items_ks(key, ncol_dist):
+    sim_columns = []
+    sim_vector = get_sim_vector_numerical(
+            key, 
+            ncol_dist,
+            "ks")
+    for filekey, sim  in sim_vector.items():
+        dvalue = sim[0]
+        pvalue = sim[1]
+        if dvalue < C.ks["dvalue"] \
+            and \
+        pvalue > C.ks["pvalue"]:
+            sim_columns.append(filekey)
+    return sim_columns
+
 def get_dist(data_list, method):
     Xnumpy = np.asarray(data_list)
     X = Xnumpy.reshape(-1, 1)

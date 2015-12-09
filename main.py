@@ -85,26 +85,13 @@ def columns_similar_to(filename, column, similarity_method):
     if key in ncol_dist: # numerical
         # TODO: refactor at this level
         if similarity_method is "ks":
-            sim_vector = da.get_sim_vector_numerical(
-                        key, 
-                        ncol_dist,
-                        similarity_method)
-            for filekey, sim  in sim_vector.items():
-                dvalue = sim[0]
-                pvalue = sim[1]
-                print(filekey)
-                print(sim[0])
-                print(sim[1])
-                if dvalue < C.ks["dvalue"] \
-                and \
-                pvalue > C.ks["pvalue"]: # need to define what is a good number
-                    sim_columns.append(filekey)
+            sim_items = da.get_sim_items_ks(key, ncol_dist)
+            sim_columns.extend(sim_items)
     elif key in tcol_dist: # text
         sim_vector = da.get_sim_vector_text(key, tcol_dist)
         for filekey, sim in sim_vector.items():
-            if sim > C.cosine["threshold"]: # arbitrary threshold on precision-recall
+            if sim > C.cosine["threshold"]: # right threshold?
                 sim_columns.append(filekey)
-    # apply filter to get only those 'similar'
     return sim_columns
 
 def analyze_dataset(list_path, signature_method):
