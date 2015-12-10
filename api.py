@@ -8,7 +8,9 @@ import config as C
 from inputoutput import inputoutput as iod
 from dataanalysis import dataanalysis  as da
 from dataanalysis import jointsignatureanalysis as jsa
+from conceptgraph import cgraph as cg
 
+cgraph = dict()
 dataset_columns = dict()
 ncol_dist = dict()
 tcol_dist = dict()
@@ -141,6 +143,13 @@ def columns_similar_to(filename, column, similarity_method):
                 sim_columns.append(filekey)
     return sim_columns
 
+def give_related_concepts(concept):
+    '''
+        Returns all concepts similar to the given
+        concept (neighbor in the graph)
+    '''
+    return cg.give_neighbors_of(concept, cgraph)
+
 def analyze_dataset(list_path, signature_method):
     ''' Gets files from directory, columns from 
         dataset, and distribution for each column 
@@ -152,6 +161,10 @@ def analyze_dataset(list_path, signature_method):
     print("Processing " + str(len(all_files_in_dir))+ " files")
     global dataset_columns
     dataset_columns = get_dataset_columns_from_files(all_files_in_dir)
+
+    # Form graph skeleton
+    global cgraph
+    cgraph = cg.build_graph_skeleton(dataset_columns)
 
     # Store dataset info in mem
     global ncol_dist

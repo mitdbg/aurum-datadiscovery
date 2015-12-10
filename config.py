@@ -1,6 +1,8 @@
 # General properties of the prototype
 
-# List of valid signature and similarity methods (i.e. with an implementation)
+# List of valid signature and similarity methods 
+# (i.e. with an implementation)
+
 valid_signature_methods = ["raw", "kd", "odsvm"]
 valid_similarity_methods = ["ks"]
 

@@ -1,7 +1,8 @@
 from sklearn.cluster import KMeans
 
-import jenks as J
+from dataanalysis import jenks as J
 
+# PROTOTYPE_ yet to test
 def kerndens(columnA, columnB):
     k_d = None
     if U.is_column_num(columnA):
