@@ -38,5 +38,6 @@ pearson_sim = {
     }
 
 kernel_density = {
-    "kernels" : 4
+    "kernels" : 4,
+    "density_method": "raw"
     }
