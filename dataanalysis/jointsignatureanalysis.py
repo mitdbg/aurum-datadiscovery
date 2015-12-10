@@ -1,6 +1,6 @@
 from scipy.stats.stats import pearsonr
 
-import kerneldensitymethod as KD
+from dataanalysis import kerneldensitymethod as KD
 import config as C
 import utils as U
 
