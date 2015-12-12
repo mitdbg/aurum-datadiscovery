@@ -19,3 +19,4 @@ if __name__ == "__main__":
             print("Analyzing PATH: " + str(sys.argv[2]))
             path = sys.argv[2]
     main(path)
+

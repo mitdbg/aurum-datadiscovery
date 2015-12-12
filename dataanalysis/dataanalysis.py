@@ -78,6 +78,7 @@ def compare_text_columns_dist(docs):
     vect = TfidfVectorizer(min_df=1)
     tfidf = vect.fit_transform(docs)
     sim = ((tfidf * tfidf.T).A)[0,1]
+    print(str(tfidf * tfidf.T))
     #pairwise_similarity = tfidf * tfidf.T
     return sim
 
@@ -109,10 +110,14 @@ def get_sim_vector_text(column, tcol_dist):
     for key, value in tcol_dist.items():
         if value_to_compare is not "" and value is not "":
             try:
-                sim = compare_text_columns_dist([value_to_compare, value])
+                sim = compare_text_columns_dist(
+                    [value_to_compare, value]
+                )
+                vt[key] = sim
             except ValueError:
-                sim = "No sim for (" + str(column) + "" + str(key) + ")" 
-            vt[key] = sim
+                print("No sim for (" + str(column) + \
+                        "" + str(key) + ")")
+                vt[key] = -1
     return vt
 
 def get_sim_matrix_text(tcol_dist):

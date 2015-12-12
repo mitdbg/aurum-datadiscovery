@@ -1,4 +1,9 @@
 from dataanalysis import dataanalysis as da
+import api as API
+import time
+
+
+now = lambda: int(round(time.time())*1000)
 
 def build_graph_skeleton(columns):
     '''
@@ -17,13 +22,34 @@ def build_graph_skeleton(columns):
                     graph[p_colname].append(colname)
     return graph
 
-def refine_graph_with_columnsignatures(ncol, tcol):
+def refine_graph_with_columnsignatures(ncol, tcol, graph):
     '''
         Given the signatures for all the numerical columns
         as well as for the textual columns, refine the graph
         creating additional links whenever necessary
     '''
-    print("TODO")
+    st = now()
+    for col, sig in ncol.items():
+        # Get list of columns similar to this one
+        (filename, colname) = col
+        cols = API.columns_similar_to(filename, colname, "ks")
+        # Create links to the similar cols
+        for c in cols:
+            graph[col].append(c)
+    et = now()
+    st = now()
+    print("Took: " +str(et-st)+ "ms to refine with num values")
+    for col, sig in tcol.items():
+        # Get list of columns similar to this one
+        (filename, colname) = col
+        cols = API.columns_similar_to(filename, colname, "ks")
+        # Create links to the similar cols
+        for c in cols:
+            graph[col].append(c)
+    et = now()
+    print("Took: " +str(et-st)+ "ms to refine with text values")
+    return graph
+        
 
 def give_neighbors_of(concept, graph):
     '''
@@ -40,7 +66,7 @@ def give_neighbors_of(concept, graph):
                  
 def give_n_concepts_close_to(num, key, graph):
     return graph[key][:num]
-    
+
 
 if __name__ == "__main__":
     print("TODO")

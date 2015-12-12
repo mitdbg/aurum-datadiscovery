@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 from os import listdir
 from os.path import isfile, join
 
@@ -14,6 +15,8 @@ cgraph = dict()
 dataset_columns = dict()
 ncol_dist = dict()
 tcol_dist = dict()
+
+now = lambda: int(round(time.time())*1000)
 
 def get_dataset_files(dataset_path):
     '''
@@ -47,7 +50,6 @@ def process_columns_types(cols):
         else:
             toret[key] = value
     return toret
-        
 
 def dataset_columns(path):
     '''
@@ -130,14 +132,14 @@ def columns_similar_to(filename, column, similarity_method):
     sim_vector = None
     sim_columns = []
     if key in ncol_dist: # numerical
-        print("Numerical search")
+        #print("Numerical search")
         if similarity_method is "ks":
             sim_items = da.get_sim_items_ks(key, ncol_dist)
             sim_columns.extend(sim_items)
     elif key in tcol_dist: # text
-        print("Textual search")
+        #print("Textual search")
         sim_vector = da.get_sim_vector_text(key, tcol_dist)
-        for filekey, sim in sim_vector.items():
+        for (filekey, sim) in sim_vector.items():
             #print(str(sim) + " > " + str(C.cosine["threshold"]))
             if sim > C.cosine["threshold"]: # right threshold?
                 sim_columns.append(filekey)
@@ -159,19 +161,38 @@ def analyze_dataset(list_path, signature_method):
     for f in all_files_in_dir:
         print(str(f))
     print("Processing " + str(len(all_files_in_dir))+ " files")
+    st = now()
     global dataset_columns
     dataset_columns = get_dataset_columns_from_files(all_files_in_dir)
+    et = now()
+    print("Took: " +str(et-st)+ "ms to extract columns")
 
     # Form graph skeleton
+    st = now()
     global cgraph
     cgraph = cg.build_graph_skeleton(dataset_columns)
+    et = now()
+    print("Took: " +str(et-st)+ "ms to build cgraph skeleton")
 
     # Store dataset info in mem
+    st = now()
     global ncol_dist
     global tcol_dist
     (ncol_dist, tcol_dist) = da.get_columns_signature(
                             dataset_columns,
                             signature_method)
+    et = now()
+    print("Took: " +str(et-st)+ "ms to extract column signatures")
+    # Refine concept graph
+    st = now()
+    global cgraph
+    cgraph = cg.refine_graph_with_columnsignatures(
+            ncol_dist, 
+            tcol_dist, 
+            cgraph
+    )
+    et = now()
+    print("Took: " +str(et-st)+ "ms to refine concept graph")
     return (ncol_dist, tcol_dist)
 
 def process_files(files, signature_method, similarity_method):
