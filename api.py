@@ -166,14 +166,14 @@ def analyze_dataset(list_path, signature_method):
     global dataset_columns
     dataset_columns = get_dataset_columns_from_files(all_files_in_dir)
     et = now()
-    print("Took: " +str(et-st)+ "ms to extract columns")
+    t_to_extract_cols = str(et-st)
 
     # Form graph skeleton
     st = now()
     global cgraph
     cgraph = cg.build_graph_skeleton(dataset_columns)
     et = now()
-    print("Took: " +str(et-st)+ "ms to build cgraph skeleton")
+    t_to_build_graph_skeleton = str(et-st)
 
     # Store dataset info in mem
     st = now()
@@ -183,7 +183,7 @@ def analyze_dataset(list_path, signature_method):
                             dataset_columns,
                             signature_method)
     et = now()
-    print("Took: " +str(et-st)+ "ms to extract column signatures")
+    t_to_extract_signatures = str(et-st)
     # Refine concept graph
     st = now()
     global cgraph
@@ -193,7 +193,11 @@ def analyze_dataset(list_path, signature_method):
             cgraph
     )
     et = now()
-    print("Took: " +str(et-st)+ "ms to refine concept graph")
+    t_to_refine_graph = str(et-st)
+    print("Took: " +t_to_extract_cols+ "ms to extract columns")
+    print("Took: " +t_to_build_graph_skeleton+ "ms to build cgraph skeleton")
+    print("Took: " +t_to_extract_signatures+ "ms to extract column signatures")
+    print("Took: " +t_to_refine_graph+ "ms to refine concept graph")
     return (ncol_dist, tcol_dist)
 
 def store_precomputed_model():
