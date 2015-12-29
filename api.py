@@ -7,6 +7,7 @@ from os.path import isfile, join
 import utils
 import config as C
 from inputoutput import inputoutput as iod
+from inputoutput import serde
 from dataanalysis import dataanalysis  as da
 from dataanalysis import jointsignatureanalysis as jsa
 from conceptgraph import cgraph as cg
@@ -194,6 +195,36 @@ def analyze_dataset(list_path, signature_method):
     et = now()
     print("Took: " +str(et-st)+ "ms to refine concept graph")
     return (ncol_dist, tcol_dist)
+
+def store_precomputed_model():
+    '''
+    Store dataset columns, signature collection (2 files) and
+    graph
+    '''
+    print("Storing signatures...")
+    serde.serialize_signature_collection(tcol_dist, ncol_dist)    
+    print("Storing signatures...DONE!")
+    print("Storing graph...")
+    serde.serialize_graph(cgraph)
+    print("Storing graph...DONE!")
+    print("Storing dataset columns...")
+    serde.serialize_dataset_columns(dataset_columns)
+    print("Storing dataset columns...DONE!")
+
+def load_precomputed_model():
+    print("Loading signature collections...")
+    global tcol_dist
+    global ncol_dist
+    (tcol_dist, ncol_dist) = serde.deserialize_signature_collections()
+    print("Loading signature collections...DONE!")
+    print("Loading graph...")
+    global cgraph
+    cgraph = serde.deserialize_graph()
+    print("Loading graph...DONE!")
+    print("Loading dataset columns...")
+    global dataset_columns
+    dataset_columns = serde.deserialize_dataset_columns()
+    print("Loading dataset columns...DONE!")
 
 def process_files(files, signature_method, similarity_method):
     dataset_columns = get_dataset_columns_from_files(files)

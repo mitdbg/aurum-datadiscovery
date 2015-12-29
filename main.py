@@ -9,6 +9,8 @@ import config as C
 def main(path):
     if path is not None:
         API.analyze_dataset(path, "raw")
+    else:
+        API.load_precomputed_model()
     print("Discovery_Prototype entering interactive mode...")
     embed() 
 
@@ -18,5 +20,7 @@ if __name__ == "__main__":
         if sys.argv[1] == "-p":
             print("Analyzing PATH: " + str(sys.argv[2]))
             path = sys.argv[2]
+        elif sys.argv[1] == "-l":
+            print("Loading precomputed model")
     main(path)
 

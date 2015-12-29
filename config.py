@@ -43,3 +43,9 @@ kernel_density = {
     "kernels" : 4,
     "density_method": "raw"
     }
+
+# Serde parameters
+serdepath = "./data/"
+signcollectionfile = "sigcolfile.pickle"
+graphfile = "graphfile.pickle"
+datasetcolsfile = "datasetcols.pickle"
