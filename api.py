@@ -94,7 +94,7 @@ def get_jsignature_for(fileA, columnA, fileB, columnB, method):
     if utils.is_column_num(columnA) and utils.is_column_num(columnB): 
         return jsa.get_jsignature(columnA, columnB, method)
     else:
-        print("Column type mismatch")
+        print("Column types not supported")
 
 def get_similarity_columns(columnA, columnB, method):
     '''

@@ -78,7 +78,7 @@ def compare_text_columns_dist(docs):
     vect = TfidfVectorizer(min_df=1)
     tfidf = vect.fit_transform(docs)
     sim = ((tfidf * tfidf.T).A)[0,1]
-    print(str(tfidf * tfidf.T))
+    #print(str(tfidf * tfidf.T))
     #pairwise_similarity = tfidf * tfidf.T
     return sim
 
