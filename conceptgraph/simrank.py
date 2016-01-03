@@ -42,7 +42,7 @@ def predecessor_of(node, graph):
                 l_ns.append(k)
     return l_ns
 
-if __name__ == "__main__":
+def main():
     from collections import OrderedDict
     test_graph = OrderedDict()
     test_graph['1'] = []
@@ -63,8 +63,9 @@ if __name__ == "__main__":
     sim = simrank(test_graph, max_iter, eps, c)
 
     print(test_graph)
-    print(test_graph)
-    print(test_graph)
-    print(test_graph)
     print(sim)
+    return (test_graph, sim)
+
+if __name__ == "__main__":
+    main()
 

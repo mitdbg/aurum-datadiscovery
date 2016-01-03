@@ -23,6 +23,12 @@ def serialize_dataset_columns(obj):
         pickle.dump(obj, f)
     print("Done serialization of dataset columns!")
 
+def serialize_simrank_matrix(obj):
+    path_to_serialize = C.serdepath + C.simrankfile
+    with open(path_to_serialize, "wb") as f:
+        pickle.dump(obj, f)
+    print("Done serialization of simrank matrix!")
+
 def deserialize_signature_collections():
     path_to_deserialize = C.serdepath + "T_" + C.signcollectionfile
     with open(path_to_deserialize, "rb") as f:
@@ -45,6 +51,13 @@ def deserialize_dataset_columns():
     with open(path_to_deserialize, "rb") as f:
         dcols = pickle.load(f)
     print("Done deserialization of dataset columns!")
+    return dcols 
+
+def deserialize_simrank_matrix():
+    path_to_deserialize = C.serdepath + C.simrankfile
+    with open(path_to_deserialize, "rb") as f:
+        dcols = pickle.load(f)
+    print("Done deserialization of simrank matrix!")
     return dcols 
 
 if __name__ == "__main__":

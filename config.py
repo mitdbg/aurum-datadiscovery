@@ -44,8 +44,15 @@ kernel_density = {
     "density_method": "raw"
     }
 
+# Simrank parameters
+sr_maxiter = 1000
+sr_eps = 1e-4
+sr_c = 0.8
+simrank_sim_threshold = 0.2
+
 # Serde parameters
 serdepath = "./data/"
 signcollectionfile = "sigcolfile.pickle"
 graphfile = "graphfile.pickle"
 datasetcolsfile = "datasetcols.pickle"
+simrankfile = "simrankfile.pickle"

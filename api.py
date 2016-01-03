@@ -11,8 +11,10 @@ from inputoutput import serde
 from dataanalysis import dataanalysis  as da
 from dataanalysis import jointsignatureanalysis as jsa
 from conceptgraph import cgraph as cg
+from conceptgraph import simrank as sr
 
 cgraph = dict()
+simrank = None
 dataset_columns = dict()
 ncol_dist = dict()
 tcol_dist = dict()
@@ -146,12 +148,19 @@ def columns_similar_to(filename, column, similarity_method):
                 sim_columns.append(filekey)
     return sim_columns
 
-def give_related_concepts(concept):
+def neighbors_of(concept):
     '''
-        Returns all concepts similar to the given
-        concept (neighbor in the graph)
+        Returns all concepts that are neighbors
+        of concept
     '''
     return cg.give_neighbors_of(concept, cgraph)
+
+def give_structural_sim_of(concept):
+    '''
+        Returns all concepts that are similar (structure)
+        to concept after a given threshold
+    '''
+    return cg.give_structural_sim_of(concept, cgraph, simrank)
 
 def analyze_dataset(list_path, signature_method):
     ''' Gets files from directory, columns from 
@@ -194,10 +203,16 @@ def analyze_dataset(list_path, signature_method):
     )
     et = now()
     t_to_refine_graph = str(et-st)
+    st = now()
+    global simrank
+    simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
+    et = now()
+    t_to_simrank = str(et-st)
     print("Took: " +t_to_extract_cols+ "ms to extract columns")
     print("Took: " +t_to_build_graph_skeleton+ "ms to build cgraph skeleton")
     print("Took: " +t_to_extract_signatures+ "ms to extract column signatures")
     print("Took: " +t_to_refine_graph+ "ms to refine concept graph")
+    print("Took: " +t_to_simrank+ "ms to compute simrank")
     return (ncol_dist, tcol_dist)
 
 def store_precomputed_model():
@@ -211,6 +226,9 @@ def store_precomputed_model():
     print("Storing graph...")
     serde.serialize_graph(cgraph)
     print("Storing graph...DONE!")
+    print("Storing simrank matrix...")
+    serde.serialize_simrank_matrix(simrank)
+    print("Storing simrank matrix...DONE!")
     print("Storing dataset columns...")
     serde.serialize_dataset_columns(dataset_columns)
     print("Storing dataset columns...DONE!")
@@ -225,6 +243,10 @@ def load_precomputed_model():
     global cgraph
     cgraph = serde.deserialize_graph()
     print("Loading graph...DONE!")
+    print("Loading simrank matrix...")
+    global simrank
+    simrank = serde.deserialize_simrank_matrix()
+    print("Loading simrank matrix...DONE!")
     print("Loading dataset columns...")
     global dataset_columns
     dataset_columns = serde.deserialize_dataset_columns()
