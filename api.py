@@ -195,7 +195,6 @@ def analyze_dataset(list_path, signature_method):
     t_to_extract_signatures = str(et-st)
     # Refine concept graph
     st = now()
-    global cgraph
     cgraph = cg.refine_graph_with_columnsignatures(
             ncol_dist, 
             tcol_dist, 
@@ -269,6 +268,21 @@ def process_files(files, signature_method, similarity_method):
     print("")
     print("Similarity for textual columns")
     utils.print_dict(sim_matrix_text)
+
+def print_result(result):
+    from IPython.display import Markdown, display
+    def printmd(string):
+        display(Markdown(string))
+    grouped_by_dataset = dict()
+    for dataset, column in result:
+        if dataset not in grouped_by_dataset:
+            grouped_by_dataset[dataset] = []
+        grouped_by_dataset[dataset].append(column)
+    for key, value in grouped_by_dataset.items():
+        printmd("**" + str(key) + "**")
+        for v in value:
+            print("   " + str(v))
+        
 
 def main():
     # Parse input parameters
