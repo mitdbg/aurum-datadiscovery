@@ -107,9 +107,22 @@ def get_similarity_columns(columnA, columnB, method):
     elif method == "odsvm":
         return da.compare_num_columns_dist_odsvm(columnA, columnB)
 
+def pairs_similar_to_pair(X, Y, method):
+    '''
+        Given two columns, it finds a jsignature for them and then 
+        returns all pairs with similar score.
+    '''
+    (fileA, columnA) = X
+    (fileB, columnB) = Y
+    jsig = get_jsignature_for(fileA, columnA, fileB, columnB, method) 
+    if jsig is False:
+        print("Could not compute joint signature for the provided columns")
+        return False
+    return pairs_similar_to_jsig(jsig, method)
+
 def pairs_similar_to_jsig(jsignature, method):
     '''
-        Return all pairs whose jsignature is similar to the provided
+        Return all pairs whose jsignature is similar to the provided.
     '''
     return jsa.get_similar_pairs(jsignature, dataset_columns, method)
 

@@ -33,6 +33,7 @@ cosine= {
 # Configs related to joint signatures
 all_jsignatures = ["pearson", "kernel-density"]
 
+# List those methods that require the same sample size to work
 jsignature_samplesize = ["pearson"]
 
 pearson_sim = {

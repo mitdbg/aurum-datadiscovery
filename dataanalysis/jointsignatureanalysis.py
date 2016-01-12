@@ -17,7 +17,7 @@ def get_jsignature(columnA, columnB, method):
         return False
     if method in C.jsignature_samplesize:
         if len(columnA) is not len(columnB):
-            print("ERROR: " + " requires same sample size")
+            #print("ERROR: " + " requires same sample size")
             return False
     # Obtain signature given the method
     if method is "pearson":
@@ -77,7 +77,7 @@ def compare_jsignatures(jsignatureA, jsignatureB, method):
         (pearsonA, pA) = jsignatureA
         (pearsonB, pB) = jsignatureB
         dif = abs(pearsonA - pearsonB)
-        print(str(dif) + " < " + str(C.pearson_sim["threshold"]))
+        #print(str(dif) + " < " + str(C.pearson_sim["threshold"]))
         if dif < C.pearson_sim["threshold"]:
             return True
     return False
