@@ -6,6 +6,9 @@
 valid_signature_methods = ["raw", "kd", "odsvm"]
 valid_similarity_methods = ["ks"]
 
+preferred_num_method = "raw"
+preferred_text_method = "vector"
+
 # Configuration specific to each signature method
 
 kd =    {
@@ -57,3 +60,6 @@ signcollectionfile = "sigcolfile.pickle"
 graphfile = "graphfile.pickle"
 datasetcolsfile = "datasetcols.pickle"
 simrankfile = "simrankfile.pickle"
+
+# DB connection
+db_location = "mongodb://localhost:27017"

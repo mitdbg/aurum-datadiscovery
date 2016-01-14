@@ -22,5 +22,12 @@ if __name__ == "__main__":
             path = sys.argv[2]
         elif sys.argv[1] == "-l":
             print("Loading precomputed model")
+        elif sys.argv[1] == "-db":
+            print("Using DB to access model")
+        else:
+            print("USAGE:")
+            print("-p: analyze path")
+            print("-l: load precomputed model")
+            print("-db: use model stored in db")
     main(path)
 

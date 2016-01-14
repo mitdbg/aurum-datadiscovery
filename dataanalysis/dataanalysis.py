@@ -41,6 +41,13 @@ def get_sim_items_ks(key, ncol_dist):
             sim_columns.append(filekey)
     return sim_columns
 
+def get_num_dist(data, method):
+    '''
+    Get signature for numerical data following the
+    provided method
+    '''
+    return get_dist(data, method)
+
 def get_dist(data_list, method):
     Xnumpy = np.asarray(data_list)
     X = Xnumpy.reshape(-1, 1)
@@ -62,17 +69,16 @@ def get_dist(data_list, method):
         dist = svmachine.fit(X)
     return dist
     
-def get_textual_dist(data_list):
-    ''' Get TF-IDF '''
-    # merge column into 1 sentence first
-    text = ' '.join(data_list)
-    tokens = get_tokens(text)
-    print('todo')
+def get_textual_dist(data, method):
+    '''
+    Get signature for textual data following
+    the provided method
+    '''
+    sig = None
+    if method is "vector":
+        sig = ' '.join(data)
+    return sig
 
-def get_tokens(text):
-    tokens = nltk.word_tokenize(text)
-    return tokens
-    
 def compare_text_columns_dist(docs):
     ''' cosine distance between two vector of hash(words)'''
     vect = TfidfVectorizer(min_df=1)
@@ -121,7 +127,10 @@ def get_sim_vector_text(column, tcol_dist):
     return vt
 
 def get_sim_matrix_text(tcol_dist):
-    # Pairwise comparison of all textual column dist. keep them in matrix
+    ''' 
+    Pairwise comparison of all textual column dist. 
+    keep them in matrix
+    '''
     mt = dict() 
     for key, value in tcol_dist.items():
         mt[key] = dict()

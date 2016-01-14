@@ -3,6 +3,7 @@ import os
 import time
 from os import listdir
 from os.path import isfile, join
+from collections import OrderedDict
 
 import utils
 import config as C
@@ -13,7 +14,7 @@ from dataanalysis import jointsignatureanalysis as jsa
 from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr
 
-cgraph = dict()
+cgraph = OrderedDict()
 simrank = None
 dataset_columns = dict()
 ncol_dist = dict()
@@ -42,16 +43,27 @@ def get_dataset_columns_from_files(files):
             " columns")
     return dataset_columns
 
+def clean_column(column):
+    '''
+    TODO: will become a complex process, move to a dif module
+    '''
+    clean_c = dict()
+    column_type = None
+    (key, value) = column
+    if utils.is_column_num(value):
+        newvalue = utils.cast_list_to_float(value)
+        clean_c[key] = newvalue
+        column_type = 'N'
+    else:
+        clean_c[key] = value
+        column_type = 'T'
+    return (clean_c, column_type)
+
 def process_columns_types(cols):
     toret = dict()
-    for key, value in cols.items():
-        # Make it numerical if possible
-        if utils.is_column_num(value):
-            newvalue = utils.cast_list_to_float(value)
-            toret[key] = newvalue
-        # keep it as text when not possible
-        else:
-            toret[key] = value
+    for col in cols.items():
+        (clean_c, column_type) = clean_column(col)
+        toret.update(clean_c)
     return toret
 
 def dataset_columns(path):
@@ -193,7 +205,7 @@ def analyze_dataset(list_path, signature_method):
     # Form graph skeleton
     st = now()
     global cgraph
-    cgraph = cg.build_graph_skeleton(dataset_columns)
+    cgraph = cg.build_graph_skeleton(list(dataset_columns.keys()))
     et = now()
     t_to_build_graph_skeleton = str(et-st)
 

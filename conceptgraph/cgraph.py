@@ -2,23 +2,21 @@ from dataanalysis import dataanalysis as da
 import api as API
 import config as C
 
-from collections import OrderedDict
 import time
 
 
 now = lambda: int(round(time.time())*1000)
 
-def build_graph_skeleton(columns):
+def build_graph_skeleton(columns, graph):
     '''
         Builds basic graph skeleton, where columns
         are connected to other columns in the same table.
         No cross-table connections.
     '''
-    graph = OrderedDict()
-    for p_colname, _ in columns.items():
+    for p_colname in columns:
         (pf, _) = p_colname
         graph[p_colname] = []
-        for colname, _ in columns.items():
+        for colname in columns:
             (f, c) = colname
             if pf is f:
                 if colname not in graph[p_colname]:
