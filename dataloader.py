@@ -147,7 +147,7 @@ def build_graph():
     return (cgraph_cache, cgraph, simrank)
 
 def build_graph_and_store(dataset):
-     if buildgraph: 
+    if buildgraph: 
         # Build graph and simrank 
         (cgraph_cache, cgraph, simrank) = build_graph()
 

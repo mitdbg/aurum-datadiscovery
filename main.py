@@ -7,15 +7,16 @@ import config as C
 
 mode = None
 
-def main(path, mode):
+def main(path, mode, modelname):
     if mode is "load_from_scrath":
         import api as API
-        API.analyze_dataset(path, "raw")
+        API.analyze_dataset(path, "raw", modelname)
     elif mode is "deserialize_model":
         import api as API
-        API.load_precomputed_model()
+        API.load_precomputed_model(modelname)
     elif mode is "model_in_DB":
         from api import p as API
+        API.load_precomputed_model_DBVersion(modelname)
         print("TODO")
     else:
         print("Choose input mode")
@@ -43,5 +44,8 @@ if __name__ == "__main__":
         print("-p: analyze path")
         print("-l: load precomputed model")
         print("-db: use model stored in db")
-    main(path, mode)
+        print("<modelname>")
+    # model name is provided as the last parameter
+    modelname = sys.argv[len(sys.argv)-1]
+    main(path, mode, modelname)
 

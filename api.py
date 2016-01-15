@@ -15,6 +15,7 @@ from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr
 
 cgraph = OrderedDict()
+cgraph_cache = None
 simrank = None
 dataset_columns = dict()
 ncol_dist = dict()
@@ -242,7 +243,7 @@ def give_structural_sim_of(concept):
     '''
     return cg.give_structural_sim_of(concept, cgraph, simrank)
 
-def analyze_dataset(list_path, signature_method):
+def analyze_dataset(list_path, signature_method, modelname):
     ''' Gets files from directory, columns from 
         dataset, and distribution for each column 
     '''
@@ -294,41 +295,54 @@ def analyze_dataset(list_path, signature_method):
     print("Took: " +t_to_simrank+ "ms to compute simrank")
     return (ncol_dist, tcol_dist)
 
-def store_precomputed_model():
+def store_precomputed_model(modelname):
     '''
     Store dataset columns, signature collection (2 files) and
     graph
     '''
     print("Storing signatures...")
-    serde.serialize_signature_collection(tcol_dist, ncol_dist)    
+    serde.serialize_signature_collection(tcol_dist, 
+                                    ncol_dist, 
+                                    modelname)    
     print("Storing signatures...DONE!")
     print("Storing graph...")
-    serde.serialize_graph(cgraph)
+    serde.serialize_graph(cgraph, modelname)
     print("Storing graph...DONE!")
     print("Storing simrank matrix...")
-    serde.serialize_simrank_matrix(simrank)
+    serde.serialize_simrank_matrix(simrank, modelname)
     print("Storing simrank matrix...DONE!")
     print("Storing dataset columns...")
-    serde.serialize_dataset_columns(dataset_columns)
+    serde.serialize_dataset_columns(dataset_columns, modelname)
     print("Storing dataset columns...DONE!")
 
-def load_precomputed_model():
-    print("Loading signature collections...")
-    global tcol_dist
-    global ncol_dist
-    (tcol_dist, ncol_dist) = serde.deserialize_signature_collections()
-    print("Loading signature collections...DONE!")
-    print("Loading graph...")
+def load_precomputed_model_DBVersion(modelname):
+    global cgraph_cache
+    cgraph_cache = serde.deserialize_cached_graph(modelname)
     global cgraph
-    cgraph = serde.deserialize_graph()
+    cgraph = serde.deserialize_graph(modelname)
     print("Loading graph...DONE!")
     print("Loading simrank matrix...")
     global simrank
-    simrank = serde.deserialize_simrank_matrix()
+    simrank = serde.deserialize_simrank_matrix(modelname)
+    print("Loading simrank matrix...DONE!")
+
+def load_precomputed_model(modelname):
+    print("Loading signature collections...")
+    global tcol_dist
+    global ncol_dist
+    (tcol_dist, ncol_dist) = serde.deserialize_signature_collections(modelname)
+    print("Loading signature collections...DONE!")
+    print("Loading graph...")
+    global cgraph
+    cgraph = serde.deserialize_graph(modelname)
+    print("Loading graph...DONE!")
+    print("Loading simrank matrix...")
+    global simrank
+    simrank = serde.deserialize_simrank_matrix(modelname)
     print("Loading simrank matrix...DONE!")
     print("Loading dataset columns...")
     global dataset_columns
-    dataset_columns = serde.deserialize_dataset_columns()
+    dataset_columns = serde.deserialize_dataset_columns(modelname)
     print("Loading dataset columns...DONE!")
 
 def process_files(files, signature_method, similarity_method):
