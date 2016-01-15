@@ -44,16 +44,17 @@ class DB_adapted_API():
         '''
         Returns all columns similar to the provided
         '''
-        
-
-        return None
+        concept = (filename, columnname)
+        columns = neighbors_of(concept, cgraph_cache)          
+        return columns
 
     def columns_in_context_with((filename, columnname)):
         '''
         Structural similarity
         '''
-
-        return None
+        concept = (filename, columname)
+        columns = give_structural_sim_of(concept)
+        return columns
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
@@ -229,7 +230,7 @@ def columns_similar_to(filename, column, similarity_method):
                 sim_columns.append(filekey)
     return sim_columns
 
-def neighbors_of(concept):
+def neighbors_of(concept, cgraph):
     '''
         Returns all concepts that are neighbors
         of concept

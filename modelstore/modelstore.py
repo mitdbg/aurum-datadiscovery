@@ -32,9 +32,7 @@ def new_column(f, c, t, sig, n_data, t_data):
     "t_data" : t_data,
     "n_data" : n_data
     }
-    print(str(doc))
     modeldb.insert_one(doc)
-    #print("KEY: " + key + " t: " + str(t))
 
 def get_all_concepts():
     '''
@@ -53,11 +51,9 @@ def get_fields_from_concept(concept, arg1, arg2):
     '''
     (filename, columnname) = concept
     key = build_column_key(filename, columnname)    
-    print(str(key))
     res = modeldb.find({ "key" : key}, 
                        {arg1:1, arg2:1, "_id":0})
     res = res[0] # should be only one due to the query_by_prim_key
-    print(str(res))
     return (res[arg1], res[arg2])
 
 def get_all_num_cols_for_comp():
