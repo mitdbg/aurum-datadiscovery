@@ -22,6 +22,40 @@ tcol_dist = dict()
 
 now = lambda: int(round(time.time())*1000)
 
+class DB_adapted_API():
+    '''
+    This class is used to wrap up functions
+    that need special treatment
+    '''
+    
+    def test1(self):
+        return len(dataset_columns)
+
+    def search_keyword(keyword):
+        '''
+        Returns [(dataset,column)] that contain the
+        given keyword
+        '''
+        print("todo") 
+        return None
+
+    def columns_like((filename, columnname)):
+        '''
+        Returns all columns similar to the provided
+        '''
+    
+        return None
+
+    def columns_in_context_with((filename, columnname)):
+        '''
+        Structural similarity
+        '''
+
+        return None
+
+# Instantiate class to make it importable
+p = DB_adapted_API()
+
 def get_dataset_files(dataset_path):
     '''
         Get all non-hidden files in a given directory
