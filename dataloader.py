@@ -9,6 +9,7 @@ from dataanalysis import dataanalysis as da
 from modelstore import modelstore as MS
 from inputoutput import inputoutput as iod
 from conceptgraph import cgraph as cg
+from conceptgraph import simrank as sr
 
 # Capturing ctrl+C
 def signal_handler(signal, frame):
@@ -29,8 +30,6 @@ workqueue = queue.Queue()
 
 # Control variable to keep working
 goOn = True
-
-cgraph = OrderedDict()
 
 def load_csv_file(filename):
     '''
@@ -85,22 +84,14 @@ def process_csv_file(filename):
                       num_data, 
                       text_data)
         # Add new concepts to graph
-    update_concept_graph(concepts)
-
-def update_concept_graph(concepts):
-    '''
-    Update concept graph incrementally with new concepts
-    TODO: evolving
-    '''
-    global cgraph
-    cgraph = cg.build_graph_skeleton(concepts, cgraph)
 
 def load():
     '''
     Consumes load tasks from queue and process them
     '''
     total_tasks_processed = 0
-    while(goOn):
+    # TODO: change to goOn var once this is always living
+    while(workqueue.qsize() > 0):
         task = workqueue.get()
         (t_type, resource) = task
         if t_type is "CSV":
@@ -113,22 +104,92 @@ def load():
         print("Processed Tasks: " \
         + str(total_tasks_processed)+"/" + str(aprox_size))
 
+def refine_from_modelstore(cgraph):
+    '''
+    This method is an adaptation of api.refine_graph_with_csig
+    to work with the store directly
+    '''
+    # Iterate over all nodes in the graph
+    for concept in list(cgraph.keys()):
+        # For each node, detect its type and compare 
+        # all nodes of the same type
+        sim_cols = API.columns_similar_to_DBCONN(concept)
+        for col in sim_cols:
+            cgraph[concept].append(col)
+    return cgraph
+
+def add_table_neighbors(concepts, cgraph):
+    '''
+    Add additional edges to the existent graph, those of columns
+    that are in the same table
+    '''
+    for col in concepts:
+        (fname1, _) = col 
+        for col2 in concepts:
+            (fname2, _) = col2
+            if fname2 is fname1:
+                if col2 not in cgraph[col]:
+                    cgraph[col].append(col2)
+    return cgraph
+
+def build_graph():
+    '''
+    Build cgraph and simrank
+    '''
+    # First construct graph
+    cgraph_cache = OrderedDict()
+    concepts = MS.get_all_concepts()
+    cgraph_cache = refine_from_modelstore(cgraph_cache)
+    cgraph = copy.deepcopy(cgraph_cache)
+    cgraph = add_table_neighbors(concepts, cgraph_table)
+    # Then run simrank
+    simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
+    return (cgraph_cache, cgraph, simrank)
+
+def build_graph_and_store(dataset):
+     if buildgraph: 
+        # Build graph and simrank 
+        (cgraph_cache, cgraph, simrank) = build_graph()
+
+        # Serialize graph and simrank
+        print("Storing graph...")
+        serde.serialize_graph(cgraph, dataset)
+        print("Storing graph...DONE!")
+        print("Storing graph (cache)...")
+        serde.serialize_cached_graph(cgraph_cache, dataset)
+        print("Storing graph (cache)...DONE!")
+        print("Storing simrank matrix...")
+        serde.serialize_simrank_matrix(simrank, dataset)
+        print("Storing simrank matrix...DONE!")
+
 def main():
-    mode = sys.argv[1]
-    arg = sys.argv[2]
-    dataset = sys.argv[4]
+    mode = sys.argv[2]
+    dirOrDataset = sys.argv[3]
+    arg = sys.argv[4]
+    dataset = sys.argv[6]
     # Initialize model store
     MS.init(dataset)
-    if mode == "--dir":
-        print("Working on path: " + str(arg))
-        create_work_from_path_csv_files(arg)
-    load()
-    print("Done!!")
+    if mode is 'ALL' or mode is 'LOAD':
+        if mode == "--dir":
+            print("Working on path: " + str(arg))
+            create_work_from_path_csv_files(arg)
+        load()
+        print("FINISHED LOADING DATA TO STORE!")
+        if mode is 'ALL':
+            build_graph_and_store(dataset)
+            print("FINISHED MODEL CREATION!!")
+    elif mode is 'BGRAPH':
+        build_graph_and_store(dataset)
+        print("FINISHED MODEL CREATION!!")
+    else:
+        print("Unrecognized mode")
+        exit()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) is not 5:
+    if len(sys.argv) is not 7:
         print("HELP")
+        print("--mode <mode> : specifies ALL, LOAD, BGRAPH")
         print("--dir <path> to directory with CSV files")
         print("--dataset <name> of the db")
         print("USAGE")

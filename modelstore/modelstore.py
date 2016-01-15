@@ -36,6 +36,30 @@ def new_column(f, c, t, sig, n_data, t_data):
     modeldb.columns.insert_one(doc)
     #print("KEY: " + key + " t: " + str(t))
 
+def get_all_concepts():
+    '''
+    Return all keys dataset, copied into a collection
+    '''
+    print("todo")
+
+def get_fields_from_concept(concept, arg1, arg2):
+    '''
+    Project the given attributes that are returned in a tuple
+    '''
+    print("todo")
+
+def get_all_num_cols_for_comp():
+    '''
+    Return a cursor to the num columns, projecting (key, sig)
+    '''
+    print("todo")
+
+def get_all_text_cols_for_comp():
+    ''' 
+    Return a cursor to the num columns, projecting (key, sig)
+    '''
+    print("todo")
+
 def init(dataset_name):
     # Connection to DB system
     global dbc

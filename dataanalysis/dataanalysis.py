@@ -8,6 +8,28 @@ import nltk
 import config as C
 import utils as U
 
+
+def compare_pair_num_columns(col1, col2):
+    '''
+    Returns true if columns are similar
+    '''
+    sim_value = compare_num_columns_dist_ks()
+    dvalue = sim_value[0]
+    pvalue = sim_value[1]
+    if dvalue < C.ks["dvalue"] and pvalue > C.ks["pvalue"]:
+        return True
+    return False
+
+def compare_pair_text_columns(col1, col2):
+    '''
+    Returns true if columns are similar
+    '''
+    docs = [col1, col2]
+    sim_value = compare_text_columns_dist(docs)
+    if sim_value > C.cosine["threshold"]: # right threshold?
+        return True
+    return False
+
 def compare_num_columns_dist(columnA, columnB, method):
     if method is "ks":
         return compare_num_columns_dist_ks(columnA, columnB)
@@ -32,7 +54,7 @@ def get_sim_items_ks(key, ncol_dist):
             key, 
             ncol_dist,
             "ks")
-    for filekey, sim  in sim_vector.items():
+    for filekey, sim in sim_vector.items():
         dvalue = sim[0]
         pvalue = sim[1]
         if dvalue < C.ks["dvalue"] \

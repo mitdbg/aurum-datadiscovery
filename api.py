@@ -43,7 +43,8 @@ class DB_adapted_API():
         '''
         Returns all columns similar to the provided
         '''
-    
+        
+
         return None
 
     def columns_in_context_with((filename, columnname)):
@@ -184,6 +185,26 @@ def columns_similar_to_jsig(filename, column, jsignature, method):
                 dataset_columns,
                 method)
     return sim
+
+def columns_similar_to_DBCONN(concept):
+    '''
+    Iterate over entire db to find similar cols
+    '''
+    sim_cols = []
+    (c_type, sig) = MS.get_fields_from_concept(concept, "type", "sig")
+    if c_type is 'N':
+        ncol_cursor = MS.get_all_num_cols_for_comp()
+        for el in ncol_cursor:
+            are_sim = da.compare_pair_num_columns(sig, el["sig"])
+            if are_sim:
+                sim_cols.append(el["key"])
+    elif c_type is 'T':
+        tcol_cursor = MS.get_all_text_cols_for_comp()
+        for el in tcol_cursor:
+            are_sim = da.compare_pair_text_columns(sig, el["sig"])
+            if are_sim:
+                sim_cols.append(el["key"])
+    return sim_cols
 
 def columns_similar_to(filename, column, similarity_method):
     '''

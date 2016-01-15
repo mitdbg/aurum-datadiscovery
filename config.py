@@ -58,6 +58,7 @@ simrank_sim_threshold = 0.2
 serdepath = "./data/"
 signcollectionfile = "sigcolfile.pickle"
 graphfile = "graphfile.pickle"
+graphcachedfile = "graphcachedfile.pickle"
 datasetcolsfile = "datasetcols.pickle"
 simrankfile = "simrankfile.pickle"
 
