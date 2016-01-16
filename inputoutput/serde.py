@@ -10,7 +10,7 @@ def serialize_signature_collection(tcol_dist, ncol_dist, dataset):
     path_to_serialize = path + "T_" + C.signcollectionfile
     with open(path_to_serialize, "wb+") as f:
         pickle.dump(tcol_dist, f)
-    path_to_serialize = C.serdepath + "N_" + C.signcollectionfile
+    path_to_serialize = path + "N_" + C.signcollectionfile
     with open(path_to_serialize, "wb+") as f:
         pickle.dump(ncol_dist, f)
     print("Done serialization of signature collections!")

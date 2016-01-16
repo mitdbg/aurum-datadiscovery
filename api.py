@@ -267,7 +267,8 @@ def analyze_dataset(list_path, signature_method, modelname):
     # Form graph skeleton
     st = now()
     global cgraph
-    cgraph = cg.build_graph_skeleton(list(dataset_columns.keys()))
+    cgraph = cg.build_graph_skeleton(list(dataset_columns.keys()), 
+                                     cgraph)
     et = now()
     t_to_build_graph_skeleton = str(et-st)
 

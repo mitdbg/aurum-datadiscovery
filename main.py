@@ -11,7 +11,7 @@ def main(path, mode, modelname):
     print("PATH: " + str(path))
     print("MODE: " + str(mode))
     print("MODELNAME: " + str(modelname))
-    if mode is "load_from_scrath":
+    if mode is "load_from_scratch":
         import api as API
         API.analyze_dataset(path, "raw", modelname)
     elif mode is "deserialize_model":

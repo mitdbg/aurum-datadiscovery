@@ -41,7 +41,7 @@ def get_column_iterator_csv(files):
     for filename in files:
         print("Processing ... " + str(filename))
         file_columns = get_columns_from_csv_file(filename)
-        columns.extend(file_columns)
+        columns.update(file_columns)
     return columns
 
 def get_header_csv(filename):
