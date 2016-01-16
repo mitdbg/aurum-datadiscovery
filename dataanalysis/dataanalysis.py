@@ -13,7 +13,7 @@ def compare_pair_num_columns(col1, col2):
     '''
     Returns true if columns are similar
     '''
-    sim_value = compare_num_columns_dist_ks()
+    sim_value = compare_num_columns_dist_ks(col1, col2)
     dvalue = sim_value[0]
     pvalue = sim_value[1]
     if dvalue < C.ks["dvalue"] and pvalue > C.ks["pvalue"]:
@@ -25,7 +25,11 @@ def compare_pair_text_columns(col1, col2):
     Returns true if columns are similar
     '''
     docs = [col1, col2]
-    sim_value = compare_text_columns_dist(docs)
+    sim_value = None
+    try:
+        sim_value = compare_text_columns_dist(docs)
+    except ValueError:
+        sim_value = -1
     if sim_value > C.cosine["threshold"]: # right threshold?
         return True
     return False

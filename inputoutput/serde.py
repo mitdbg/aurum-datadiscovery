@@ -1,47 +1,53 @@
 import pickle
+import os
 
 import config as C
 
 def serialize_signature_collection(tcol_dist, ncol_dist, dataset):
-    path_to_serialize = C.serdepath \
-            + "/" + str(dataset) + "/" 
-            + "T_" + C.signcollectionfile
-    with open(path_to_serialize, "wb") as f:
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + "T_" + C.signcollectionfile
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(tcol_dist, f)
     path_to_serialize = C.serdepath + "N_" + C.signcollectionfile
-    with open(path_to_serialize, "wb") as f:
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(ncol_dist, f)
     print("Done serialization of signature collections!")
 
 def serialize_cached_graph(obj, dataset):
-    path_to_serialize = C.serdepath \
-            + "/" + str(dataset) + "/" \
-            + C.graphcachedfile
-    with open(path_to_serialize, "wb") as f:
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + C.graphcachedfile
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(obj, f)
     print("Done serialization of graph!")
 
 def serialize_graph(obj, dataset):
-    path_to_serialize = C.serdepath \
-            + "/" + str(dataset) + "/" \
-            + C.graphfile
-    with open(path_to_serialize, "wb") as f:
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + C.graphfile
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(obj, f)
     print("Done serialization of graph!")
 
 def serialize_dataset_columns(obj, dataset):
-    path_to_serialize = C.serdepath  \
-            + "/" + str(dataset) + "/" \
-            + C.datasetcolsfile
-    with open(path_to_serialize, "wb") as f:
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + C.datasetcolsfile
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(obj, f)
     print("Done serialization of dataset columns!")
 
 def serialize_simrank_matrix(obj, dataset):
-    path_to_serialize = C.serdepath \
-            + "/" + str(dataset) + "/" \
-            + C.simrankfile
-    with open(path_to_serialize, "wb") as f:
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + C.simrankfile
+    with open(path_to_serialize, "wb+") as f:
         pickle.dump(obj, f)
     print("Done serialization of simrank matrix!")
 

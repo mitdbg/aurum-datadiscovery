@@ -8,6 +8,9 @@ import config as C
 mode = None
 
 def main(path, mode, modelname):
+    print("PATH: " + str(path))
+    print("MODE: " + str(mode))
+    print("MODELNAME: " + str(modelname))
     if mode is "load_from_scrath":
         import api as API
         API.analyze_dataset(path, "raw", modelname)
@@ -16,8 +19,10 @@ def main(path, mode, modelname):
         API.load_precomputed_model(modelname)
     elif mode is "model_in_DB":
         from api import p as API
-        API.load_precomputed_model_DBVersion(modelname)
-        print("TODO")
+        # load specifid model bits (graph) by importing 
+        # one specific function that is not visible to others
+        from api import load_precomputed_model_DBVersion
+        load_precomputed_model_DBVersion(modelname)
     else:
         print("Choose input mode")
         exit()

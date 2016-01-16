@@ -13,6 +13,7 @@ from dataanalysis import dataanalysis  as da
 from dataanalysis import jointsignatureanalysis as jsa
 from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr
+from modelstore import modelstore as MS
 
 cgraph = OrderedDict()
 cgraph_cache = None
@@ -32,7 +33,7 @@ class DB_adapted_API():
     def test1(self):
         return len(dataset_columns)
 
-    def search_keyword(keyword):
+    def search_keyword(self, keyword):
         '''
         Returns [(dataset,column)] that contain the
         given keyword
@@ -40,19 +41,17 @@ class DB_adapted_API():
         print("todo") 
         return None
 
-    def columns_like((filename, columnname)):
+    def columns_like(self, concept):
         '''
         Returns all columns similar to the provided
         '''
-        concept = (filename, columnname)
         columns = neighbors_of(concept, cgraph_cache)          
         return columns
 
-    def columns_in_context_with((filename, columnname)):
+    def columns_in_context_with(self, concept):
         '''
         Structural similarity
         '''
-        concept = (filename, columname)
         columns = give_structural_sim_of(concept)
         return columns
 
@@ -193,19 +192,25 @@ def columns_similar_to_DBCONN(concept):
     Iterate over entire db to find similar cols
     '''
     sim_cols = []
-    (c_type, sig) = MS.get_fields_from_concept(concept, "type", "sig")
+    (c_type, sig) = MS.get_fields_from_concept(concept, 
+                                    "type", 
+                                    "signature")
     if c_type is 'N':
         ncol_cursor = MS.get_all_num_cols_for_comp()
         for el in ncol_cursor:
-            are_sim = da.compare_pair_num_columns(sig, el["sig"])
+            are_sim = da.compare_pair_num_columns(sig, 
+                                            el["signature"])
             if are_sim:
-                sim_cols.append(el["key"])
+                key = (el["filename"], el["column"])
+                sim_cols.append(key)
     elif c_type is 'T':
         tcol_cursor = MS.get_all_text_cols_for_comp()
         for el in tcol_cursor:
-            are_sim = da.compare_pair_text_columns(sig, el["sig"])
+            are_sim = da.compare_pair_text_columns(sig, 
+                                            el["signature"])
             if are_sim:
-                sim_cols.append(el["key"])
+                key = (el["filename"], el["column"])
+                sim_cols.append(key)
     return sim_cols
 
 def columns_similar_to(filename, column, similarity_method):
@@ -317,8 +322,11 @@ def store_precomputed_model(modelname):
     print("Storing dataset columns...DONE!")
 
 def load_precomputed_model_DBVersion(modelname):
+    print("Loading (cache) graph...")
     global cgraph_cache
     cgraph_cache = serde.deserialize_cached_graph(modelname)
+    print("Loading (cache) graph...DONE!")
+    print("Loading graph...")
     global cgraph
     cgraph = serde.deserialize_graph(modelname)
     print("Loading graph...DONE!")

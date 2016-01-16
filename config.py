@@ -55,7 +55,7 @@ sr_c = 0.8
 simrank_sim_threshold = 0.2
 
 # Serde parameters
-serdepath = "./data/"
+serdepath = "./data"
 signcollectionfile = "sigcolfile.pickle"
 graphfile = "graphfile.pickle"
 graphcachedfile = "graphcachedfile.pickle"

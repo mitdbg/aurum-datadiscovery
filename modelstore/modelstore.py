@@ -61,7 +61,10 @@ def get_all_num_cols_for_comp():
     Return a cursor to the num columns, projecting (key, sig)
     '''
     cursor = modeldb.find({"type":"N"}, 
-                          {"filename":1, "column":1, "_id":0})
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
     return cursor
 
 def get_all_text_cols_for_comp():
@@ -69,7 +72,10 @@ def get_all_text_cols_for_comp():
     Return a cursor to the num columns, projecting (key, sig)
     '''
     cursor = modeldb.find({"type":"T"},
-                          {"filename":1, "column":1, "_id":0})
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
     return cursor
 
 def init(dataset_name):
