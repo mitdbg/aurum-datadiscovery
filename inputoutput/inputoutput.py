@@ -22,7 +22,7 @@ def get_columns_from_csv_file(filename):
     value -> [values]
     '''
     columns = defaultdict(list)
-    with open(filename) as f:
+    with open(filename, encoding="latin-1") as f:
         reader = csv.DictReader(f)
         for row in reader:
             for (k,v) in row.items():

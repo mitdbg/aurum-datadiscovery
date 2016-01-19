@@ -14,6 +14,7 @@ def simrank(graph, max_iter, eps, c):
     sim = numpy.identity(len(nodes))
 
     for i in range(max_iter):
+        print("It: " + str(i) +"/"+str(max_iter))
         if numpy.allclose(sim, sim_prev, atol=eps):
             break
         sim_prev = numpy.copy(sim)

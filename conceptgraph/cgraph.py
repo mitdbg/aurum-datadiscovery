@@ -38,8 +38,9 @@ def refine_graph_with_columnsignatures(ncol, tcol, graph):
         for c in cols:
             graph[col].append(c)
     et = now()
+    n = str(len(ncol))
+    print("Took: "+str(et-st)+"ms to refine "+n+" num values")
     st = now()
-    print("Took: " +str(et-st)+ "ms to refine with num values")
     for col, sig in tcol.items():
         # Get list of columns similar to this one
         (filename, colname) = col
@@ -48,7 +49,8 @@ def refine_graph_with_columnsignatures(ncol, tcol, graph):
         for c in cols:
             graph[col].append(c)
     et = now()
-    print("Took: " +str(et-st)+ "ms to refine with text values")
+    n = str(len(tcol))
+    print("Took: "+str(et-st)+"ms to refine "+n+" text values")
     return graph
 
 def give_neighbors_of(concept, graph):

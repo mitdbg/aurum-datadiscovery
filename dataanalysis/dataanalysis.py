@@ -2,11 +2,17 @@ from sklearn.neighbors.kde import KernelDensity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import svm 
 from scipy.stats import ks_2samp
+from collections import Counter
 import numpy as np
+#from nltk.corpus import stopwords
 import nltk
+import string
+import time
 
 import config as C
 import utils as U
+
+#now = lambda: int(round(time.time())*1000)
 
 
 def compare_pair_num_columns(col1, col2):
@@ -28,6 +34,7 @@ def compare_pair_text_columns(col1, col2):
     sim_value = None
     try:
         sim_value = compare_text_columns_dist(docs)
+        #sim_value = 0.01
     except ValueError:
         sim_value = -1
     if sim_value > C.cosine["threshold"]: # right threshold?
@@ -105,13 +112,72 @@ def get_textual_dist(data, method):
         sig = ' '.join(data)
     return sig
 
+tt = 0
+it = 1
+
+def tokenize(text):
+    lower = text.lower() 
+    npunc = lower.translate(string.punctuation)
+    tokens = nltk.word_tokenize(npunc)
+    #ft = [w for w in tokens if not w in stopwords.words('english')]
+    return tokens[:20]
+
+def _compare_text_columns_dist(doc1, doc2):
+    # tokenize and filter stop words
+    doc1 = doc1.lower()
+    doc2 = doc2.lower()
+    f1doc1 = doc1.translate(None, string.punctuation)
+    f1doc2 = doc2.translate(None, string.punctuation)
+    tokens1 = nltk.word_tokenize(f1doc1)
+    tokens2 = nltk.word_tokenize(f1doc2)
+    #f2t1 = [w for w in tokens1 if not w in stopwords.words('english')]
+    #f2t2 = [w for w in tokens2 if not w in stopwords.words('english')]
+    c1 = Counter(f2t1)
+    c2 = Counter(f2t2)
+    t1 = c1.most_common(50)
+    t2 = c2.most_common(50)
+
+    # order by term frequency
+
+    # compute idf
+
+    # compute tf*idf
+
+    # compute cosine similarity (custom function, faster)
+
+    # return similarity
+
+
+vect = TfidfVectorizer(min_df=1)
+
 def compare_text_columns_dist(docs):
     ''' cosine distance between two vector of hash(words)'''
-    vect = TfidfVectorizer(min_df=1)
+    docs = [docs[0][:4000], docs[1][:4000]]
+    st = time.time()
+    #vect = TfidfVectorizer(tokenizer = tokenize, min_df=1)
+    global vect
     tfidf = vect.fit_transform(docs)
     sim = ((tfidf * tfidf.T).A)[0,1]
-    #print(str(tfidf * tfidf.T))
+    #sim = 0.01
+    et = time.time()
+    global tt
+    tt = tt + (et-st)
+    global it
+    it = it + 1
+    total_time = et-st
+    #if total_time == 0:
+    #    length = len(docs[0]) + len(docs[1])
+    #    print(" length = " + str(length))
+    if total_time > 0.1:
+        print("* " + str(et-st))
+    #    #length = len(docs[0]) + len(docs[1])
+    #    #print(" length = " + str(length))
+    #    print("d0: " + str(docs[0][:70]))
+    #    print("d1: " + str(docs[1][:70]))
+    #    #print(str(tfidf * tfidf.T))
     #pairwise_similarity = tfidf * tfidf.T
+    avg = tt/it
+    #print(str(avg))
     return sim
 
 def get_sim_vector_numerical(column, ncol_dist, method):

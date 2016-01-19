@@ -32,7 +32,10 @@ def new_column(f, c, t, sig, n_data, t_data):
     "t_data" : t_data,
     "n_data" : n_data
     }
-    modeldb.insert_one(doc)
+    try:
+        modeldb.insert_one(doc)
+    except pymongo.errors.DocumentTooLarge:
+        print("Trying to load: " + str(f) + " - " + str(c))
 
 def get_all_concepts():
     '''

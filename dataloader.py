@@ -1,4 +1,5 @@
 import signal
+import time
 import sys
 import queue
 import copy
@@ -112,7 +113,11 @@ def refine_from_modelstore(concepts, cgraph):
     to work with the store directly
     '''
     # Iterate over all nodes in the graph
+    total_concepts = len(concepts)
+    it = 0
     for concept in concepts:
+        print(str(it)+"/"+str(total_concepts))
+        it = it + 1
         cgraph[concept] = []
         sim_cols = API.columns_similar_to_DBCONN(concept)
         cgraph[concept].extend(sim_cols)
@@ -137,19 +142,44 @@ def build_graph():
     Build cgraph and simrank
     '''
     # First construct graph
+    st = time.time()
     cgraph_cache = OrderedDict()
     concepts = MS.get_all_concepts()
+    # figuring out bottleneck...
+    #concepts = concepts[:600]
+    print("Computing all similarities for graph...")
     cgraph_cache = refine_from_modelstore(concepts, cgraph_cache)
-    print(str(cgraph_cache))
+    print("Computing all similarities for graph...DONE")
+    et = time.time()
+    time_to_build_graph = et-st
+    #print(str(cgraph_cache))
+    print("Deep copying...")
     cgraph = copy.deepcopy(cgraph_cache)
+    print("Deep copying...DONE")
+    st = time.time()
+    print("Refining graph with neighbors...")
     cgraph = add_table_neighbors(concepts, cgraph)
+    print("Refining graph with neighbors...DONE")
+    et = time.time()
+    time_to_neighbors = et-st
     # Then run simrank
-    simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
+    st = time.time()
+    print("Computing SIMRANK...")
+    #simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
+    simrank = concepts
+    print("Computing SIMRANK...DONE")
+    et = time.time()
+    time_to_simrank = et-st
+    print("Time (graph): " + str(time_to_build_graph))
+    print("Time (neigh): " + str(time_to_neighbors))
+    print("Time (simra): " + str(time_to_simrank))
     return (cgraph_cache, cgraph, simrank)
 
 def build_graph_and_store(dataset):
     # Build graph and simr 
+    print("Building graph...")
     (cgraph_cache, cgraph, simrank) = build_graph()
+    print("Building graph...DONE!")
 
     # Serialize graph and simrank
     print("Storing graph...")
