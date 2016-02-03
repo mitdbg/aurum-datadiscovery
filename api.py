@@ -17,6 +17,7 @@ from modelstore import modelstore as MS
 
 cgraph = OrderedDict()
 cgraph_cache = None
+jgraph = OrderedDict()
 simrank = None
 dataset_columns = dict()
 ncol_dist = dict()
@@ -54,6 +55,12 @@ class DB_adapted_API():
         '''
         columns = give_structural_sim_of(concept)
         return columns
+    
+    def columns_joinable_with(self, concept):
+        '''
+        Inclusion dependency
+        '''
+        columns = neighbors_of(concept, jgraph_cache)
 
 # Instantiate class to make it importable
 p = DB_adapted_API()

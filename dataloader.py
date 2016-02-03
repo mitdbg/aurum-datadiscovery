@@ -107,6 +107,50 @@ def load():
         print("Processed Tasks: " \
         + str(total_tasks_processed)+"/" + str(aprox_size))
 
+def build_dict_values(values):
+    d = dict()
+    for v in values:
+        if v not in d:
+            d[v] = 0
+        d[v] = d[v] + 1
+    return d
+
+def compute_overlap(values1, values2, th_overlap, th_cutoff):
+    overlap = 0
+    non_overlap = 0
+    for v in values2:
+        if v in values1:
+            overlap = overlap + 1
+        else:
+            non_overlap = non_overlap + 1
+        if overlap > th_overlap:
+            return True
+        if non_overlap > th_cutoff:
+            return False
+
+def jgraph_from_modelstore(concepts, jgraph):
+    '''
+    Creates a join graph reading from the store directly
+    '''
+    # pick one concept and create a dict with its value
+    for pconcept in concepts:
+        pvalues = MS.get_values_for(pconcept)#TODO
+        vals = build_dict_values(pvalues)
+        # iterate over store, getting other columns
+        for concept in concepts:
+            # check new column is not already included    
+            if concept not in jgraph[concept]:
+                values = MS.get_values_for(concept)
+                total_size = len(pvalues) + len(values)
+                th_overlap = C.join_overlap_th * total_size
+                th_cutoff = total_size - th_overlap
+                overlap = compute_overlap(pvalues, values, 
+                                        th_overlap, th_cutoff)
+                if overlap:
+                    jgraph[pconcept].append(concept)
+                    jgraph[concept].append(pconcept)
+    return jgraph
+
 def refine_from_modelstore(concepts, cgraph):
     '''
     This method is an adaptation of api.refine_graph_with_csig
@@ -137,7 +181,7 @@ def add_table_neighbors(concepts, cgraph):
                     cgraph[col].append(col2)
     return cgraph
 
-def build_graph():
+def _build_graph():
     '''
     Build cgraph and simrank
     '''
@@ -174,6 +218,61 @@ def build_graph():
     print("Time (neigh): " + str(time_to_neighbors))
     print("Time (simra): " + str(time_to_simrank))
     return (cgraph_cache, cgraph, simrank)
+
+def build_graph():
+    concepts, cgraph_cache = build_cgraph_cache()
+    cgraph = build_cgraph(concepts, cgraph_cache)
+    simrank = build_simrank(cgraph)
+    return (cgraph_cache, cgraph, simrank)
+
+def build_cgraph_cache():
+    # First construct graph
+    st = time.time()
+    cgraph_cache = OrderedDict()
+    concepts = MS.get_all_concepts()
+    # figuring out bottleneck...
+    #concepts = concepts[:600]
+    print("Computing all similarities for graph...")
+    cgraph_cache = refine_from_modelstore(concepts, cgraph_cache)
+    print("Computing all similarities for graph...DONE")
+    et = time.time()
+    time_to_build_graph = et-st
+    print("Time to build graph: " + str(time_to_build_graph))
+    return concepts, cgraph_cache
+
+def build_cgraph(concepts, cgraph_cache):
+    print("Deep copying...")
+    cgraph = copy.deepcopy(cgraph_cache)
+    print("Deep copying...DONE")
+    st = time.time()
+    print("Refining graph with neighbors...")
+    cgraph = add_table_neighbors(concepts, cgraph)
+    print("Refining graph with neighbors...DONE")
+    et = time.time()
+    time_to_neighbors = et-st
+    print("Time to add table neighbors: "+str(time_to_neighbors))
+    return cgraph
+
+def build_simrank():
+    # Then run simrank
+    st = time.time()
+    print("Computing SIMRANK...")
+    simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
+    #simrank = concepts
+    print("Computing SIMRANK...DONE")
+    et = time.time()
+    time_to_simrank = et-st
+    print("Time to simrank: " + str(time_to_simrank))
+    return simrank
+
+def build_jgraph(concepts):
+    st = time.time()
+    jgraph = dict()
+    jgraph = jgraph_from_modelstore(concepts, jgraph)
+    et = time.time()
+    time_to_jgraph = et-st
+    print("Time to jgraph: " + str(time_to_jgraph))
+    return jgraph
 
 def build_graph_and_store(dataset):
     # Build graph and simr 

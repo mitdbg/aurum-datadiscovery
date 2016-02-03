@@ -42,11 +42,36 @@ def get_all_concepts():
     Return all keys dataset, copied into a collection
     '''
     concepts = []
-    res_cursor = modeldb.find({}, {"filename" : 1, "column":1, "_id" : 0})
+    res_cursor = modeldb.find({}, {"filename" : 1, 
+                            "column":1, 
+                            "_id" : 0})
     for el in res_cursor:
         key = (el["filename"], el["column"])
         concepts.append(key)
     return concepts
+
+def get_values_of_concept(concept):
+    '''
+    Get n_data or t_data depending on type
+    '''
+    (fname, cname) = concept
+    key = build_column_key(fname, cname)
+    res = modeldb.find({"key": key}, {"type": 1, 
+                                    "n_data": 1,
+                                    "t_data": 1})
+    values = None
+    type_col = None
+    n_data = None
+    t_data = None
+    for r in res:
+        type_col = r["type"]
+        n_data = r["n_data"]
+        t_data = r["t_data"]
+    if type_col == "N":
+        values = n_data
+    elif type_col == "T":
+        values = t_data
+    return values
 
 def get_fields_from_concept(concept, arg1, arg2):
     '''
@@ -91,7 +116,7 @@ def init(dataset_name):
     print(str(modeldb))
 
 def main():
-    db_name = "datagov_tiny"
+    db_name = "mitdwhslice"
     init(db_name)
     #concepts = get_all_concepts()
     #print(str(concepts))
@@ -104,9 +129,15 @@ def main():
     #res = get_all_num_cols_for_comp()
     #for r in res:
     #    print(str(r))
-    res = get_all_text_cols_for_comp()
-    for r in res:
-        print(str(r))
+    #res = get_all_text_cols_for_comp()
+    #for r in res:
+    #    print(str(r))
+    concept = ('Cip.csv', 'Version')
+    values = get_values_of_concept(concept)
+    values = values[:5]
+    for v in values:
+        print(v)
+
     print("done!")
    
 if __name__ == "__main__":
