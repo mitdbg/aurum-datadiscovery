@@ -39,8 +39,8 @@ class DB_adapted_API():
         Returns [(dataset,column)] that contain the
         given keyword
         '''
-        print("todo") 
-        return None
+        columns = search_kw(keyword)
+        return columns
 
     def columns_like(self, concept):
         '''
@@ -60,10 +60,15 @@ class DB_adapted_API():
         '''
         Inclusion dependency
         '''
-        columns = neighbors_of(concept, jgraph_cache)
+        columns = neighbors_of(concept, jgraph)
+        return columns
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
+
+def search_kw(kw):
+    columns = MS.search_keyword(kw)
+    return columns
 
 def get_dataset_files(dataset_path):
     '''
@@ -338,10 +343,16 @@ def load_precomputed_model_DBVersion(modelname):
     global cgraph
     cgraph = serde.deserialize_graph(modelname)
     print("Loading graph...DONE!")
+    print("Loading jgraph...")
+    global jgraph
+    jgraph = serde.deserialize_jgraph(modelname)
+    print("Loading jgraph...DONE!")
     print("Loading simrank matrix...")
     global simrank
     simrank = serde.deserialize_simrank_matrix(modelname)
     print("Loading simrank matrix...DONE!")
+    # Initialize the model DB
+    MS.init(modelname)
 
 def load_precomputed_model(modelname):
     print("Loading signature collections...")

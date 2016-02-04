@@ -54,6 +54,9 @@ sr_eps = 1e-4
 sr_c = 0.8
 simrank_sim_threshold = 0.2
 
+# Overlap parameters
+join_overlap_th = 0.5
+
 # Serde parameters
 serdepath = "./data"
 signcollectionfile = "sigcolfile.pickle"
@@ -61,6 +64,7 @@ graphfile = "graphfile.pickle"
 graphcachedfile = "graphcachedfile.pickle"
 datasetcolsfile = "datasetcols.pickle"
 simrankfile = "simrankfile.pickle"
+jgraphfile = "jgraphfile.pickle"
 
 # DB connection
 db_location = "mongodb://localhost:27017"

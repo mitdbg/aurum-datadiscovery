@@ -1,13 +1,14 @@
 from pymongo import MongoClient
+from pymongo import TEXT
 
 import config as C
 
 # db client
 dbc = None
-# Model database
+# Database
+database = None
+# Model collection 
 modeldb = None
-# Source tracking database
-srctrackingdb = None
 
 def build_column_key(filename, columname):
     key = str(filename + "-" + columname)
@@ -106,17 +107,29 @@ def get_all_text_cols_for_comp():
                            "_id":0})
     return cursor
 
+def search_keyword(keyword):
+    '''
+    Search keyword
+    '''
+    res = modeldb.find({"t_data": keyword},
+                 {"filename":1, "column":1, "_id":0})
+    colmatches = [r for r in res]
+    return colmatches
+
 def init(dataset_name):
     # Connection to DB system
     global dbc
     dbc = MongoClient(C.db_location)
     # Configure right DB
+    global database
+    database = dbc[dataset_name]
     global modeldb
-    modeldb = dbc[dataset_name].columns
-    print(str(modeldb))
+    modeldb = database.columns
+    # Create full text search index
+    modeldb.create_index([('t_data', TEXT)])
 
 def main():
-    db_name = "mitdwhslice"
+    db_name = "testtiny3"
     init(db_name)
     #concepts = get_all_concepts()
     #print(str(concepts))
@@ -132,9 +145,9 @@ def main():
     #res = get_all_text_cols_for_comp()
     #for r in res:
     #    print(str(r))
-    concept = ('Cip.csv', 'Version')
-    values = get_values_of_concept(concept)
-    values = values[:5]
+    #concept = ('Cip.csv', 'Version')
+    keyword = "Colorado"
+    values = search_keyword(keyword)
     for v in values:
         print(v)
 

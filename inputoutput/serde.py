@@ -33,6 +33,15 @@ def serialize_graph(obj, dataset):
         pickle.dump(obj, f)
     print("Done serialization of graph!")
 
+def serialize_jgraph(obj, dataset):
+    path = C.serdepath + "/" + str(dataset) + "/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    path_to_serialize = path + C.jgraphfile
+    with open(path_to_serialize, "wb+") as f:
+        pickle.dump(obj, f)
+    print("Done serialization of jgraph!")
+
 def serialize_dataset_columns(obj, dataset):
     path = C.serdepath + "/" + str(dataset) + "/"
     if not os.path.exists(path):
@@ -62,7 +71,7 @@ def deserialize_signature_collections(dataset):
             + "N_" + C.signcollectionfile
     with open(path_to_deserialize, "rb") as f:
         ncol_dist = pickle.load(f)
-    print("Done deserialization of signature collections!")
+    print("Done deserialization of signature collection!")
     return (tcol_dist, ncol_dist)
 
 def deserialize_cached_graph(dataset):
@@ -71,7 +80,7 @@ def deserialize_cached_graph(dataset):
             + C.graphcachedfile
     with open(path_to_deserialize, "rb") as f:
         graph = pickle.load(f)
-    print("Done deserialization of signature collection!")
+    print("Done deserialization of cgraph_cache!")
     return graph
 
 def deserialize_graph(dataset):
@@ -80,7 +89,16 @@ def deserialize_graph(dataset):
             + C.graphfile
     with open(path_to_deserialize, "rb") as f:
         graph = pickle.load(f)
-    print("Done deserialization of signature collection!")
+    print("Done deserialization of cgraph!")
+    return graph
+
+def deserialize_jgraph(dataset):
+    path_to_deserialize = C.serdepath \
+            + "/" + str(dataset) + "/" \
+            + C.jgraphfile
+    with open(path_to_deserialize, "rb") as f:
+        graph = pickle.load(f)
+    print("Done deserialization of jgraph!")
     return graph
 
 def deserialize_dataset_columns(dataset):
