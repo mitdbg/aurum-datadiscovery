@@ -33,13 +33,20 @@ class DB_adapted_API():
     
     def test1(self):
         return len(dataset_columns)
+    
+    def peek(self, column, num):
+        '''
+        Peek 10 values of the column
+        '''
+        values = MS.peek_values(column, num)
+        return values
 
     def search_keyword(self, keyword):
         '''
         Returns [(dataset,column)] that contain the
         given keyword
         '''
-        columns = search_kw(keyword)
+        columns = MS.search_keyword(keyword)
         return columns
 
     def columns_like(self, concept):
@@ -65,10 +72,6 @@ class DB_adapted_API():
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
-
-def search_kw(kw):
-    columns = MS.search_keyword(kw)
-    return columns
 
 def get_dataset_files(dataset_path):
     '''

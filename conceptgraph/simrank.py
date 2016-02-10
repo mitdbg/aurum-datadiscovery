@@ -1,5 +1,6 @@
 import numpy
 import itertools
+import pickle
 
 def simrank(graph, max_iter, eps, c):
     '''
@@ -15,6 +16,9 @@ def simrank(graph, max_iter, eps, c):
 
     for i in range(max_iter):
         print("It: " + str(i) +"/"+str(max_iter))
+        filename = "srpickle" + str(i)
+        with open(filename, "wb+") as f:
+            pickle.dump(sim, f)
         if numpy.allclose(sim, sim_prev, atol=eps):
             break
         sim_prev = numpy.copy(sim)

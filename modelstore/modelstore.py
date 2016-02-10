@@ -51,6 +51,30 @@ def get_all_concepts():
         concepts.append(key)
     return concepts
 
+def peek_values(concept, num):
+    '''
+    Get num samples of column
+    TODO: repetition, remove this or get_values
+    '''
+    (fname, cname) = concept
+    key = build_column_key(fname, cname)
+    res = modeldb.find({"key": key}, {"type": 1,
+                                      "n_data": 1,
+                                      "t_data": 1})
+    values = None
+    type_col = None
+    n_data = None
+    t_data = None
+    for r in res:
+        type_col = r["type"]
+        n_data = r["n_data"]
+        t_data = r["t_data"]
+    if type_col == "N":
+        values = n_data[:num]
+    elif type_col == "T":
+        values = t_data[:num]
+    return values
+
 def get_values_of_concept(concept):
     '''
     Get n_data or t_data depending on type
@@ -111,8 +135,12 @@ def search_keyword(keyword):
     '''
     Search keyword
     '''
-    res = modeldb.find({"t_data": keyword},
-                 {"filename":1, "column":1, "_id":0})
+    #res = modeldb.find({"t_data": keyword},
+    #             {"filename":1, "column":1, "_id":0})
+    res = modeldb.find({'$text': {'$search':keyword}}, 
+                    {'filename':1, 
+                            'column':1,
+                            '_id': 0})
     colmatches = [r for r in res]
     return colmatches
 
