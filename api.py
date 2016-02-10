@@ -31,9 +31,10 @@ class DB_adapted_API():
     that need special treatment
     '''
     
-    def test1(self):
-        return len(dataset_columns)
-    
+    '''
+    Primitives 
+    '''
+
     def peek(self, column, num):
         '''
         Peek 10 values of the column
@@ -69,6 +70,89 @@ class DB_adapted_API():
         '''
         columns = neighbors_of(concept, jgraph)
         return columns
+
+    '''
+    Functions: Functions use primitives for more refined output
+    '''
+
+    def columns_of_table(self, table):
+        '''
+        Returns all columns of the given table
+        '''
+        columns = [] 
+        for k,v in cgraph_cache.items():
+            fn, cn = k
+            if fn == table:
+                columns.append(cn)
+        return columns
+        
+
+    def join_path(self, table1, table2, maxdepth):
+        '''
+        Given two tables and max depth returns join paths if exist
+        '''
+        def parent_of(fname, cname, visited):
+            for column, parent in visited:
+                fn, cn = column
+                if fn == fname:
+                    return parent
+
+        # get columns from tables 
+        cols1 = DB_adapted_API.columns_of_table(self, table1)
+        cols1 = [(table1, c) for c in cols1]
+    
+        # comparison structure
+        # [(colname, parentcol)]
+        # keep intermediate structure to 
+        visited = []
+        visiting = [(c, None) for c in cols1]
+ 
+        while maxdepth > 0:
+            # create temporal structure for joins
+            neighbors = []
+            # go through visiting and get new joins
+            for son, father in visiting:
+                joins = []
+                try:
+                    joins = DB_adapted_API.columns_joinable_with(self,son)
+                except KeyError:
+                    continue
+                # prepare these in the right format
+                joins = [(j, son) for j in joins]
+                #print("JOINS to: " + str(son))
+                #print (str(joins))
+                # extend neighbors with these
+                neighbors.extend(joins)
+            #print("visiting: " + str(son))
+            #print(str(neighbors))
+            # push visiting to visited and neighbors to visiting
+            visited.extend(visiting)
+            visiting = neighbors
+            maxdepth = maxdepth - 1
+        visited.extend(visiting)
+
+        #print("VISITED:")
+        #print(str(visited))
+
+        # does any col1 join cols2
+        joinpaths = []
+        for column, parent in visited:
+            joinpath = []
+            fname, cname = column
+            if fname == table2:
+                joinpath.append(column)
+                found_root = False
+                while not found_root:
+                    p = parent_of(fname, cname, visited)
+                    pfname, pcname = p
+                    joinpath.append(p)
+                    if pfname == table1:
+                        found_root = True
+                    else:
+                        fname, cname = pfname, pcname
+                joinpaths.append(joinpath)
+
+        return joinpaths
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
