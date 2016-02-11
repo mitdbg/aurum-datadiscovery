@@ -1,0 +1,3 @@
+appdebug = True
+appname = "Aurum"
+
