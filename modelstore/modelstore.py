@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from pymongo import TEXT
+from pymongo.errors import DocumentTooLarge
 
 import config as C
 
@@ -35,7 +36,7 @@ def new_column(f, c, t, sig, n_data, t_data):
     }
     try:
         modeldb.insert_one(doc)
-    except pymongo.errors.DocumentTooLarge:
+    except DocumentTooLarge:
         print("Trying to load: " + str(f) + " - " + str(c))
 
 def get_all_concepts():

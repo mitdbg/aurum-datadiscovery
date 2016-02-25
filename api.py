@@ -153,6 +153,9 @@ class DB_adapted_API():
                 joinpaths.append(joinpath)
 
         return joinpaths
+    
+    def print(self, results):
+        print_result(results)
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
@@ -435,9 +438,9 @@ def load_precomputed_model_DBVersion(modelname):
     jgraph = serde.deserialize_jgraph(modelname)
     print("Loading jgraph...DONE!")
     print("Loading simrank matrix...")
-    global simrank
-    simrank = serde.deserialize_simrank_matrix(modelname)
-    print("Loading simrank matrix...DONE!")
+    #global simrank
+    #simrank = serde.deserialize_simrank_matrix(modelname)
+    #print("Loading simrank matrix...DONE!")
     # Initialize the model DB
     MS.init(modelname)
 

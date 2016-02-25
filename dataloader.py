@@ -106,6 +106,7 @@ def load():
         total_tasks_processed = total_tasks_processed + 1
         print("Processed Tasks: " \
         + str(total_tasks_processed)+"/" + str(aprox_size))
+        print("Finished processing: " + str(resource))
 
 def build_dict_values(values):
     d = dict()
@@ -118,19 +119,56 @@ def build_dict_values(values):
 def compute_overlap(values1, values2, th_overlap, th_cutoff):
     overlap = 0
     non_overlap = 0
-    for k,v in values2.items():
-        if v in values1.keys():
-            overlap = overlap + (v*values1[v])
+    longest = None
+    shortest = None
+    if len(values1) > len(values2):
+        longest = values1
+        shortest = values2
+    else:
+        longest = values2
+        shortest = values1
+
+    for k, v in shortest.items():
+        #print("is: " + str(k) + " in longest.keys?" + str(longest.keys()))
+        if k in longest.keys():
+            #overlap = overlap + (v * values1[k]) # cartesian product
+            #overlap = overlap + v + values1[k]    # unique values only
+            overlap = overlap + 1
         else:
             non_overlap = non_overlap + 1
+        #print("ov: " + str(overlap) + " nonov: " + str(non_overlap))
         if overlap > th_overlap:
-            print("ov: "+str(overlap)+" cutoff: "+str(non_overlap))
+            #print("ov: "+str(overlap)+" cutoff: "+str(non_overlap))
             return True
         if non_overlap > th_cutoff:
-            #print("ov: "+str(overlap)+" cutoff: "+str(non_overlap))
+            #print("nov: "+str(non_overlap)+" thcutoff: "+str(th_cutoff))
             return False
 
 def jgraph_from_modelstore(concepts, jgraph):
+    '''
+    Creates a join graph reading from the store directly
+    '''
+    tit = len(concepts)
+    it = 0
+    for pconcept in concepts:
+        print(str(it) + "/" + str(tit))
+        it = it + 1
+        jgraph[pconcept] = []
+        pvalues = MS.get_values_of_concept(pconcept)
+        pvals = build_dict_values(pvalues)
+        for concept in concepts:
+            values = MS.get_values_of_concept(concept)
+            vals = build_dict_values(values)
+            total_size = len(pvalues) + len(values)
+            th_overlap = C.join_overlap_th * total_size
+            th_cutoff = total_size - th_overlap
+            overlap = compute_overlap(pvals, vals, th_overlap, th_cutoff)
+            if overlap:
+                jgraph[pconcept].append(concept)
+    return jgraph
+    
+
+def _jgraph_from_modelstore(concepts, jgraph):
     '''
     Creates a join graph reading from the store directly
     '''
@@ -282,16 +320,12 @@ def build_jgraph(concepts):
     st = time.time()
     jgraph = dict()
     jgraph = jgraph_from_modelstore(concepts, jgraph)
+    #for k,v in jgraph.items():
+    #    print(str(k)+" -> " + str(len(v)))
     et = time.time()
     time_to_jgraph = et-st
     print("Time to jgraph: " + str(time_to_jgraph))
     return jgraph
-
-#def build_graph():
-#    concepts, cgraph_cache = build_cgraph_cache()
-#    cgraph = build_cgraph(concepts, cgraph_cache)
-#    simrank = build_simrank(cgraph)
-#    return (cgraph_cache, cgraph, simrank)
 
 def build_graph_and_store(dataset):
     # Build cgraph_cache
@@ -321,12 +355,14 @@ def build_graph_and_store(dataset):
     serde.serialize_jgraph(jgraph, dataset)
     print("Storing jgraph...DONE!")
 
+    print("SKIPPING SIMRANK")
+
     # Build simrank
-    simrank = build_simrank(cgraph)
+    #simrank = build_simrank(cgraph)
     # Store simrank 
-    print("Storing simrank matrix...")
-    serde.serialize_simrank_matrix(simrank, dataset)
-    print("Storing simrank matrix...DONE!")
+    #print("Storing simrank matrix...")
+    #serde.serialize_simrank_matrix(simrank, dataset)
+    #print("Storing simrank matrix...DONE!")
 
 def main():
     mode = sys.argv[2]

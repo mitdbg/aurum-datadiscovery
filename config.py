@@ -55,7 +55,7 @@ sr_c = 0.8
 simrank_sim_threshold = 0.2
 
 # Overlap parameters
-join_overlap_th = 0.5
+join_overlap_th = 0.4
 
 # Serde parameters
 serdepath = "./data"
