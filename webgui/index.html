@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="ddContent">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular.min.js"></script>
+    <script src="js/controller.js"></script>
+    <title>dd Prototype</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="bootstrap-3.3.6-dist/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="cover.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="../../assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="container-fluid" ng-controller="contentController as cc">
+      <!-- Logo, search and interaction bar and menu button -->
+      <div class = "row">
+        <div class="col-md-2">
+          <div class="ix-bar">
+            <a href="#" class="thumbnail">
+              <img src="..." alt="...">
+            </a>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="ix-bar">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Keyword search..." ng-model="keyword">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" ng-click="cc.keywordSearch(keyword)">
+                    <span class="glyphicon glyphicon-search"></span>
+                  </button>
+                </span>
+            </div><!-- /input-group -->
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="ix-bar">
+            <button class="btn btn-default" type="submit" ng-click="cc.colSim()">Column similarity</button>
+            <button class="btn btn-default" type="submit" ng-click="cc.colOve()">Column overlap</button>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="ix-bar">
+            <button class="btn btn-default" type="button" aria-label="Menu Button">
+              <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Partial results view (left) and schema view (right) -->
+      <div class = "row">
+        <div class="col-md-1">
+
+        </div>
+        <div class="col-md-7">
+          <div class="panel panel-default">
+            <div class="panel-body" id="mid-col-height">
+              <div class="scrollable-content" >
+                <div class = "row" ng-repeat="row in cc.rows">
+                  <div class="col-md-3" ng-repeat="file in row.files">
+                    <div class="panel panel-default">
+                      <div class="panel-body" ng-click="cc.setSchema(file.name)">
+                        {{file.name}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="panel panel-default">
+            <div class="panel-body" id="mid-col-height">
+              <div class="scrollable-content" >
+                <div class="list-group" ng-repeat="colname in cc.schema">
+                  <button type="button" class="list-group-item" ng-click="cc.selectColumn(colname.name)">
+                    {{colname.name}}
+                    <button class="btn btn-default" type="submit" ng-click="cc.showSamples(colname.name)">
+                      API1
+                    </button>
+                  </button>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-1">
+
+        </div>
+      </div>
+      <!-- Session memory view -->
+      <div class = "row">
+        <div class="col-md-1">
+
+        </div>
+        <div class="col-md-10">
+          <div class="panel panel-default">
+            <div class="panel-body" id="bottom-col-height">
+              thumbnails</br>
+              thumbnails</br>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-1">
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="bootstrap-3.3.6-dist/js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
