@@ -2,11 +2,16 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 from flask import send_from_directory
+from flask import make_response 
+from flask import current_app
 from flask.ext.cors import CORS
 
+import sys
 from datetime import timedelta
-from flask import make_response, request, current_app
 from functools import update_wrapper
+
+from api import p as API
+from api import load_precomputed_model_DBVersion
 
 import webconfig as C
 
@@ -63,8 +68,9 @@ def root():
 @app.route('/kwsearch')
 def kwsearch():
     kw = request.args.get('kw')
-    string = "hello " + str(kw) 
-    return string
+    result = API.search_keyword(kw)
+    print(str(result))
+    return jsonify(result)
 
 @app.route('/colsim')
 def colsim():
@@ -150,4 +156,14 @@ def test():
     return jsonify(json)
 
 if __name__ == '__main__':
+    if len(sys.argv) >= 2:
+        modelname = sys.argv[2]
+
+    else:
+        print("USAGE")
+        print("db: the name of the model to serve")
+        print("python web.py --db <db>")
+        exit()
+    modelname
+    load_precomputed_model_DBVersion(modelname)
     app.run()
