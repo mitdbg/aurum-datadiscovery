@@ -9,7 +9,7 @@ ddContent.factory('test', function($resource) {
 
 ddContent.factory('kwsearch', function($resource) {
   return $resource("http://127.0.0.1:5000/kwsearch",{ }, {
-    getData: {method:'GET', isArray: false}
+    getData: {method:'GET', isArray: true}
   });
 });
 
@@ -79,8 +79,7 @@ function ContentController(test, kwsearch, colsim, colove) {
         {'colname': 'id8', 'samples': ['0', '0', '0'], 'selected': 'N'},
         {'colname': 'name8', 'samples': ['0', '0', '0'], 'selected': 'N'}
     ]}
-    ]
-    },
+    ]},
     {'files': [
       {'filename': 'I',
       'schema': [
@@ -97,8 +96,7 @@ function ContentController(test, kwsearch, colsim, colove) {
         {'colname': 'id11', 'samples': ['0', '0', '0'], 'selected': 'N'},
         {'colname': 'name11', 'samples': ['0', '0', '0'], 'selected': 'N'}
       ]}
-    ]
-    }
+    ]}
   ];
 
   /*
@@ -110,7 +108,29 @@ function ContentController(test, kwsearch, colsim, colove) {
 
   this.selectedFile;
   this.selectedColumn;
+
+  this.numberItemsPerRow = 4;
 }
+
+/*
+Format list of items into list of rows with n items (files) per row
+*/
+ContentController.prototype.formatServerResultIntoClientFormat = function(serverResult) {
+  var newRows = [];
+  var currentRow = [];
+  for(var i = 0; i < serverResult.length; i++) {
+    currentRow.push(serverResult[i]);
+    if(currentRow.length == this.numberItemsPerRow) {
+      // Finished row
+      newRows.push({'files': currentRow});
+      currentRow = [];
+    }
+  }
+  if(currentRow.length != 0) {
+    newRows.push({'files': currentRow});
+  }
+  this.rows = newRows;
+};
 
 ContentController.prototype.setRowsTest = function () {
   $scope = this; // wrapping the scope for the closure
@@ -123,7 +143,8 @@ ContentController.prototype.setRowsTest = function () {
 ContentController.prototype.keywordSearch = function (keyword) {
   $scope = this; // wrapping the scope for the closure
   var result = this.kwsearch.get({'kw': keyword}, function() {
-    console.log(result);
+    var serverResult = result.result;
+    $scope.formatServerResultIntoClientFormat(serverResult);
   });
 };
 

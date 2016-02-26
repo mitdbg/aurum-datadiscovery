@@ -177,7 +177,7 @@ def format_output_for_webclient(raw_output, consider_col_sel):
         for c in allcols:
             colrepr = {
                 'colname': c,
-                'samples': p.peek((fname, c), 10),
+                'samples': p.peek((fname, c), 5),
                 'selected': set_selected(c)
             }
             colsrepr.append(colrepr)

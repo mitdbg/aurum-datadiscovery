@@ -70,22 +70,29 @@ def root():
 def kwsearch():
     kw = request.args.get('kw')
     result = API.search_keyword(kw)
-    print(str(result))
-    return jsonify(result)
+    format_result = format_output_for_webclient(result, False)
+    json = {'result': format_result}
+    return jsonify(json)
 
 @app.route('/colsim')
 def colsim():
     filename = request.args.get('filename')
     colname = request.args.get('colname')
-    string = "colsim: " + str(filename) + " -> " + str(colname) 
-    return string
+    key = (filename, colname)
+    result = API.columns_like(key)
+    format_result = format_output_for_webcient(result, True)
+    json = {'result': format_result}
+    return jsonify(json)
 
 @app.route('/colove')
 def colove():
     filename = request.args.get('filename')
     colname = request.args.get('colname')
-    string = "colove: " + str(filename) + " -> " + str(colname) 
-    return string
+    key = (filename, colname)
+    result = API.columns_joinable_with(key)
+    format_result = format_output_for_webcient(result, True)
+    json = {'result': format_result}
+    return jsonify(json)
 
 @app.route('/test')
 def test():
