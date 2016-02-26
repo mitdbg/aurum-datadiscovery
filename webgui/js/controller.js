@@ -1,11 +1,41 @@
-var ddContent = angular.module('ddContent', []).controller('contentController', ContentController);
+var ddContent = angular.module('ddContent', ['ngResource'])
+.controller('contentController', ContentController);
 
-function ContentController() {
+ddContent.factory('test', function($resource) {
+  return $resource("http://127.0.0.1:5000/test",{ }, {
+    getData: {method:'GET', isArray: false}
+  });
+});
+
+ddContent.factory('kwsearch', function($resource) {
+  return $resource("http://127.0.0.1:5000/kwsearch",{ }, {
+    getData: {method:'GET', isArray: false}
+  });
+});
+
+ddContent.factory('colsim', function($resource) {
+  return $resource("http://127.0.0.1:5000/colsim",{ }, {
+    getData: {method:'GET', isArray: false}
+  });
+});
+
+ddContent.factory('colove', function($resource) {
+  return $resource("http://127.0.0.1:5000/colove",{ }, {
+    getData: {method:'GET', isArray: false}
+  });
+});
+
+function ContentController(test, kwsearch, colsim, colove) {
   /*
     The files returned by the last user action. These are grouped by rows for
     visualization in the left panel.
   */
-  this.rows = [
+  this.test = test;
+  this.kwsearch = kwsearch;
+  this.colsim = colsim;
+  this.colove = colove;
+  this.rows = [];
+  this.rowss = [
     {'files': [
       {'name': 'A',
       'schema': [
@@ -82,6 +112,21 @@ function ContentController() {
   this.selectedColumn;
 }
 
+ContentController.prototype.setRowsTest = function () {
+  $scope = this; // wrapping the scope for the closure
+  var result = this.test.get(function() {
+    var newRows = result.result;
+    $scope.rows = newRows;
+  });
+};
+
+ContentController.prototype.keywordSearch = function (keyword) {
+  $scope = this; // wrapping the scope for the closure
+  var result = this.kwsearch.get({'kw': keyword}, function() {
+    console.log(result);
+  });
+};
+
 /*
   On file click, we change the schema that is shown
 */
@@ -117,10 +162,6 @@ ContentController.prototype.selectColumn = function (colname) {
   this.selectedColumn = colname;
 };
 
-ContentController.prototype.keywordSearch = function (keyword) {
-  console.log("searching: " + keyword);
-}
-
 ContentController.prototype.colSim = function () {
   if(this.selectedFile == 'undefined' || this.selectedFile == null
   || this.selectedColumn == 'undefined' || this.selectedColumn == null) {
@@ -128,6 +169,12 @@ ContentController.prototype.colSim = function () {
     return;
   }
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
+  var result = this.colsim.get(
+    {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
+    console.log(result);
+  });
+
+
   console.log("show similar to: " );
   console.log(key);
 };
@@ -139,6 +186,10 @@ ContentController.prototype.colOve = function () {
     return;
   }
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
+  var result = this.colove.get(
+    {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
+    console.log(result);
+  });
   console.log("show overlap to: ");
   console.log(key);
 };
