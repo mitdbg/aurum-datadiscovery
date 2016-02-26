@@ -11,6 +11,7 @@ from datetime import timedelta
 from functools import update_wrapper
 
 from api import p as API
+from api import format_output_for_webclient
 from api import load_precomputed_model_DBVersion
 
 import webconfig as C

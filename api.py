@@ -35,11 +35,11 @@ class DB_adapted_API():
     Primitives 
     '''
 
-    def peek(self, column, num):
+    def peek(self, concept, num):
         '''
         Peek 10 values of the column
         '''
-        values = MS.peek_values(column, num)
+        values = MS.peek_values(concept, num)
         return values
 
     def search_keyword(self, keyword):
@@ -159,6 +159,47 @@ class DB_adapted_API():
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
+
+def format_output_for_webclient(raw_output, consider_col_sel):
+    '''
+    Format raw output into something client understands,
+    mostly, enrich the data with schema and samples
+    '''
+    def get_repr_columns(fname, columns, consider_col_sel):
+        def set_selected(c):
+            if consider_col_sel:
+                if c in columns:
+                    return 'Y'
+            return 'N' 
+        # Get all columns of fname
+        allcols = p.columns_of_table(fname)
+        colsrepr = []
+        for c in allcols:
+            colrepr = {
+                'colname': c,
+                'samples': p.peek((fname, c), 10),
+                'selected': set_selected(c)
+            }
+            colsrepr.append(colrepr)
+        return colsrepr
+            
+    entries = []
+    # Group results into a dict with file -> [column]
+    group_by_file = dict()
+    for (fname, cname) in raw_output:
+        if fname not in group_by_file:
+            group_by_file[fname] = []
+        group_by_file[fname].append(cname)
+    # Create entry per filename
+    for fname, columns in group_by_file.items():
+        entry = {'filename': fname,
+                 'schema': get_repr_columns(
+                    fname, 
+                    columns, 
+                    consider_col_sel)
+                }
+        entries.append(entry)
+    return entries
 
 def get_dataset_files(dataset_path):
     '''

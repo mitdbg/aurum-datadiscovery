@@ -59,8 +59,8 @@
         </div>
         <div class="col-md-4">
           <div class="ix-bar">
-            <button class="btn btn-default" type="submit" ng-click="cc.colSim()">Column similarity</button>
-            <button class="btn btn-default" type="submit" ng-click="cc.colOve()">Column overlap</button>
+            <button class="btn btn-default" type="submit" ng-click="cc.colSim()">Similar columns</button>
+            <button class="btn btn-default" type="submit" ng-click="cc.colOve()">Overlapping columns</button>
             <button class="btn btn-default" type="submit" ng-click="cc.setRowsTest()">test</button>
           </div>
         </div>
@@ -84,8 +84,8 @@
                 <div class = "row" ng-repeat="row in cc.rows">
                   <div class="col-md-3" ng-repeat="file in row.files">
                     <div class="panel panel-default">
-                      <div class="panel-body" ng-click="cc.setSchema(file.name)">
-                        {{file.name}}
+                      <div class="panel-body" ng-click="cc.setSchema(file.filename)">
+                        {{file.filename}}
                       </div>
                     </div>
                   </div>
@@ -98,14 +98,14 @@
           <div class="panel panel-default">
             <div class="panel-body" id="mid-col-height">
               <div class="scrollable-content" >
-                <div class="list-group" ng-repeat="colname in cc.schema">
-                  <button type="button" class="list-group-item" ng-click="cc.selectColumn(colname.name)">
-                    {{colname.name}}
-                    <button class="btn btn-default" type="submit" ng-click="cc.showSamples(colname.name)">
+                <div class="list-group" ng-repeat="column in cc.schema">
+                  <button type="button" class="list-group-item" ng-click="cc.selectColumn(column.colname)"
+                  ng-style="elStyle=cc.selectStyleColumn(column.selected)">
+                    {{column.colname}}
+                    <button class="btn btn-default" type="submit" ng-click="cc.showSamples(column.colname)">
                       API1
                     </button>
                   </button>
-
                 </div>
               </div>
             </div>
@@ -123,8 +123,7 @@
         <div class="col-md-10">
           <div class="panel panel-default">
             <div class="panel-body" id="bottom-col-height">
-              thumbnails</br>
-              thumbnails</br>
+              TODO</br>
             </div>
           </div>
         </div>

@@ -34,68 +34,68 @@ function ContentController(test, kwsearch, colsim, colove) {
   this.kwsearch = kwsearch;
   this.colsim = colsim;
   this.colove = colove;
-  this.rows = [];
-  this.rowss = [
+  this.rowss = [];
+  this.rows = [
     {'files': [
-      {'name': 'A',
+      {'filename': 'A',
       'schema': [
-        {'name': 'id1', 'samples': ['1', '1', '1']},
-        {'name': 'name1', 'samples': ['one', 'one']}
+        {'colname': 'id1', 'samples': ['1', '1', '1'], 'selected': 'Y'},
+        {'colname': 'name1', 'samples': ['one', 'one'], 'selected': 'N'}
       ]},
-      {'name': 'B',
+      {'filename': 'B',
       'schema': [
-        {'name': 'id2', 'samples': ['2', '2', '2']},
-        {'name': 'name2', 'samples': ['two', 'two', 'two']}
+        {'colname': 'id2', 'samples': ['2', '2', '2'], 'selected': 'Y'},
+        {'colname': 'name2', 'samples': ['two', 'two', 'two'], 'selected': 'N'}
       ]},
-      {'name': 'C',
+      {'filename': 'C',
       'schema': [
-        {'name': 'id3', 'samples': ['3', '3', '3']},
-        {'name': 'name3', 'samples': ['three', 'three', 'three']}
+        {'colname': 'id3', 'samples': ['3', '3', '3'], 'selected': 'N'},
+        {'colname': 'name3', 'samples': ['three', 'three', 'three'], 'selected':'N'}
       ]},
-      {'name': 'D',
+      {'filename': 'D',
       'schema': [
-        {'name': 'id4', 'samples': ['0', '0', '0']},
-        {'name': 'name4', 'samples': ['0', '0', '0']}
+        {'colname': 'id4', 'samples': ['0', '0', '0'], 'selected':'Y'},
+        {'colname': 'name4', 'samples': ['0', '0', '0'], 'selected':'N'}
       ]}
     ]},
     {'files': [
-      {'name': 'E',
+      {'filename': 'E',
       'schema': [
-        {'name': 'id5', 'samples': ['0', '0', '0']},
-        {'name': 'name5', 'samples': ['0', '0', '0']}
+        {'colname': 'id5', 'samples': ['0', '0', '0'], 'selected': 'N'},
+        {'colname': 'name5', 'samples': ['0', '0', '0'], 'selected': 'N'}
       ]},
-      {'name': 'F',
+      {'filename': 'F',
       'schema': [
-        {'name': 'id6', 'samples': ['0', '0', '0']},
-        {'name': 'name6', 'samples': ['0', '0', '0']}
+        {'colname': 'id6', 'samples': ['0', '0', '0'], 'selected':'N'},
+        {'colname': 'name6', 'samples': ['0', '0', '0'], 'selected':'N'}
       ]},
-      {'name': 'G',
+      {'filename': 'G',
       'schema': [
-        {'name': 'id7', 'samples': ['0', '0', '0']},
-        {'name': 'name7', 'samples': ['0', '0', '0']}
+        {'colname': 'id7', 'samples': ['0', '0', '0'], 'selected': 'N'},
+        {'colname': 'name7', 'samples': ['0', '0', '0'], 'selected': 'N'}
       ]},
-      {'name': 'H',
+      {'filename': 'H',
       'schema': [
-        {'name': 'id8', 'samples': ['0', '0', '0']},
-        {'name': 'name8', 'samples': ['0', '0', '0']}
+        {'colname': 'id8', 'samples': ['0', '0', '0'], 'selected': 'N'},
+        {'colname': 'name8', 'samples': ['0', '0', '0'], 'selected': 'N'}
     ]}
     ]
     },
     {'files': [
-      {'name': 'I',
+      {'filename': 'I',
       'schema': [
-        {'name': 'id9', 'samples': ['0', '0', '0']},
-        {'name': 'name9', 'samples': ['0', '0', '0']}
+        {'colname': 'id9', 'samples': ['0', '0', '0'], 'selected': 'Y'},
+        {'colname': 'name9', 'samples': ['0', '0', '0'], 'selected': 'Y'}
       ]},
-      {'name': 'J',
+      {'filename': 'J',
       'schema': [
-        {'name': 'id10', 'samples': ['0', '0', '0']},
-        {'name': 'name10', 'samples': ['0', '0', '0']}
+        {'colname': 'id10', 'samples': ['0', '0', '0'], 'selected': 'N'},
+        {'colname': 'name10', 'samples': ['0', '0', '0'], 'selected': 'N'}
       ]},
-      {'name': 'K',
+      {'filename': 'K',
       'schema': [
-        {'name': 'id11', 'samples': ['0', '0', '0']},
-        {'name': 'name11', 'samples': ['0', '0', '0']}
+        {'colname': 'id11', 'samples': ['0', '0', '0'], 'selected': 'N'},
+        {'colname': 'name11', 'samples': ['0', '0', '0'], 'selected': 'N'}
       ]}
     ]
     }
@@ -137,7 +137,7 @@ ContentController.prototype.setSchema = function (filename) {
     var files = this.rows[i].files;
     for(var j = 0; j<files.length; j++) {
       var file = files[j];
-      if(file.name == filename) {
+      if(file.filename == filename) {
         this.schema = file.schema;
       }
     }
@@ -192,4 +192,13 @@ ContentController.prototype.colOve = function () {
   });
   console.log("show overlap to: ");
   console.log(key);
+};
+
+ContentController.prototype.selectStyleColumn = function (selected) {
+  if(selected == 'Y') {
+    return {'background-color':'blue'};
+  }
+  else {
+    return '{}';
+  }
 };
