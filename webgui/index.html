@@ -43,9 +43,16 @@
       <div class = "row">
         <div class="col-md-2">
           <div class="ix-bar">
+            <div class="panel panel-default selectionable">
+              <div class="panel-body">
+                <h4>Data Discovery Prototype</h4>
+              </div>
+            </div>
+            <!--
             <a href="#" class="thumbnail">
               <img src="" alt="">
             </a>
+            -->
           </div>
         </div>
         <div class="col-md-4">
@@ -113,7 +120,9 @@
                       <div id="modaldialog" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
                         <div class="modal-dialog modal-lg">
                           <div class="modal-content">
-                            {{cc.samples}}
+                            <ul class="list-group" ng-repeat="s in cc.samples track by $index">
+                              <li class="list-group-item">{{s}}</li>
+                            </ul>
                           </div>
                         </div>
                       </div>
@@ -142,8 +151,19 @@
         </div>
         <div class="col-md-10">
           <div class="panel panel-default">
-            <div class="panel-body" id="bottom-col-height">
-              TODO</br>
+            <div class="panel-body selectionable" id="bottom-col-height" ng-switch on="cc.queryMode">
+              <div ng-switch-when="kw">
+                <h3>Showing files that contain the keyword: {{cc.currentKeyword}}</h3>
+              </div>
+              <div ng-switch-when="colsim">
+                <h3>Showing columns similar to: [ file: {{cc.currentSelectedFile}} and column: {{cc.currentSelectedColumn}} ]</h3>
+              </div>
+              <div ng-switch-when="colove">
+                <h3>Showing columns that overlap with: [ file: {{cc.currentSelectedFile}} and column: {{cc.currentSelectedColumn}} ]</h3>
+              </div>
+              <div ng-switch-when="null">
+                <h3>Start your search with some keyword</h3>
+              </div>
             </div>
           </div>
         </div>

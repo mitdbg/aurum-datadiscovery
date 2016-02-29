@@ -106,8 +106,14 @@ function ContentController(test, kwsearch, colsim, colove) {
 
   ];
 
+  // Context mode
   this.selectedFile;
   this.selectedColumn;
+  this.currentSelectedFile;
+  this.currentSelectedColumn;
+  this.currentKeyword;
+  this.queryMode = "null";
+  this.currentKeyword;
   this.samples = "Simple test, is this overwritten already?";
 
   this.numberItemsPerRow = 4;
@@ -142,6 +148,8 @@ ContentController.prototype.setRowsTest = function () {
 };
 
 ContentController.prototype.keywordSearch = function (keyword) {
+  this.queryMode = "kw";
+  this.currentKeyword = keyword;
   $scope = this; // wrapping the scope for the closure
   var result = this.kwsearch.get({'kw': keyword}, function() {
     var serverResult = result.result;
@@ -194,6 +202,9 @@ ContentController.prototype.colSim = function () {
     return;
   }
   this.schema = null;
+  this.queryMode = "colsim";
+  this.currentSelectedFile = this.selectedFile;
+  this.currentSelectedColumn = this.selectedColumn;
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colsim.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
@@ -209,6 +220,9 @@ ContentController.prototype.colOve = function () {
     return;
   }
   this.schema = null;
+  this.queryMode = "colove";
+  this.currentSelectedFile = this.selectedFile;
+  this.currentSelectedColumn = this.selectedColumn;
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colove.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
@@ -219,7 +233,7 @@ ContentController.prototype.colOve = function () {
 
 ContentController.prototype.selectStyleColumn = function (selected) {
   if(selected == 'Y') {
-    return {'background-color':'blue'};
+    return {'background-color':'lightcoral'};
   }
   else {
     return '{}';
