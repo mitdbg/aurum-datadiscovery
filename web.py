@@ -80,7 +80,7 @@ def colsim():
     colname = request.args.get('colname')
     key = (filename, colname)
     result = API.columns_like(key)
-    format_result = format_output_for_webcient(result, True)
+    format_result = format_output_for_webclient(result, True)
     json = {'result': format_result}
     return jsonify(json)
 
@@ -90,7 +90,7 @@ def colove():
     colname = request.args.get('colname')
     key = (filename, colname)
     result = API.columns_joinable_with(key)
-    format_result = format_output_for_webcient(result, True)
+    format_result = format_output_for_webclient(result, True)
     json = {'result': format_result}
     return jsonify(json)
 

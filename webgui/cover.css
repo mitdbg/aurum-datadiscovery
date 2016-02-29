@@ -27,7 +27,7 @@ a:hover {
 html,
 body {
   height: 100%;
-  background-color: #333;
+  background-color: #262216;
 }
 body {
   color: #fff;
@@ -175,8 +175,45 @@ body {
   height: 80px;
 }
 
+.peek-button {
+  margin-top:5%;
+  border-style: solid;
+  border-color: #A7A7A7;
+}
+
+.peek-button:hover {
+  border-style: solid;
+  border-color: #A7A7A7;
+  background: rgba(204, 204, 204, 0.18);
+}
+
 .scrollable-content {
   height: 100%;
   width: 100%;
   overflow-y: scroll;
 }
+.selectionable {
+  color: #5D1C1C;
+  word-break:break-all;
+  max-height: 90px;
+  min-height: 90px;
+}
+.selectionable:hover {
+  background: rgba(204, 204, 204, 0.18);
+}
+
+.selectionable:visited {
+  background: red;
+}
+
+.modal-content {
+  color: black;
+}
+
+.selected {
+  background: red;
+}
+
+
+/* styling
+http://www.awwwards.com/trendy-web-color-palettes-and-material-design-color-schemes-tools.html */

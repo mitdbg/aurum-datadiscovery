@@ -34,8 +34,8 @@ function ContentController(test, kwsearch, colsim, colove) {
   this.kwsearch = kwsearch;
   this.colsim = colsim;
   this.colove = colove;
-  this.rowss = [];
-  this.rows = [
+  this.rows = [];
+  this.rowss = [
     {'files': [
       {'filename': 'A',
       'schema': [
@@ -108,6 +108,7 @@ function ContentController(test, kwsearch, colsim, colove) {
 
   this.selectedFile;
   this.selectedColumn;
+  this.samples = "Simple test, is this overwritten already?";
 
   this.numberItemsPerRow = 4;
 }
@@ -169,13 +170,16 @@ ContentController.prototype.setSchema = function (filename) {
   On schema.column click, we show some samples of the values
 */
 ContentController.prototype.showSamples = function (colname) {
+  this.samples = "overwrite at the very beginning";
   for(var i = 0; i<this.schema.length; i++) {
     var col = this.schema[i];
-    if(col.name == colname) {
-      var samples = col.samples;
-      alert(samples);
+    if(col.colname == colname) {
+      var smps = col.samples;
+      this.samples = smps;
+      $('#modaldialog').modal();
     }
   }
+
 };
 
 ContentController.prototype.selectColumn = function (colname) {
@@ -189,15 +193,13 @@ ContentController.prototype.colSim = function () {
     alert("SELECT a file and a column FIRST");
     return;
   }
+  this.schema = null;
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colsim.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
-    console.log(result);
+      var serverResult = result.result;
+      $scope.formatServerResultIntoClientFormat(serverResult);
   });
-
-
-  console.log("show similar to: " );
-  console.log(key);
 };
 
 ContentController.prototype.colOve = function () {
@@ -206,13 +208,13 @@ ContentController.prototype.colOve = function () {
     alert("SELECT a file and a column FIRST");
     return;
   }
+  this.schema = null;
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colove.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
-    console.log(result);
+      var serverResult = result.result;
+      $scope.formatServerResultIntoClientFormat(serverResult);
   });
-  console.log("show overlap to: ");
-  console.log(key);
 };
 
 ContentController.prototype.selectStyleColumn = function (selected) {
