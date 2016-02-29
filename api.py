@@ -85,21 +85,33 @@ class DB_adapted_API():
             if fn == table:
                 columns.append(cn)
         return columns
-        
 
-    def join_path(self, table1, table2, maxdepth):
+    def may_join_path(self, table1, table2, maxdepth):
         '''
         Given two tables and max depth returns join paths if exist
         '''
+        def is_join_path_included(joinpaths, joinpath):
+            first_joinpath = joinpath[0]
+            last_joinpath = joinpath[len(joinpath)-1]
+            for jp in joinpaths:
+                first_jp = jp[0]
+                last_jp = jp[len(jp)-1]
+                if first_jp == first_joinpath and last_jp == last_joinpath:
+                    return True
+            return False
         def parent_of(fname, cname, visited):
             for column, parent in visited:
                 fn, cn = column
-                if fn == fname:
+                if fn == fname and cn == cname:
                     return parent
 
         # get columns from tables 
         cols1 = DB_adapted_API.columns_of_table(self, table1)
         cols1 = [(table1, c) for c in cols1]
+
+        #print("all columns of the first table")
+        #for c in cols1:
+        #    print(str(c))
     
         # comparison structure
         # [(colname, parentcol)]
@@ -107,18 +119,24 @@ class DB_adapted_API():
         visited = []
         visiting = [(c, None) for c in cols1]
  
+        it = 0
         while maxdepth > 0:
+            #print("IT: " + str(it))
+            #it = it + 1
+            #print("VISITING: ")
+            #for v in visiting:
+            #    print(str(v))
             # create temporal structure for joins
             neighbors = []
             # go through visiting and get new joins
             for son, father in visiting:
                 joins = []
                 try:
-                    joins = DB_adapted_API.columns_joinable_with(self,son)
+                    joins = DB_adapted_API.columns_like(self,son)
                 except KeyError:
                     continue
                 # prepare these in the right format
-                joins = [(j, son) for j in joins]
+                joins = [(j, son) for j in joins if j != son]
                 #print("JOINS to: " + str(son))
                 #print (str(joins))
                 # extend neighbors with these
@@ -132,7 +150,8 @@ class DB_adapted_API():
         visited.extend(visiting)
 
         #print("VISITED:")
-        #print(str(visited))
+        #for v in visited:
+        #    print(str(visited))
 
         # does any col1 join cols2
         joinpaths = []
@@ -150,7 +169,100 @@ class DB_adapted_API():
                         found_root = True
                     else:
                         fname, cname = pfname, pcname
-                joinpaths.append(joinpath)
+                # Check for repetition
+                if not is_join_path_included(joinpaths, joinpath):
+                    joinpaths.append(joinpath)
+
+        return joinpaths
+
+        
+
+    def join_path(self, table1, table2, maxdepth):
+        '''
+        Given two tables and max depth returns join paths if exist
+        '''
+        def is_join_path_included(joinpaths, joinpath):
+            first_joinpath = joinpath[0]
+            last_joinpath = joinpath[len(joinpath)-1]
+            for jp in joinpaths:
+                first_jp = jp[0]
+                last_jp = jp[len(jp)-1]
+                if first_jp == first_joinpath and last_jp == last_joinpath:
+                    return True
+            return False
+        def parent_of(fname, cname, visited):
+            for column, parent in visited:
+                fn, cn = column
+                if fn == fname and cn == cname:
+                    return parent
+
+        # get columns from tables 
+        cols1 = DB_adapted_API.columns_of_table(self, table1)
+        cols1 = [(table1, c) for c in cols1]
+
+        #print("all columns of the first table")
+        #for c in cols1:
+        #    print(str(c))
+    
+        # comparison structure
+        # [(colname, parentcol)]
+        # keep intermediate structure to 
+        visited = []
+        visiting = [(c, None) for c in cols1]
+ 
+        it = 0
+        while maxdepth > 0:
+            #print("IT: " + str(it))
+            #it = it + 1
+            #print("VISITING: ")
+            #for v in visiting:
+            #    print(str(v))
+            # create temporal structure for joins
+            neighbors = []
+            # go through visiting and get new joins
+            for son, father in visiting:
+                joins = []
+                try:
+                    joins = DB_adapted_API.columns_joinable_with(self,son)
+                except KeyError:
+                    continue
+                # prepare these in the right format
+                joins = [(j, son) for j in joins if j != son]
+                #print("JOINS to: " + str(son))
+                #print (str(joins))
+                # extend neighbors with these
+                neighbors.extend(joins)
+            #print("visiting: " + str(son))
+            #print(str(neighbors))
+            # push visiting to visited and neighbors to visiting
+            visited.extend(visiting)
+            visiting = neighbors
+            maxdepth = maxdepth - 1
+        visited.extend(visiting)
+
+        #print("VISITED:")
+        #for v in visited:
+        #    print(str(visited))
+
+        # does any col1 join cols2
+        joinpaths = []
+        for column, parent in visited:
+            joinpath = []
+            fname, cname = column
+            if fname == table2:
+                joinpath.append(column)
+                found_root = False
+                while not found_root:
+                    p = parent_of(fname, cname, visited)
+                    pfname, pcname = p
+                    joinpath.append(p)
+                    if pfname == table1:
+                        found_root = True
+                    else:
+                        fname, cname = pfname, pcname
+                # Check for repetition
+                if not is_join_path_included(joinpaths, joinpath):
+                    joinpaths.append(joinpath)
 
         return joinpaths
     
