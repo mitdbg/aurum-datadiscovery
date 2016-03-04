@@ -167,47 +167,6 @@ def jgraph_from_modelstore(concepts, jgraph):
                 jgraph[pconcept].append(concept)
     return jgraph
     
-
-def _jgraph_from_modelstore(concepts, jgraph):
-    '''
-    Creates a join graph reading from the store directly
-    '''
-    it = 0
-    tit = len(concepts)
-    # pick one concept and create a dict with its value
-    for pconcept in concepts:
-        if pconcept not in jgraph:
-            jgraph[pconcept] = []
-        print(str(it) + "/" + str(tit))
-        it = it + 1
-        pvalues = MS.get_values_of_concept(pconcept)
-        pvals = build_dict_values(pvalues)
-        # iterate over store, getting other columns
-        for concept in concepts:
-            # check new column is not already included    
-            if concept in jgraph:
-                continue
-            else:
-            #if concept not in jgraph[concept]:
-                values = MS.get_values_of_concept(concept)
-                vals = build_dict_values(values)
-                total_size = len(pvalues) + len(values)
-                th_overlap = C.join_overlap_th * total_size
-                th_cutoff = total_size - th_overlap
-                #print("total_size: " + str(total_size))
-                #print("th-overlap: " + str(th_overlap))
-                #print("th-cutoff: " + str(th_cutoff))
-                overlap = compute_overlap(pvals, vals, 
-                                        th_overlap, th_cutoff)
-                if overlap:
-            #        if pconcept not in jgraph:
-            #            jgraph[pconcept] = []
-                    jgraph[pconcept].append(concept)
-                    if concept not in jgraph:
-                        jgraph[concept] = []
-                    jgraph[concept].append(pconcept)
-    return jgraph
-
 def refine_from_modelstore(concepts, cgraph):
     '''
     This method is an adaptation of api.refine_graph_with_csig
@@ -237,44 +196,6 @@ def add_table_neighbors(concepts, cgraph):
                 if col2 not in cgraph[col]:
                     cgraph[col].append(col2)
     return cgraph
-
-#def _build_graph():
-#    '''
-#    Build cgraph and simrank
-#    '''
-#    # First construct graph
-#    st = time.time()
-#    cgraph_cache = OrderedDict()
-#    concepts = MS.get_all_concepts()
-#    # figuring out bottleneck...
-#    #concepts = concepts[:600]
-#    print("Computing all similarities for graph...")
-#    cgraph_cache = refine_from_modelstore(concepts, cgraph_cache)
-#    print("Computing all similarities for graph...DONE")
-#    et = time.time()
-#    time_to_build_graph = et-st
-#    #print(str(cgraph_cache))
-#    print("Deep copying...")
-#    cgraph = copy.deepcopy(cgraph_cache)
-#    print("Deep copying...DONE")
-#    st = time.time()
-#    print("Refining graph with neighbors...")
-#    cgraph = add_table_neighbors(concepts, cgraph)
-#    print("Refining graph with neighbors...DONE")
-#    et = time.time()
-#    time_to_neighbors = et-st
-#    # Then run simrank
-#    st = time.time()
-#    print("Computing SIMRANK...")
-#    #simrank = sr.simrank(cgraph, C.sr_maxiter, C.sr_eps, C.sr_c)
-#    simrank = concepts
-#    print("Computing SIMRANK...DONE")
-#    et = time.time()
-#    time_to_simrank = et-st
-#    print("Time (graph): " + str(time_to_build_graph))
-#    print("Time (neigh): " + str(time_to_neighbors))
-#    print("Time (simra): " + str(time_to_simrank))
-#    return (cgraph_cache, cgraph, simrank)
 
 def build_cgraph_cache():
     # First construct graph

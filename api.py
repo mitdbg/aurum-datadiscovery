@@ -175,8 +175,6 @@ class DB_adapted_API():
 
         return joinpaths
 
-        
-
     def join_path(self, table1, table2, maxdepth):
         '''
         Given two tables and max depth returns join paths if exist
@@ -647,7 +645,6 @@ def print_result(result):
         printmd("**" + str(key) + "**")
         for v in value:
             print("   " + str(v))
-        
 
 def main():
     # Parse input parameters
