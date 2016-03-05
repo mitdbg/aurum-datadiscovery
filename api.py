@@ -3,7 +3,9 @@ import os
 import time
 from os import listdir
 from os.path import isfile, join
+import editdistance
 from collections import OrderedDict
+import operator
 
 import utils
 import config as C
@@ -70,6 +72,13 @@ class DB_adapted_API():
         '''
         columns = neighbors_of(concept, jgraph)
         return columns
+
+    def search_schema(self, keyword, topk, includescore):
+        '''
+        Return list of tables-columns with similar column name
+        '''
+        res = attr_similar_to(keyword, topk, includescore)
+        return res
 
     '''
     Functions: Functions use primitives for more refined output
@@ -269,6 +278,33 @@ class DB_adapted_API():
 
 # Instantiate class to make it importable
 p = DB_adapted_API()
+
+def attr_similar_to(keyword, topk, score):
+    '''
+    Returns k most similar (levenhstein) attributes to the 
+    one provided
+    '''
+    # TODO: handle multiple input keywords
+    similarity_map = dict()
+    kw = keyword.lower()
+    for (fname, cname) in concepts:
+        p = cname.lower()
+        p_tokens = p.split(' ')
+        for tok in p_tokens:
+            # compute similarity and put in dict if beyond a
+            distance = editdistance.eval(kw, tok)
+            # minimum threshold
+            if distance < C.max_distance_schema_similarity:
+                similarity_map[(fname, cname)] = distance
+                break # to avoid potential repetitions
+    sorted_sim_map = sorted(similarity_map.items(),
+                        key=operator.itemgetter(1))
+    if score:
+        return sorted_sim_map[:topk]
+    else:
+        noscore_res = [n for (n, score) in sorted_sim_map[:topk]]
+        return noscore_res
+        
 
 def format_output_for_webclient(raw_output, consider_col_sel):
     '''
@@ -589,11 +625,17 @@ def load_precomputed_model_DBVersion(modelname):
     jgraph = serde.deserialize_jgraph(modelname)
     print("Loading jgraph...DONE!")
     print("Loading simrank matrix...")
+
     #global simrank
     #simrank = serde.deserialize_simrank_matrix(modelname)
     #print("Loading simrank matrix...DONE!")
+
     # Initialize the model DB
     MS.init(modelname)
+    global concepts
+    print("Loading concepts for schema primitives...")
+    concepts = MS.get_all_concepts()
+    print("Loading concepts for schema primitives...DONE")
 
 def load_precomputed_model(modelname):
     print("Loading signature collections...")

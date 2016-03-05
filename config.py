@@ -57,6 +57,9 @@ simrank_sim_threshold = 0.2
 # Overlap parameters
 join_overlap_th = 0.4
 
+# Schema similarity parameters
+max_distance_schema_similarity = 10
+
 # Serde parameters
 serdepath = "./data"
 signcollectionfile = "sigcolfile.pickle"
@@ -73,3 +76,5 @@ db_location = "mongodb://localhost:27017"
 # Cluster configs
 ################
 max_future_list_size = 10
+
+
