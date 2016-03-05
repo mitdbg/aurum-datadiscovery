@@ -68,3 +68,8 @@ jgraphfile = "jgraphfile.pickle"
 
 # DB connection
 db_location = "mongodb://localhost:27017"
+
+################
+# Cluster configs
+################
+max_future_list_size = 10

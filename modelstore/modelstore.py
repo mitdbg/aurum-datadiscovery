@@ -76,6 +76,26 @@ def peek_values(concept, num):
         values = t_data[:num]
     return values
 
+def get_values_and_type_of_concept(concept):
+    (fname, cname) = concept
+    key = build_column_key(fname, cname)
+    res = modeldb.find({"key": key}, {"type": 1, 
+                                    "n_data": 1,
+                                    "t_data": 1})
+    values = None
+    type_col = None
+    n_data = None
+    t_data = None
+    for r in res:
+        type_col = r["type"]
+        n_data = r["n_data"]
+        t_data = r["t_data"]
+    if type_col == "N":
+        values = n_data
+    elif type_col == "T":
+        values = t_data
+    return (values, type_col)
+
 def get_values_of_concept(concept):
     '''
     Get n_data or t_data depending on type

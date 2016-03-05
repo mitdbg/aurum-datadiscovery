@@ -22,8 +22,7 @@ def signal_handler(signal, frame):
     time.sleep(3) # wait 3 secs before shutting down
     sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
-#print('Press Ctrl+C')
-#signal.pause()
+
 
 # All load task types that are supported
 loadtask_types = ["CSV"]
