@@ -84,6 +84,39 @@ class DB_adapted_API():
     Functions: Functions use primitives for more refined output
     '''
 
+    def tables_with_schema(self, list_keywords, topk):
+        '''
+        Return list of tables that contain the required schema
+        '''
+        all_res = []
+        # First get results for each of the provided keywords
+        # (input_keyword , [((table, column), score)]
+        for keyword in list_keywords:
+            res = attr_similar_to(keyword, 30, True)
+            all_res.append((keyword, res))
+
+        # Group by tables, and include the (kw, score) that matched
+        group_by_table_keyword = dict()
+        for (keyword, res) in all_res:
+            for (n, score) in res:
+                (fname, cname) = n
+                if fname not in group_by_table_keyword:
+                    group_by_table_keyword[fname] = []
+                included = False
+                for kw, score in group_by_table_keyword[fname]:
+                    if keyword.lower() == kw.lower():
+                        included = True# dont include more than once
+                if not included:
+                    group_by_table_keyword[fname].append((keyword, score))
+                else:
+                    continue
+
+        # Create final output
+        toreturn = sorted(group_by_table_keyword.items(),
+                    key=lambda x : len(x[1]),
+                    reverse = True)
+        return toreturn[:topk]
+
     def columns_of_table(self, table):
         '''
         Returns all columns of the given table
