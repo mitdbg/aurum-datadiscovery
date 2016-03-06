@@ -12,8 +12,44 @@ import time
 import config as C
 import utils as U
 
-#now = lambda: int(round(time.time())*1000)
+def build_dict_values(values):
+    d = dict()
+    for v in values:
+        if v not in d:
+            d[v] = 0
+        d[v] = d[v] + 1
+    return d
 
+def compute_overlap(values1, values2, th_overlap, th_cutoff):
+    overlap = 0
+    non_overlap = 0
+    longest = None
+    shortest = None
+    if len(values1) > len(values2):
+        longest = values1
+        shortest = values2
+    else:
+        longest = values2
+        shortest = values1
+
+    for k, v in shortest.items():
+        if k in longest.keys():
+            overlap = overlap + 1
+        else:
+            non_overlap = non_overlap + 1
+        if overlap > th_overlap:
+            return True
+        if non_overlap > th_cutoff:
+            return False
+
+def compute_overlap_of_columns(col1, col2):
+    vals1 = build_dict_values(col1)
+    vals2 = build_dict_values(col2)
+    total_size = len(vals1) + len(vals2)
+    th_overlap = C.join_overlap_th * total_size
+    th_cutoff = total_size - th_overlap
+    overlap = compute_overlap(vals1, vals2, th_overlap, th_cutoff)
+    return overlap
 
 def compare_pair_num_columns(col1, col2):
     '''

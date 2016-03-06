@@ -9,6 +9,8 @@ import config as C
 import api as API
 from inputoutput import serde
 from inputoutput import inputoutput as iod
+from modelstore import modelstore as MS
+from dataanalysis import dataanalysis as da
 import ddworker as ASYNC
 
 # Capturing ctrl+C
@@ -27,13 +29,26 @@ State
 # Queue that keeps tasks to process
 workqueue = queue.Queue()
 
+cgraph = dict() # for similarity
+jgraph = dict() # for overlap
+
 # Coordinator for index building
 
 maxsize = C.max_future_list_size
 list_of_future_results = []
 
-def process_result():
-    print("TODO")
+def process_result(result):
+    (sim_map, ove_map) = result
+    for k, v in sim_map.items():
+        if k not in cgraph:
+            cgraph[k] = []
+        cgraph[k].extend(v)
+    for k, v in ove_map.items():
+        if k not in jgraph:
+            jgraph[k] = []
+        jgraph[k].extend(v)
+    print("CGRAPH-size: " + str(len(cgraph.items())))
+    print("JGRAPH-size: " + str(len(jgraph.items())))
 
 def process_futures():
     '''
@@ -42,28 +57,50 @@ def process_futures():
     '''
     goOn = True
     while goOn:
-        for el in list_of_future_result:
+        for el in list_of_future_results:
+            #print("STATUS: " + str(el.status))
             if el.ready():
                 result = el.get()
                 process_result(result)
-        if len(el) < maxsize:
+                list_of_future_results.remove(el)
+        if len(list_of_future_results) < maxsize:
             goOn = False
         else:
             # sleep 1 second
             time.sleep(1)
 
-def build_indexes():
+def partition_concepts(concepts, workers):
+    '''
+    Hash-partitions concepts per workers
+    '''
+    numw = len(workers)
+    print("Partition concepts into num_chunks: " + str(numw))
+    partitions = dict()
+    for w in workers:
+        partitions[w] = []
+    for c in concepts:
+        hashc = hash(c) % numw
+        key = workers[hashc]
+        partitions[key].append(c)
+    return partitions
+
+def build_indexes(dbname, workers):
     # Get all concepts
-    cgraph_cache = OrderedDict()
     concepts = MS.get_all_concepts()
-    ASYNC.distributed_concepts.delay(concepts) # broadcast
+    partitions = partition_concepts(concepts, workers)
+    for q in workers: # send to all workers RR
+        ASYNC.distribute_concepts.apply_async(args=[partitions[q]], queue=q)
+        ASYNC.init_db.apply_async(args=[dbname], queue=q) 
+    it = 0
     # Choose pivot concept
     for c in concepts:
-        (p_values, p_type) = MS.get_values_and_type(c) 
+        print("Computing for: " + str(it))
+        it = it + 1
+        (p_values, p_type) = MS.get_values_and_type_of_concept(c) 
         process_futures()
-        future = ASYNC.send_col.delay(p_values, p_type) #broadcast
-        list_of_future_results.append(future)
-        
+        for q in workers:
+            f = ASYNC.compute_index.apply_async(args=[c, p_values, p_type], queue=q)
+            list_of_future_results.append(f)
 
 # Loading functions
 
@@ -141,48 +178,78 @@ def create_work_from_path_csv_files(path):
 def create_work_from_db(dbconn):
     print("TODO")
 
+def serialize_model():
+    print("TODO")
 
 # Starting function 
 
 
 def main():
     mode = sys.argv[2]
-    dirOrDataset = sys.argv[3]
     sourceInputType = sys.argv[4]
-    arg = sys.argv[6]
-    dataset = sys.argv[8]
+    arg = sys.argv[5]
+    dbname = sys.argv[7]
+    workersqueuestring = sys.argv[9]
+    workers = workersqueuestring.split(',')
     print("MODE: " + str(mode))
-    print("DATASET: " + str(dataset))
+    print("dbname: " + str(dbname))
+    print("WORKER QUEUES: " + str(workers))
     # Initialize model store
-    MS.init(dataset)
+    MS.init(dbname)
     if mode == "ALL" or mode == "LOAD":
-        if dirOrDataset == "--input":
-            if sourceInputType == "csvfiles":
-                print("Working on path: " + str(arg))
-                create_work_from_path_csv_files(arg)
-            elif sourceInputType == "db":
-                print("Working on db: " + str(arg))
-                create_work_from_db(arg)
+        if sourceInputType == "csvfiles":
+            print("Working on path: " + str(arg))
+            create_work_from_path_csv_files(arg)
+        elif sourceInputType == "db":
+            print("Working on db: " + str(arg))
+            create_work_from_db(arg)
         load()
         print("FINISHED LOADING DATA TO STORE!")
         if mode == "ALL":
-            build_indexes(dataset)
+            build_indexes(dbname, workers)
             print("FINISHED MODEL CREATION!!")
     elif mode == "BGRAPH":
-        build_indexes(dataset)
+        build_indexes(dbname, workers)
         print("FINISHED MODEL CREATION!!")
     else:
         print("Unrecognized mode")
         exit()
+    serialize_model()
+
+def test():
+    mode = sys.argv[2]
+    sourceInputType = sys.argv[4]
+    arg = sys.argv[5]
+    dbname = sys.argv[7]
+    workersqueuestring = sys.argv[9]
+    workers = workersqueuestring.split(',')
+    print("MODE: " + str(mode))
+    print("dbname: " + str(dbname))
+    print("WORKER QUEUES: " + str(workers))
+    MS.init(dbname)
+    concepts = MS.get_all_concepts()
+    print("Total concepts: " + str(len(concepts)))
+    partitions = partition_concepts(concepts, workers)
+    print("Partition concepts: ")
+    for k,v in partitions.items():
+        print(str(k) + ": " + str(len(v)))
+    for w in workers:
+        print("Sending task to " + str(w))
+        ASYNC.test.apply_async(args=[w], queue=w)
+    
 
 if __name__ == "__main__":
-    if len(sys.argv) is not 7:
+    print("INPUT PARAMETERS: " + str(len(sys.argv)))
+    print(str(sys.argv))
+    if len(sys.argv) is not 10:
         print("HELP")
         print("--mode <mode> : ALL (load and bgraph), LOAD, BGRAPH")
-        print("--input <type>: (db, csvfiles), <path> to dbconnector or
-directory with CSV files")
+        print("--input <type>: (db, csvfiles), <path> to dbconnector or directory with CSV files")
         print("--dataset <name> : name given to this data repo")
-        print("USAGE")
+        print("--workers <queues> : comma separated, no space worker queues")
+        print("EXAMPLE")
+        print("python build_idx_coordinator.py --mode ALL --input csvfiles whatever/fake --dataset fakeagain --workers w1,w2,w3")
         exit()
     main()
+    #test()
 

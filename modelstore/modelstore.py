@@ -165,7 +165,7 @@ def search_keyword(keyword):
     colmatches = [(r['filename'], r['column']) for r in res]
     return colmatches
 
-def init(dataset_name):
+def init(dataset_name, create_index=True):
     # Connection to DB system
     global dbc
     dbc = MongoClient(C.db_location)
@@ -175,7 +175,8 @@ def init(dataset_name):
     global modeldb
     modeldb = database.columns
     # Create full text search index
-    modeldb.create_index([('t_data', TEXT)])
+    if create_index:
+        modeldb.create_index([('t_data', TEXT)])
 
 def main():
     db_name = "testtiny3"
