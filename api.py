@@ -338,6 +338,46 @@ def attr_similar_to(keyword, topk, score):
         noscore_res = [n for (n, score) in sorted_sim_map[:topk]]
         return noscore_res
         
+def format_output_for_webclient_ss(raw_output, consider_col_sel):
+    '''
+    Format raw output into something client understands.
+    The output in this case is the result of a table search.
+    '''
+    def get_repr_columns(fname, columns, consider_col_sel):
+        def set_selected(c):
+            if consider_col_sel:
+                if c in columns:
+                    return 'Y'
+            return 'N' 
+        # Get all columns of fname
+        allcols = p.columns_of_table(fname)
+        for myc in columns:
+            allcols.append(myc)
+        colsrepr = []
+        for c in allcols:
+            colrepr = {
+                'colname': c,
+                'samples': p.peek((fname, c), 15),
+                'selected': set_selected(c)
+            }
+            colsrepr.append(colrepr)
+        return colsrepr
+            
+    entries = []
+
+    # Create entry per filename
+    #for fname, columns in group_by_file.items():
+    for fname, column_scores in raw_output:
+        columns = [c for (c, _) in column_scores]
+        entry = {'filename': fname,
+                 'schema': get_repr_columns(
+                    fname, 
+                    columns, 
+                    consider_col_sel)
+                }
+        entries.append(entry)
+    return entries
+
 
 def format_output_for_webclient(raw_output, consider_col_sel):
     '''

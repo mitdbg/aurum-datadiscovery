@@ -12,6 +12,7 @@ from functools import update_wrapper
 
 from api import p as API
 from api import format_output_for_webclient
+from api import format_output_for_webclient_ss
 from api import load_precomputed_model_DBVersion
 
 import webconfig as C
@@ -71,6 +72,15 @@ def kwsearch():
     kw = request.args.get('kw')
     result = API.search_keyword(kw)
     format_result = format_output_for_webclient(result, False)
+    json = {'result': format_result}
+    return jsonify(json)
+
+@app.route('/ssearch')
+def ssearch():
+    ss = request.args.get('attrs')
+    attrs = ss.split(',')
+    result = API.tables_with_schema(attrs, 5)
+    format_result = format_output_for_webclient_ss(result, True)
     json = {'result': format_result}
     return jsonify(json)
 

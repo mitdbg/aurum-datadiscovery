@@ -160,20 +160,25 @@ def tokenize(text):
 
 def _compare_text_columns_dist(doc1, doc2):
     # tokenize and filter stop words
+    doc1 = doc1[:4000]
+    doc2 = doc2[:4000]
     doc1 = doc1.lower()
     doc2 = doc2.lower()
-    f1doc1 = doc1.translate(None, string.punctuation)
-    f1doc2 = doc2.translate(None, string.punctuation)
-    tokens1 = nltk.word_tokenize(f1doc1)
-    tokens2 = nltk.word_tokenize(f1doc2)
-    #f2t1 = [w for w in tokens1 if not w in stopwords.words('english')]
-    #f2t2 = [w for w in tokens2 if not w in stopwords.words('english')]
+    #f1doc1 = doc1.translate(None, [string.punctuation])
+    #f1doc2 = doc2.translate(None, [string.punctuation])
+    tokens1 = nltk.word_tokenize(doc1)
+    tokens2 = nltk.word_tokenize(doc2)
+    f2t1 = [t for t in tokens1 if len(t) > 3]
+    f2t2 = [t for t in tokens2 if len(t) > 3]
+    
+    # order by term frequency
     c1 = Counter(f2t1)
     c2 = Counter(f2t2)
     t1 = c1.most_common(50)
     t2 = c2.most_common(50)
+    print(str(t1))
 
-    # order by term frequency
+    # compute tf
 
     # compute idf
 
@@ -189,6 +194,7 @@ vect = TfidfVectorizer(min_df=1)
 def compare_text_columns_dist(docs):
     ''' cosine distance between two vector of hash(words)'''
     docs = [docs[0][:4000], docs[1][:4000]]
+    #docs = [docs[0], docs[1]]
     st = time.time()
     #vect = TfidfVectorizer(tokenizer = tokenize, min_df=1)
     global vect

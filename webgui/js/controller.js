@@ -13,6 +13,12 @@ ddContent.factory('kwsearch', function($resource) {
   });
 });
 
+ddContent.factory('ssearch', function($resource) {
+  return $resource("http://127.0.0.1:5000/ssearch",{ }, {
+    getData: {method:'GET', isArray: true}
+  });
+});
+
 ddContent.factory('colsim', function($resource) {
   return $resource("http://127.0.0.1:5000/colsim",{ }, {
     getData: {method:'GET', isArray: false}
@@ -25,13 +31,14 @@ ddContent.factory('colove', function($resource) {
   });
 });
 
-function ContentController(test, kwsearch, colsim, colove) {
+function ContentController(test, kwsearch, ssearch, colsim, colove) {
   /*
     The files returned by the last user action. These are grouped by rows for
     visualization in the left panel.
   */
   this.test = test;
   this.kwsearch = kwsearch;
+  this.ssearch = ssearch;
   this.colsim = colsim;
   this.colove = colove;
   this.rows = [];
@@ -114,6 +121,7 @@ function ContentController(test, kwsearch, colsim, colove) {
   this.currentKeyword;
   this.queryMode = "null";
   this.currentKeyword;
+  this.currentSchemaSearch;
   this.samples = "Simple test, is this overwritten already?";
 
   this.numberItemsPerRow = 4;
@@ -154,6 +162,16 @@ ContentController.prototype.keywordSearch = function (keyword) {
   var result = this.kwsearch.get({'kw': keyword}, function() {
     var serverResult = result.result;
     $scope.formatServerResultIntoClientFormat(serverResult);
+  });
+};
+
+ContentController.prototype.schemaSearch = function (attrs) {
+  this.queryMode = "ss";
+  this.currentSchemaSearch = attrs;
+  $scope = this; // wrapping the scope for the closure
+  var result = this.ssearch.get({'attrs': attrs}, function() {
+    var serverResult = result.result;
+    $scope.formatServerResultIntoClientFormat(serverResult); // TODO: for schema search changes
   });
 };
 

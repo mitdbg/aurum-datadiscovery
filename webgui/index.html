@@ -65,6 +65,14 @@
                   </button>
                 </span>
             </div><!-- /input-group -->
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Schema search..." ng-model="attrs">
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" ng-click="cc.schemaSearch(attrs)">
+                    <span class="glyphicon glyphicon-search"></span>
+                  </button>
+                </span>
+            </div><!-- /input-group -->
           </div>
         </div>
         <div class="col-md-4">
@@ -154,6 +162,9 @@
             <div class="panel-body selectionable" id="bottom-col-height" ng-switch on="cc.queryMode">
               <div ng-switch-when="kw">
                 <h3>Showing files that contain the keyword: {{cc.currentKeyword}}</h3>
+              </div>
+              <div ng-switch-when="ss">
+                <h3>Showing files (sorted by relevance) that match/contain the schema: {{cc.currentSchemaSearch}}</h3>
               </div>
               <div ng-switch-when="colsim">
                 <h3>Showing columns similar to: [ file: {{cc.currentSelectedFile}} and column: {{cc.currentSelectedColumn}} ]</h3>
