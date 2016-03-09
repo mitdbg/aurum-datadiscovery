@@ -42,13 +42,24 @@ def process_result(result):
     for k, v in sim_map.items():
         if k not in cgraph:
             cgraph[k] = []
+        print("extending cgraph with: " + str(len(v)))
         cgraph[k].extend(v)
     for k, v in ove_map.items():
         if k not in jgraph:
             jgraph[k] = []
+        print("extending jgraph with: " + str(len(v)))
         jgraph[k].extend(v)
-    print("CGRAPH-size: " + str(len(cgraph.items())))
-    print("JGRAPH-size: " + str(len(jgraph.items())))
+
+def process_all_futures_till_completion():
+    '''
+    Just to run at the end to empty the future list
+    '''
+    while len(list_of_future_results) > 0:
+        for el in list_of_future_results:
+            if el.ready():
+                result = el.get()
+                process_result(result)
+                list_of_future_results.remove(el)
 
 def process_futures():
     '''
@@ -92,15 +103,25 @@ def build_indexes(dbname, workers):
         ASYNC.distribute_concepts.apply_async(args=[partitions[q]], queue=q)
         ASYNC.init_db.apply_async(args=[dbname], queue=q) 
     it = 0
+    batch = []
+    batchsize = C.parallel_index_batch_size
+    tasks_in_batch = 0
     # Choose pivot concept
     for c in concepts:
         print("Computing for: " + str(it))
         it = it + 1
         (p_values, p_type) = MS.get_values_and_type_of_concept(c) 
-        process_futures()
-        for q in workers:
-            f = ASYNC.compute_index.apply_async(args=[c, p_values, p_type], queue=q)
-            list_of_future_results.append(f)
+        batch.append((c, p_values, p_type))
+        tasks_in_batch = tasks_in_batch + 1
+        if tasks_in_batch >= batchsize:
+            process_futures()
+            for q in workers:
+                f = ASYNC.compute_index.apply_async(args=[batch], queue=q)
+                list_of_future_results.append(f)
+            # reset batch for next iteration
+            tasks_in_batch = 0
+            batch = []
+    process_all_futures_till_completion()
 
 # Loading functions
 
@@ -241,6 +262,10 @@ def test():
 if __name__ == "__main__":
     print("INPUT PARAMETERS: " + str(len(sys.argv)))
     print(str(sys.argv))
+    # python build_idx_coordinator.py --mode BGRAPH 
+    # --input csvfiles
+    # /Users/ra-mit/Desktop/mitdwhdataslice --dataset slice 
+    # --workers w1,w2
     if len(sys.argv) is not 10:
         print("HELP")
         print("--mode <mode> : ALL (load and bgraph), LOAD, BGRAPH")
