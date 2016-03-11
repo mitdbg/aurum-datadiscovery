@@ -5,6 +5,8 @@ def is_column_num(column):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 def print_dict(dictionary):
     for key, value in dictionary.items():

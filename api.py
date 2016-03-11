@@ -448,6 +448,11 @@ def clean_column(column):
     clean_c = dict()
     column_type = None
     (key, value) = column
+    # column may be null in some cases, change it if so
+    (fname, cname) = key
+    if cname == None:
+         cname = "None"
+         key = (fname, cname)
     if utils.is_column_num(value):
         newvalue = utils.cast_list_to_float(value)
         clean_c[key] = newvalue

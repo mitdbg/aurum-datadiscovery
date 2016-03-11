@@ -135,6 +135,9 @@ def process_csv_file(filename):
         # Clean columns
         # clean_c is a dict with 1 key
         # c_type is the value of the types
+        if column is None:
+             print("Found column None in file: " + str(filename)) 
+             column = "NULL"
         (clean_c, c_type) = API.clean_column(column)
         values = list(clean_c.values())[0]
         (f_name, c_name) = list(clean_c.keys())[0]

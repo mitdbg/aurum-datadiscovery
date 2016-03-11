@@ -12,6 +12,10 @@ database = None
 modeldb = None
 
 def build_column_key(filename, columname):
+    if filename == None:
+        print("Filename is NoneType")
+    if columname == None:
+        print("Columname is NoneType")
     key = str(filename + "-" + columname)
     return key
 
