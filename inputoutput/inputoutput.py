@@ -2,6 +2,7 @@ import sys
 import os
 from os import listdir, path
 import csv
+import _csv
 from collections import defaultdict
 
 def get_files_in_dir(path):
@@ -24,12 +25,15 @@ def get_columns_from_csv_file(filename):
     columns = defaultdict(list)
     with open(filename, encoding="latin-1") as f:
         reader = csv.DictReader(f)
-        for row in reader:
-            for (k,v) in row.items():
-                # TODO: ugly the need to call this each time
-                f_name = os.path.basename(f.name)
-                column_name = (f_name, k)
-                columns[column_name].append(v)
+        try:
+            for row in reader:
+                for (k,v) in row.items():
+                    # TODO: ugly the need to call this each time
+                    f_name = os.path.basename(f.name)
+                    column_name = (f_name, k)
+                    columns[column_name].append(v)
+        except _csv.Error:
+            print("skipping file, as critical problems found while reading file: " + str(filename))
     return columns
 
 def get_column_iterator_csv(files):

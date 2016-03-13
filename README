@@ -1,0 +1,11 @@
+
+Install requirements:
+
+- Install mongo (with full text search).
+If using version 2.4 on a numa machine, then run like this
+numactl --interleave=all mongod --dbpath data/db/ --setParameter textSearchEnabled=true
+make sure data/db exists in the current directory
+
+- Install python3. It is easy to do this in userspace
+- Create a virtualenv with python3
+- Install all requirements. There are some version problems, iterate a few times removing hard constraints on versions. When a system wide dependency for scipy, scikit-learn or numpy exists, try to leverage it.

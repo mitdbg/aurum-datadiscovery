@@ -145,7 +145,10 @@ def get_textual_dist(data, method):
     '''
     sig = None
     if method is "vector":
-        sig = ' '.join(data)
+        try:
+            sig = ' '.join(data)
+        except TypeError:
+            sig = ' '.join(str(data)) # forcing to string here
     return sig
 
 tt = 0
