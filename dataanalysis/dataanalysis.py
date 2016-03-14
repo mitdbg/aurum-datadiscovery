@@ -194,6 +194,13 @@ def _compare_text_columns_dist(doc1, doc2):
 
 vect = TfidfVectorizer(min_df=1)
 
+def get_tfidf_docs(docs):
+    st = time.time()
+    tfidf = vect.fit_transform(docs)
+    et = time.time()
+    print("Time to TFIDF: " + str(et-st))
+    return tfidf
+
 def compare_text_columns_dist(docs):
     ''' cosine distance between two vector of hash(words)'''
     docs = [docs[0][:4000], docs[1][:4000]]
