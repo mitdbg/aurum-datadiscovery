@@ -1,5 +1,6 @@
 from sklearn.neighbors.kde import KernelDensity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer 
 from sklearn import svm 
 from scipy.stats import ks_2samp
 from collections import Counter
@@ -50,6 +51,35 @@ def compute_overlap_of_columns(col1, col2):
     th_cutoff = total_size - th_overlap
     overlap = compute_overlap(vals1, vals2, th_overlap, th_cutoff)
     return overlap
+
+def get_numerical_signature(values, S):
+    '''
+    Learns a distribution of the values
+    Then generates a sample of size S
+    '''
+    # Transform data to numpy array
+    Xnumpy = np.asarray(values)
+    X = Xnumpy.reshape(-1, 1)
+    # Learn kernel
+    kde = KernelDensity(
+        kernel = C.kd["kernel"], 
+        bandwidth = C.kd["bandwidth"]
+    ).fit(X)
+    sig_v = [kde.sample()[0][0] for x in range(S)]
+    return sig_v
+
+def get_textual_signature(values, S):
+    '''
+    Creates a representative vector of the values of at
+    most size S
+    '''
+    raw = ' '.join(values)
+    vectorizer = CountVectorizer(min_df=1, 
+                stop_words="english", 
+                max_features=5)
+    analyze = vectorizer.build_analyzer()
+    sig_v = analyze(raw)
+    return sig_v[:S]
 
 def compare_pair_num_columns(col1, col2):
     '''

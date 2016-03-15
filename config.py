@@ -22,6 +22,9 @@ odsvm = {
         "gamma":0.1
         }
 
+# Configuration specific to holistic signature method
+sig_v_size = 30
+
 # Configuration specific to each similarity method
 
 ks =    {
