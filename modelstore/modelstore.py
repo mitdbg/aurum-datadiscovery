@@ -43,6 +43,30 @@ def new_column(f, c, t, sig, n_data, t_data):
     except DocumentTooLarge:
         print("Trying to load: " + str(f) + " - " + str(c))
 
+def get_numerical_signatures():
+    cursor = modeldb.find({"type":"N"}, 
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
+    results = []
+    for el in cursor:
+        key = (el['filename'], el['column'])
+        results.append((key, el['signature']))
+    return results
+
+def get_textual_signatures():
+    cursor = modeldb.find({"type":"T"}, 
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
+    results = []
+    for el in cursor:
+        key = (el['filename'], el['column'])
+        results.append((key, el['signature']))
+    return results
+
 def get_all_concepts():
     '''
     Return all keys dataset, copied into a collection
