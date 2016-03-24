@@ -135,6 +135,9 @@ def process_csv_file(filename):
         # Clean columns
         # clean_c is a dict with 1 key
         # c_type is the value of the types
+        if column is None:
+             print("Found column None in file: " + str(filename)) 
+             column = "NULL"
         (clean_c, c_type) = API.clean_column(column)
         values = list(clean_c.values())[0]
         (f_name, c_name) = list(clean_c.keys())[0]
@@ -199,8 +202,19 @@ def create_work_from_path_csv_files(path):
 def create_work_from_db(dbconn):
     print("TODO")
 
-def serialize_model():
-    print("TODO")
+def serialize_model(dbname):
+    '''
+    Serialize the two graph structures
+    '''
+    # Store cgraph
+    print("Storing graph (cache)...")
+    serde.serialize_cached_graph(cgraph, dbname)
+    print("Storing graph (cache)...DONE!")
+    # Store jgraph
+    print("Storing jgraph...")
+    serde.serialize_jgraph(jgraph, dbname)
+    print("Storing jgraph...DONE!")
+    
 
 # Starting function 
 
@@ -235,7 +249,7 @@ def main():
     else:
         print("Unrecognized mode")
         exit()
-    serialize_model()
+    serialize_model(dbname)
 
 def test():
     mode = sys.argv[2]

@@ -309,6 +309,28 @@ class DB_adapted_API():
     def print(self, results):
         print_result(results)
 
+    def entity_complement(table_to_enrich, tables):
+        '''
+        Given a table of reference (table_to_enrich) it uses information from
+        other available tables (tables) to add entities
+        '''
+        print("TODO")
+
+    def schema_complement(table_to_enrich, tables):
+        '''
+        Given a table of reference (table_to_enrich) it uses information from
+        other available tables (tables) to enrich the schema
+        '''
+        print("TODO")
+
+    def reduce_to_view(tables):
+        '''
+        Given a bunch of tables it tries a best-effort approach to reconcile
+        them into the minimum number of tables. Naively, it tries to enrich each
+        individual table until it reduces the total number
+        '''
+        print("TODO")
+
 # Instantiate class to make it importable
 p = DB_adapted_API()
 
@@ -448,6 +470,11 @@ def clean_column(column):
     clean_c = dict()
     column_type = None
     (key, value) = column
+    # column may be null in some cases, change it if so
+    (fname, cname) = key
+    if cname == None:
+         cname = "None"
+         key = (fname, cname)
     if utils.is_column_num(value):
         newvalue = utils.cast_list_to_float(value)
         clean_c[key] = newvalue

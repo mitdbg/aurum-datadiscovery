@@ -12,6 +12,10 @@ database = None
 modeldb = None
 
 def build_column_key(filename, columname):
+    if filename == None:
+        print("Filename is NoneType")
+    if columname == None:
+        print("Columname is NoneType")
     key = str(filename + "-" + columname)
     return key
 
@@ -38,6 +42,30 @@ def new_column(f, c, t, sig, n_data, t_data):
         modeldb.insert_one(doc)
     except DocumentTooLarge:
         print("Trying to load: " + str(f) + " - " + str(c))
+
+def get_numerical_signatures():
+    cursor = modeldb.find({"type":"N"}, 
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
+    results = []
+    for el in cursor:
+        key = (el['filename'], el['column'])
+        results.append((key, el['signature']))
+    return results
+
+def get_textual_signatures():
+    cursor = modeldb.find({"type":"T"}, 
+                          {"filename":1, 
+                           "column":1, 
+                           "signature":1,
+                           "_id":0})
+    results = []
+    for el in cursor:
+        key = (el['filename'], el['column'])
+        results.append((key, el['signature']))
+    return results
 
 def get_all_concepts():
     '''

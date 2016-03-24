@@ -1,0 +1,24 @@
+
+Install requirements:
+
+- Install mongo (with full text search).
+If using version 2.4 on a numa machine, then run like this
+numactl --interleave=all mongod --dbpath data/db/ --setParameter textSearchEnabled=true
+make sure data/db exists in the current directory
+
+- Install python3. It is easy to do this in userspace
+- Create a virtualenv with python3
+- Install all requirements. There are some version problems, iterate a few times removing hard constraints on versions. When a system wide dependency for scipy, scikit-learn or numpy exists, try to leverage it.
+
+
+Different loading techniques:
+
+- dataloader is a single threaded impl
+build_idx_coordinator is a multi-thread multi machine impl
+
+- ddworker is a simple worker in charge of computing n^2 pairs for similarity and
+overlap, it is coordinated by build_idx_coordinator
+
+- fullworker is a worker in charge of: loading, computing signature, communicating
+to coordinator
+

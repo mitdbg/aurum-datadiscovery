@@ -22,6 +22,9 @@ odsvm = {
         "gamma":0.1
         }
 
+# Configuration specific to holistic signature method
+sig_v_size = 30
+
 # Configuration specific to each similarity method
 
 ks =    {
@@ -76,6 +79,6 @@ db_location = "mongodb://localhost:27017"
 # Cluster configs
 ################
 max_future_list_size = 10
-parallel_index_batch_size = 20
+parallel_index_batch_size = 10
 
 
