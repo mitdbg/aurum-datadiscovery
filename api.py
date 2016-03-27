@@ -711,6 +711,7 @@ def store_precomputed_model(modelname):
     serde.serialize_dataset_columns(dataset_columns, modelname)
     print("Storing dataset columns...DONE!")
 
+
 def load_precomputed_model_DBVersion(modelname):
     print("Loading (cache) graph...")
     global cgraph_cache
@@ -718,10 +719,12 @@ def load_precomputed_model_DBVersion(modelname):
     print("Loading (cache) graph...DONE!")
     print("Loading graph...")
     global cgraph
+# lsh - nolsh
     cgraph = serde.deserialize_graph(modelname)
     print("Loading graph...DONE!")
     print("Loading jgraph...")
     global jgraph
+# lsh - nolsh
     jgraph = serde.deserialize_jgraph(modelname)
     print("Loading jgraph...DONE!")
     print("Loading simrank matrix...")

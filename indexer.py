@@ -20,7 +20,7 @@ from dataanalysis import dataanalysis as da
 import fullworker as ASYNC
 
 dimension = 30
-rbp = RandomBinaryProjections('rbp', 10)
+rbp = RandomBinaryProjections('rbp', 30)
 
 num_engine = Engine(dimension, 
             lshashes=[rbp], 
@@ -155,12 +155,21 @@ def create_sim_graph_num(cgraph, num_eng, num_sig):
     for ns in num_sig:
         (key, sig) = ns
         cgraph[key] = []
+        print("sim to: " + str(key))
         N = num_eng.neighbours(np.array(sig))
         for n in N:
             (data, label, value) = n
-            tokens = label.split(' ')
+            if value > 0.02:
+                continue
+            tokens = label.split('%&%&%')
             label_key = (tokens[0], tokens[1])
+            #print(str(label_key) + " -- " + str(value))
+            print(str(key)+" -> "+str(label_key) +":"+str(value))
             cgraph[key].append(label_key)
+        print(" ")
+        print(" ")
+        print(" ")
+        #time.sleep(3)
     return cgraph
 
 def create_sim_graph_text(cgraph, text_engine, text_sig, tfidf):
@@ -169,15 +178,21 @@ def create_sim_graph_text(cgraph, text_engine, text_sig, tfidf):
         (key, sig) = ts
         cgraph[key] = []
         sparse_row = tfidf.getrow(rowidx)
+        rowidx = rowidx + 1
         dense = sparse_row.todense()
         array = dense.A[0]
         N = text_engine.neighbours(array)
         for n in N:
             (data, label, value) = n
-            tokens = label.split(' ')
+            tokens = label.split('%&%&%')
             label_key = (tokens[0], tokens[1])
             cgraph[key].append(label_key)
     return cgraph
+
+def serialize_model(cgraph, dbname):
+    print("Storing graph (cache)...")
+    serde.serialize_cached_graph(cgraph, dbname)
+    print("Storing graph (cache)...DONE!")
 
 def build_indexes():
     '''
@@ -189,7 +204,7 @@ def build_indexes():
     for s in num_sig:
         (name, signature) = s
         (fname, cname) = name
-        key = str(fname)+" "+str(cname)
+        key = str(fname)+"%&%&%"+str(cname)
         num_engine.store_vector(np.array(signature), key)
     et = time.time()
     print("Total time to index all num sigs: " + str((et-st)))
@@ -217,7 +232,7 @@ def build_indexes():
     for ts in text_sig:
         (name, signature) = ts
         (fname, cname) = name
-        key = str(fname)+" "+str(cname)
+        key = str(fname)+"%&%&%"+str(cname)
         sparse_row = tfidf.getrow(rowidx)
         dense = sparse_row.todense() 
         array = dense.A[0]
@@ -228,7 +243,6 @@ def build_indexes():
     print("total store text: " + str((et-st)))
 
     cgraph=create_sim_graph_text(cgraph, text_engine, text_sig, tfidf)
-    print("cgraph with: " + str(len(cgraph)))
     return cgraph
 
 def main():
@@ -251,9 +265,9 @@ def main():
         exit()
     elif mode == "BGRAPH":
         # build graphs reading signatures from store
-        build_indexes()
+        cgraph = build_indexes()
+        serialize_model(cgraph, dbname)
         print("DONE building indexes")
-    #serialize_model(dbname)
     
 if __name__ == "__main__":
     print("INPUT PARAMETERS: " + str(len(sys.argv)))
