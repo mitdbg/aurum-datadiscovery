@@ -3,6 +3,8 @@ import os
 from os import listdir, path
 import csv
 import _csv
+import dataset
+
 from collections import defaultdict
 
 def get_files_in_dir(path):
@@ -82,3 +84,31 @@ if __name__ == "__main__":
     columns = get_column_iterator_csv(filename)
     print(str(columns))
 
+
+def get_tables_from_db(dbpath):
+    con = dataset.connect(dbpath)
+    tables = []
+    table = con.load_table('all_tables')
+
+    rows = table.all()
+    for row in rows:
+        tables.append(row['table_name'])
+
+    con.close()
+    return tables
+
+def get_columns_from_db(table, dbpath):
+    con = dataset.connect(dbpath)
+    maintable = con.load_table('all_tables')
+    results = maintable.find(table_name=table)
+    header = []
+    for result in results:
+        header.append(results['column_name'])
+    columns = defaultdict(list)
+
+    datatable = con.load_table(table)
+    rows = datatable.find(_limit=None)
+    for row in rows:
+        for k in header:
+            columns[k].append(row[k])
+    return columns
