@@ -159,7 +159,7 @@ def create_sim_graph_num(cgraph, num_eng, num_sig):
         N = num_eng.neighbours(np.array(sig))
         for n in N:
             (data, label, value) = n
-            if value > 0.02:
+            if value > 0.0001:
                 continue
             tokens = label.split('%&%&%')
             label_key = (tokens[0], tokens[1])
@@ -212,7 +212,6 @@ def build_indexes():
     cgraph = OrderedDict()
     cgraph = create_sim_graph_num(cgraph, num_engine, num_sig)
     #create_sim_graph(num_engine, None, num_sig,  None)
-
     text_sig = MS.get_textual_signatures()
     docs = []
     for ts in text_sig:
