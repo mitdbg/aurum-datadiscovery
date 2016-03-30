@@ -1,12 +1,15 @@
 def is_column_num(column):
-    try:
-        for v in column:
+    value_error_count = 0
+    type_error_count = 0
+    threshold = 0.3
+    for v in column:
+        try:
             float(v)
-        return True
-    except ValueError:
-        return False
-    except TypeError:
-        return False
+        except ValueError:
+            ++value_error_count
+        except TypeError:
+            ++type_error_count
+    return (value_error_count+type_error_count)< threshold*len(column)
 
 def print_dict(dictionary):
     for key, value in dictionary.items():
@@ -17,12 +20,22 @@ def print_dict(dictionary):
 def cast_list_to_float(l):
     newlist = []
     for el in l:
-        newel = float(el)
-        newlist.append(newel) 
+        if isfloat(el):
+            newel = float(el)
+            newlist.append(newel)
     return newlist
 
 if __name__ == "__main__":
     lst = ["23", "234", "12"]
     print(lst)
-    intlist = cast_list_to_int(lst)
+    intlist = cast_list_to_float(lst)
     print(intlist)
+
+def isfloat(value):
+  try:
+    float(value)
+    return True
+  except ValueError:
+    return False
+  except TypeError:
+      return False
