@@ -25,7 +25,12 @@ def load_tables(batch_of_tasks):
     colsigs = []
     for task in batch_of_tasks:
         (source_input_type, arg, t) = task
-        columns = iod.get_columns_from_csv_file(t)
+        columns = []
+        if source_input_type == "db":
+            columns = iod.get_columns_from_db(t, arg)
+        elif source_input_type == "csvfiles":
+            columns = iod.get_columns_from_csv_file(t)
+
         for column in columns.items():
             # basic preprocess and clean columns
             (clean_c, c_type) = API.clean_column(column)
