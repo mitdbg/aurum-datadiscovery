@@ -720,12 +720,12 @@ def load_precomputed_model_DBVersion(modelname):
     print("Loading graph...")
     global cgraph
 # lsh - nolsh
-    #cgraph = serde.deserialize_graph(modelname)
+    cgraph = serde.deserialize_graph(modelname)
     print("Loading graph...DONE!")
     print("Loading jgraph...")
     global jgraph
 # lsh - nolsh
-    #jgraph = serde.deserialize_jgraph(modelname)
+    jgraph = serde.deserialize_jgraph(modelname)
     print("Loading jgraph...DONE!")
     print("Loading simrank matrix...")
 

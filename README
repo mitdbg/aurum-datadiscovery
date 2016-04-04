@@ -1,19 +1,41 @@
 
-Install requirements:
+Deploy requirements:
+#####################
 
 - Install mongo (with full text search).  If using version 2.4 on a numa
-  machine, then run like this numactl --interleave=all mongod --dbpath data/db/
---setParameter textSearchEnabled=true make sure data/db exists in the current
-directory
+  machine, then run like this: 
+
+$> numactl --interleave=all mongod --dbpath data/db/ --setParameter textSearchEnabled=true 
+
+make sure data/db exists in the current directory
 
 - Install python3. It is easy to do this in userspace
+
 - Create a virtualenv with python3
+
+$> sudo apt-get install python-virtualenv
+$> virtualenv -p /usr/bin/python3.4 <name-venv>
+
+- Install math libraries for highest performance
+
+$> sudo apt-get install gfortran libopenblas-dev liblapack-dev
+
 - Install all requirements. There are some version problems, iterate a few times
   removing hard constraints on versions. When a system wide dependency for
-scipy, scikit-learn or numpy exists, try to leverage it.
+  scipy, scikit-learn or numpy exists, try to leverage it.
 
+Some of the additional packages asked (in a ubuntu machine):
+
+$> sudo apt-get install lib32ncurses5-dev
+may need to install scipy individually first
+
+WEB:
+##
+
+$> sudo apt-get install nginx
 
 Different loading techniques:
+#############################
 
 - dataloader is a single threaded impl build_idx_coordinator is a multi-thread
   multi machine impl
