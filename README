@@ -31,9 +31,53 @@ may need to install scipy individually first
 
 WEB:
 ##
-Install the web server:
+Install the web server, uwsgi and uwsgi-plugin-python (system wide):
 
-$> sudo apt-get install nginx
+$> deactivate
+$> sudo apt-get install nginx uwsgi uwsgi-plugin-python
+
+use this command to restart nginx whenever a configuration changes:
+
+$> sudo /etc/init.d/nginx restart
+
+Create nginx folders and delete default config:
+
+$> sudo mkdir /var/www/aurum
+$> sudo chown -R ra:ra /var/www/aurum (change ra for your user)
+$> sudo rm /etc/nginx/sites-enabled/default
+
+Move the file webserverconfig/aurum.conf to
+/var/www/aurum/aurum.conf
+
+and then symlink the file to nginx configuration directory:
+
+$> sudo ln -s /var/www/aurum/aurum.conf /etc/nginx/conf.d/
+
+Move the file webserverconfig/uwsgi.ini to 
+/var/www/aurum/uwsgi.ini
+
+Create files for uwsgi logs:
+
+$> sudo mkdir -p /var/log/uwsgi
+$> sudo chown -R ra:ra /var/log/uwsgi (change ra for your user)
+
+Test that uwsgi works, i.e., that nginx can connect to uwsgi:
+
+$> uwsgi --ini /var/www/aurum/uwsgi.ini
+
+Make uwsgi run as a daemon:
+
+1. move webserver/uwsgi.conf to /etc/init/
+2. create these:
+
+$> sudo mkdir /etc/uwsgi && sudo mkdir /etc/uwsgi/vassals
+$> sudo ln -s /var/www/aurum/aurum.ini /etc/uwsgi/vassals
+
+make www-data user to own these:
+
+$> sudo chown -R www-data:www-data /var/www/aurum/
+$> sudo chown -R www-data:www-data /var/log/uwsgi/
+$> sudo chmod 777 /var/log/uwsgi/aurum.log
 
 
 Different loading techniques:

@@ -33,10 +33,10 @@ def load_tables(batch_of_tasks):
 
         for column in columns.items():
             # basic preprocess and clean columns
-            print(str(column[1]))
+            #print(str(column[1]))
             (clean_c, c_type) = API.clean_column(column)
             values = list(clean_c.values())[0]
-            print(str(len(values)))
+            #print(str(len(values)))
             (f_name, c_name) = list(clean_c.keys())[0]
             num_data = []
             text_data = []

@@ -184,4 +184,4 @@ if __name__ == '__main__':
         exit()
     modelname
     load_precomputed_model_DBVersion(modelname)
-    app.run()
+    app.run(host=C.host)
