@@ -127,6 +127,7 @@ def load_data_parallel(source_input_type, arg, dbname, workers):
         futures[q] = None
     while len(tables) > 0:
         task = create_task(tables, source_input_type, arg)
+        #print(str(task))
         not_assigned = True
         while not_assigned:
             not_assigned = process_futures(futures, task)

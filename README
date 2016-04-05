@@ -31,8 +31,10 @@ may need to install scipy individually first
 
 WEB:
 ##
+Install the web server:
 
 $> sudo apt-get install nginx
+
 
 Different loading techniques:
 #############################
@@ -45,4 +47,13 @@ Different loading techniques:
 
 - fullworker is a worker in charge of: loading, computing signature,
   communicating to coordinator
+
+Start load:
+#########
+
+workers:
+celery -A fullworker worker --loglevel=INFO --concurrency 1 -n worker1 -Q w1
+
+master:
+python indexer.py --mode ALL --input csvfiles ~/Desktop/slicemitdwh/ --dataset fakeagain --workers w1
 
