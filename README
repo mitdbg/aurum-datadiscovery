@@ -9,6 +9,13 @@ $> numactl --interleave=all mongod --dbpath data/db/ --setParameter textSearchEn
 
 make sure data/db exists in the current directory
 
+In modern OS do:
+
+$> sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+$> echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+$> sudo apt-get update
+$> sudo apt-get install mongodb-org
+
 - Install python3. It is easy to do this in userspace
 
 - Create a virtualenv with python3
@@ -26,8 +33,13 @@ $> sudo apt-get install gfortran libopenblas-dev liblapack-dev
 
 Some of the additional packages asked (in a ubuntu machine):
 
+$> sudo apt-get install python3.4-dev (or whatever version is present)
 $> sudo apt-get install lib32ncurses5-dev
+$> sudo apt-get install python-numpy
+
 may need to install scipy individually first
+
+$> pip install scipy
 
 WEB:
 ##
@@ -69,19 +81,7 @@ Test that uwsgi works, i.e., that nginx can connect to uwsgi:
 
 $> uwsgi --ini /var/www/aurum/uwsgi.ini
 
-Make uwsgi run as a daemon:
-
-1. move webserver/uwsgi.conf to /etc/init/
-2. create these:
-
-$> sudo mkdir /etc/uwsgi && sudo mkdir /etc/uwsgi/vassals
-$> sudo ln -s /var/www/aurum/aurum.ini /etc/uwsgi/vassals
-
-make www-data user to own these:
-
-$> sudo chown -R www-data:www-data /var/www/aurum/
-$> sudo chown -R www-data:www-data /var/log/uwsgi/
-$> sudo chmod 777 /var/log/uwsgi/aurum.log
+Change endpoint for webclient app. In js/controller.js indicate the correct one
 
 Different loading techniques:
 #############################
