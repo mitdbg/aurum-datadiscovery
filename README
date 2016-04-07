@@ -49,6 +49,10 @@ $> sudo rm /etc/nginx/sites-enabled/default
 Move the file webserverconfig/aurum.conf to
 /var/www/aurum/aurum.conf
 
+then copy webgui (static files) to /var/www/aurum/static
+
+$> cp -r webgui/ /var/www/aurum/static/
+
 and then symlink the file to nginx configuration directory:
 
 $> sudo ln -s /var/www/aurum/aurum.conf /etc/nginx/conf.d/
@@ -78,7 +82,6 @@ make www-data user to own these:
 $> sudo chown -R www-data:www-data /var/www/aurum/
 $> sudo chown -R www-data:www-data /var/log/uwsgi/
 $> sudo chmod 777 /var/log/uwsgi/aurum.log
-
 
 Different loading techniques:
 #############################
