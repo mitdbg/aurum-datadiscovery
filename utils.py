@@ -1,5 +1,5 @@
 def is_column_num(column):
-    print(str(column))
+    #print(str(column))
     value_error_count = 0
     type_error_count = 0
     threshold = 0.3
