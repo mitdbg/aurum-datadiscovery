@@ -117,7 +117,8 @@ def load_data_parallel(source_input_type, arg, dbname, workers):
         tables = iod.get_tables_from_db(arg)
     elif source_input_type == "csvfiles":
         tables = iod.get_files_in_dir(arg)
-    print("Num tables: " + str(len(tables)))
+    total_num_tables = len(tables)
+    print("Num tables: " + str(total_num_tables)
     # Initialize workers
     for q in workers:
         ASYNC.init_worker.apply_async(args=[dbname], queue=q)
@@ -126,6 +127,8 @@ def load_data_parallel(source_input_type, arg, dbname, workers):
     for q in workers:
         futures[q] = None
     while len(tables) > 0:
+        processed_tables = len(tables) - total_num_tables
+        print("Task: " + str(processed_tables) + "/" + str(total_num_tables))
         task = create_task(tables, source_input_type, arg)
         #print(str(task))
         not_assigned = True
