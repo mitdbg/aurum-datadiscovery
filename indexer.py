@@ -118,8 +118,9 @@ def load_data_parallel(source_input_type, arg, dbname, workers):
     elif source_input_type == "csvfiles":
         tables = iod.get_files_in_dir(arg)
     total_num_tables = len(tables)
-    print("Num tables: " + str(total_num_tables)
+    print("Num tables: " + str(total_num_tables))
     # Initialize workers
+    print(str(workers))
     for q in workers:
         ASYNC.init_worker.apply_async(args=[dbname], queue=q)
     # create and assign tasks while there are some available
@@ -287,5 +288,6 @@ if __name__ == "__main__":
         print("--workers <queues> : comma separated, no space worker queues")
         print("EXAMPLE")
         print("python indexer.py --mode ALL --input csvfiles whatever/fake --dataset fakeagain --workers w1,w2,w3")
+        # python indexer.py --mode LOAD --input csvfiles /data/raulcf/datagovdata/ --dataset datagov --workers w1,w2,w3,w4
         exit()
     main()
