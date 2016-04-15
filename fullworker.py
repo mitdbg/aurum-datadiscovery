@@ -63,6 +63,6 @@ def load_tables(batch_of_tasks):
             key = (f_name, c_name)
             colsig = (key, c_type, sig)
             colsigs.append(colsig)
-        print("Processed signatures for: " + str(f_name))
+        #print("Processed signatures for: " + str(f_name))
     return colsigs
 
