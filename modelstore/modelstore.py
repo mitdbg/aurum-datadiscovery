@@ -184,12 +184,12 @@ def search_keyword(keyword):
     '''
     Search keyword
     '''
-    #res = modeldb.find({"t_data": keyword},
-    #             {"filename":1, "column":1, "_id":0})
-    res = modeldb.find({'$text': {'$search':keyword}}, 
-                    {'filename':1, 
-                            'column':1,
-                            '_id': 0})
+    res = modeldb.find({"t_data": keyword},
+                 {"filename":1, "column":1, "_id":0})
+    #res = modeldb.find({'$text': {'$search':keyword}}, 
+    #                {'filename':1, 
+    #                        'column':1,
+    #                        '_id': 0})
     colmatches = [(r['filename'], r['column']) for r in res]
     return colmatches
 
