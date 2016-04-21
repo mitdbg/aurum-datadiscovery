@@ -185,13 +185,15 @@ def search_keyword(keyword):
     '''
     Search keyword
     '''
-    res = modeldb.find({"t_data": keyword},
-                 {"filename":1, "column":1, "_id":0})
-    #res = modeldb.find({'$text': {'$search':keyword}}, 
-    #                {'filename':1, 
-    #                        'column':1,
-    #                        '_id': 0})
+    #res = modeldb.find({"t_data": keyword},
+    #             {"filename":1, "column":1, "_id":0})
+    res = modeldb.find({'$text': {'$search':keyword}}, 
+                    {'filename':1, 
+                            'column':1,
+                            '_id': 0})
+    print("creating output...")
     colmatches = [(r['filename'], r['column']) for r in res]
+    print("created!")
     return colmatches
 
 def init(dataset_name, create_index=True):
@@ -205,6 +207,7 @@ def init(dataset_name, create_index=True):
     modeldb = database.columns
     # Create full text search index
     if create_index:
+        print("Creating full-text search index")
         modeldb.create_index([('t_data', TEXT)])
         modeldb.create_index("key", HASHED)
 

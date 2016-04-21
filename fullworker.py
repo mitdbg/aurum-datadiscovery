@@ -12,7 +12,7 @@ app = Celery('fullworker',backend=CC.CELERY_RESULT_BACKEND,broker=CC.BROKER_URL)
 
 @app.task()
 def init_worker(dbname):
-    MS.init(dbname, create_index=False)
+    MS.init(dbname, create_index=True)
     print("Initialized db: " + str(dbname))
 
 @app.task()
