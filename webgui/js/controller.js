@@ -165,6 +165,7 @@ ContentController.prototype.keywordSearch = function (keyword) {
   this.currentKeyword = keyword;
   $scope = this; // wrapping the scope for the closure
   var result = this.kwsearch.get({'kw': keyword}, function() {
+    console.log("Rx KW result");
     var serverResult = result.result;
     $scope.formatServerResultIntoClientFormat(serverResult);
   });
@@ -175,6 +176,7 @@ ContentController.prototype.schemaSearch = function (attrs) {
   this.currentSchemaSearch = attrs;
   $scope = this; // wrapping the scope for the closure
   var result = this.ssearch.get({'attrs': attrs}, function() {
+    console.log("Rx SCH result");
     var serverResult = result.result;
     $scope.formatServerResultIntoClientFormat(serverResult); // TODO: for schema search changes
   });
@@ -231,6 +233,7 @@ ContentController.prototype.colSim = function () {
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colsim.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
+      console.log("Rx COLSIM result");
       var serverResult = result.result;
       $scope.formatServerResultIntoClientFormat(serverResult);
   });
@@ -249,6 +252,7 @@ ContentController.prototype.colOve = function () {
   key = {'filename': this.selectedFile, 'columname': this.selectedColumn};
   var result = this.colove.get(
     {'filename': this.selectedFile, 'colname': this.selectedColumn}, function() {
+      console.log("Rx COLOVE result");
       var serverResult = result.result;
       $scope.formatServerResultIntoClientFormat(serverResult);
   });

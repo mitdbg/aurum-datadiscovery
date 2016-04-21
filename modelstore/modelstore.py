@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from pymongo import TEXT
+from pymongo import HASHED
 from pymongo.errors import DocumentTooLarge
 
 import config as C
@@ -205,6 +206,7 @@ def init(dataset_name, create_index=True):
     # Create full text search index
     if create_index:
         modeldb.create_index([('t_data', TEXT)])
+        modeldb.create_index("key", HASHED)
 
 def main():
     db_name = "testtiny3"
