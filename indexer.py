@@ -178,6 +178,7 @@ def create_sim_graph_num(cgraph, num_eng, num_sig):
     return cgraph
 
 def create_sim_graph_text(cgraph, text_engine, text_sig, tfidf):
+    # FIXME: bottleneck. parallelize this
     rowidx = 0
     for ts in text_sig:
         (key, sig) = ts

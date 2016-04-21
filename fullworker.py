@@ -30,6 +30,11 @@ def load_tables(batch_of_tasks):
             columns = iod.get_columns_from_db(t, arg)
         elif source_input_type == "csvfiles":
             columns = iod.get_columns_from_csv_file(t)
+        # Limit values per column to max
+        max_value = C.max_values_per_column
+        for (k,v) in columns.items():
+            v = v[:max_value]
+            columns[k] = v
 
         for column in columns.items():
             # basic preprocess and clean columns

@@ -4,6 +4,7 @@ from os import listdir, path
 import csv
 import _csv
 import dataset
+import config as C
 
 from collections import defaultdict
 
@@ -24,16 +25,23 @@ def get_columns_from_csv_file(filename):
     key -> (filename, columna)
     value -> [values]
     '''
+    #max_values = C.max_values_per_column
+    #current_values = 0
     columns = defaultdict(list)
     with open(filename, encoding="latin-1") as f:
         reader = csv.DictReader(f)
         try:
             for row in reader:
+                #current_values = current_values + 1
                 for (k,v) in row.items():
                     # TODO: ugly the need to call this each time
                     f_name = os.path.basename(f.name)
                     column_name = (f_name, k)
                     columns[column_name].append(v)
+                #if max_values != -1:
+                #    if current_values > max_values:
+                        # early-termination for reaching max values
+                #        return columns
         except _csv.Error:
             print("skipping file, as critical problems found while reading file: " + str(filename))
     return columns

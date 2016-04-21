@@ -81,4 +81,7 @@ db_location = "mongodb://localhost:27017"
 max_future_list_size = 10
 parallel_index_batch_size = 3
 
-
+######
+## IO
+######
+max_values_per_column = 5000
