@@ -1,32 +1,37 @@
+var host = '128.30.77.76'
+var port = '5000'
+
+var baseUrl = host + ':' + port
+
 var ddContent = angular.module('ddContent', ['ngResource'])
 .controller('contentController', ContentController);
 
 ddContent.factory('test', function($resource) {
-  return $resource("http://127.0.0.1:5000/test",{ }, {
+  return $resource("http://"+baseUrl+"/test",{ }, {
     getData: {method:'GET', isArray: false}
   });
 });
 
 ddContent.factory('kwsearch', function($resource) {
-  return $resource("http://127.0.0.1:5000/kwsearch",{ }, {
+  return $resource("http://"+baseUrl+"/kwsearch",{ }, {
     getData: {method:'GET', isArray: true}
   });
 });
 
 ddContent.factory('ssearch', function($resource) {
-  return $resource("http://127.0.0.1:5000/ssearch",{ }, {
+  return $resource("http://"+baseUrl+"/ssearch",{ }, {
     getData: {method:'GET', isArray: true}
   });
 });
 
 ddContent.factory('colsim', function($resource) {
-  return $resource("http://127.0.0.1:5000/colsim",{ }, {
+  return $resource("http://"+baseUrl+"/colsim",{ }, {
     getData: {method:'GET', isArray: false}
   });
 });
 
 ddContent.factory('colove', function($resource) {
-  return $resource("http://127.0.0.1:5000/colove",{ }, {
+  return $resource("http://"+baseUrl+"/colove",{ }, {
     getData: {method:'GET', isArray: false}
   });
 });
