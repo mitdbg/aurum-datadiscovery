@@ -209,7 +209,7 @@ def init(dataset_name, create_index=True):
     if create_index:
         print("Creating full-text search index")
         modeldb.create_index([('t_data', TEXT)])
-        modeldb.create_index("key", HASHED)
+        modeldb.create_index([("key", HASHED)])
 
 def main():
     db_name = "testtiny3"
