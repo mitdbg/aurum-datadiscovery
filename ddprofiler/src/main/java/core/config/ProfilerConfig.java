@@ -11,12 +11,12 @@ public class ProfilerConfig extends Config {
 	private static final ConfigDef config;
 	
 	public static final String EXECUTION_MODE = "execution.mode";
-	private static final String EXECUTION_MODE_DOC = "Online for server mode and Offline for one-shot";
+	private static final String EXECUTION_MODE_DOC = "(online) for server mode and (offline) for one-shot";
 	
 	
 	static{
 		config = new ConfigDef()
-				.define(EXECUTION_MODE, Type.STRING, "", Importance.HIGH, EXECUTION_MODE_DOC);
+				.define(EXECUTION_MODE, Type.INT, "", Importance.HIGH, EXECUTION_MODE_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {
