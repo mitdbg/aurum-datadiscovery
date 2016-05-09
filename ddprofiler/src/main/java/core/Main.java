@@ -3,6 +3,7 @@ package core;
 import java.util.List;
 import java.util.Properties;
 
+import comm.WebServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
@@ -25,8 +26,12 @@ public class Main {
 		int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
 		if(executionMode == ExecutionMode.ONLINE.mode) {
 			// Start infrastructure for REST server
+			WebServer ws = new WebServer(pc);
+			ws.init();
+			
 		}
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {
+			// Run with the configured input parameters and produce results to file (?)
 			
 		}
 		

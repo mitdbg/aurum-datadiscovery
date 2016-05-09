@@ -12,11 +12,16 @@ public class ProfilerConfig extends Config {
 	
 	public static final String EXECUTION_MODE = "execution.mode";
 	private static final String EXECUTION_MODE_DOC = "(online) for server mode and (offline) for one-shot";
+
+	public static final String WEB_SERVER_PORT = "web.server.port";
+	private static final String WEB_SERVER_PORT_DOC = "The port where web server listens";
 	
 	
 	static{
 		config = new ConfigDef()
-				.define(EXECUTION_MODE, Type.INT, "", Importance.HIGH, EXECUTION_MODE_DOC);
+				.define(EXECUTION_MODE, Type.INT, "", Importance.HIGH, EXECUTION_MODE_DOC)
+				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC);
+				
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {
