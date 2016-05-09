@@ -57,3 +57,11 @@ target/
 
 # vim swap files
 *.swp
+
+# java related stuff
+ddprofiler/.classpath
+ddprofiler/.gitignore
+ddprofiler/.gradle/
+ddprofiler/.project
+ddprofiler/.settings/
+
