@@ -6,7 +6,7 @@
  *
  */
 
-package conn;
+package inputoutput.conn;
 
 
 import java.io.BufferedReader;

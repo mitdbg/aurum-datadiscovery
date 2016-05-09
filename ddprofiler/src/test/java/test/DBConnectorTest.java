@@ -7,9 +7,9 @@ import java.util.Vector;
 
 import org.junit.Test;
 
-import conn.DBConnector;
 import inputoutput.Attribute;
 import inputoutput.Record;
+import inputoutput.conn.DBConnector;
 
 public class DBConnectorTest {
 

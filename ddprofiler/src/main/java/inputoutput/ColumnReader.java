@@ -16,8 +16,8 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import conn.Connector;
-import conn.FileConnector;
+import inputoutput.conn.Connector;
+import inputoutput.conn.FileConnector;
 
 public class ColumnReader implements Iterable<Record> {
 
