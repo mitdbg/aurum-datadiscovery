@@ -1,7 +1,5 @@
 package test;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -18,6 +16,7 @@ public class DBConnectorTest {
 	@Test
 	public void test() {
 		DBConnector conn = new DBConnector();
+		
 		conn.setDb_system_name("mysql");
 		conn.setConn_ip("localhost");
 		conn.setPort(3306);

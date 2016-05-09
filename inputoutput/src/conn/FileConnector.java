@@ -9,11 +9,6 @@
 package conn;
 
 
-import inputoutput.Attribute;
-import inputoutput.ColumnStore;
-import inputoutput.Record;
-import inputoutput.Table_Info;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -21,16 +16,20 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
 
+import inputoutput.Attribute;
+import inputoutput.Record;
+import inputoutput.Table_Info;
+
 public class FileConnector extends Connector{
 	private BufferedReader fileReader;
 	private long line_counter=0;
 	private Table_Info tb_info;
 
-	private char spliter;
-	public FileConnector(){this.spliter = ',';}	
+	private String spliter;
+	public FileConnector(){this.spliter = ",";}	
 	private Vector<Record> records;
 	
-	public FileConnector(String connectPath, String filename, char spliter) throws IOException{
+	public FileConnector(String connectPath, String filename, String spliter) throws IOException{
 		this.connectPath = connectPath;
 		this.filename = filename;
 		this.spliter = spliter;
@@ -59,8 +58,8 @@ public class FileConnector extends Connector{
 		int start_pos = 0;
 		boolean inside_qutation=false;
 		for(int i=0; i<attributes.length(); i++){
-
-			if(attributes.charAt(i) == this.spliter && inside_qutation == false){
+			
+			if(spliter.indexOf(attributes.charAt(i))>=0 && inside_qutation == false){
 				String store_str = attributes.substring(start_pos, i);
 				results.addElement(store_str.trim());				
 				start_pos = i+1;
@@ -113,6 +112,7 @@ public class FileConnector extends Connector{
 			line_counter++;
 			read_lines = true;
 			List<String> res = csv_spliter(line); 
+			//System.out.println(res.size());
 			Record rec = new Record();
 			rec.setTuples(res);
 			rec_list.add(rec);

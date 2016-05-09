@@ -11,7 +11,6 @@ package conn;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Vector;
 
 import inputoutput.Attribute;
 import inputoutput.Record;

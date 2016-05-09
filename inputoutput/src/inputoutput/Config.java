@@ -8,10 +8,10 @@
 
 package inputoutput;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,25 +75,41 @@ public class Config {
 	private String conn_filename;//for file name (csv) or table (in database)
 	private String conn_ip;//for database
 	private String port;//db connection port
+	private String spliter;
 	
 	public void load_config_file(String config_file) throws IOException{
-		BufferedReader bf_reader = new BufferedReader(new FileReader(config_file));
-		log.info("loading the configure file");
-		conn_type = bf_reader.readLine().trim();
+		Properties prop = new Properties();
+		InputStream input = null;
+		input = new FileInputStream(config_file);
+		prop.load(input);
+
+		conn_type = prop.getProperty("conn_type");
 		if(conn_type.equals("FILE")){
-			conn_path = bf_reader.readLine();
-			conn_filename = bf_reader.readLine();
+			conn_path = prop.getProperty("conn_path");
+			conn_filename = prop.getProperty("conn_filename");
+			System.out.println(prop.getProperty("spliter"));
+			spliter = prop.getProperty("spliter");
+			spliter = spliter.substring(1, spliter.length()-1);
+			//System.out.println("spliter:"+spliter);	
 		}else if(conn_type.equals("DB")){
-			conn_ip = bf_reader.readLine();
-			conn_path = bf_reader.readLine();
-			conn_filename = bf_reader.readLine();
-			db_system_name = bf_reader.readLine();
-			port = bf_reader.readLine();
-			user_name = bf_reader.readLine();
-			password = bf_reader.readLine();
+			conn_ip = prop.getProperty("conn_ip");
+			conn_path = prop.getProperty("conn_path");
+			conn_filename = prop.getProperty("conn_filename");
+			db_system_name = prop.getProperty("db_system_name");
+			port = prop.getProperty("port");
+			user_name = prop.getProperty("user_name");
+			password = prop.getProperty("password");
 		}else{
-			log.log(Level.SEVERE, "Incorrect configuration file with configure type",  conn_type);
+			log.log(Level.SEVERE,
+					"Incorrect configuration file with configure type",  conn_type);
+			throw new IOException();
 		}
+	}
+	public String getSpliter() {
+		return spliter;
+	}
+	public void setSpliter(String spliter) {
+		this.spliter = spliter;
 	}
 
 }

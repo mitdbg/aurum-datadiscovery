@@ -14,7 +14,7 @@ public class FileConnectorTest {
 
 	@Test
 	public void testGetAttributes() throws IOException {
-		FileConnector fc = new FileConnector(".\\src\\test\\", "NELL.08m.990.ontology.csv", '\t');
+		FileConnector fc = new FileConnector(".\\src\\test\\", "nell.simple.csv", " \t");
 		Vector<Record> rec_list = new Vector<Record>();
 		List<Attribute> attributes_of_table = fc.getAttributes();
 
