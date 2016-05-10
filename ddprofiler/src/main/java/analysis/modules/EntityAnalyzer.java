@@ -1,16 +1,21 @@
+/**
+ * @author Raul - raulcf@csail.mit.edu
+ *
+ */
 package analysis.modules;
 
 import java.util.List;
 
 import analysis.DataConsumer;
-import inputoutput.Record;
+import inputoutput.Value;
 
 public class EntityAnalyzer implements DataConsumer {
 
 	@Override
-	public boolean feedData(List<Record> records) {
+	public <T extends DataType> boolean feedData(List<Value<T>> records) {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 
 }

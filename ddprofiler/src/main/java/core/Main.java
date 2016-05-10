@@ -1,3 +1,7 @@
+/**
+ * @author Raul - raulcf@csail.mit.edu
+ *
+ */
 package core;
 
 import java.util.List;

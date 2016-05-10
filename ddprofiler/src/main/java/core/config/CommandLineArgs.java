@@ -1,3 +1,7 @@
+/**
+ * @author Raul - raulcf@csail.mit.edu
+ *
+ */
 package core.config;
 
 import joptsimple.OptionParser;

@@ -1,3 +1,7 @@
+/**
+ * @author Raul - raulcf@csail.mit.edu
+ *
+ */
 package comm;
 
 import org.eclipse.jetty.server.Server;

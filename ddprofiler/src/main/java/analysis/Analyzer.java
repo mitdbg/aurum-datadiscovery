@@ -1,3 +1,7 @@
+/**
+ * @author Raul - raulcf@csail.mit.edu
+ *
+ */
 package analysis;
 
 import java.util.Iterator;
@@ -15,11 +19,9 @@ import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
 import analysis.modules.Signature;
 import analysis.modules.SignatureAnalyzer;
-import inputoutput.Record;
+import inputoutput.Value;
 
 public class Analyzer implements Analysis, DataConsumer {
-
-	private static Analyzer instance;
 	
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
@@ -46,14 +48,11 @@ public class Analyzer implements Analysis, DataConsumer {
 	}
 	
 	public static Analyzer makeAnalyzer() {
-		if(instance == null) {
-			return new Analyzer();
-		}
-		return instance;
+		return new Analyzer();
 	}
 	
 	@Override
-	public boolean feedData(List<Record> records) {
+	public <T extends DataType> boolean feedData(List<Value<T>> records) {
 		
 		Iterator<DataConsumer> dcs = analyzers.iterator();
 		while(dcs.hasNext()) {

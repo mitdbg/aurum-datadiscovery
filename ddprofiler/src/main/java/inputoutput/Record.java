@@ -1,20 +1,20 @@
 /**
- * 
- */
-/**
  * @author Sibo Wang
  *
  */
 package inputoutput;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class Record {
+	
 	private List<String> tuples;
+	
 	public Record(){
-		tuples = new Vector<String>();
+		tuples = new ArrayList<String>();
 	}
+	
 	public void setTuples(List<String> tuples){
 		this.tuples = tuples;
 	}
@@ -23,6 +23,7 @@ public class Record {
 		return this.tuples;
 	}
 	
+	@Override
 	public String toString(){
 		String res="Record(";
 		for(int i=0; i<tuples.size(); i++){
