@@ -7,6 +7,6 @@ package inputoutput;
 
 public class Value<T> {
 
-	public T value;
+	public T v;
 	
 }
