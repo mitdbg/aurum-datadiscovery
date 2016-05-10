@@ -13,10 +13,11 @@ dependencies {
     compile 'net.sf.jopt-simple:jopt-simple:4.8'
     compile 'org.eclipse.jetty:jetty-server:9.2.9.v20150224'
     compile 'org.eclipse.jetty:jetty-servlet:9.2.9.v20150224'
-    compile "javax.ws.rs:jsr311-api:1.1.1"
-    compile 'com.sun.jersey:jersey-server:1.13'
-    compile 'com.sun.jersey:jersey-core:1.13'
-    compile 'com.sun.jersey:jersey-servlet:1.13'
+    compile 'javax.ws.rs:javax.ws.rs-api:2.0-m03'
+    compile 'org.glassfish.jersey.core:jersey-server:2.22.2'
+    compile 'org.glassfish.jersey.core:jersey-common:2.22.2'
+    compile 'org.glassfish.jersey.containers:jersey-container-jetty-servlet:2.22.2'
+
 
     testCompile 'junit:junit:4.11'
 }

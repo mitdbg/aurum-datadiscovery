@@ -28,13 +28,10 @@ public class Main {
 			// Start infrastructure for REST server
 			WebServer ws = new WebServer(pc);
 			ws.init();
-			
 		}
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {
 			// Run with the configured input parameters and produce results to file (?)
-			
 		}
-		
 	}
 	
 	public static void main(String args[]) {

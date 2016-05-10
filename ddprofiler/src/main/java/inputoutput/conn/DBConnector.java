@@ -87,7 +87,7 @@ public class DBConnector extends Connector {
 			new_row = true;
 			Record rec = new Record();
 			for(int i=0; i<this.tb_info.getTable_attributes().size(); i++){
-				String v1 = rs.getObject(i+1).toString();				
+				String v1 = rs.getObject(i+1).toString();
 				//System.out.println(v1);
 				rec.getTuples().add(v1);
 			}

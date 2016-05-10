@@ -19,7 +19,7 @@ public class ProfilerConfig extends Config {
 	
 	static{
 		config = new ConfigDef()
-				.define(EXECUTION_MODE, Type.INT, "", Importance.HIGH, EXECUTION_MODE_DOC)
+				.define(EXECUTION_MODE, Type.INT, 0, Importance.HIGH, EXECUTION_MODE_DOC)
 				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC);
 				
 	}

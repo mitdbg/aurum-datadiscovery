@@ -14,4 +14,19 @@ public class WebHandler {
     public String test() {
         return "Hello World";
     }
+    
+    @GET
+    @Path("new_data_source")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String newDataSource() {
+    	return "";
+    }
+    
+    @GET
+    @Path("new_attribute")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String newAttribute() {
+    	return "";
+    }
+    
 }
