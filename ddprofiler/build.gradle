@@ -20,6 +20,8 @@ dependencies {
     compile 'org.glassfish.jersey.containers:jersey-container-jetty-servlet:2.22.2'
     // stream summarizer
     compile 'com.clearspring.analytics:stream:2.9.2'
+    // opennlp
+    compile 'org.apache.opennlp:opennlp-tools:1.6.0'
 
 
     testCompile 'junit:junit:4.11'
