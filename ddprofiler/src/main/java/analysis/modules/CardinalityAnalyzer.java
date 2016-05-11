@@ -6,28 +6,60 @@ package analysis.modules;
 
 import java.util.List;
 
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import com.clearspring.analytics.stream.cardinality.ICardinality;
+
 import analysis.FloatDataConsumer;
 import analysis.IntegerDataConsumer;
 import analysis.TextualDataConsumer;
 
 public class CardinalityAnalyzer implements IntegerDataConsumer, FloatDataConsumer, TextualDataConsumer {
 
+	private long totalRecords;
+	private ICardinality ic;
+	
+	public CardinalityAnalyzer() {
+		ic = new HyperLogLogPlus(4, 16);
+	}
+	
+	public Cardinality getCardinality() {
+		long uniqueElements = ic.cardinality();
+		Cardinality c = new Cardinality(totalRecords, uniqueElements);
+		
+		return c;
+	}
+	
 	@Override
 	public boolean feedTextData(List<String> records) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		for(String r : records) {
+			totalRecords++;
+			ic.offer(r);
+		}
+		
+		return true;
 	}
 
 	@Override
 	public boolean feedFloatData(List<Float> records) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		for(float r : records) {
+			totalRecords++;
+			ic.offer(r);
+		}
+		
+		return true;
 	}
 
 	@Override
 	public boolean feedIntegerData(List<Integer> records) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		for(int r : records) {
+			totalRecords++;
+			ic.offer(r);
+		}
+		
+		return true;
 	}
 
 
