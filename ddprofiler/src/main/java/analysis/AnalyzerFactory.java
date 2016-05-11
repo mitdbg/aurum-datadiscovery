@@ -3,12 +3,12 @@ package analysis;
 
 public class AnalyzerFactory {
 
-	public NumericalAnalysis makeNumericalAnalyzer() {
+	public static NumericalAnalysis makeNumericalAnalyzer() {
 		NumericalAnalyzer na = NumericalAnalyzer.makeAnalyzer();
 		return na;
 	}
 	
-	public TextualAnalysis makeTextualAnalyzer() {
+	public static TextualAnalysis makeTextualAnalyzer() {
 		TextualAnalyzer ta = TextualAnalyzer.makeAnalyzer();
 		return ta;
 	}

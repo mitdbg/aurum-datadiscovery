@@ -7,7 +7,7 @@ package analysis.modules;
 public class DataType {
 	
 	public enum Type {
-		INT, DOUBLE, BYTE, STRING, CHAR, DATE;
+		INT, DOUBLE, BYTE, STRING, CHAR, DATE, FLOAT;
 	}
 	
 	private Type type;
