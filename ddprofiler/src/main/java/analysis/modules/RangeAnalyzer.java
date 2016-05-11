@@ -6,29 +6,32 @@ package analysis.modules;
 
 import java.util.List;
 
-import analysis.DataConsumer;
-import inputoutput.Value;
+import analysis.FloatDataConsumer;
+import analysis.IntegerDataConsumer;
 
-public class RangeAnalyzer implements DataConsumer {
+public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 
 	private int totalRecords;
 	private int max;
 	private int min;
 	private double avg;
-	
+
+
 	@Override
-	public <T extends DataType> boolean feedData(List<Value<T>> records) {
+	public boolean feedIntegerData(List<Integer> records) {
 		
-		DataType.Type t = ((DataType)records.get(0).v).getType();
-		
-		if(t == DataType.Type.INT) {
-			for(Value<T> value : records) {
-				totalRecords++;
+		for(int value : records) {
+			totalRecords++;
 				
-			}
 		}
 		
 		return true;
+	}
+	
+	@Override
+	public boolean feedFloatData(List<Float> records) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

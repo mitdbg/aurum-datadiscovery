@@ -4,7 +4,6 @@
  */
 package analysis;
 
-import java.util.Iterator;
 import java.util.List;
 
 import analysis.modules.Cardinality;
@@ -15,54 +14,42 @@ import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
 import analysis.modules.Overlap;
 import analysis.modules.OverlapAnalyzer;
-import analysis.modules.Range;
-import analysis.modules.RangeAnalyzer;
 import analysis.modules.Signature;
 import analysis.modules.SignatureAnalyzer;
-import inputoutput.Value;
 
-public class Analyzer implements Analysis, DataConsumer {
-	
+public class TextualAnalyzer implements TextualAnalysis, TextualDataConsumer {
+
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
-	private EntityAnalyzer ea;
 	private OverlapAnalyzer oa;
-	private RangeAnalyzer ra;
+	private EntityAnalyzer ea;
 	private SignatureAnalyzer sa;
 	
-	private Analyzer() {
-		// TODO: Get from properties which one of these we want to configure
+	private TextualAnalyzer() {
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		ea = new EntityAnalyzer();
 		oa = new OverlapAnalyzer();
-		ra = new RangeAnalyzer();
 		sa = new SignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ea);
 		analyzers.add(oa);
-		analyzers.add(ra);
+		analyzers.add(ea);
 		analyzers.add(sa);
 	}
 	
-	public static Analyzer makeAnalyzer() {
-		return new Analyzer();
+	public static TextualAnalyzer makeAnalyzer() {
+		return new TextualAnalyzer();
 	}
 	
 	@Override
-	public <T extends DataType> boolean feedData(List<Value<T>> records) {
-		
-		Iterator<DataConsumer> dcs = analyzers.iterator();
-		while(dcs.hasNext()) {
-			DataConsumer dc = dcs.next();
-			dc.feedData(records);
-		}
-		
+	public boolean feedTextData(List<String> records) {
+		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	@Override
 	public DataProfile getProfile() {
 		// TODO Auto-generated method stub
@@ -94,15 +81,9 @@ public class Analyzer implements Analysis, DataConsumer {
 	}
 
 	@Override
-	public Range getNumericalRange() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Entities getEntities() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 }

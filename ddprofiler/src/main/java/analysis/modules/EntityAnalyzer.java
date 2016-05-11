@@ -6,13 +6,13 @@ package analysis.modules;
 
 import java.util.List;
 
-import analysis.DataConsumer;
-import inputoutput.Value;
+import analysis.TextualDataConsumer;
 
-public class EntityAnalyzer implements DataConsumer {
+public class EntityAnalyzer implements TextualDataConsumer {
+
 
 	@Override
-	public <T extends DataType> boolean feedData(List<Value<T>> records) {
+	public boolean feedTextData(List<String> records) {
 		// TODO Auto-generated method stub
 		return false;
 	}
