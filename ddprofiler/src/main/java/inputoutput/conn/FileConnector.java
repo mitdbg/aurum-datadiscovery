@@ -99,7 +99,7 @@ public class FileConnector extends Connector{
 	}
 	
 	@Override
-	public boolean readRows(int num, List<Record> rec_list) throws IOException{
+	public boolean readRows(int num, List<Record> rec_list) throws IOException {
 		String line;
 		boolean read_lines = false;
 		/*for(String keys: col_store.getColumn_vectors().keySet()){

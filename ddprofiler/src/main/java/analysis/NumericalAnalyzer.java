@@ -11,8 +11,6 @@ import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.DataType;
 import analysis.modules.DataTypeAnalyzer;
-import analysis.modules.Overlap;
-import analysis.modules.OverlapAnalyzer;
 import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
 import analysis.modules.Signature;
@@ -23,7 +21,6 @@ public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
-	private OverlapAnalyzer oa;
 	private RangeAnalyzer ra;
 	private SignatureAnalyzer sa;
 	
@@ -31,12 +28,10 @@ public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer
 	private NumericalAnalyzer() {
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
-		oa = new OverlapAnalyzer();
 		ra = new RangeAnalyzer();
 		sa = new SignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
-		analyzers.add(oa);
 		analyzers.add(ra);
 		analyzers.add(sa);
 	}
@@ -83,12 +78,6 @@ public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer
 
 	@Override
 	public Signature getSignature() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Overlap getOverlap() {
 		// TODO Auto-generated method stub
 		return null;
 	}

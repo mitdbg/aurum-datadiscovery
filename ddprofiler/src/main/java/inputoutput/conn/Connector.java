@@ -1,7 +1,4 @@
 /**
- * 
- */
-/**
  * @author Sibo Wang
  *
  */
@@ -23,5 +20,6 @@ public abstract class Connector {
 	abstract void initConnector() throws IOException, ClassNotFoundException, SQLException;
 	abstract void destroyConnector();
 	public abstract List<Attribute> getAttributes() throws IOException, SQLException;
-	public abstract boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException ;
+	public abstract boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException;
+
 }
