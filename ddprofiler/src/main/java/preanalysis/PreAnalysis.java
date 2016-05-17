@@ -12,6 +12,6 @@ public interface PreAnalysis {
 
 	public void composeConnector(Connector c);
 	public DataQualityReport getQualityReport();
-	public List<Attribute> estimateDataType();
+	public List<Attribute> getEstimatedDataTypes();
 	
 }

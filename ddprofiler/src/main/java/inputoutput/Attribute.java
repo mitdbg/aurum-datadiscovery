@@ -1,43 +1,58 @@
+/**
+ * @author Sibo Wang
+ * @author ra-mit (edits)
+ */
 package inputoutput;
 
 public class Attribute {
-	private String column_name;
-	private String column_type;
-	private int column_size;
+	
+	public enum AttributeType {
+		INT, FLOAT, STRING, UNKNOWN;
+	}
+	
+	private String columnName;
+	private AttributeType columnType;
+	private int columnSize;
 
 	public Attribute(String column_name){
-		this.column_name = column_name;
-		this.column_type = "UNKNOWN";
-		this.column_size = -1;
+		this.columnName = column_name;
+		this.columnType = AttributeType.UNKNOWN;
+		this.columnSize = -1;
 	}
 	
 	public Attribute(String column_name, String column_type, int column_size){
-		this.column_name = column_name;
-		this.column_type = column_type;
-		this.column_size = column_size;
+		this.columnName = column_name;
+		// TODO: swith(column_type) and transform string into enum
+		this.columnType = AttributeType.UNKNOWN;
+		this.columnSize = column_size;
 	}
 	
-	public String getColumn_name() {
-		return column_name;
+	public String getColumnName() {
+		return columnName;
 	}
-	public void setColumn_name(String column_name) {
-		this.column_name = column_name;
+	
+	public void setColumnName(String column_name) {
+		this.columnName = column_name;
 	}
-	public String getColumn_type() {
-		return column_type;
+	
+	public AttributeType getColumnType() {
+		return columnType;
 	}
-	public void setColumn_type(String column_type) {
-		this.column_type = column_type;
+	
+	public void setColumnType(AttributeType column_type) {
+		this.columnType = column_type;
 	}
-	public int getColumn_size() {
-		return column_size;
+	
+	public int getColumnSize() {
+		return columnSize;
 	}
-	public void setColumn_size(int column_size) {
-		this.column_size = column_size;
+	
+	public void setColumnSize(int column_size) {
+		this.columnSize = column_size;
 	}
 	
 	public String toString(){
-		return "column name: " + this.column_name + " column type: " + this.column_type 
-				+ " column size: "+ this.column_size;
+		return "column name: " + this.columnName + " column type: " + this.columnType 
+				+ " column size: "+ this.columnSize;
 	}
 }

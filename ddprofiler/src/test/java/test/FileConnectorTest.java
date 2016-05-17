@@ -34,7 +34,7 @@ public class FileConnectorTest {
 		while (fc.readRows(numRecords, rec_list)) {
 			for (int j = 0; j < rec_list.size(); j++) {
 				for (int i = 0; i < attributes_of_table.size(); i++) {
-					System.out.println(attributes_of_table.get(i).getColumn_name() + ":" + rec_list.get(j).getTuples().get(i));
+					System.out.println(attributes_of_table.get(i).getColumnName() + ":" + rec_list.get(j).getTuples().get(i));
 				}
 			}
 			rec_list = new Vector<Record>();
