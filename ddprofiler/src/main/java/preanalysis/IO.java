@@ -10,6 +10,6 @@ import inputoutput.Attribute;
 
 public interface IO {
 
-	public Map<Attribute, List<String>> readRows(int num);
+	public Map<Attribute, List<Object>> readRows(int num);
 	
 }

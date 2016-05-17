@@ -5,6 +5,8 @@ package preanalysis;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,7 +26,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	 */
 	
 	@Override
-	public Map<Attribute, List<String>> readRows(int num) {
+	public Map<Attribute, List<Object>> readRows(int num) {
 		Map<Attribute, List<String>> data = null;
 		try {
 			data = c.readRows(num);
@@ -33,13 +35,37 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			e.printStackTrace();
 		}
 		
+		// Calculate data types if not known yet
 		if(! knownDataTypes) {
 			calculateDataTypes(data);
 		}
 		
+		Map<Attribute, List<Object>> castData = new HashMap<>();
+		// Cast map to the type
+		for(Entry<Attribute, List<String>> e : data.entrySet()) {
+			List<Object> castValues = new ArrayList<>();
+			AttributeType at = e.getKey().getColumnType();
+			if(at.equals(AttributeType.FLOAT)) {
+				for(String s : e.getValue()) {
+					float f = 0f;
+					try {
+						f = Float.valueOf(s).floatValue();
+					}
+					catch (NumberFormatException nfe) {
+						continue; // SKIP data that does not parse correctly
+					}
+					castValues.add(f);
+				}
+			}
+			else if (at.equals(AttributeType.STRING)) {
+				e.getValue().forEach(s -> castValues.add(s));
+			}
+			castData.put(e.getKey(), castValues);
+		}
+		
 		// TODO: update quality report
 		
-		return data;
+		return castData;
 	}
 	
 	private void calculateDataTypes(Map<Attribute, List<String>> data) {

@@ -2,10 +2,13 @@ package test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.junit.Test;
 
 import inputoutput.Attribute;
+import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
 
@@ -29,7 +32,27 @@ public class PreAnalyzerTest {
 		List<Attribute> attrs = pa.getEstimatedDataTypes();
 		for(Attribute a : attrs) {
 			System.out.println(a);
-			
+		}
+		
+		Map<Attribute, List<Object>> data = pa.readRows(numRecords);
+		for(Entry<Attribute, List<Object>> a : data.entrySet()) {
+			System.out.println();
+			System.out.println();
+			System.out.println();
+			System.out.println("NAME: " + a.getKey().getColumnName());
+			System.out.println("TYPE: " + a.getKey().getColumnType());
+			if(a.getKey().getColumnType().equals(AttributeType.FLOAT)) {
+				List<Object> objs = a.getValue();
+				for(Object f : objs) {
+					System.out.println((float)f);
+				}
+			}
+			if(a.getKey().getColumnType().equals(AttributeType.STRING)) {
+				List<Object> objs = a.getValue();
+				for(Object f : objs) {
+					System.out.println(f);
+				}
+			}
 		}
 	}
 
