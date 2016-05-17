@@ -1,8 +1,6 @@
 /**
- * 
- */
-/**
  * @author Sibo Wang
+ * @author ra-mit (edits)
  *
  */
 
@@ -13,14 +11,19 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.Table_Info;
 
-public class FileConnector extends Connector{
+public class FileConnector extends Connector {
+	
 	private BufferedReader fileReader;
 	private long line_counter=0;
 	private Table_Info tb_info;
@@ -102,12 +105,7 @@ public class FileConnector extends Connector{
 	public boolean readRows(int num, List<Record> rec_list) throws IOException {
 		String line;
 		boolean read_lines = false;
-		/*for(String keys: col_store.getColumn_vectors().keySet()){
-			col_store.getColumn_vectors().get(keys).clear();
-		}*/
-		 
-		
-		
+
 		for(int i=0; i<num && (line = fileReader.readLine())!=null; i++ ){
 			line_counter++;
 			read_lines = true;
@@ -122,6 +120,40 @@ public class FileConnector extends Connector{
 			}*/
 		}
 		return read_lines;
+	}
+
+
+	/**
+	 * Returns a map with Attribute of table as key and a list of num values as value.
+	 * Map is created internally as it must preserve insertion order
+	 * @param num
+	 * @return
+	 * @throws IOException
+	 * @throws SQLException
+	 */
+	@Override
+	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
+		
+		Map<Attribute, List<String>> data = new LinkedHashMap<>();
+		// Make sure attrs is populated, if not, populate it here
+		if(data.isEmpty()) {
+			List<Attribute> attrs = this.getAttributes();
+			attrs.forEach(a -> data.put(a, new ArrayList<>()));
+		}
+		
+		// Read data and insert in order
+		List<Record> recs = new ArrayList<>();
+		this.readRows(num, recs);
+		for(Record r : recs) {
+			List<String> values = r.getTuples();
+			int currentIdx = 0;
+			for(List<String> vals : data.values()) { // ordered iteration
+				vals.add(values.get(currentIdx));
+				currentIdx++;
+			}
+		}
+		
+		return data;
 	}
 
 }

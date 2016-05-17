@@ -1,7 +1,10 @@
 package test;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import org.junit.Test;
@@ -36,5 +39,45 @@ public class FileConnectorTest {
 			}
 			rec_list = new Vector<Record>();
 		}
+	}
+	
+	@Test
+	public void testGetAttrValueMap() throws IOException {
+		
+		FileConnector fc = new FileConnector(path, filename, separator);
+		
+		int numRecords = 9;
+		Map<Attribute, List<String>> data = null;
+		try {
+			data = fc.readRows(numRecords);
+		}
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for(Entry<Attribute, List<String>> e : data.entrySet()) {
+			System.out.println(e.getKey());
+			e.getValue().forEach(string -> System.out.print(string + ", "));
+			System.out.println();
+		}
+		for(Entry<Attribute, List<String>> e : data.entrySet()) {
+			System.out.println(e.getKey());
+			System.out.println("numValues: " + e.getValue().size());
+		}
+		
+		try {
+			data = fc.readRows(numRecords);
+		} 
+		catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		for(Entry<Attribute, List<String>> e : data.entrySet()) {
+			System.out.println(e.getKey());
+			e.getValue().forEach(string -> System.out.print(string + ", "));
+			System.out.println();
+		}
+		
 	}
 }
