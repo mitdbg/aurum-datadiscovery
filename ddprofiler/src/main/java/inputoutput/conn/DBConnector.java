@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
-import inputoutput.Table_Info;
+import inputoutput.TableInfo;
 
 public class DBConnector extends Connector {
 
@@ -35,11 +35,11 @@ public class DBConnector extends Connector {
 	private String conn_ip;// for database
 	private int port;// db connection port
 	Connection conn = null;
-	private Table_Info tb_info;
+	private TableInfo tb_info;
 	private Statement stat;	
 	private long curr_offset=0;
 	public DBConnector(){
-		this.tb_info = new Table_Info();
+		this.tb_info = new TableInfo();
 	}
 	
 	public DBConnector(String db_system_name, String conn_ip, int port,
@@ -51,7 +51,7 @@ public class DBConnector extends Connector {
 		this.filename = filename;
 		this.user_name =user_name;
 		this.password = password;
-		this.tb_info = new Table_Info();
+		this.tb_info = new TableInfo();
 	}
 
 
@@ -63,7 +63,7 @@ public class DBConnector extends Connector {
 					user_name, password);
 
 			List<Attribute> attrs = this.getAttributes();
-			this.tb_info.setTable_attributes(attrs);
+			this.tb_info.setTableAttributes(attrs);
 
 		} catch (ClassNotFoundException e) {
 			log.log(Level.SEVERE, "DB connection driver not found");
@@ -87,7 +87,7 @@ public class DBConnector extends Connector {
 		while(rs.next()){
 			new_row = true;
 			Record rec = new Record();
-			for(int i=0; i<this.tb_info.getTable_attributes().size(); i++){
+			for(int i=0; i<this.tb_info.getTableAttributes().size(); i++){
 				String v1 = rs.getObject(i+1).toString();
 				//System.out.println(v1);
 				rec.getTuples().add(v1);
@@ -185,11 +185,11 @@ public class DBConnector extends Connector {
 		this.port = port;
 	}
 
-	public Table_Info getTb_info() {
+	public TableInfo getTb_info() {
 		return tb_info;
 	}
 
-	public void setTb_info(Table_Info tb_info) {
+	public void setTb_info(TableInfo tb_info) {
 		this.tb_info = tb_info;
 	}
 

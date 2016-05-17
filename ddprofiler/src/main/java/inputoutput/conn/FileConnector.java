@@ -6,7 +6,6 @@
 
 package inputoutput.conn;
 
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -20,28 +19,30 @@ import java.util.Vector;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
-import inputoutput.Table_Info;
+import inputoutput.TableInfo;
 
 public class FileConnector extends Connector {
 	
 	private BufferedReader fileReader;
-	private long line_counter=0;
-	private Table_Info tb_info;
+	private long lineCounter = 0;
+	private TableInfo tableInfo;
 
-	private String spliter;
-	public FileConnector(){this.spliter = ",";}	
+	private String lineSplitter;
 	private Vector<Record> records;
+	
+	public FileConnector() {
+		this.lineSplitter = ",";
+	}	
 	
 	public FileConnector(String connectPath, String filename, String spliter) throws IOException{
 		this.connectPath = connectPath;
 		this.filename = filename;
-		this.spliter = spliter;
-		this.tb_info = new Table_Info();
+		this.lineSplitter = spliter;
+		this.tableInfo = new TableInfo();
 		initConnector();
 		List<Attribute> attrs = this.getAttributes();
-		tb_info.setTable_attributes(attrs);
+		tableInfo.setTableAttributes(attrs);
 	}
-	
 	
 	@Override
 	void initConnector() throws FileNotFoundException {
@@ -62,7 +63,7 @@ public class FileConnector extends Connector {
 		boolean inside_qutation=false;
 		for(int i=0; i<attributes.length(); i++){
 			
-			if(spliter.indexOf(attributes.charAt(i))>=0 && inside_qutation == false){
+			if(lineSplitter.indexOf(attributes.charAt(i))>=0 && inside_qutation == false){
 				String store_str = attributes.substring(start_pos, i);
 				results.addElement(store_str.trim());				
 				start_pos = i+1;
@@ -77,16 +78,16 @@ public class FileConnector extends Connector {
 		return results;
 	}
 	
-	public List<Attribute> getAttributes() throws IOException{
+	public List<Attribute> getAttributes() throws IOException {
 		
 		//assume that the first row is the attributes;
 		
-		if(line_counter!=0){
+		if(lineCounter!=0){
 			//wrong usage of the getAttributes function
-			return tb_info.getTable_attributes();
+			return tableInfo.getTableAttributes();
 		}
 		String attributes = fileReader.readLine();
-		line_counter++;
+		lineCounter++;
 		List<String> attr_name_list =  csv_spliter(attributes);
 		Vector<Attribute> attr_list = new Vector<Attribute>();
 		for(int i=0; i< attr_name_list.size(); i++){
@@ -107,7 +108,7 @@ public class FileConnector extends Connector {
 		boolean read_lines = false;
 
 		for(int i=0; i<num && (line = fileReader.readLine())!=null; i++ ){
-			line_counter++;
+			lineCounter++;
 			read_lines = true;
 			List<String> res = csv_spliter(line); 
 			//System.out.println(res.size());
@@ -137,7 +138,7 @@ public class FileConnector extends Connector {
 		Map<Attribute, List<String>> data = new LinkedHashMap<>();
 		// Make sure attrs is populated, if not, populate it here
 		if(data.isEmpty()) {
-			List<Attribute> attrs = this.getAttributes();
+			List<Attribute> attrs = this.tableInfo.getTableAttributes();
 			attrs.forEach(a -> data.put(a, new ArrayList<>()));
 		}
 		
