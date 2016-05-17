@@ -60,5 +60,18 @@ public class Range {
 	public double getAvg() {
 		return avg;
 	}
+	
+	@Override
+	public String toString() {
+		if(type.equals(Type.INT)) {
+			return "Max: "+max+" Min:"+min+" Avg: "+avg;
+		}
+		else if(type.equals(Type.FLOAT)) {
+			return "Max: "+maxF+" Min:"+minF+" Avg: "+avg;
+		}
+		else {
+			return "Unknown type";
+		}
+	}
 
 }

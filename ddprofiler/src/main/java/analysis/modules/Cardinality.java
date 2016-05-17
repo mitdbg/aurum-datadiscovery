@@ -21,5 +21,10 @@ public class Cardinality {
 	public long getUniqueElements() {
 		return uniqueElements;
 	}
+	
+	@Override
+	public String toString() {
+		return uniqueElements+"/"+totalRecords;
+	}
 
 }

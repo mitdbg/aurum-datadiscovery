@@ -12,6 +12,8 @@ import analysis.TextualDataConsumer;
 
 public class SignatureAnalyzer implements IntegerDataConsumer, FloatDataConsumer, TextualDataConsumer {
 
+	private Signature signature = new Signature();
+	
 	@Override
 	public boolean feedTextData(List<String> records) {
 		// TODO Auto-generated method stub
@@ -30,5 +32,8 @@ public class SignatureAnalyzer implements IntegerDataConsumer, FloatDataConsumer
 		return false;
 	}
 
+	public Signature getSignature() {
+		return signature;
+	}
 
 }

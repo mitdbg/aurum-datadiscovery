@@ -4,6 +4,8 @@
  */
 package analysis;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import analysis.modules.Cardinality;
@@ -15,7 +17,7 @@ import analysis.modules.EntityAnalyzer;
 import analysis.modules.Signature;
 import analysis.modules.SignatureAnalyzer;
 
-public class TextualAnalyzer implements TextualAnalysis, TextualDataConsumer {
+public class TextualAnalyzer implements TextualAnalysis {
 
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
@@ -24,6 +26,7 @@ public class TextualAnalyzer implements TextualAnalysis, TextualDataConsumer {
 	private SignatureAnalyzer sa;
 	
 	private TextualAnalyzer() {
+		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		ea = new EntityAnalyzer();
@@ -41,7 +44,12 @@ public class TextualAnalyzer implements TextualAnalysis, TextualDataConsumer {
 	
 	@Override
 	public boolean feedTextData(List<String> records) {
-		// TODO Auto-generated method stub
+		Iterator<DataConsumer> dcs = analyzers.iterator();
+		while(dcs.hasNext()) {
+			TextualDataConsumer dc = (TextualDataConsumer) dcs.next();
+			dc.feedTextData(records);
+		}
+		
 		return false;
 	}
 	
@@ -59,20 +67,17 @@ public class TextualAnalyzer implements TextualAnalysis, TextualDataConsumer {
 
 	@Override
 	public Signature getSignature() {
-		// TODO Auto-generated method stub
-		return null;
+		return sa.getSignature();
 	}
 
 	@Override
 	public Cardinality getCardinality() {
-		// TODO Auto-generated method stub
-		return null;
+		return ca.getCardinality();
 	}
 
 	@Override
 	public Entities getEntities() {
-		// TODO Auto-generated method stub
-		return null;
+		return ea.getEntities();
 	}
 
 }

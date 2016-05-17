@@ -25,7 +25,6 @@ public class CardinalityAnalyzer implements IntegerDataConsumer, FloatDataConsum
 	public Cardinality getCardinality() {
 		long uniqueElements = ic.cardinality();
 		Cardinality c = new Cardinality(totalRecords, uniqueElements);
-		
 		return c;
 	}
 	

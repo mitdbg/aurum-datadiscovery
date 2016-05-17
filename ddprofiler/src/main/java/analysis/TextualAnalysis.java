@@ -9,7 +9,7 @@ import analysis.modules.Entities;
  * @author Raul - raulcf@csail.mit.edu
  *
  */
-public interface TextualAnalysis extends Analysis {
+public interface TextualAnalysis extends Analysis,  TextualDataConsumer {
 
 	public Entities getEntities();
 }

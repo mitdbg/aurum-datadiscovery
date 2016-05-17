@@ -64,6 +64,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		}
 		
 		// TODO: update quality report
+		// TODO: % of different data types, null values, values that look like NULL e.g. X, "", etc
 		
 		return castData;
 	}

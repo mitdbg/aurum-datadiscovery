@@ -17,5 +17,19 @@ public class Entities {
 	public Set<String> getEntities() {
 		return entities;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append("[");
+		for(String s : entities) {
+			sb.append(s);
+			sb.append(" - ");
+		}
+		sb.append("]");
+		
+		return sb.toString();
+	}
 
 }

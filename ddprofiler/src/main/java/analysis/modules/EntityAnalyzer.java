@@ -34,10 +34,11 @@ public class EntityAnalyzer implements TextualDataConsumer {
 
 	@Override
 	public boolean feedTextData(List<String> records) {
-		
 		// TODO: preprocessing to records?
-		
-		String[] sentences = (String[]) records.toArray();
+		String[] sentences = new String[records.size()];
+		for(int i = 0; i < sentences.length; i++) {
+			sentences[i] = records.get(i);
+		}
 		Span nameSpans[] = nameFinder.find(sentences);
 		
 		for(Span s : nameSpans) {
@@ -73,5 +74,4 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		}
 		return model;
 	}
-
 }

@@ -4,6 +4,7 @@
  */
 package analysis;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,7 +17,7 @@ import analysis.modules.RangeAnalyzer;
 import analysis.modules.Signature;
 import analysis.modules.SignatureAnalyzer;
 
-public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer, FloatDataConsumer {
+public class NumericalAnalyzer implements NumericalAnalysis {
 	
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
@@ -26,6 +27,7 @@ public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer
 	
 	
 	private NumericalAnalyzer() {
+		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		ra = new RangeAnalyzer();
@@ -78,20 +80,17 @@ public class NumericalAnalyzer implements NumericalAnalysis, IntegerDataConsumer
 
 	@Override
 	public Signature getSignature() {
-		// TODO Auto-generated method stub
-		return null;
+		return sa.getSignature();
 	}
 
 	@Override
 	public Cardinality getCardinality() {
-		// TODO Auto-generated method stub
-		return null;
+		return ca.getCardinality();
 	}
 
 	@Override
 	public Range getNumericalRange() {
-		// TODO Auto-generated method stub
-		return null;
+		return ra.getFloatRange();
 	}
 	
 }
