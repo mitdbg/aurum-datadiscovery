@@ -27,10 +27,13 @@ public class Main {
 	}
 
 	public void startProfiler(ProfilerConfig pc) {
+		
+		Conductor c = new Conductor(pc);
+		
 		int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
 		if(executionMode == ExecutionMode.ONLINE.mode) {
 			// Start infrastructure for REST server
-			WebServer ws = new WebServer(pc);
+			WebServer ws = new WebServer(pc, c);
 			ws.init();
 		}
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {

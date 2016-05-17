@@ -4,34 +4,43 @@
  */
 package comm;
 
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.glassfish.jersey.servlet.ServletContainer;
 
+import core.Conductor;
 import core.config.ProfilerConfig;
 
 public class WebServer {
 
 	private Server server;
-	private ServletContextHandler context;
-	private ServletHolder jerseyServlet;
 	
-	public WebServer(ProfilerConfig pc) {
-		context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
- 
-        server = new Server(pc.getInt(ProfilerConfig.WEB_SERVER_PORT));
-        server.setHandler(context);
- 
-        jerseyServlet = context.addServlet(ServletContainer.class, "/*");
-        jerseyServlet.setInitOrder(0);
- 
-        // Tells the Jersey Servlet which REST service/class to load.
-        jerseyServlet.setInitParameter("jersey.config.server.provider.classnames", WebHandler.class.getCanonicalName());
- 
+	public WebServer(ProfilerConfig pc, Conductor c) {
+		silenceJettyLogger();
+		WebHandler handler = new WebHandler(c);
+		this.server = new Server(pc.getInt(ProfilerConfig.WEB_SERVER_PORT));
+
+        // Configure servletHandler
+        ServletHandler sHandler = new ServletHandler();
+        ServletHolder sh = new ServletHolder(handler);
+        sHandler.addServletWithMapping(sh, "/dd");
+        
+        // Configure all handlers
+        HandlerList handlers = new HandlerList();
+        handlers.setHandlers(new Handler[] { sHandler, new DefaultHandler() });
+        server.setHandler(handlers);
+        
+        // Configure connector
+        ServerConnector http = new ServerConnector(server);
+        http.setIdleTimeout(30000);
+        server.addConnector(http);
 	}
-	
+
 	public void init() {
 		try {
             server.start();
@@ -54,6 +63,15 @@ public class WebServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private void silenceJettyLogger() {
+		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("org.eclipse.jetty");
+		if (!(logger instanceof ch.qos.logback.classic.Logger)) {
+		    return;
+		}
+		ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
+		logbackLogger.setLevel(ch.qos.logback.classic.Level.INFO);
 	}
 	
 }

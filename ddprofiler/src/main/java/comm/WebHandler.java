@@ -4,40 +4,89 @@
  */
 package comm;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Path("/dd")
-public class WebHandler {
+import core.Conductor;
+
+public class WebHandler extends HttpServlet {
+	
+	private static final long serialVersionUID = 1L;
+	final private static Logger LOG = LoggerFactory.getLogger(WebHandler.class);
 	
 	// Jackson (JSON) serializer
 	private ObjectMapper om = new ObjectMapper();
-    
-    @GET
-    @Path("init_store")
-    public void initStore() {
+	private Conductor c;
+	
+	public WebHandler(Conductor c) {
+		this.c = c;
+	}
+	
+	@Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// Get parameter map
+		Map<String, String[]> parameters = request.getParameterMap();
+		String[] actionIdValues = parameters.get("actionid");
+		String actionId = actionIdValues[0];
+		String result = handleAction(actionId, parameters);
+		response.setContentType("text");
+		response.getWriter().println(result);
+    }
+	
+	private String handleAction(String action, Map<String, String[]> parameters) {
+		String response = null;
+		
+		switch(action){
+		case "initStore":
+			initStore();
+			return "OK";
+		case "a":
+			
+		case "b":
+			
+		case "c":
+			
+		case "test":
+			test();
+			return "OK";
+		case "test2":
+			String[] a = parameters.get("a");
+			String[] b = parameters.get("b");
+			String[] c = parameters.get("c");
+			response = test2(a[0], b[0], c[0]);
+			return response;
+		case "test3":
+			a = parameters.get("a");
+			b = parameters.get("b");
+			response = test3(a[0],b[0]);
+			return response;
+		default:
+				
+		}
+		return "FAIL";
+	}
+	
+    public boolean initStore() {
     	// TODO: initialize connection to store
+    	return true;
     }
     
-    @GET
-    @Path("new_data_source")
-    @Produces(MediaType.TEXT_PLAIN)
     public String newDataSource() {
     	
     	return "";
     }
     
-    @GET
-    @Path("new_attribute")
-    @Produces(MediaType.TEXT_PLAIN)
     public String newAttribute() {
     	
     	return "";
@@ -46,24 +95,15 @@ public class WebHandler {
     
     // Embedded Testing functions
     
-    @GET
-    @Path("test")
-    @Produces(MediaType.TEXT_PLAIN)
     public String test() {
         return "Hello World";
     }
     
-    @GET
-    @Path("test2")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String test2(@QueryParam("a") String a, @QueryParam("b") String b, @QueryParam("c") String c, @Context UriInfo uriInfo) {
+    public String test2(String a, String b, String c) {
 		return a + "-" + b + "-" + c;
     }
     
-    @GET
-    @Path("test3")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String test3(@QueryParam("a") String a, @QueryParam("b") String b) {
+    public String test3(String a, String b) {
     	Test t = new Test(a, b);
     	String response = "";
     	try {
