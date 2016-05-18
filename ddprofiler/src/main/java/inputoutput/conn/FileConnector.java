@@ -144,7 +144,10 @@ public class FileConnector extends Connector {
 		
 		// Read data and insert in order
 		List<Record> recs = new ArrayList<>();
-		this.readRows(num, recs);
+		boolean readData = this.readRows(num, recs);
+		if(!readData) {
+			return null;
+		}
 		for(Record r : recs) {
 			List<String> values = r.getTuples();
 			int currentIdx = 0;

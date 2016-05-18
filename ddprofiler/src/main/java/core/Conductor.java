@@ -11,6 +11,8 @@ import core.config.ProfilerConfig;
 
 public class Conductor {
 
+	private ProfilerConfig pc;
+	
 	private BlockingQueue<WorkerTask> taskQueue;
 	private ExecutorService pool;
 	private List<Future<WorkerTaskResult>> resultQueue;
@@ -19,6 +21,7 @@ public class Conductor {
 	private Consumer runnable;
 	
 	public Conductor(ProfilerConfig pc) {
+		this.pc = pc;
 		taskQueue = new LinkedBlockingQueue<>();
 		pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
 		runnable = new Consumer();
@@ -54,7 +57,7 @@ public class Conductor {
 					e.printStackTrace();
 				}
 				// Create worker to handle the task and submit to the pool
-				Worker w = new Worker(wt);
+				Worker w = new Worker(wt, pc);
 				Future<WorkerTaskResult> future = pool.submit(w);
 				
 				// Store future
