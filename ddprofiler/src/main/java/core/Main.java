@@ -38,6 +38,7 @@ public class Main {
 		}
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {
 			// Run with the configured input parameters and produce results to file (?)
+			// TODO: this will be great for quick testing
 		}
 	}
 	

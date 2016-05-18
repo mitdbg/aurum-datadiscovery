@@ -34,7 +34,7 @@ public class FileConnector extends Connector {
 		this.lineSplitter = ",";
 	}	
 	
-	public FileConnector(String connectPath, String filename, String spliter) throws IOException{
+	public FileConnector(String connectPath, String filename, String spliter) throws IOException {
 		this.connectPath = connectPath;
 		this.filename = filename;
 		this.lineSplitter = spliter;

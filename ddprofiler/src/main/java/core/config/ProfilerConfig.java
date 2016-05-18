@@ -19,13 +19,16 @@ public class ProfilerConfig extends Config {
 
 	public static final String WEB_SERVER_PORT = "web.server.port";
 	private static final String WEB_SERVER_PORT_DOC = "The port where web server listens";
+
+	public static final String NUM_POOL_THREADS = "num.pool.threads";
+	private static final String NUM_POOL_THREADS_DOC = "Number of threads in the worker pool";
 	
 	
 	static{
 		config = new ConfigDef()
 				.define(EXECUTION_MODE, Type.INT, 0, Importance.HIGH, EXECUTION_MODE_DOC)
-				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC);
-				
+				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC)
+				.define(NUM_POOL_THREADS, Type.INT, 4, Importance.LOW, NUM_POOL_THREADS_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

@@ -47,15 +47,19 @@ public class WebHandler extends HttpServlet {
 	private String handleAction(String action, Map<String, String[]> parameters) {
 		String response = null;
 		
-		switch(action){
+		switch(action) {
 		case "initStore":
-			initStore();
+			String[] dbname = parameters.get("dbname");
+			initStore(dbname[0]);
 			return "OK";
-		case "a":
+		case "processDataSource":
+			String[] type = parameters.get("type");
+			String[] conn = parameters.get("path");
+			String[] name = parameters.get("source");
+			response = processDataSource(type[0], conn[0], name[0]);
+			return response;
 			
-		case "b":
-			
-		case "c":
+			// test functions
 			
 		case "test":
 			test();
@@ -77,23 +81,20 @@ public class WebHandler extends HttpServlet {
 		return "FAIL";
 	}
 	
-    public boolean initStore() {
+    private String processDataSource(String type, String path, String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean initStore(String dbname) {
     	// TODO: initialize connection to store
     	return true;
     }
     
-    public String newDataSource() {
-    	
-    	return "";
-    }
-    
-    public String newAttribute() {
-    	
-    	return "";
-    }
-    
-    
-    // Embedded Testing functions
+    /**
+     *  Embedded Testing functions
+     */
+	
     
     public String test() {
         return "Hello World";
