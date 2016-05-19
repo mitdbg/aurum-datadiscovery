@@ -37,8 +37,9 @@ public class DBConnector extends Connector {
 	Connection conn = null;
 	private TableInfo tb_info;
 	private Statement stat;	
-	private long curr_offset=0;
-	public DBConnector(){
+	private long curr_offset = 0;
+	
+	public DBConnector() {
 		this.tb_info = new TableInfo();
 	}
 	
@@ -48,7 +49,7 @@ public class DBConnector extends Connector {
 		this.conn_ip = conn_ip;
 		this.port = port;
 		this.connectPath = connectPath;
-		this.filename = filename;
+		this.sourceName = filename;
 		this.user_name =user_name;
 		this.password = password;
 		this.tb_info = new TableInfo();
@@ -78,7 +79,7 @@ public class DBConnector extends Connector {
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		stat = conn.createStatement();
-		String sql = "select * from "+filename+ " LIMIT "+ curr_offset+","+num;
+		String sql = "select * from "+sourceName+ " LIMIT "+ curr_offset+","+num;
 		//String sql = "select * from "+filename+ " LIMIT "+ num;
 
 		System.out.println(sql);
@@ -114,7 +115,7 @@ public class DBConnector extends Connector {
 	@Override
 	public List<Attribute> getAttributes() throws SQLException {
 		DatabaseMetaData metadata = conn.getMetaData();
-		ResultSet resultSet = metadata.getColumns(null, null, filename, null);
+		ResultSet resultSet = metadata.getColumns(null, null, sourceName, null);
 		Vector<Attribute> attrs  = new Vector<Attribute>();
 		while (resultSet.next()) {
 			String name = resultSet.getString("COLUMN_NAME");
@@ -138,11 +139,11 @@ public class DBConnector extends Connector {
 	}
 	
 	public String getFilename(){
-		return this.filename;
+		return this.sourceName;
 	}
 	
 	public void setFilename(String filename){
-		this.filename = filename;
+		this.sourceName = filename;
 	}
 	
 	public String getDb_system_name() {
@@ -205,5 +206,10 @@ public class DBConnector extends Connector {
 	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String getSourceName() {
+		return this.db_system_name;
 	}
 }

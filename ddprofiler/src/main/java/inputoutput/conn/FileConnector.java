@@ -36,7 +36,7 @@ public class FileConnector extends Connector {
 	
 	public FileConnector(String connectPath, String filename, String spliter) throws IOException {
 		this.connectPath = connectPath;
-		this.filename = filename;
+		this.sourceName = filename;
 		this.lineSplitter = spliter;
 		this.tableInfo = new TableInfo();
 		initConnector();
@@ -45,8 +45,13 @@ public class FileConnector extends Connector {
 	}
 	
 	@Override
+	public String getSourceName() {
+		return this.sourceName;
+	}
+	
+	@Override
 	void initConnector() throws FileNotFoundException {
-		fileReader = new BufferedReader(new FileReader(connectPath+filename));
+		fileReader = new BufferedReader(new FileReader(connectPath+sourceName));
 	}
 	
 	void destroyConnector(){

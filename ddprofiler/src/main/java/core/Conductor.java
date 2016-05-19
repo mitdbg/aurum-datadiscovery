@@ -15,7 +15,7 @@ public class Conductor {
 	
 	private BlockingQueue<WorkerTask> taskQueue;
 	private ExecutorService pool;
-	private List<Future<WorkerTaskResult>> resultQueue;
+	private List<Future<WorkerTaskResultFuture>> resultQueue;
 	
 	private Thread consumer;
 	private Consumer runnable;
@@ -58,13 +58,13 @@ public class Conductor {
 				
 				// Create worker to handle the task and submit to the pool
 				Worker w = new Worker(wt, pc);
-				Future<WorkerTaskResult> future = pool.submit(w);
+				Future<WorkerTaskResultFuture> future = pool.submit(w);
 				
 				// Store future
 				resultQueue.add(future);
 				
 				// Check if there are futures that have finished at this point
-				for(Future<WorkerTaskResult> f : resultQueue) {
+				for(Future<WorkerTaskResultFuture> f : resultQueue) {
 					if(f.isDone()) {
 						// TODO: this one is done
 					}

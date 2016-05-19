@@ -16,7 +16,7 @@ import inputoutput.conn.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
-public class Worker implements Callable<WorkerTaskResult> {
+public class Worker implements Callable<WorkerTaskResultFuture> {
 
 	private WorkerTask task;
 	private int numRecordChunk;
@@ -27,7 +27,7 @@ public class Worker implements Callable<WorkerTaskResult> {
 	}
 
 	@Override
-	public WorkerTaskResult call() throws Exception {
+	public WorkerTaskResultFuture call() throws Exception {
 		// Collection to hold analyzers
 		Map<String, Analysis> analyzers = new HashMap<>();
 		
@@ -36,8 +36,8 @@ public class Worker implements Callable<WorkerTaskResult> {
 		PreAnalyzer pa = new PreAnalyzer();
 		pa.composeConnector(c);
 		
-		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
-		for(Entry<Attribute, Values> entry : data.entrySet()) {
+		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
+		for(Entry<Attribute, Values> entry : initData.entrySet()) {
 			Attribute a = entry.getKey();
 			AttributeType at = a.getColumnType();
 			Analysis analysis = null;
@@ -52,7 +52,30 @@ public class Worker implements Callable<WorkerTaskResult> {
 			analyzers.put(a.getColumnName(), analysis);
 		}
 		
-		return null;
+		// Consume all records from the connector
+		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
+		while(data != null) {
+			// Do the processing
+			for(Entry<Attribute, Values> entry : data.entrySet()) {
+				String atName = entry.getKey().getColumnName();
+				Values vs = entry.getValue();
+				if(vs.areFloatValues()) {
+					((NumericalAnalysis)analyzers.get(atName)).feedFloatData(vs.getFloats());
+				}
+				else if(vs.areIntegerValues()) {
+					((NumericalAnalysis)analyzers.get(atName)).feedIntegerData(vs.getIntegers());
+				}
+				else if(vs.areStringValues()) {
+					((TextualAnalysis)analyzers.get(atName)).feedTextData(vs.getStrings());
+				}
+			}
+			data = pa.readRows(numRecordChunk);
+		}
+		
+		// Get results and wrap them in a Result object
+		WorkerTaskResultFuture wtrf = new WorkerTaskResultFuture(c.getSourceName(), c.getAttributes(), analyzers);
+		
+		return wtrf;
 	}
 
 }
