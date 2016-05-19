@@ -26,7 +26,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	 */
 	
 	@Override
-	public Map<Attribute, List<Object>> readRows(int num) {
+	public Map<Attribute, Values> readRows(int num) {
 		Map<Attribute, List<String>> data = null;
 		try {
 			data = c.readRows(num);
@@ -40,12 +40,15 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			calculateDataTypes(data);
 		}
 		
-		Map<Attribute, List<Object>> castData = new HashMap<>();
+		Map<Attribute, Values> castData = new HashMap<>();
 		// Cast map to the type
 		for(Entry<Attribute, List<String>> e : data.entrySet()) {
-			List<Object> castValues = new ArrayList<>();
+			Values vs = null;
 			AttributeType at = e.getKey().getColumnType();
 			if(at.equals(AttributeType.FLOAT)) {
+				
+				List<Float> castValues = new ArrayList<>();
+				vs = Values.makeFloatValues(castValues);
 				for(String s : e.getValue()) {
 					float f = 0f;
 					try {
@@ -58,9 +61,12 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				}
 			}
 			else if (at.equals(AttributeType.STRING)) {
+				List<String> castValues = new ArrayList<>();
+				vs = Values.makeStringValues(castValues);
 				e.getValue().forEach(s -> castValues.add(s));
 			}
-			castData.put(e.getKey(), castValues);
+			
+			castData.put(e.getKey(), vs);
 		}
 		
 		// TODO: update quality report

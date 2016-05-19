@@ -3,13 +3,12 @@
  */
 package preanalysis;
 
-import java.util.List;
 import java.util.Map;
 
 import inputoutput.Attribute;
 
 public interface IO {
 
-	public Map<Attribute, List<Object>> readRows(int num);
+	public Map<Attribute, Values> readRows(int num);
 	
 }

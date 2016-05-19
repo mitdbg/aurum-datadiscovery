@@ -53,9 +53,9 @@ public class Conductor {
 				try {
 					wt = taskQueue.take();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
 				// Create worker to handle the task and submit to the pool
 				Worker w = new Worker(wt, pc);
 				Future<WorkerTaskResult> future = pool.submit(w);

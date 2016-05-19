@@ -19,6 +19,7 @@ import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
+import preanalysis.Values;
 
 public class AnalyzerTest {
 
@@ -34,16 +35,16 @@ public class AnalyzerTest {
 		PreAnalyzer pa = new PreAnalyzer();
 		pa.composeConnector(fc);
 		
-		Map<Attribute, List<Object>> data = pa.readRows(numRecords);
-		for(Entry<Attribute, List<Object>> a : data.entrySet()) {
+		Map<Attribute, Values> data = pa.readRows(numRecords);
+		for(Entry<Attribute, Values> a : data.entrySet()) {
 			System.out.println("CName: "+a.getKey().getColumnName());
 			System.out.println("CType: "+a.getKey().getColumnType());
 			AttributeType at = a.getKey().getColumnType();
 			if(at.equals(AttributeType.FLOAT)) {
 				NumericalAnalysis na = AnalyzerFactory.makeNumericalAnalyzer();
 				List<Float> floats = new ArrayList<>();
-				for(Object s : a.getValue()) {
-					floats.add((float)s);
+				for(Float s : a.getValue().getFloats()) {
+					floats.add(s);
 				}
 
 				na.feedFloatData(floats);
@@ -60,8 +61,8 @@ public class AnalyzerTest {
 			if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer();
 				List<String> strs = new ArrayList<>();
-				for(Object s : a.getValue()) {
-					strs.add((String)s);
+				for(String s : a.getValue().getStrings()) {
+					strs.add(s);
 				}
 
 				ta.feedTextData(strs);

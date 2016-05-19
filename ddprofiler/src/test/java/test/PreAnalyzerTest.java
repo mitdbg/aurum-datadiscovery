@@ -11,13 +11,14 @@ import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
+import preanalysis.Values;
 
 public class PreAnalyzerTest {
 
 	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
 	private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
-	private int numRecords = 100;
+	private int numRecords = 10;
 	
 	@Test
 	public void testPreAnalyzerForTypes() throws IOException {
@@ -34,22 +35,22 @@ public class PreAnalyzerTest {
 			System.out.println(a);
 		}
 		
-		Map<Attribute, List<Object>> data = pa.readRows(numRecords);
-		for(Entry<Attribute, List<Object>> a : data.entrySet()) {
+		Map<Attribute, Values> data = pa.readRows(numRecords);
+		for(Entry<Attribute, Values> a : data.entrySet()) {
 			System.out.println();
 			System.out.println();
 			System.out.println();
 			System.out.println("NAME: " + a.getKey().getColumnName());
 			System.out.println("TYPE: " + a.getKey().getColumnType());
 			if(a.getKey().getColumnType().equals(AttributeType.FLOAT)) {
-				List<Object> objs = a.getValue();
-				for(Object f : objs) {
-					System.out.println((float)f);
+				List<Float> objs = a.getValue().getFloats();
+				for(float f : objs) {
+					System.out.println(f);
 				}
 			}
 			if(a.getKey().getColumnType().equals(AttributeType.STRING)) {
-				List<Object> objs = a.getValue();
-				for(Object f : objs) {
+				List<String> objs = a.getValue().getStrings();
+				for(String f : objs) {
 					System.out.println(f);
 				}
 			}
