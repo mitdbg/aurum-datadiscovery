@@ -4,6 +4,8 @@
  */
 package analysis.modules;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class Entities {
@@ -14,8 +16,10 @@ public class Entities {
 		this.entities = entities;
 	}
 	
-	public Set<String> getEntities() {
-		return entities;
+	public List<String> getEntities() {
+		List<String> ents = new ArrayList<>();
+		entities.forEach(e -> ents.add(e));
+		return ents;
 	}
 	
 	@Override

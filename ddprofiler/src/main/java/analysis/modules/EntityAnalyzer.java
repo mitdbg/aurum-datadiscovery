@@ -74,4 +74,9 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		}
 		return model;
 	}
+
+	public void clear() {
+		this.entities.clear();
+		this.nameFinder.clearAdaptiveData();
+	}
 }

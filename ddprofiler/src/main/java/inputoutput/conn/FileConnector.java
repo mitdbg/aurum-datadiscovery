@@ -112,7 +112,7 @@ public class FileConnector extends Connector {
 		String line;
 		boolean read_lines = false;
 
-		for(int i=0; i<num && (line = fileReader.readLine())!=null; i++ ){
+		for(int i=0; i<num && (line = fileReader.readLine()) != null; i++) {
 			lineCounter++;
 			read_lines = true;
 			List<String> res = csv_spliter(line); 

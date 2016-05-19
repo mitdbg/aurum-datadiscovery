@@ -3,24 +3,20 @@ package core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Set;
 
 import analysis.Analysis;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
+import analysis.modules.Entities;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 
-public class WorkerTaskResultFuture implements Future<List<WorkerTaskResult>> {
+public class WorkerTaskResultHolder {
 
-	private boolean isDone = false;
-	private boolean isCancelled = false;
 	private List<WorkerTaskResult> results;
 	
-	public WorkerTaskResultFuture(String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
+	public WorkerTaskResultHolder(String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
 		List<WorkerTaskResult> rs = new ArrayList<>();
 		for(Attribute a : attributes) {
 			AttributeType at = a.getColumnType();
@@ -56,6 +52,12 @@ public class WorkerTaskResultFuture implements Future<List<WorkerTaskResult>> {
 			}
 			else if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = ((TextualAnalysis)an);
+				List<String> ents = ta.getEntities().getEntities();
+				String[] entities = new String[ents.size()];
+				for(int i = 0; i < entities.length; i++) {
+					entities[i] = ents.get(i);
+				}
+				
 				WorkerTaskResult wtr = new WorkerTaskResult(
 						id,
 						sourceName,
@@ -63,43 +65,20 @@ public class WorkerTaskResultFuture implements Future<List<WorkerTaskResult>> {
 						"T",
 						(int)ta.getCardinality().getTotalRecords(),
 						(int)ta.getCardinality().getUniqueElements(),
-						(String[]) ta.getEntities().getEntities().toArray());
+						entities);
 				rs.add(wtr);
 			}
 		}
-		isDone = true;
+		this.results = rs;
 	}
 	
 	private int computeAttrId(String sourceName, String columnName) {
 		String t = sourceName.concat(columnName);
 		return t.hashCode();
 	}
-
-	@Override
-	public boolean isCancelled() {
-		return isCancelled;
-	}
-
-	@Override
-	public boolean isDone() {
-		return isDone;
-	}
-
-	@Override
-	public List<WorkerTaskResult> get() throws InterruptedException, ExecutionException {
-		return results;
-	}
-
-	@Override
-	public List<WorkerTaskResult> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
-	@Override
-	public boolean cancel(boolean mayInterruptIfRunning) {
-		// TODO Auto-generated method stub
-		return false;
+	public List<WorkerTaskResult> get() {
+		return results;
 	}
 
 }

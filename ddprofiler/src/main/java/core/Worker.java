@@ -1,6 +1,7 @@
 package core;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -16,7 +17,7 @@ import inputoutput.conn.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
-public class Worker implements Callable<WorkerTaskResultFuture> {
+public class Worker implements Callable<List<WorkerTaskResult>> {
 
 	private WorkerTask task;
 	private int numRecordChunk;
@@ -27,7 +28,7 @@ public class Worker implements Callable<WorkerTaskResultFuture> {
 	}
 
 	@Override
-	public WorkerTaskResultFuture call() throws Exception {
+	public List<WorkerTaskResult> call() throws Exception {
 		// Collection to hold analyzers
 		Map<String, Analysis> analyzers = new HashMap<>();
 		
@@ -54,7 +55,9 @@ public class Worker implements Callable<WorkerTaskResultFuture> {
 		
 		// Consume all records from the connector
 		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
+		int records = 0;
 		while(data != null) {
+			records = records + data.size();
 			// Do the processing
 			for(Entry<Attribute, Values> entry : data.entrySet()) {
 				String atName = entry.getKey().getColumnName();
@@ -70,12 +73,13 @@ public class Worker implements Callable<WorkerTaskResultFuture> {
 				}
 			}
 			data = pa.readRows(numRecordChunk);
+			System.out.println("records: " + records);
 		}
 		
 		// Get results and wrap them in a Result object
-		WorkerTaskResultFuture wtrf = new WorkerTaskResultFuture(c.getSourceName(), c.getAttributes(), analyzers);
+		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
 		
-		return wtrf;
+		return wtrf.get();
 	}
 
 }

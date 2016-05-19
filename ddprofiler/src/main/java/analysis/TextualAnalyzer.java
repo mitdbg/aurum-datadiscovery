@@ -25,11 +25,11 @@ public class TextualAnalyzer implements TextualAnalysis {
 	private EntityAnalyzer ea;
 	private SignatureAnalyzer sa;
 	
-	private TextualAnalyzer() {
+	private TextualAnalyzer(EntityAnalyzer ea) {
 		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
-		ea = new EntityAnalyzer();
+		this.ea = ea;
 		sa = new SignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
@@ -38,8 +38,9 @@ public class TextualAnalyzer implements TextualAnalysis {
 		analyzers.add(sa);
 	}
 	
-	public static TextualAnalyzer makeAnalyzer() {
-		return new TextualAnalyzer();
+	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea) {
+		ea.clear();
+		return new TextualAnalyzer(ea);
 	}
 	
 	@Override

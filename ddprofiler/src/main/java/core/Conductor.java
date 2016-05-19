@@ -1,11 +1,14 @@
 package core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import core.config.ProfilerConfig;
 
@@ -15,7 +18,8 @@ public class Conductor {
 	
 	private BlockingQueue<WorkerTask> taskQueue;
 	private ExecutorService pool;
-	private List<Future<WorkerTaskResultFuture>> resultQueue;
+	private List<Future<List<WorkerTaskResult>>> futures;
+	private BlockingQueue<WorkerTaskResult> results;
 	
 	private Thread consumer;
 	private Consumer runnable;
@@ -23,6 +27,8 @@ public class Conductor {
 	public Conductor(ProfilerConfig pc) {
 		this.pc = pc;
 		taskQueue = new LinkedBlockingQueue<>();
+		futures = new ArrayList<>();
+		results = new LinkedBlockingQueue<>();
 		pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
 		runnable = new Consumer();
 		consumer = new Thread(runnable);
@@ -32,8 +38,29 @@ public class Conductor {
 		this.consumer.start();
 	}
 	
+	public void stop() {
+		this.runnable.stop();
+	}
+	
 	public boolean submitTask(WorkerTask task) {
 		return taskQueue.add(task);
+	}
+	
+	public List<WorkerTaskResult> consumeResults() {
+		List<WorkerTaskResult> availableResults = new ArrayList<>();
+		WorkerTaskResult wtr = null;
+		do {
+			try {
+				wtr = results.poll(500, TimeUnit.MILLISECONDS);
+				if(wtr != null) {
+					availableResults.add(wtr);
+				}
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} while(wtr != null);
+		return availableResults;
 	}
 	
 	class Consumer implements Runnable {
@@ -46,30 +73,38 @@ public class Conductor {
 		
 		@Override
 		public void run() {
+			
 			while(doWork) {
 				
 				// Attempt to consume new task
 				WorkerTask wt = null;
 				try {
-					wt = taskQueue.take();
-				} catch (InterruptedException e) {
+					wt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+				} 
+				catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				
-				// Create worker to handle the task and submit to the pool
-				Worker w = new Worker(wt, pc);
-				Future<WorkerTaskResultFuture> future = pool.submit(w);
-				
-				// Store future
-				resultQueue.add(future);
+				if(wt != null) {
+					// Create worker to handle the task and submit to the pool
+					Worker w = new Worker(wt, pc);
+					Future<List<WorkerTaskResult>> future = pool.submit(w);
+					// Store future
+					futures.add(future);
+				}
 				
 				// Check if there are futures that have finished at this point
-				for(Future<WorkerTaskResultFuture> f : resultQueue) {
+				for(Future<List<WorkerTaskResult>> f : futures) {
 					if(f.isDone()) {
-						// TODO: this one is done
+						try {
+							results.addAll(f.get());
+						} 
+						catch (InterruptedException | ExecutionException e) {
+							e.printStackTrace();
+						}
 					}
 					else if(f.isCancelled()) {
-						
+						// TODO: handle error somehow
 					}
 				}
 			}

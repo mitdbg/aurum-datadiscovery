@@ -30,6 +30,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		Map<Attribute, List<String>> data = null;
 		try {
 			data = c.readRows(num);
+			if(data == null) return null;
 		}
 		catch (IOException | SQLException e) {
 			e.printStackTrace();
