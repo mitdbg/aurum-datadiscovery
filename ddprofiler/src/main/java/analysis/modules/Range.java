@@ -15,9 +15,9 @@ public class Range {
 	private float maxF;
 	private int min;
 	private float minF;
-	private double avg;
+	private float avg;
 	
-	public Range(Type t, int totalRecords, int max, int min, double avg) {
+	public Range(Type t, int totalRecords, int max, int min, float avg) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.max = max;
@@ -25,7 +25,7 @@ public class Range {
 		this.avg = avg;
 	}
 	
-	public Range(Type t, int totalRecords, float maxF, float minF, double avg) {
+	public Range(Type t, int totalRecords, float maxF, float minF, float avg) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.maxF = maxF;
@@ -57,7 +57,7 @@ public class Range {
 		return minF;
 	}
 
-	public double getAvg() {
+	public float getAvg() {
 		return avg;
 	}
 	

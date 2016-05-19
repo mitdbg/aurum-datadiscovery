@@ -23,7 +23,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	// TODO: methods to estimate median and other quantiles
 	// TODO: maintain standard deviation
 	
-	private double avg;
+	private float avg;
 	
 	public Range getIntegerRange() {
 		avg = totalSum/totalRecords;
