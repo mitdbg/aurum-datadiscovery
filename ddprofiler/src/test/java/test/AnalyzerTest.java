@@ -13,8 +13,9 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.Cardinality;
 import analysis.modules.Entities;
+import analysis.modules.NumericalSignature;
 import analysis.modules.Range;
-import analysis.modules.Signature;
+import analysis.modules.TextualSignature;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.FileConnector;
@@ -50,7 +51,7 @@ public class AnalyzerTest {
 				na.feedFloatData(floats);
 				Cardinality c = na.getCardinality();
 				Range r = na.getNumericalRange();
-				Signature s = na.getSignature();
+				NumericalSignature s = na.getSignature();
 				System.out.println("Cardinality:");
 				System.out.println(c);
 				System.out.println("Range:");
@@ -68,7 +69,7 @@ public class AnalyzerTest {
 				ta.feedTextData(strs);
 				Cardinality c = ta.getCardinality();
 				Entities e = ta.getEntities();
-				Signature s = ta.getSignature();
+				TextualSignature s = ta.getSignature();
 				System.out.println("Cardinality:");
 				System.out.println(c);
 				System.out.println("Entities:");

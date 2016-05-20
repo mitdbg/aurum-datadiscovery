@@ -14,8 +14,8 @@ import analysis.modules.DataType;
 import analysis.modules.DataTypeAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
-import analysis.modules.Signature;
-import analysis.modules.SignatureAnalyzer;
+import analysis.modules.TextualSignature;
+import analysis.modules.TextualSignatureAnalyzer;
 
 public class TextualAnalyzer implements TextualAnalysis {
 
@@ -23,14 +23,14 @@ public class TextualAnalyzer implements TextualAnalysis {
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
 	private EntityAnalyzer ea;
-	private SignatureAnalyzer sa;
+	private TextualSignatureAnalyzer sa;
 	
 	private TextualAnalyzer(EntityAnalyzer ea) {
 		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		this.ea = ea;
-		sa = new SignatureAnalyzer();
+		sa = new TextualSignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ea);
@@ -67,7 +67,7 @@ public class TextualAnalyzer implements TextualAnalysis {
 	}
 
 	@Override
-	public Signature getSignature() {
+	public TextualSignature getSignature() {
 		return sa.getSignature();
 	}
 

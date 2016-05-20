@@ -3,6 +3,7 @@
  */
 package analysis;
 
+import analysis.modules.NumericalSignature;
 import analysis.modules.Range;
 
 /**
@@ -12,5 +13,6 @@ import analysis.modules.Range;
 public interface NumericalAnalysis extends Analysis, IntegerDataConsumer, FloatDataConsumer {
 
 	public Range getNumericalRange();
+	public NumericalSignature getSignature();
 	
 }
