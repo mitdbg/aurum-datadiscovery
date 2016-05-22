@@ -16,6 +16,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import conn.DBConnector;
 import inputoutput.conn.Connector;
 import inputoutput.conn.FileConnector;
 
@@ -43,6 +44,17 @@ public class ColumnReader implements Iterable<Record> {
 				log.log(Level.SEVERE, "Cannot initlaize the file connector");
 				e.printStackTrace();
 			}
+		}else if (config.getConn_type().equals("DB")) {
+			log.info("The connector is DBConnector");
+			try {
+				conn = new DBConnector(config.getDb_system_name(), config.getConn_ip(), Integer.parseInt(config.getPort()),
+						config.getConn_path(), config.getConn_filename(), config.getUser_name(), config.getPassword());
+			} catch (NumberFormatException | IOException e) {
+				log.log(Level.SEVERE, "Cannot initlaize the DB connector");
+				e.printStackTrace();
+			}
+		}else{
+			log.log(Level.SEVERE, "Wrong connector type");
 		}
 	}
 

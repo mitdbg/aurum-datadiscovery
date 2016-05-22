@@ -17,6 +17,7 @@ public class ColumnReaderTest {
 		//testing FileConnector
 		ColumnReader cr = new ColumnReader();
 		cr.initConfig(".\\src\\config\\fileconnector.config");
+		//cr.initConfig(".\\src\\config\\dbconnector.config");
 		cr.initConnector(cr.getConfig());	
 		
 		/*List<Record> recs = cr.readRecords(5);

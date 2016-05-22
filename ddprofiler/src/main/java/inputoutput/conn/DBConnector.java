@@ -53,6 +53,7 @@ public class DBConnector extends Connector {
 		this.user_name =user_name;
 		this.password = password;
 		this.tb_info = new TableInfo();
+		this.initConnector();
 	}
 
 
@@ -82,7 +83,7 @@ public class DBConnector extends Connector {
 		String sql = "select * from "+sourceName+ " LIMIT "+ curr_offset+","+num;
 		//String sql = "select * from "+filename+ " LIMIT "+ num;
 
-		System.out.println(sql);
+		//System.out.println(sql);
 		ResultSet rs = stat.executeQuery(sql);
 		boolean new_row = false;
 		while(rs.next()){
@@ -94,7 +95,7 @@ public class DBConnector extends Connector {
 				rec.getTuples().add(v1);
 			}
 			rec_list.add(rec);
-			System.out.println(rec);
+			//System.out.println(rec);
 		}
 		curr_offset+=rec_list.size();
 		rs.close();
