@@ -16,21 +16,24 @@ public class Range {
 	private int min;
 	private float minF;
 	private float avg;
+	private float std_deviation;//stores the std_deviation for the profiler
 	
-	public Range(Type t, int totalRecords, int max, int min, float avg) {
+	public Range(Type t, int totalRecords, int max, int min, float avg, float std_deviation) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.max = max;
 		this.min = min;
 		this.avg = avg;
+		this.setStd_deviation(std_deviation);
 	}
 	
-	public Range(Type t, int totalRecords, float maxF, float minF, float avg) {
+	public Range(Type t, int totalRecords, float maxF, float minF, float avg, float std_deviation) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.maxF = maxF;
 		this.minF = minF;
 		this.avg = avg;
+		this.setStd_deviation(std_deviation);
 	}
 	
 	public Type getType() {
@@ -60,6 +63,17 @@ public class Range {
 	public float getAvg() {
 		return avg;
 	}
+
+	
+	public float getStd_deviation() {
+		return std_deviation;
+	}
+
+	public void setStd_deviation(float std_deviation) {
+		this.std_deviation = std_deviation;
+	}
+
+	
 	
 	@Override
 	public String toString() {
@@ -73,5 +87,6 @@ public class Range {
 			return "Unknown type";
 		}
 	}
+
 
 }

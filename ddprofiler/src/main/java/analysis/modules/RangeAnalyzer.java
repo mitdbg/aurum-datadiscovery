@@ -1,6 +1,6 @@
 /**
  * @author Raul - raulcf@csail.mit.edu
- *
+ * @author Sibo Wang (edits)
  */
 package analysis.modules;
 
@@ -19,21 +19,24 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	private float maxF;
 	private float minF;
 	private float totalSumF;
-	
 	// TODO: methods to estimate median and other quantiles
 	// TODO: maintain standard deviation
+
+	private double square_Sum;
 	
 	private float avg;
-	
+	private float std_deviation;
 	public Range getIntegerRange() {
-		avg = totalSum/totalRecords;
-		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg);
+		avg = (float) (totalSum*1.0/totalRecords);
+		std_deviation = (float) Math.sqrt(square_Sum/totalRecords - avg*avg);
+		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, std_deviation);
 		return r;
 	}
 	
 	public Range getFloatRange() {
 		avg = totalSumF/totalRecords;
-		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg);
+		std_deviation = (float) Math.sqrt(square_Sum/totalRecords - avg*avg);
+		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, std_deviation);
 		return r;
 	}
 
@@ -45,8 +48,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > max) max = value;
 			if(value < min) min = value;
 			totalSum += value;
+			square_Sum +=value*value;
 		}
-		
 		return true;
 	}
 	
@@ -58,6 +61,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > maxF) maxF = value;
 			if(value < minF) minF = value;
 			totalSumF += value;
+			square_Sum += value*value;
 		}
 		
 		return true;
