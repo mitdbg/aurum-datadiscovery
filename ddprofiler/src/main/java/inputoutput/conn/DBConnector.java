@@ -44,7 +44,7 @@ public class DBConnector extends Connector {
 	}
 	
 	public DBConnector(String db_system_name, String conn_ip, int port,
-			String connectPath, String filename, String user_name, String password){
+			String connectPath, String filename, String user_name, String password) throws IOException{
 		this.db_system_name = db_system_name;
 		this.conn_ip = conn_ip;
 		this.port = port;

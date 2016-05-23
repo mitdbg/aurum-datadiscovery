@@ -5,6 +5,7 @@
 package inputoutput;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Record {
@@ -19,6 +20,11 @@ public class Record {
 		this.tuples = tuples;
 	}
 	
+	public void setTuples(String[] res) {
+		this.tuples.addAll(Arrays.asList(res));
+	}
+
+	
 	public List<String> getTuples(){
 		return this.tuples;
 	}
@@ -27,11 +33,12 @@ public class Record {
 	public String toString(){
 		String res="Record(";
 		for(int i=0; i<tuples.size(); i++){
-			res+= tuples.get(i)+",";
+			res+= "|"+tuples.get(i)+"|,";
 		}
 		res+=")";
 		return res;
 	}
+
 
 	
 }

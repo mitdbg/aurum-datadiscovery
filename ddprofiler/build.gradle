@@ -26,6 +26,9 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-core:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
+	
+	// opencsv
+	compile 'net.sf.opencsv:opencsv:2.3'
 
 
     testCompile 'junit:junit:4.11'

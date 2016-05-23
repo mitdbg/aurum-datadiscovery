@@ -16,7 +16,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import conn.DBConnector;
+import inputoutput.conn.DBConnector;
 import inputoutput.conn.Connector;
 import inputoutput.conn.FileConnector;
 
