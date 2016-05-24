@@ -5,7 +5,7 @@
 package analysis.modules;
 
 import java.util.List;
-
+import com.clearspring.analytics.stream.quantile.QDigest;
 import analysis.FloatDataConsumer;
 import analysis.IntegerDataConsumer;
 
@@ -19,13 +19,30 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	private float maxF;
 	private float minF;
 	private float totalSumF;
-	// TODO: methods to estimate median and other quantiles
-	// TODO: maintain standard deviation
-
-	private double square_Sum;
 	
+	
+	/*
+	 * calculate the std_deviation
+	 */
+	private double square_Sum;
 	private float avg;
 	private float std_deviation;
+
+	private final int QUANTILE_COMPRESSION_RATIO=128;
+	/*
+	 * provide estimator of quantile.
+	 * Let c be the number of distinct values in the stream
+	 * the relative error is O(log(c)/QUANTILE_COMPRESSION_RATIO)
+	 * We make a conservative assumption that c can be as large as 2^64. 
+	 * Then, to provide good estimation, we will need to set QUANTILE_COMPRESSION_RATIO
+	 * to 128 to reach a reasonable relative estimation.
+	 */
+	private QDigest quantile_estimator = new QDigest(QUANTILE_COMPRESSION_RATIO);
+
+	public long getQuantile(double p){
+		return quantile_estimator.getQuantile(p);
+	}
+	
 	public Range getIntegerRange() {
 		avg = (float) (totalSum*1.0/totalRecords);
 		std_deviation = (float) Math.sqrt(square_Sum/totalRecords - avg*avg);
@@ -49,7 +66,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value < min) min = value;
 			totalSum += value;
 			square_Sum +=value*value;
+			quantile_estimator.offer(value);
 		}
+		
 		return true;
 	}
 	
@@ -62,8 +81,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value < minF) minF = value;
 			totalSumF += value;
 			square_Sum += value*value;
+			quantile_estimator.offer((long) value);
 		}
-		
 		return true;
 	}
 

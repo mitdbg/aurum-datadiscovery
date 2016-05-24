@@ -24,8 +24,10 @@ import preanalysis.Values;
 
 public class AnalyzerTest {
 
-	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
-	private String filename = "short_cis_course_catalog.csv";
+	private String path = "C:/";
+	private String filename = "Leading_Causes_of_Death__1990-2010.csv";
+	//private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
+	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	private int numRecords = 100;
 	
@@ -58,6 +60,7 @@ public class AnalyzerTest {
 				System.out.println(r);
 				System.out.println("Signature:");
 				System.out.println(s);
+				System.out.println("medium: "+na.getQuantile(0.5));
 			}
 			if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer();

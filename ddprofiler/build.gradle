@@ -30,6 +30,8 @@ dependencies {
 	// opencsv
 	compile 'net.sf.opencsv:opencsv:2.3'
 
+	//count-min sketch
+	compile 'com.clearspring.analytics:stream:2.7.0'
 
     testCompile 'junit:junit:4.11'
 }
