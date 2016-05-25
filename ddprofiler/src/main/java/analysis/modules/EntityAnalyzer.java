@@ -40,7 +40,6 @@ public class EntityAnalyzer implements TextualDataConsumer {
 			sentences[i] = records.get(i);
 		}
 		Span nameSpans[] = nameFinder.find(sentences);
-		
 		for(Span s : nameSpans) {
 			entities.add(s.getType());
 		}

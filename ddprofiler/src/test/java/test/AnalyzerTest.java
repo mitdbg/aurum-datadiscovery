@@ -24,7 +24,7 @@ import preanalysis.Values;
 
 public class AnalyzerTest {
 
-	private String path = "C:/";
+	private String path = "C:\\";
 	private String filename = "Leading_Causes_of_Death__1990-2010.csv";
 	//private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
 	//private String filename = "short_cis_course_catalog.csv";

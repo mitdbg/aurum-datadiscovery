@@ -24,9 +24,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	/*
 	 * calculate the std_deviation
 	 */
-	private double square_Sum;
+	private double squareSum;
 	private float avg;
-	private float std_deviation;
+	private float stdDeviation;
 
 	private final int QUANTILE_COMPRESSION_RATIO=128;
 	/*
@@ -37,23 +37,23 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	 * Then, to provide good estimation, we will need to set QUANTILE_COMPRESSION_RATIO
 	 * to 128 to reach a reasonable relative estimation.
 	 */
-	private QDigest quantile_estimator = new QDigest(QUANTILE_COMPRESSION_RATIO);
+	private QDigest quantileEstimator = new QDigest(QUANTILE_COMPRESSION_RATIO);
 
 	public long getQuantile(double p){
-		return quantile_estimator.getQuantile(p);
+		return quantileEstimator.getQuantile(p);
 	}
 	
 	public Range getIntegerRange() {
 		avg = (float) (totalSum*1.0/totalRecords);
-		std_deviation = (float) Math.sqrt(square_Sum/totalRecords - avg*avg);
-		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, std_deviation);
+		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg*avg);
+		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation);
 		return r;
 	}
 	
 	public Range getFloatRange() {
 		avg = totalSumF/totalRecords;
-		std_deviation = (float) Math.sqrt(square_Sum/totalRecords - avg*avg);
-		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, std_deviation);
+		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg*avg);
+		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation);
 		return r;
 	}
 
@@ -65,8 +65,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > max) max = value;
 			if(value < min) min = value;
 			totalSum += value;
-			square_Sum +=value*value;
-			quantile_estimator.offer(value);
+			squareSum +=value*value;
+			quantileEstimator.offer(value);
 		}
 		
 		return true;
@@ -80,8 +80,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > maxF) maxF = value;
 			if(value < minF) minF = value;
 			totalSumF += value;
-			square_Sum += value*value;
-			quantile_estimator.offer((long) value);
+			squareSum += value*value;
+			quantileEstimator.offer((long) value);
 		}
 		return true;
 	}
