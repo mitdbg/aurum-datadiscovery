@@ -12,6 +12,8 @@ import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
 import joptsimple.OptionParser;
+import store.Store;
+import store.StoreFactory;
 
 public class Main {
 	
@@ -28,7 +30,9 @@ public class Main {
 
 	public void startProfiler(ProfilerConfig pc) {
 		
-		Conductor c = new Conductor(pc);
+		Store s = StoreFactory.makeElasticStore(pc);
+		
+		Conductor c = new Conductor(pc, s);
 		
 		int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
 		if(executionMode == ExecutionMode.ONLINE.mode) {

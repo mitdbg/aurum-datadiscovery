@@ -29,6 +29,8 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-core:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
+    // jest for elasticsearch
+    compile 'io.searchbox:jest:2.0.0'
 
 
     testCompile 'junit:junit:4.11'

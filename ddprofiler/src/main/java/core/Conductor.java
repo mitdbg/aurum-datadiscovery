@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import core.config.ProfilerConfig;
+import store.Store;
 
 public class Conductor {
 
@@ -21,11 +22,14 @@ public class Conductor {
 	private List<Future<List<WorkerTaskResult>>> futures;
 	private BlockingQueue<WorkerTaskResult> results;
 	
+	private Store store;
+	
 	private Thread consumer;
 	private Consumer runnable;
 	
-	public Conductor(ProfilerConfig pc) {
+	public Conductor(ProfilerConfig pc, Store s) {
 		this.pc = pc;
+		this.store = s;
 		taskQueue = new LinkedBlockingQueue<>();
 		futures = new ArrayList<>();
 		results = new LinkedBlockingQueue<>();
