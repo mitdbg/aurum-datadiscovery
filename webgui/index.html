@@ -11,6 +11,15 @@
     <script src="js/angular.min.js"></script>
     <script src="js/angular-resource.js"></script>
     <script src="js/controller.js"></script>
+
+    <style type="text/css">
+        #graphvis {
+          position: absolute;
+          width: 50%;
+          height: 70%;
+        }
+      </style>
+
     <title>dd Prototype</title>
 
     <!-- Bootstrap core CSS -->
@@ -152,6 +161,145 @@
 
         </div>
       </div>
+
+
+
+      <!-- Graph visualization panel -->
+      <div class = "row">
+        <div class="col-md-1"> </div>
+        <div class="col-md-10">
+          <div class="panel panel-default">
+            <div class="panel-body" id="mid-col-height">
+              <div class="scrollable-content" >
+                <div id="graphvis" ng-model="graphdata">
+                  <script src="js/sigma/sigma.min.js"></script>
+                  <script src="js/sigma/sigma.parsers.json.min.js"></script>
+                  <script>
+                    var graphdata = {
+                      nodes: [
+                        { id: 'n0', label: "A", size:1, x:0, y:0, color:"red" },
+                        { id: 'n1', label: "B", size:1, x:0.2, y:1.2, color:"red" },
+                        { id: 'n2', label: "C", size:1, x:1.4, y:0.5, color:"red" },
+                        { id: 'n3', label: "D", size:1, x:1.9, y:0.6, color:"red" },
+                        { id: 'n4', label: "E", size:1, x:2.1, y:0.2, color:"red" },
+                        { id: 'n5', label: "F", size:1, x:2.3, y:1.3, color:"red" },
+                        { id: 'n6', label: "G", size:1, x:0.6, y:2.8, color:"red" },
+                        { id: 'n7', label: "H", size:1, x:1.8, y:2.7, color:"red" },
+                        { id: 'n8', label: "I", size:1, x:2.9, y:2.3, color:"red" },
+                        { id: 'n9', label: "J", size:1, x:3.2, y:0.7, color:"red" },
+                        { id: 'n10', label: "K", size:1, x:3.4, y:1.1, color:"red" },
+                        { id: 'n11', label: "L", size:1, x:3.6, y:2.5, color:"red" },
+                        { id: 'n12', label: "M", size:1, x:0.1, y:3.3, color:"red" },
+                        { id: 'n13', label: "N", size:1, x:1.8, y:3.6, color:"red" },
+                        { id: 'n14', label: "O", size:1, x:2.5, y:3.8, color:"red" },
+                        { id: 'n15', label: "P", size:1, x:3.2, y:3.9, color:"red" }
+                      ],
+                      edges: [
+                        {id: 'e0', source: 'n0', target: 'n1'},
+                        {id: 'e1', source: 'n1', target: 'n3'},
+                        {id: 'e2', source: 'n3', target: 'n11'},
+                        {id: 'e3', source: 'n2', target: 'n7'},
+                        {id: 'e4', source: 'n4', target: 'n6'},
+                        {id: 'e5', source: 'n6', target: 'n10'},
+                        {id: 'e6', source: 'n10', target: 'n8'},
+                        {id: 'e7', source: 'n9', target: 'n3'},
+                        {id: 'e8', source: 'n3', target: 'n15'},
+                        {id: 'e9', source: 'n15', target: 'n11'},
+                        {id: 'e10', source: 'n13', target: 'n12'},
+                        {id: 'e11', source: 'n0', target: 'n10'},
+                        {id: 'e12', source: 'n7', target: 'n8'},
+                        {id: 'e13', source: 'n5', target: 'n1'},
+                        {id: 'e14', source: 'n15', target: 'n5'},
+                        {id: 'e15', source: 'n14', target: 'n6'}
+                      ]
+                    };
+
+                    sigma.classes.graph.addMethod('neighbors', function(nodeId) {
+                      var k;
+                      var neighbors = {};
+                      var index = this.allNeighborsIndex[nodeId] || {};
+
+                      for (k in index) {
+                          neighbors[k] = this.nodesIndex[k];
+                        }
+                      return neighbors;
+                    });
+
+                    var s = new sigma('graphvis');
+                    s.graph.read(graphdata);
+
+                    //s.refresh();
+
+
+                    // sigma.parsers.json('path/to/les-miserables.gexf', {
+                    //   container: 'graphvis'
+                    // }, function(s) {
+                    //   // We first need to save the original colors of our
+                    //   // nodes and edges, like this:
+                    //   s.graph.nodes().forEach(function(n) {
+                    //     n.originalColor = n.color;
+                    //   });
+                    //   s.graph.edges().forEach(function(e) {
+                    //     e.originalColor = e.color;
+                    //   });
+
+                    // When a node is clicked, we check for each node
+                    // if it is a neighbor of the clicked one. If not,
+                    // we set its color as grey, and else, it takes its
+                    // original color.
+                    // We do the same for the edges, and we only keep
+                    // edges that have both extremities colored.
+                    s.bind('clickNode', function(e) {
+                      var nodeId = e.data.node.id;
+                      var toKeep = s.graph.neighbors(nodeId);
+                      toKeep[nodeId] = e.data.node;
+
+                      s.graph.nodes().forEach(function(n) {
+                        if (toKeep[n.id])
+                          n.color = "#f00";
+                        else
+                          n.color = '#eee';
+                      });
+
+                      s.graph.edges().forEach(function(e) {
+                        if (toKeep[e.source] && toKeep[e.target])
+                          e.color = "#f00";
+                        else
+                          e.color = '#eee';
+                      });
+
+                      // Since the data has been modified, we need to
+                      // call the refresh method to make the colors
+                      // update effective.
+                      s.refresh();
+                    });
+
+                    // When the stage is clicked, we just color each
+                    // node and edge with its original color.
+                    s.bind('clickStage', function(e) {
+                      s.graph.nodes().forEach(function(n) {
+                        n.color = "#f00";
+                      });
+
+                      s.graph.edges().forEach(function(e) {
+                        e.color = "#f00";
+                      });
+
+                      // Same as in the previous event:
+                      s.refresh();
+                    });
+
+                    s.refresh();
+
+                  </script>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-1"> </div>
+      </div>
+
       <!-- Session memory view -->
       <div class = "row">
         <div class="col-md-1">

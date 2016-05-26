@@ -29,7 +29,7 @@ public class AlmostE2ETest {
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
-		Conductor c = new Conductor(pc);
+		Conductor c = new Conductor(pc, null);
 		
 		c.start();
 		
