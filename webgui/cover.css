@@ -200,7 +200,7 @@ body {
   min-height: 90px;
 }
 .selectionable:hover {
-  background: rgba(204, 204, 204, 0.18);
+  background: rgba(204, 204, 204, 0.78);
 }
 
 .selectionable:visited {
