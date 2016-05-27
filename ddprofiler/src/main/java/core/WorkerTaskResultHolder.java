@@ -21,7 +21,7 @@ public class WorkerTaskResultHolder {
 		for(Attribute a : attributes) {
 			AttributeType at = a.getColumnType();
 			Analysis an = analyzers.get(a.getColumnName());
-			int id = computeAttrId(sourceName, a.getColumnName());
+			int id = Utils.computeAttrId(sourceName, a.getColumnName());
 			if(at.equals(AttributeType.FLOAT)) {
 				NumericalAnalysis na = ((NumericalAnalysis)an);
 				WorkerTaskResult wtr = new WorkerTaskResult(
@@ -70,11 +70,6 @@ public class WorkerTaskResultHolder {
 			}
 		}
 		this.results = rs;
-	}
-	
-	private int computeAttrId(String sourceName, String columnName) {
-		String t = sourceName.concat(columnName);
-		return t.hashCode();
 	}
 	
 	public List<WorkerTaskResult> get() {

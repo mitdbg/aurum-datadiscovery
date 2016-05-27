@@ -30,12 +30,12 @@ public class Conductor {
 	public Conductor(ProfilerConfig pc, Store s) {
 		this.pc = pc;
 		this.store = s;
-		taskQueue = new LinkedBlockingQueue<>();
-		futures = new ArrayList<>();
-		results = new LinkedBlockingQueue<>();
-		pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
-		runnable = new Consumer();
-		consumer = new Thread(runnable);
+		this.taskQueue = new LinkedBlockingQueue<>();
+		this.futures = new ArrayList<>();
+		this.results = new LinkedBlockingQueue<>();
+		this.pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
+		this.runnable = new Consumer();
+		this.consumer = new Thread(runnable);
 	}
 	
 	public void start() {
@@ -84,14 +84,14 @@ public class Conductor {
 				WorkerTask wt = null;
 				try {
 					wt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-				} 
+				}
 				catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				
 				if(wt != null) {
 					// Create worker to handle the task and submit to the pool
-					Worker w = new Worker(wt, pc);
+					Worker w = new Worker(wt, store, pc);
 					Future<List<WorkerTaskResult>> future = pool.submit(w);
 					// Store future
 					futures.add(future);

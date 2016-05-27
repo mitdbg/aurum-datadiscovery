@@ -26,7 +26,7 @@ public class StoreLoadingTest {
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
-		Conductor c = new Conductor(pc, null);
+		Conductor c = new Conductor(pc, StoreFactory.makeNullStore(pc));
 		
 		c.start();
 		

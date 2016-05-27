@@ -42,6 +42,10 @@ public class ElasticStore implements Store {
 				"{ \"properties\" : "
 				+ "{ \"id\" :   {\"type\" : \"integer\","
 				+ 				"\"store\" : \"yes\","
+				+ 				"\"index\" : \"not_analyzed\"},"
+				+ "\"sourceName\" :   {\"type\" : \"string\","
+				+ 				"\"index\" : \"not_analyzed\"}, "
+				+ "\"columnName\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"text\" : {\"type\" : \"string\", "
 				+ 				"\"store\" : \"no\"," // space saving?
@@ -84,13 +88,15 @@ public class ElasticStore implements Store {
 	}
 
 	@Override
-	public boolean indexData(int id, List<String> values) {
+	public boolean indexData(int id, String sourceName, String columnName, List<String> values) {
 		String strId = Integer.toString(id);
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		String v = concatValues(values);
 		source.put("id", strId);
+		source.put("sourceName", sourceName);
+		source.put("columnName", columnName);
 		source.put("text", v);
-		Index index = new Index.Builder(source).index("text").type("column").id(strId).build();
+		Index index = new Index.Builder(source).index("text").type("column").build();
 		try {
 			client.execute(index);
 		} 
