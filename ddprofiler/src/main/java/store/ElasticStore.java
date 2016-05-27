@@ -39,34 +39,35 @@ public class ElasticStore implements Store {
 		PutMapping textMapping = new PutMapping.Builder(
 				"text",
 				"column",
-				"{ \"document\" : { \"properties\" : "
-				+ "{ \"id\" :   {\"type\" : \"integer\", "
+				"{ \"properties\" : "
+				+ "{ \"id\" :   {\"type\" : \"integer\","
 				+ 				"\"store\" : \"yes\","
-				+ 				"\"index\" : \"not_analyzed\"} "
-				+ "},"
-				+ "{ \"text\" : {\"type\" : \"string\",  "
+				+ 				"\"index\" : \"not_analyzed\"}, "
+				+ "\"text\" : {\"type\" : \"string\", "
 				+ 				"\"store\" : \"no\"," // space saving?
 				+ 				"\"index\" : \"analyzed\","
 				+ 				"\"term_vector\" : \"yes\"}"
 				+ "}"
 				+ " "
-				+ "} }"
+				+ "}"
 		).build();
+		System.out.println(textMapping.toString());
 		
 		PutMapping profileMapping = new PutMapping.Builder(
 				"profile",
 				"column",
-				"{ \"document\" : { \"properties\" : "
-				+ "{ \"id\" : {\"type\" : \"integer\"} },"
-				+ "{ \"sourceName\" : {\"type\" : \"string\"} },"
-				+ "{ \"columnName\" : {\"type\" : \"string\"} },"
-				+ "{ \"dataType\" : {\"type\" : \"string\"} },"
-				+ "{ \"totalValues\" : {\"type\" : \"integer\"} },"
-				+ "{ \"uniqueValues\" : {\"type\" : \"integer\"} },"
-				+ "{ \"entities\" }," // array
-				+ "{ \"minValue\" : {\"type\" : \"integer\"} },"
-				+ "{ \"maxValue\" : {\"type\" : \"integer\"} },"
-				+ "{ \"avgValue\" : {\"type\" : \"float\"} },"
+				"{ \"properties\" : "
+				+ "{ "
+				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"columnName\" : {\"type\" : \"string\", \"index\" : \"analyzed\"},"
+				+ "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," // array
+				+ "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+				+ "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+				+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"}"
 				+ "} }"
 		).build();
 		
@@ -84,11 +85,12 @@ public class ElasticStore implements Store {
 
 	@Override
 	public boolean indexData(int id, List<String> values) {
+		String strId = Integer.toString(id);
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		String v = concatValues(values);
-		source.put("id", Integer.toString(id));
+		source.put("id", strId);
 		source.put("text", v);
-		Index index = new Index.Builder(source).index("text").type("column").build();
+		Index index = new Index.Builder(source).index("text").type("column").id(strId).build();
 		try {
 			client.execute(index);
 		} 
@@ -100,6 +102,7 @@ public class ElasticStore implements Store {
 
 	@Override
 	public boolean storeDocument(WorkerTaskResult wtr) {
+		String strId = Integer.toString(wtr.getId());
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		source.put("id", Integer.toString(wtr.getId()));
 		source.put("sourceName", wtr.getSourceName());
@@ -111,7 +114,7 @@ public class ElasticStore implements Store {
 		source.put("minValue", Float.toString(wtr.getMinValue()));
 		source.put("maxValue", Float.toString(wtr.getMaxValue()));
 		source.put("avgValue", Float.toString(wtr.getAvgValue()));
-		Index index = new Index.Builder(source).index("profile").type("column").build();
+		Index index = new Index.Builder(source).index("profile").type("column").id(strId).build();
 		try {
 			client.execute(index);
 		} 
