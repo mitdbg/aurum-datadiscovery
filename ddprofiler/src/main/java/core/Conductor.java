@@ -39,6 +39,7 @@ public class Conductor {
 	}
 	
 	public void start() {
+		this.store.initStore();
 		this.consumer.start();
 	}
 	

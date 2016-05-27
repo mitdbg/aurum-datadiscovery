@@ -30,9 +30,12 @@ public class Main {
 
 	public void startProfiler(ProfilerConfig pc) {
 		
+		// Default is elastic, if we have more in the future, just pass a property to configure this
 		Store s = StoreFactory.makeElasticStore(pc);
 		
 		Conductor c = new Conductor(pc, s);
+		
+		c.start();
 		
 		int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
 		if(executionMode == ExecutionMode.ONLINE.mode) {
@@ -43,6 +46,7 @@ public class Main {
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {
 			// Run with the configured input parameters and produce results to file (?)
 			// TODO: this will be great for quick testing
+			
 		}
 	}
 	
