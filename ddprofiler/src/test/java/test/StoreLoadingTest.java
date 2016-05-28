@@ -5,33 +5,28 @@ import java.util.Properties;
 
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import core.Conductor;
 import core.WorkerTask;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
+import store.Store;
+import store.StoreFactory;
 
-public class AlmostE2ETest {
+public class StoreLoadingTest {
 
-	private String path = "C:\\";
-	private String filename = "Leading_Causes_of_Death__1990-2010.csv";
-	//private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
-	//private String filename = "short_cis_course_catalog.csv";
+	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
+	private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
-	private ObjectMapper om = new ObjectMapper();
-	
 	@Test
-	public void almostE2ETest() {
+	public void storeLoadingE2ETest() {
 		
 		Properties p = new Properties();
 		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
-		Conductor c = new Conductor(pc, null);
+		Conductor c = new Conductor(pc, StoreFactory.makeNullStore(pc));
 		
 		c.start();
 		
@@ -43,17 +38,16 @@ public class AlmostE2ETest {
 			results = c.consumeResults(); // we know there is only one set of results
 		} while(results.isEmpty());
 		
+		// Create store
+		Store elasticStore = StoreFactory.makeElasticStore(pc);
+		
+		elasticStore.initStore();
+		
 		for(WorkerTaskResult wtr : results) {
-			String textual = null;
-			try {
-				textual = om.writeValueAsString(wtr);
-			} 
-			catch (JsonProcessingException e) {
-				e.printStackTrace();
-			}
-			System.out.println(textual);
+			elasticStore.storeDocument(wtr);
 		}
 		
+		System.out.println("DONE!");
 	}
 
 }

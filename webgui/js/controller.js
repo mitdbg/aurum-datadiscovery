@@ -1,4 +1,4 @@
-var host = '128.30.77.76'
+var host = '127.0.0.1'
 var port = '5000'
 
 var baseUrl = host + ':' + port

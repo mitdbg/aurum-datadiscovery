@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
+import core.WorkerTask;
 
 public class WebHandler extends HttpServlet {
 	
@@ -52,11 +53,11 @@ public class WebHandler extends HttpServlet {
 			String[] dbname = parameters.get("dbname");
 			initStore(dbname[0]);
 			return "OK";
-		case "processDataSource":
-			String[] type = parameters.get("type");
+		case "processCSVDataSource":
 			String[] conn = parameters.get("path");
 			String[] name = parameters.get("source");
-			response = processDataSource(type[0], conn[0], name[0]);
+			String[] separator = parameters.get("separator");
+			response = processCSVDataSource(conn[0], name[0], separator[0]);
 			return response;
 			
 			// test functions
@@ -81,9 +82,11 @@ public class WebHandler extends HttpServlet {
 		return "FAIL";
 	}
 	
-    private String processDataSource(String type, String path, String name) {
-		// TODO Auto-generated method stub
-		return null;
+    private String processCSVDataSource(String path, String name, String separator) {
+    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
+    	boolean success = c.submitTask(wt);
+    	if(success) return "OK";
+    	return "FAIL";
 	}
 
 	public boolean initStore(String dbname) {

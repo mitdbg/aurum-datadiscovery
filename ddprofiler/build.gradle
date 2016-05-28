@@ -33,6 +33,9 @@ dependencies {
 	// opencsv
 	compile 'net.sf.opencsv:opencsv:2.3'
 
+    // jest for elasticsearch
+    compile 'io.searchbox:jest:2.0.0'
+
 	//count-min sketch
 	compile 'com.clearspring.analytics:stream:2.7.0'
 

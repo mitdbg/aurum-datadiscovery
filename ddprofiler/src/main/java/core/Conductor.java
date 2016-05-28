@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import core.config.ProfilerConfig;
+import store.Store;
 
 public class Conductor {
 
@@ -21,20 +22,24 @@ public class Conductor {
 	private List<Future<List<WorkerTaskResult>>> futures;
 	private BlockingQueue<WorkerTaskResult> results;
 	
+	private Store store;
+	
 	private Thread consumer;
 	private Consumer runnable;
 	
-	public Conductor(ProfilerConfig pc) {
+	public Conductor(ProfilerConfig pc, Store s) {
 		this.pc = pc;
-		taskQueue = new LinkedBlockingQueue<>();
-		futures = new ArrayList<>();
-		results = new LinkedBlockingQueue<>();
-		pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
-		runnable = new Consumer();
-		consumer = new Thread(runnable);
+		this.store = s;
+		this.taskQueue = new LinkedBlockingQueue<>();
+		this.futures = new ArrayList<>();
+		this.results = new LinkedBlockingQueue<>();
+		this.pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
+		this.runnable = new Consumer();
+		this.consumer = new Thread(runnable);
 	}
 	
 	public void start() {
+		this.store.initStore();
 		this.consumer.start();
 	}
 	
@@ -80,14 +85,14 @@ public class Conductor {
 				WorkerTask wt = null;
 				try {
 					wt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-				} 
+				}
 				catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				
 				if(wt != null) {
 					// Create worker to handle the task and submit to the pool
-					Worker w = new Worker(wt, pc);
+					Worker w = new Worker(wt, store, pc);
 					Future<List<WorkerTaskResult>> future = pool.submit(w);
 					// Store future
 					futures.add(future);
