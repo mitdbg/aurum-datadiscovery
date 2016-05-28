@@ -14,7 +14,6 @@ import analysis.modules.DataType;
 import analysis.modules.DataTypeAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
-import analysis.modules.MultiEntityAnalyzer;
 import analysis.modules.TextualSignature;
 import analysis.modules.TextualSignatureAnalyzer;
 
@@ -23,10 +22,10 @@ public class TextualAnalyzer implements TextualAnalysis {
 	private List<DataConsumer> analyzers;
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
-	private MultiEntityAnalyzer ea;
+	private EntityAnalyzer ea;
 	private TextualSignatureAnalyzer sa;
 	
-	private TextualAnalyzer(MultiEntityAnalyzer ea) {
+	private TextualAnalyzer(EntityAnalyzer ea) {
 		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
@@ -38,7 +37,7 @@ public class TextualAnalyzer implements TextualAnalysis {
 		analyzers.add(sa);
 	}
 	
-	public static TextualAnalyzer makeAnalyzer(MultiEntityAnalyzer ea2) {
+	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
 		ea2.clear();
 		return new TextualAnalyzer(ea2);
 	}
