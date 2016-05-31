@@ -279,7 +279,7 @@ if __name__ == "__main__":
     print(str(sys.argv))
     # python build_idx_coordinator.py --mode BGRAPH 
     # --input csvfiles
-    # /Users/ra-mit/Desktop/mitdwhdataslice --dataset slice 
+    # /Users/ra-mit/Desktop/mitdwhdataslice --dataset slice
     # --workers w1,w2
     if len(sys.argv) is not 10:
         print("HELP")
