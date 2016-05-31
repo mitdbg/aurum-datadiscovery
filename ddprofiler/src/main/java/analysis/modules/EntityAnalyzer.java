@@ -4,6 +4,7 @@
  */
 package analysis.modules;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
 
+import analysis.AnalyzerFactory;
 import analysis.TextualDataConsumer;
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
@@ -25,16 +27,26 @@ public class EntityAnalyzer implements TextualDataConsumer {
 	private List<NameFinderME> nameFinderList = null;
 	private Properties prop = null;
 
-	public EntityAnalyzer(String NLPModeConfigFileName) {
+	public EntityAnalyzer() {
 		prop = new Properties(); 
 		entities = new HashSet<>();
 		nameFinderList = new Vector<NameFinderME>();
-		List<TokenNameFinderModel> modelList = loadModel(NLPModeConfigFileName);
-		System.out.println(modelList.size());
-		for (TokenNameFinderModel tf_model : modelList) {
-			NameFinderME nameFinder = new NameFinderME(tf_model);
-			nameFinderList.add(nameFinder);
+		InputStream NLPModeConfigStream;
+		List<TokenNameFinderModel> modelList;
+		try {
+			NLPModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
+					"config"+ File.separator+"nlpmodel.config").openStream();
+			modelList = loadModel(NLPModeConfigStream);
+			System.out.println(modelList.size());
+			for (TokenNameFinderModel tf_model : modelList) {
+				NameFinderME nameFinder = new NameFinderME(tf_model);
+				nameFinderList.add(nameFinder);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+
+
 	}
 
 	public Entities getEntities() {
@@ -63,7 +75,7 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		return false;
 	}
 
-	public List<TokenNameFinderModel> loadModel(String modelConfigName) {
+	public List<TokenNameFinderModel> loadModel(InputStream modelConfigStream) {
 		// TODO: what model/models do we need to load?
 		/*
 		 * currently, we adopted the models provided by openNLP the detailed
@@ -72,7 +84,7 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		List<TokenNameFinderModel> modelList = new Vector<TokenNameFinderModel>();
 		InputStream input = null;
 		try {
-			input = new FileInputStream(modelConfigName);
+			input = modelConfigStream;
 			prop.load(input);
 			Enumeration<?> enumVar = prop.propertyNames();
 			while (enumVar.hasMoreElements()) {
