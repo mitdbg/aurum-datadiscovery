@@ -1,6 +1,6 @@
 /**
  * @author Raul - raulcf@csail.mit.edu
- *
+ * @author Sibo Wang (edit)
  */
 package analysis.modules;
 
@@ -16,21 +16,24 @@ public class Range {
 	private int min;
 	private float minF;
 	private float avg;
+	private float stdDeviation;//stores the stdDeviation for the profiler
 	
-	public Range(Type t, int totalRecords, int max, int min, float avg) {
+	public Range(Type t, int totalRecords, int max, int min, float avg, float stdDeviation) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.max = max;
 		this.min = min;
 		this.avg = avg;
+		this.stdDeviation = stdDeviation;
 	}
 	
-	public Range(Type t, int totalRecords, float maxF, float minF, float avg) {
+	public Range(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.maxF = maxF;
 		this.minF = minF;
 		this.avg = avg;
+		this.stdDeviation = stdDeviation;
 	}
 	
 	public Type getType() {
@@ -60,6 +63,17 @@ public class Range {
 	public float getAvg() {
 		return avg;
 	}
+
+	
+	public float getStdDeviation() {
+		return stdDeviation;
+	}
+
+	public void setStdDeviation(float stdDeviation) {
+		this.stdDeviation = stdDeviation;
+	}
+
+	
 	
 	@Override
 	public String toString() {
@@ -73,5 +87,6 @@ public class Range {
 			return "Unknown type";
 		}
 	}
+
 
 }

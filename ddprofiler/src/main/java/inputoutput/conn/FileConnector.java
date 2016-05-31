@@ -6,7 +6,6 @@
 
 package inputoutput.conn;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -17,27 +16,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import au.com.bytecode.opencsv.CSVReader;
+
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
 
 public class FileConnector extends Connector {
 	
-	private BufferedReader fileReader;
+	private CSVReader fileReader;
 	private long lineCounter = 0;
 	private TableInfo tableInfo;
 
-	private String lineSplitter;
+	private char lineSplitter;
 	private Vector<Record> records;
 	
 	public FileConnector() {
-		this.lineSplitter = ",";
+		this.lineSplitter = ',';
 	}	
 	
 	public FileConnector(String connectPath, String filename, String spliter) throws IOException {
 		this.connectPath = connectPath;
 		this.sourceName = filename;
-		this.lineSplitter = spliter;
+		
+		/*
+		 * FIXME: OpenCSV only support single spliter.  So we only use the first
+		 * spliter in the splitter string, which may contain more than one char.
+		 */
+			 
+		this.lineSplitter = spliter.charAt(0);
+		
 		this.tableInfo = new TableInfo();
 		initConnector();
 		List<Attribute> attrs = this.getAttributes();
@@ -51,7 +59,8 @@ public class FileConnector extends Connector {
 	
 	@Override
 	void initConnector() throws FileNotFoundException {
-		fileReader = new BufferedReader(new FileReader(connectPath+sourceName));
+		fileReader = new CSVReader(new FileReader(connectPath+sourceName), this.lineSplitter);
+		//fileReader = new BufferedReader(new FileReader(connectPath+sourceName));
 	}
 	
 	void destroyConnector(){
@@ -61,28 +70,8 @@ public class FileConnector extends Connector {
 			e.printStackTrace();
 		}
 	}
-
-	public List<String> csv_spliter(String attributes){
-		Vector<String> results = new Vector<String>();
-		int start_pos = 0;
-		boolean inside_qutation=false;
-		for(int i=0; i<attributes.length(); i++){
-			
-			if(lineSplitter.indexOf(attributes.charAt(i))>=0 && inside_qutation == false){
-				String store_str = attributes.substring(start_pos, i);
-				results.addElement(store_str.trim());				
-				start_pos = i+1;
-			}
-			
-			if(attributes.charAt(i) == '\"'){
-				inside_qutation = !inside_qutation;
-			}			
-		}
-		String last_str = attributes.substring(start_pos, attributes.length());
-		results.addElement(last_str.trim());
-		return results;
-	}
 	
+
 	public List<Attribute> getAttributes() throws IOException {
 		
 		//assume that the first row is the attributes;
@@ -91,12 +80,13 @@ public class FileConnector extends Connector {
 			//wrong usage of the getAttributes function
 			return tableInfo.getTableAttributes();
 		}
-		String attributes = fileReader.readLine();
+		String[] attributes = fileReader.readNext();
 		lineCounter++;
-		List<String> attr_name_list =  csv_spliter(attributes);
+		//List<String> attr_name_list =  csv_spliter(attributes);
+		
 		Vector<Attribute> attr_list = new Vector<Attribute>();
-		for(int i=0; i< attr_name_list.size(); i++){
-			Attribute attr = new Attribute(attr_name_list.get(i));
+		for(int i=0; i< attributes.length; i++){
+			Attribute attr = new Attribute(attributes[i]);
 			attr_list.addElement(attr);
 		}
 		return attr_list;
@@ -109,25 +99,19 @@ public class FileConnector extends Connector {
 	
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException {
-		String line;
 		boolean read_lines = false;
-
-		for(int i=0; i<num && (line = fileReader.readLine()) != null; i++) {
+		String[] res = null;
+		for(int i=0; i<num && (res = fileReader.readNext()) != null; i++) {
 			lineCounter++;
 			read_lines = true;
-			List<String> res = csv_spliter(line); 
-			//System.out.println(res.size());
 			Record rec = new Record();
 			rec.setTuples(res);
 			rec_list.add(rec);
-			/*for(int j=0; j<res.size(); j++){
-				String attr = col_store.getColumn_index().get(j);
-				col_store.getColumn_vectors().get(attr).add(res.get(j));
-			}*/
 		}
 		return read_lines;
 	}
 
+	int debug_cnt=0;
 
 	/**
 	 * Returns a map with Attribute of table as key and a list of num values as value.
@@ -154,15 +138,43 @@ public class FileConnector extends Connector {
 			return null;
 		}
 		for(Record r : recs) {
-			List<String> values = r.getTuples();
+			List<String> values = r.getTuples();			
 			int currentIdx = 0;
 			for(List<String> vals : data.values()) { // ordered iteration
 				vals.add(values.get(currentIdx));
 				currentIdx++;
 			}
 		}
-		
 		return data;
 	}
 
+	
+	/*
+	 * obsoleted function, buggy when handling cvs files like below
+	 * A,B,"C DDD "" EEE, F
+	 * it should be splited into (|A|, |B|, |"C DDD "" EEE|, F). 
+	 * however, current function will return  (|A|, |B|, |"C DDD "" EEE, F|) since it escape comma inside quotes.
+	 */
+	public List<String> csv_spliter(String attributes){
+		Vector<String> results = new Vector<String>();
+		int start_pos = 0;
+		boolean inside_qutation=false;
+		for(int i=0; i<attributes.length(); i++){
+			
+			if(lineSplitter == attributes.charAt(i) && inside_qutation == false){
+				String store_str = attributes.substring(start_pos, i);
+				results.addElement(store_str.trim());				
+				start_pos = i+1;
+			}
+			
+			if(attributes.charAt(i) == '\"'){
+				inside_qutation = !inside_qutation;
+			}			
+		}
+		String last_str = attributes.substring(start_pos, attributes.length());
+		results.addElement(last_str.trim());
+		return results;
+	}
+	
+	
 }

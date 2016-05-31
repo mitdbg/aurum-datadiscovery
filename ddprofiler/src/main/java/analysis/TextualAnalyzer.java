@@ -34,13 +34,12 @@ public class TextualAnalyzer implements TextualAnalysis {
 		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ea);
-		analyzers.add(ea);
 		analyzers.add(sa);
 	}
 	
-	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea) {
-		ea.clear();
-		return new TextualAnalyzer(ea);
+	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
+		ea2.clear();
+		return new TextualAnalyzer(ea2);
 	}
 	
 	@Override

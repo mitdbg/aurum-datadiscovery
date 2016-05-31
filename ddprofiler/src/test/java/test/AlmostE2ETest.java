@@ -15,8 +15,10 @@ import core.config.ProfilerConfig;
 
 public class AlmostE2ETest {
 
-	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
-	private String filename = "short_cis_course_catalog.csv";
+	private String path = "C:\\";
+	private String filename = "Leading_Causes_of_Death__1990-2010.csv";
+	//private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
+	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
 	private ObjectMapper om = new ObjectMapper();

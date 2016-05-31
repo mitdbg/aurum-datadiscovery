@@ -93,5 +93,10 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	public Range getNumericalRange() {
 		return ra.getFloatRange();
 	}
+
+	@Override
+	public long getQuantile(double p) {
+		return ra.getQuantile(p);
+	}
 	
 }
