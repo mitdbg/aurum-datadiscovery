@@ -9,7 +9,7 @@ import config as C
 import api as API
 from inputoutput import serde
 from dataanalysis import dataanalysis as da
-from modelstore import modelstore as MS
+from modelstore import mongomodelstore as MS
 from inputoutput import inputoutput as iod
 from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr

@@ -15,7 +15,7 @@ from dataanalysis import dataanalysis  as da
 from dataanalysis import jointsignatureanalysis as jsa
 from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr
-from modelstore import modelstore as MS
+from modelstore import mongomodelstore as MS
 
 cgraph = OrderedDict()
 cgraph_cache = None

@@ -9,7 +9,7 @@ import config as C
 import api as API
 from inputoutput import serde
 from inputoutput import inputoutput as iod
-from modelstore import modelstore as MS
+from modelstore import mongomodelstore as MS
 from dataanalysis import dataanalysis as da
 import ddworker as ASYNC
 
