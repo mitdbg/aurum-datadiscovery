@@ -8,6 +8,11 @@ from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
 from nearpy.distances import CosineDistance
 
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
+from collections import defaultdict
+
 rbp = RandomBinaryProjections('rbp', 30)
 
 
@@ -79,12 +84,36 @@ def build_entity_sim_relation(network, fields, entities):
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
 
 
-def build_content_sim_relation_text(network, fields):
-    print('todo')
+def build_content_sim_relation_text(network, fields, signatures):
+    docs = []
+    for e in signatures:
+        docs.append(' '.join(e))
+
+    tfidf = da.get_tfidf_docs(docs)  # this may become redundant if we exploit the store characteristics
+    text_engine = index_in_text_engine(fields, tfidf)
+    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.CONTENT_SIM)
 
 
-def build_content_sim_relation_num(network, fields, values):
-    print('todo')
+def build_content_sim_relation_num(network, fields, features):
+    X = StandardScaler.fit_transform(features)
+    db = DBSCAN(eps=0.3, min_samples=3).fit(X)
+    labels = db.labels_
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    print("Total num clusters found: " + str(n_clusters))
+    # group indices by label
+    clusters = defaultdict(list)
+    for i in range(len(labels)):
+        clusters[labels[i]].append(i)
+    # create relations
+    for k, v in clusters.items():
+        for el1 in v:
+            for el2 in v:
+                if el1 != el2:
+                    sn1, fn1 = fields[el1]
+                    sn2, fn2 = fields[el2]
+                    n1 = network.add_field(sn1, fn1)
+                    n2 = network.add_field(sn2, fn2)
+                    network.add_relation(n1, n2, Relation.CONTENT_SIM, 1)
 
 
 def build_overlap_relation():

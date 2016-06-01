@@ -61,10 +61,13 @@ class Node:
 
 class FieldNetwork:
     # The core graph
-    G = nx.MultiGraph()
+    __G = nx.MultiGraph()
 
-    def __init__(self):
-        self.__G = nx.MultiGraph()
+    def __init__(self, graph=None):
+        if graph is None:
+            self.__G = nx.MultiGraph()
+        else:
+            self.__G = graph
 
     def relations_between(self, node1, node2):
         return self.__G[node1][node2]
@@ -107,6 +110,17 @@ class FieldNetwork:
         """
         score = {'score': score}
         self.__G.add_edge(node_src, node_target, relation, score)
+
+
+def serialize_network(network, path):
+    G = network.G
+    nx.write_gpickle(G, path)
+
+
+def deserialize_network(path):
+    G = nx.read_gpickle(path)
+    network = FieldNetwork(G)
+    return network
 
 
 if __name__ == "__main__":
