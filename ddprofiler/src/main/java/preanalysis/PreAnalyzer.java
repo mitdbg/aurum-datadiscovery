@@ -22,6 +22,12 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	private Connector c;
 	private List<Attribute> attributes;
 	private boolean knownDataTypes = false;
+	
+	private static final Pattern DOUBLE_PATTERN = Pattern
+			.compile("[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
+					+ "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
+					+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
+					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
 
 	/**
 	 * Implementation of IO interface
@@ -49,7 +55,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			Values vs = null;
 			AttributeType at = e.getKey().getColumnType();
 			if (at.equals(AttributeType.FLOAT)) {
-
 				List<Float> castValues = new ArrayList<>();
 				vs = Values.makeFloatValues(castValues);
 				for (String s : e.getValue()) {
@@ -61,7 +66,21 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					}
 					castValues.add(f);
 				}
-			} else if (at.equals(AttributeType.STRING)) {
+			} 
+			else if (at.equals(AttributeType.INT)) {
+				List<Integer> castValues = new ArrayList<>();
+				vs = Values.makeIntegerValues(castValues);
+				for (String s : e.getValue()) {
+					int f = 0;
+					try {
+						f = Integer.valueOf(s).intValue();
+					} catch (NumberFormatException nfe) {
+						continue; // SKIP data that does not parse correctly
+					}
+					castValues.add(f);
+				}
+			}
+			else if (at.equals(AttributeType.STRING)) {
 				List<String> castValues = new ArrayList<>();
 				vs = Values.makeStringValues(castValues);
 				e.getValue().forEach(s -> castValues.add(s));
@@ -89,13 +108,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		}
 	}
 
-	private static final Pattern DOUBLE_PATTERN = Pattern
-			.compile("[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
-					+ "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
-					+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
-					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
-
-	private static boolean isNumberical(String s) {
+	private static boolean isNumerical(String s) {
 		return DOUBLE_PATTERN.matcher(s).matches();
 	}
 
@@ -127,7 +140,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	/*
 	 * exception based type checker private static boolean
 	 */
-	public static boolean isNumbericalExpcetion(String s) {
+	public static boolean isNumericalException(String s) {
 		try {
 			Double.parseDouble(s);
 			return true;
@@ -153,7 +166,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		int intMatches = 0;
 		int strMatches = 0;
 		for (String s : values) {
-			if (isNumberical(s)) {
+			if (isNumerical(s)) {
 				if (isInteger(s))
 					intMatches++;
 				else

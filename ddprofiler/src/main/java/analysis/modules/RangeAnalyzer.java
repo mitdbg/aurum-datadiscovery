@@ -51,7 +51,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	}
 	
 	public Range getFloatRange() {
-		avg = totalSumF/totalRecords;
+		avg = totalSumF / totalRecords;
 		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg*avg);
 		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation);
 		return r;
@@ -65,7 +65,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > max) max = value;
 			if(value < min) min = value;
 			totalSum += value;
-			squareSum +=value*value;
+			squareSum += value * value;
+			if(value < 0) continue;
 			quantileEstimator.offer(value);
 		}
 		
@@ -80,7 +81,8 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value > maxF) maxF = value;
 			if(value < minF) minF = value;
 			totalSumF += value;
-			squareSum += value*value;
+			squareSum += value * value;
+			if(value < 0) continue;
 			quantileEstimator.offer((long) value);
 		}
 		return true;

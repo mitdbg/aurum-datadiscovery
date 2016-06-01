@@ -1,6 +1,7 @@
 package core;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -10,10 +11,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import core.config.ProfilerConfig;
 import store.Store;
 
 public class Conductor {
+	
+	final private Logger LOG = LoggerFactory.getLogger(Conductor.class.getName());
 
 	private ProfilerConfig pc;
 	
@@ -33,7 +39,9 @@ public class Conductor {
 		this.taskQueue = new LinkedBlockingQueue<>();
 		this.futures = new ArrayList<>();
 		this.results = new LinkedBlockingQueue<>();
-		this.pool = Executors.newFixedThreadPool(pc.getInt(ProfilerConfig.NUM_POOL_THREADS));
+		int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
+		this.pool = Executors.newFixedThreadPool(numWorkers);
+		LOG.info("Create worker pool, num workers: {}", numWorkers);
 		this.runnable = new Consumer();
 		this.consumer = new Thread(runnable);
 	}
@@ -48,7 +56,12 @@ public class Conductor {
 	}
 	
 	public boolean submitTask(WorkerTask task) {
+		LOG.info("Task {} submitted for processing", task.getTaskId());
 		return taskQueue.add(task);
+	}
+	
+	public boolean isTherePendingWork() {
+		return futures.size() > 0;
 	}
 	
 	public List<WorkerTaskResult> consumeResults() {
@@ -99,10 +112,14 @@ public class Conductor {
 				}
 				
 				// Check if there are futures that have finished at this point
-				for(Future<List<WorkerTaskResult>> f : futures) {
+				Iterator<Future<List<WorkerTaskResult>>> it = futures.iterator();
+				while(it.hasNext()) {
+					Future<List<WorkerTaskResult>> f = it.next();
 					if(f.isDone()) {
 						try {
+							LOG.info("Remaining futures: {}", futures.size());
 							results.addAll(f.get());
+							it.remove();
 						} 
 						catch (InterruptedException | ExecutionException e) {
 							e.printStackTrace();

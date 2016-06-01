@@ -1,5 +1,8 @@
 package test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 
@@ -14,7 +17,7 @@ import store.StoreFactory;
 
 public class StoreLoadingTest {
 
-	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
+	private String path = "/Users/ra-mit/Desktop/mitdwh_test/";
 	private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
@@ -27,25 +30,39 @@ public class StoreLoadingTest {
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
 		Conductor c = new Conductor(pc, StoreFactory.makeNullStore(pc));
-		
 		c.start();
 		
-		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
-		c.submitTask(wt);
+		try {
+			Files.walk(Paths.get(path)).forEach(filePath -> {
+			    if (Files.isRegularFile(filePath)) {
+			    	String name = filePath.getFileName().toString();
+			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
+			    	c.submitTask(wt);
+			    }
+			});
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 		
-		List<WorkerTaskResult> results = null;
-		do {
-			results = c.consumeResults(); // we know there is only one set of results
-		} while(results.isEmpty());
+//		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
+//		c.submitTask(wt);
 		
 		// Create store
 		Store elasticStore = StoreFactory.makeElasticStore(pc);
-		
 		elasticStore.initStore();
 		
-		for(WorkerTaskResult wtr : results) {
-			elasticStore.storeDocument(wtr);
+		while(c.isTherePendingWork()) {
+			List<WorkerTaskResult> results = null;
+			do {
+				results = c.consumeResults(); // we know there is only one set of results
+			} while(results.isEmpty());
+			
+			for(WorkerTaskResult wtr : results) {
+				elasticStore.storeDocument(wtr);
+			}
 		}
+		
 		
 		System.out.println("DONE!");
 	}

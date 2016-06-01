@@ -44,7 +44,7 @@ public class ProfilerConfig extends Config {
 				.define(NUM_RECORD_READ, Type.INT, 1000, Importance.MEDIUM, NUM_RECORD_READ_DOC)
 				.define(STORE_SERVER, Type.STRING, "localhost", Importance.HIGH, STORE_SERVER_DOC)
 				.define(STORE_PORT, Type.INT, 9200, Importance.HIGH, STORE_PORT_DOC)
-				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC);
+				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {
