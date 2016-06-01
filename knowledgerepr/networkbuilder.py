@@ -56,7 +56,7 @@ def build_schema_relation(network, fields):
             if sn_outer == sn and fn_outer != fn:
                 assert isinstance(network, FieldNetwork)
                 n_inner = network.add_field(sn, fn)
-                network.add_relation(n_outer, n_inner, Relation.SCHEMA)
+                network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 
 
 def build_schema_sim_relation(network, fields):
@@ -79,7 +79,11 @@ def build_entity_sim_relation(network, fields, entities):
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
 
 
-def build_content_sim_relation():
+def build_content_sim_relation_text(network, fields):
+    print('todo')
+
+
+def build_content_sim_relation_num(network, fields, values):
     print('todo')
 
 
