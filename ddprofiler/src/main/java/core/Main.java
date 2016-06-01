@@ -4,6 +4,9 @@
  */
 package core;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 
@@ -34,7 +37,6 @@ public class Main {
 		Store s = StoreFactory.makeElasticStore(pc);
 		
 		Conductor c = new Conductor(pc, s);
-		
 		c.start();
 		
 		int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
@@ -45,14 +47,14 @@ public class Main {
 		}
 		else if (executionMode == ExecutionMode.OFFLINE.mode) {
 			// Run with the configured input parameters and produce results to file (?)
-			// TODO: this will be great for quick testing
-			
+			String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+			this.readDirectoryAndCreateTasks(c, pathToSources);
 		}
 	}
 	
 	public static void main(String args[]) {
 		
-		// Get Properties with command line configuration 
+		// Get Properties with command line configuration
 		List<ConfigKey> configKeys = ProfilerConfig.getAllConfigKey();
 		OptionParser parser = new OptionParser();
 		// Unrecognized options are passed through to the query
@@ -74,6 +76,23 @@ public class Main {
 		
 		Main m = new Main();
 		m.startProfiler(pc);
+	}
+	
+	private void readDirectoryAndCreateTasks(Conductor c, String pathToSources) {
+		try {
+			Files.walk(Paths.get(pathToSources)).forEach(filePath -> {
+			    if (Files.isRegularFile(filePath)) {
+			    	String path = null; // TODO:
+			    	String name = null; // TODO:
+			    	String separator = null; // TODO:
+			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
+			    	c.submitTask(wt);
+			    }
+			});
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static Properties validateProperties(Properties p) {

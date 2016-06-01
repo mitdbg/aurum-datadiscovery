@@ -93,3 +93,15 @@ def build_pkfk_relation():
 
 if __name__ == "__main__":
     print("TODO")
+
+    # test
+    from scipy import spatial
+    import numpy
+
+    d = [1, 2, 3]
+    d2 = [3, 4, 5]
+
+    result = 1 - spatial.distance.cosine(d, d2)
+    print("result: " + str(result))
+    result2 = 1.0 - numpy.dot(d, d2)
+    print("result2: " + str(result))
