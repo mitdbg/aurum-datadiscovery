@@ -3,25 +3,40 @@ from knowledgerepr import fieldnetwork
 from knowledgerepr import networkbuilder
 from knowledgerepr.networkbuilder import FieldNetwork
 
+import time
+
 
 def main():
+    start_all = time.time()
     network = FieldNetwork()
     store = StoreHandler()
 
     # Get all fields from store
-    fields = store.get_all_fields()
+    fields_gen = store.get_all_fields()
+    fields = [f for f in fields_gen]
     # Schema relation
+    start_schema = time.time()
     networkbuilder.build_schema_relation(network, fields)
+    end_schema = time.time()
+    print("Total schema: {0}".format(str(end_schema - start_schema)))
 
-    import networkx as nx
-    from matplotlib.pyplot import show
+    # Schema_sim relation
+    start_schema_sim = time.time()
+    networkbuilder.build_schema_sim_relation(network, fields)
+    end_schema_sim = time.time()
+    print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
+
+    #import networkx as nx
+    #from matplotlib.pyplot import show
     #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
-    nx.draw(network._get_underlying_repr())
-    show()
+    #nx.draw(network._get_underlying_repr())
+    #show()
+
+    end_all = time.time()
+    print("Total time: {0}".format(str(end_all - start_all)))
 
     """
-    # Schema_sim relation
-    networkbuilder.build_schema_sim_relation(network, fields)
+
     # Entity_sim relation
     fields, entities = store.get_all_fields_entities()
     networkbuilder.build_entity_sim_relation(network, fields, entities)

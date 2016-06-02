@@ -19,7 +19,7 @@ rbp = RandomBinaryProjections('rbp', 30)
 def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
     # FIXME: bottleneck. parallelize this
     rowidx = 0
-    for (sn, fn) in fields:
+    for (nid, sn, fn) in fields:
         node1 = network.add_field(sn, fn)
         sparse_row = tfidf.getrow(rowidx)
         rowidx += 1
@@ -42,7 +42,7 @@ def index_in_text_engine(fields, tfidf):
 
     st = time.time()
     rowidx = 0
-    for (sn, fn) in fields:
+    for (nid, sn, fn) in fields:
         key = str(sn) + "%&%&%" + str(fn)
         sparse_row = tfidf.getrow(rowidx)
         rowidx += 1
@@ -54,8 +54,7 @@ def index_in_text_engine(fields, tfidf):
     return text_engine
 
 
-def build_schema_relation(network, fields_gen):
-    fields = [f for f in fields_gen]
+def build_schema_relation(network, fields):
     for (nid, sn_outer, fn_outer) in fields:
         n_outer = network.add_field(sn_outer, fn_outer)
         for(nid, sn, fn) in fields:
@@ -67,7 +66,7 @@ def build_schema_relation(network, fields_gen):
 
 def build_schema_sim_relation(network, fields):
     docs = []
-    for (sn, fn) in fields:
+    for (nid, sn, fn) in fields:
         docs.append(fn)
 
     tfidf = da.get_tfidf_docs(docs)
