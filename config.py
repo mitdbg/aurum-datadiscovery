@@ -74,6 +74,8 @@ jgraphfile = "jgraphfile.pickle"
 
 # DB connection
 db_location = "mongodb://localhost:27017"
+db_host = 'localhost'
+db_port = '9200'
 
 ################
 # Cluster configs

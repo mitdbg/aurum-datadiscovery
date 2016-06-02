@@ -54,10 +54,11 @@ def index_in_text_engine(fields, tfidf):
     return text_engine
 
 
-def build_schema_relation(network, fields):
-    for (sn_outer, fn_outer) in fields:
+def build_schema_relation(network, fields_gen):
+    fields = [f for f in fields_gen]
+    for (nid, sn_outer, fn_outer) in fields:
         n_outer = network.add_field(sn_outer, fn_outer)
-        for(sn, fn) in fields:
+        for(nid, sn, fn) in fields:
             if sn_outer == sn and fn_outer != fn:
                 assert isinstance(network, FieldNetwork)
                 n_inner = network.add_field(sn, fn)

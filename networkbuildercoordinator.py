@@ -12,6 +12,14 @@ def main():
     fields = store.get_all_fields()
     # Schema relation
     networkbuilder.build_schema_relation(network, fields)
+
+    import networkx as nx
+    from matplotlib.pyplot import show
+    #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
+    nx.draw(network._get_underlying_repr())
+    show()
+
+    """
     # Schema_sim relation
     networkbuilder.build_schema_sim_relation(network, fields)
     # Entity_sim relation
@@ -30,8 +38,9 @@ def main():
 
     path = "test/"
     fieldnetwork.serialize_network(network, path)
+    """
 
-    print("TODO")
+    print("DONE!")
 
 if __name__ == "__main__":
-    print("TODO")
+    main()

@@ -69,6 +69,9 @@ class FieldNetwork:
         else:
             self.__G = graph
 
+    def _get_underlying_repr(self):
+        return self.__G
+
     def relations_between(self, node1, node2):
         return self.__G[node1][node2]
 

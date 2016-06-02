@@ -1,9 +1,8 @@
-from elasticsearch_dsl.connections import connections
+from elasticsearch import Elasticsearch
 import config as c
 
 
 class StoreHandler:
-
     # Store client
     client = None
 
@@ -13,7 +12,7 @@ class StoreHandler:
             :return:
             """
         global client
-        client = connections.create_connection(hosts=[c.db_location], timeout=20)
+        client = Elasticsearch([{'host': c.db_host, 'port': c.db_port}])
 
     def close(self):
         print("TODO")
@@ -23,7 +22,30 @@ class StoreHandler:
         Reads all fields, described as (id, source_name, field_name) from the store.
         :return: a list of all fields with the form (id, source_name, field_name)
         """
-        print("TODO")
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='profile', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
+                yield id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
 
     def peek_values(self, field, num_values):
         """
@@ -66,3 +88,9 @@ class StoreHandler:
 
 if __name__ == "__main__":
     print("Elastic Store")
+    handler = StoreHandler()
+    all_fields = handler.get_all_fields()
+    i = 0
+    for el in all_fields:
+        print(str(el))
+    print("Total fields: " + str(i))
