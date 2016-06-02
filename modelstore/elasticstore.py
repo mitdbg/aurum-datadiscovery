@@ -47,6 +47,45 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
+    def get_all_fields_with(self, attrs):
+        """
+        Reads all fields, described as (id, source_name, field_name) from the store.
+        :return: a list of all fields with the form (id, source_name, field_name)
+        """
+        template = 'hits.hits._source.'
+        filter_path = ['_scroll_id',
+                       'hits.hits._id',
+                       'hits.total',
+                       'hits.hits._source.sourceName',
+                       'hits.hits._source.columnName']
+        for attr in attrs:
+            new_filter_path = template + attr
+            filter_path.append(new_filter_path)
+
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='profile', body=body, scroll="10m",
+                            filter_path=filter_path
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                toret = []
+                toret.append(h['_id'])
+                toret.append(h['_source']['sourceName'])
+                toret.append(h['_source']['columnName'])
+                for attr in attrs:
+                    toret.append(h['_source'][attr])
+                tuple_result = tuple(toret)
+                yield tuple_result
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=filter_path
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def peek_values(self, field, num_values):
         """
         Reads sample values for the given field
@@ -69,7 +108,15 @@ class StoreHandler:
         Retrieves all fields and entities from the store
         :return: (fields, entities)
         """
-        print("TODO")
+        results = self.get_all_fields_with(['entities'])
+        fields = []
+        ents = []
+        for r in results:
+            (nid, sn, fn, entities) = r
+            fields.append((nid, sn, fn))
+            ents.append(entities)
+        return fields, ents
+
 
     def get_all_fields_textsignatures(self):
         """
@@ -89,7 +136,7 @@ class StoreHandler:
 if __name__ == "__main__":
     print("Elastic Store")
     handler = StoreHandler()
-    all_fields = handler.get_all_fields()
+    all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
     i = 0
     for el in all_fields:
         print(str(el))

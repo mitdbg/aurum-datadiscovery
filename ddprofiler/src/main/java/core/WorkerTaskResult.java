@@ -9,7 +9,7 @@ public class WorkerTaskResult {
 	final private String dataType;
 	final private int totalValues;
 	final private int uniqueValues;
-	final private String[] entities;
+	final private String entities;
 	final private float minValue;
 	final private float maxValue;
 	final private float avgValue;
@@ -21,7 +21,7 @@ public class WorkerTaskResult {
 			String dataType,
 			int totalValues,
 			int uniqueValues,
-			String[] entities) {
+			String entities) {
 		this.id = id;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
@@ -50,7 +50,7 @@ public class WorkerTaskResult {
 		this.dataType = dataType;
 		this.totalValues = totalValues;
 		this.uniqueValues = uniqueValues;
-		this.entities = new String[]{}; // non existent
+		this.entities = ""; // non existent
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.avgValue = avgValue;
@@ -80,7 +80,7 @@ public class WorkerTaskResult {
 		return uniqueValues;
 	}
 
-	public String[] getEntities() {
+	public String getEntities() {
 		return entities;
 	}
 

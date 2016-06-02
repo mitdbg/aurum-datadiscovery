@@ -52,7 +52,7 @@ public class AnalyzerTest {
 
 				na.feedFloatData(floats);
 				Cardinality c = na.getCardinality();
-				Range r = na.getNumericalRange();
+				Range r = na.getNumericalRange(AttributeType.FLOAT);
 				NumericalSignature s = na.getSignature();
 				System.out.println("Cardinality:");
 				System.out.println(c);

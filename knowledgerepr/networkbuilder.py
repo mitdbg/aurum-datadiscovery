@@ -77,7 +77,7 @@ def build_schema_sim_relation(network, fields):
 def build_entity_sim_relation(network, fields, entities):
     docs = []
     for e in entities:
-        docs.append(' '.join(e))
+        docs.append(e)
 
     tfidf = da.get_tfidf_docs(docs)
     text_engine = index_in_text_engine(fields, tfidf)

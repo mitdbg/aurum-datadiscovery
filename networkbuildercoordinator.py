@@ -26,20 +26,25 @@ def main():
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
-    #import networkx as nx
-    #from matplotlib.pyplot import show
+    # Entity_sim relation
+    start_entity_sim = time.time()
+    fields, entities = store.get_all_fields_entities()
+    networkbuilder.build_entity_sim_relation(network, fields, entities)
+    end_entity_sim = time.time()
+    print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
+
+    import networkx as nx
+    from matplotlib.pyplot import show
     #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
-    #nx.draw(network._get_underlying_repr())
-    #show()
+    nx.draw(network._get_underlying_repr())
+    show()
 
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
 
     """
 
-    # Entity_sim relation
-    fields, entities = store.get_all_fields_entities()
-    networkbuilder.build_entity_sim_relation(network, fields, entities)
+
     # Content_sim text relation
     fields, text_signatures = store.get_all_fields_textsignatures()
     networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
@@ -57,5 +62,24 @@ def main():
 
     print("DONE!")
 
+
+def test():
+    network = FieldNetwork()
+    store = StoreHandler()
+
+    # Entity_sim relation
+    start_entity_sim = time.time()
+    fields, entities = store.get_all_fields_entities()
+    networkbuilder.build_entity_sim_relation(network, fields, entities)
+    end_entity_sim = time.time()
+    print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
+
+    import networkx as nx
+    from matplotlib.pyplot import show
+    # nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
+    nx.draw(network._get_underlying_repr())
+    show()
+
 if __name__ == "__main__":
     main()
+    #test()
