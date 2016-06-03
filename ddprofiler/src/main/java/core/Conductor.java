@@ -1,8 +1,10 @@
 package core;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import store.Store;
 
@@ -32,6 +35,8 @@ public class Conductor {
 	
 	private Thread consumer;
 	private Consumer runnable;
+	// Cached entity analyzers (expensive initialization)
+	private Map<String, EntityAnalyzer> cachedEntityAnalyzers;
 	
 	public Conductor(ProfilerConfig pc, Store s) {
 		this.pc = pc;
@@ -40,7 +45,14 @@ public class Conductor {
 		this.futures = new ArrayList<>();
 		this.results = new LinkedBlockingQueue<>();
 		int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
-		this.pool = Executors.newFixedThreadPool(numWorkers);
+		List<String> uniqueThreadNames = new ArrayList<>();
+		cachedEntityAnalyzers = new HashMap<>();
+		for(int i = 0; i < numWorkers; i++) {
+			String name = new Integer(i).toString();
+			uniqueThreadNames.add(name);
+			cachedEntityAnalyzers.put(name, new EntityAnalyzer());
+		}
+		this.pool = Executors.newFixedThreadPool(numWorkers, new DDThreadFactory(uniqueThreadNames));
 		LOG.info("Create worker pool, num workers: {}", numWorkers);
 		this.runnable = new Consumer();
 		this.consumer = new Thread(runnable);
@@ -105,7 +117,7 @@ public class Conductor {
 				
 				if(wt != null) {
 					// Create worker to handle the task and submit to the pool
-					Worker w = new Worker(wt, store, pc);
+					Worker w = new Worker(wt, store, pc, cachedEntityAnalyzers);
 					Future<List<WorkerTaskResult>> future = pool.submit(w);
 					// Store future
 					futures.add(future);

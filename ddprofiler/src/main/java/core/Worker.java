@@ -10,6 +10,7 @@ import analysis.Analysis;
 import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
+import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
@@ -24,10 +25,15 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 	private int numRecordChunk;
 	private Store store;
 	
-	public Worker(WorkerTask task, Store store, ProfilerConfig pc) {
+	// cached object
+	private EntityAnalyzer ea;
+	
+	public Worker(WorkerTask task, Store store, ProfilerConfig pc, Map<String, EntityAnalyzer> cachedEntityAnalyzers) {
 		this.task = task;
 		this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
 		this.store = store;
+		String threadName = Thread.currentThread().getName();
+		this.ea = cachedEntityAnalyzers.get(threadName);
 	}
 
 	@Override
@@ -92,7 +98,7 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 				((NumericalAnalysis)analysis).feedIntegerData(entry.getValue().getIntegers());
 			}
 			else if(at.equals(AttributeType.STRING)) {
-				analysis = AnalyzerFactory.makeTextualAnalyzer();
+				analysis = AnalyzerFactory.makeTextualAnalyzer(ea);
 				((TextualAnalysis)analysis).feedTextData(entry.getValue().getStrings());
 			}
 			analyzers.put(a.getColumnName(), analysis);

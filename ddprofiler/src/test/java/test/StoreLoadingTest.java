@@ -25,7 +25,7 @@ public class StoreLoadingTest {
 	public void storeLoadingE2ETest() {
 		
 		Properties p = new Properties();
-		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
+		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "3");
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
