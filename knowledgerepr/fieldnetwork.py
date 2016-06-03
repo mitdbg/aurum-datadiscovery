@@ -1,4 +1,5 @@
 from enum import Enum
+import operator
 import networkx as nx
 
 
@@ -113,6 +114,13 @@ class FieldNetwork:
         """
         score = {'score': score}
         self.__G.add_edge(node_src, node_target, relation, score)
+
+    def fields_degree(self, topk):
+        degree = nx.degree(self.__G)
+        sorted_degree = sorted(degree.items(), key=operator.itemgetter(1))
+        sorted_degree.reverse()
+        topk_nodes = sorted_degree[:topk]
+        return topk_nodes
 
 
 def serialize_network(network, path):

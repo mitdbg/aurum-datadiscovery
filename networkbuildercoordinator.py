@@ -40,6 +40,11 @@ def main():
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
+    topk = 100
+    degree = network.fields_degree(topk)
+    for node, val in degree:
+        print("N - " + str(node) + " degree: " + str(val))
+
     import networkx as nx
     from matplotlib.pyplot import show
     #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
