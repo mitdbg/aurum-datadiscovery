@@ -29,7 +29,11 @@ public class StoreLoadingTest {
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
-		Conductor c = new Conductor(pc, StoreFactory.makeNullStore(pc));
+		// Create store
+		Store elasticStore = StoreFactory.makeElasticStore(pc);
+		elasticStore.initStore();
+		
+		Conductor c = new Conductor(pc, elasticStore);
 		c.start();
 		
 		try {
@@ -47,10 +51,6 @@ public class StoreLoadingTest {
 		
 //		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
 //		c.submitTask(wt);
-		
-		// Create store
-		Store elasticStore = StoreFactory.makeElasticStore(pc);
-		elasticStore.initStore();
 		
 		while(c.isTherePendingWork()) {
 			List<WorkerTaskResult> results = null;

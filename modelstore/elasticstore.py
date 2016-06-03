@@ -86,6 +86,39 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
+    def get_fields_text_index(self):
+        """
+        Reads all fields, described as (id, source_name, field_name) from the store (text index).
+        :return: a list of all fields with the form (id, source_name, field_name)
+        """
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='text', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.id',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                rawid_id_source_and_file_name = (h['_id'], h['_source']['id'],
+                                                 h['_source']['sourceName'], h['_source']['columnName'])
+                yield rawid_id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def peek_values(self, field, num_values):
         """
         Reads sample values for the given field
@@ -117,13 +150,32 @@ class StoreHandler:
             ents.append(entities)
         return fields, ents
 
-
     def get_all_fields_textsignatures(self):
         """
         Retrieves textual fields and signatures from the store
         :return: (fields, textsignatures)
         """
-        print("TODO")
+        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": 25}}
+        #mltbody = {"query": {"more_like_this": {"fields": ["text"], "like": [
+        #    {"_index": "text", "_type": "column", "_id": 'AVUWyTdmm0DSuPJKDY1h'}]}}}
+        #client.termvectors(index='text', id='AVUWyTdmm0DSuPJKDY1h', doc_type='column', body=term_body)
+
+        fields = []
+        seen_nid = []
+        text_signatures = []
+        text_fields_gen = self.get_fields_text_index()
+        for (rawid, nid, sn, fn) in text_fields_gen:
+            if nid not in seen_nid:
+                fields.append((nid, sn, fn))
+                ans = client.termvectors(index='text', id=rawid, doc_type='column', body=term_body)
+                terms = []
+                if ans['found']:
+                    term_vectors = ans['term_vectors']
+                    if 'text' in term_vectors:
+                        terms = list(ans['term_vectors']['text']['terms'].keys())
+                text_signatures.append(terms)
+            seen_nid.append(nid)
+        return (fields, text_signatures)
 
     def get_all_fields_numsignatures(self):
         """
@@ -136,8 +188,13 @@ class StoreHandler:
 if __name__ == "__main__":
     print("Elastic Store")
     handler = StoreHandler()
-    all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
-    i = 0
-    for el in all_fields:
-        print(str(el))
-    print("Total fields: " + str(i))
+    #all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
+    #i = 0
+    #for el in all_fields:
+    #    print(str(el))
+    #print("Total fields: " + str(i))
+
+    data = handler.get_all_fields_textsignatures()
+    fields, text_sig = data
+    for sig in text_sig:
+        print(str(sig))
