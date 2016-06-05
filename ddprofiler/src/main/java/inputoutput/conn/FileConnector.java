@@ -113,40 +113,6 @@ public class FileConnector extends Connector {
 
 	int debug_cnt=0;
 
-	/**
-	 * Returns a map with Attribute of table as key and a list of num values as value.
-	 * Map is created internally as it must preserve insertion order
-	 * @param num
-	 * @return
-	 * @throws IOException
-	 * @throws SQLException
-	 */
-	@Override
-	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
-		
-		Map<Attribute, List<String>> data = new LinkedHashMap<>();
-		// Make sure attrs is populated, if not, populate it here
-		if(data.isEmpty()) {
-			List<Attribute> attrs = this.tableInfo.getTableAttributes();
-			attrs.forEach(a -> data.put(a, new ArrayList<>()));
-		}
-		
-		// Read data and insert in order
-		List<Record> recs = new ArrayList<>();
-		boolean readData = this.readRows(num, recs);
-		if(!readData) {
-			return null;
-		}
-		for(Record r : recs) {
-			List<String> values = r.getTuples();			
-			int currentIdx = 0;
-			for(List<String> vals : data.values()) { // ordered iteration
-				vals.add(values.get(currentIdx));
-				currentIdx++;
-			}
-		}
-		return data;
-	}
 
 	
 	/*
