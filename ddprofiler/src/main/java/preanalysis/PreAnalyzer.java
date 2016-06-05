@@ -95,7 +95,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
 					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
 
-	private static boolean isNumberical(String s) {
+	public static boolean isNumberical(String s) {
 		return DOUBLE_PATTERN.matcher(s).matches();
 	}
 
