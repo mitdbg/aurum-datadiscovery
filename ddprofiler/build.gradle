@@ -38,7 +38,14 @@ dependencies {
 
 	//count-min sketch
 	compile 'com.clearspring.analytics:stream:2.7.0'
-
+	
+	// mysql driver
+	compile 'mysql:mysql-connector-java:5.1.6'
+	
+	
+	//oracle driver
+	compile 'com.oracle:ojdbc14:10.2.0.2.0'
+	
     testCompile 'junit:junit:4.11'
 }
 

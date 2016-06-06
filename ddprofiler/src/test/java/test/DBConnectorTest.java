@@ -17,13 +17,13 @@ public class DBConnectorTest {
 	public void test() {
 		DBConnector conn = new DBConnector();
 		
-		conn.setDb_system_name("mysql");
-		conn.setConn_ip("localhost");
-		conn.setPort(3306);
-		conn.setUser_name("root");
+		conn.setDB("mysql");
+		conn.setConnIP("localhost");
+		conn.setPort("3306");
+		conn.setUsername("root");
 		conn.setPassword("Qatar");
 		conn.setConnectPath("/test");
-		conn.setFilename("nellsimple");
+		conn.setFilename("deathcause");
 		try {
 			conn.initConnector();
 			List<Attribute> attr_list = conn.getAttributes();
