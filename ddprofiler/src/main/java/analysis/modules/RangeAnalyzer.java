@@ -28,7 +28,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	private float avg;
 	private float stdDeviation;
 
-	private final int QUANTILE_COMPRESSION_RATIO=128;
+	final private int QUANTILE_COMPRESSION_RATIO = 128;
 	/*
 	 * provide estimator of quantile.
 	 * Let c be the number of distinct values in the stream
@@ -45,15 +45,23 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	
 	public Range getIntegerRange() {
 		avg = (float) (totalSum*1.0/totalRecords);
-		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg*avg);
-		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation);
+		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg * avg);
+		long quantile75 = this.getQuantile(75);
+		long quantile25 = this.getQuantile(25);
+		long iqr = quantile75 - quantile25;
+		long median = this.getQuantile(50);
+		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation, median, iqr);
 		return r;
 	}
 	
 	public Range getFloatRange() {
 		avg = totalSumF / totalRecords;
-		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg*avg);
-		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation);
+		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg * avg);
+		long quantile75 = this.getQuantile(75);
+		long quantile25 = this.getQuantile(25);
+		long iqr = quantile75 - quantile25;
+		long median = this.getQuantile(50);
+		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
 		return r;
 	}
 

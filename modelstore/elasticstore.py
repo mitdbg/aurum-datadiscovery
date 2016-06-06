@@ -155,10 +155,8 @@ class StoreHandler:
         Retrieves textual fields and signatures from the store
         :return: (fields, textsignatures)
         """
+        # TODO: do this only for textual columns
         term_body = {"filter": {"min_term_freq": 2, "max_num_terms": 25}}
-        #mltbody = {"query": {"more_like_this": {"fields": ["text"], "like": [
-        #    {"_index": "text", "_type": "column", "_id": 'AVUWyTdmm0DSuPJKDY1h'}]}}}
-        #client.termvectors(index='text', id='AVUWyTdmm0DSuPJKDY1h', doc_type='column', body=term_body)
 
         fields = []
         seen_nid = []
@@ -182,19 +180,55 @@ class StoreHandler:
         Retrieves numerical fields and signatures from the store
         :return: (fields, numsignatures)
         """
-        print("TODO")
+        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "N"}}]}}}
+        res = client.search(index='profile', body=query_body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName',
+                                         'hits.hits._source.median',
+                                         'hits.hits._source.iqr']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        fields = []
+        num_sig = []
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
+                fields.append(id_source_and_file_name)
+                num_sig.append((h['_source']['median'], h['_source']['iqr']))
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName',
+                                             'hits.hits._source.median',
+                                             'hits.hits._source.iqr']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+        return fields, num_sig
 
 
 if __name__ == "__main__":
     print("Elastic Store")
     handler = StoreHandler()
-    #all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
-    #i = 0
-    #for el in all_fields:
+    # all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
+    # i = 0
+    # for el in all_fields:
     #    print(str(el))
-    #print("Total fields: " + str(i))
+    # print("Total fields: " + str(i))
 
-    data = handler.get_all_fields_textsignatures()
-    fields, text_sig = data
-    for sig in text_sig:
+    #data = handler.get_all_fields_textsignatures()
+    #fields, text_sig = data
+    #for sig in text_sig:
+    #    print(str(sig))
+
+    data = handler.get_all_fields_numsignatures()
+    fields, num_sig = data
+    for sig in num_sig:
         print(str(sig))

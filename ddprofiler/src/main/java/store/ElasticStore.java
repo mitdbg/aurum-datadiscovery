@@ -72,7 +72,9 @@ public class ElasticStore implements Store {
 				+ "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," // array
 				+ "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
 				+ "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-				+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"}"
+				+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+				+ "\"median\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
+				+ "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}"
 				+ "} }"
 		).build();
 		
@@ -121,6 +123,8 @@ public class ElasticStore implements Store {
 		source.put("minValue", Float.toString(wtr.getMinValue()));
 		source.put("maxValue", Float.toString(wtr.getMaxValue()));
 		source.put("avgValue", Float.toString(wtr.getAvgValue()));
+		source.put("median", Long.toString(wtr.getMedian()));
+		source.put("iqr", Long.toString(wtr.getIQR()));
 		Index index = new Index.Builder(source).index("profile").type("column").id(strId).build();
 		try {
 			client.execute(index);

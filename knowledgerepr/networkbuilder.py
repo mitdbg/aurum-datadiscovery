@@ -95,7 +95,7 @@ def build_content_sim_relation_text(network, fields, signatures):
 
 
 def build_content_sim_relation_num(network, fields, features):
-    X = StandardScaler.fit_transform(features)
+    X = StandardScaler().fit_transform(features)
     db = DBSCAN(eps=0.3, min_samples=3).fit(X)
     labels = db.labels_
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
@@ -109,8 +109,8 @@ def build_content_sim_relation_num(network, fields, features):
         for el1 in v:
             for el2 in v:
                 if el1 != el2:
-                    sn1, fn1 = fields[el1]
-                    sn2, fn2 = fields[el2]
+                    nid1, sn1, fn1 = fields[el1]
+                    nid2, sn2, fn2 = fields[el2]
                     n1 = network.add_field(sn1, fn1)
                     n2 = network.add_field(sn2, fn2)
                     network.add_relation(n1, n2, Relation.CONTENT_SIM, 1)

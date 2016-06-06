@@ -31,7 +31,9 @@ public class WorkerTaskResultHolder {
 						(int)na.getCardinality().getUniqueElements(),
 						na.getNumericalRange(AttributeType.FLOAT).getMinF(),
 						na.getNumericalRange(AttributeType.FLOAT).getMaxF(),
-						na.getNumericalRange(AttributeType.FLOAT).getAvg());
+						na.getNumericalRange(AttributeType.FLOAT).getAvg(),
+						na.getNumericalRange(AttributeType.FLOAT).getMedian(),
+						na.getNumericalRange(AttributeType.FLOAT).getIQR());
 				rs.add(wtr);
 			}
 			else if(at.equals(AttributeType.INT)) {
@@ -45,7 +47,9 @@ public class WorkerTaskResultHolder {
 						(int)na.getCardinality().getUniqueElements(),
 						na.getNumericalRange(AttributeType.INT).getMin(),
 						na.getNumericalRange(AttributeType.INT).getMax(),
-						na.getNumericalRange(AttributeType.INT).getAvg());
+						na.getNumericalRange(AttributeType.INT).getAvg(),
+						na.getNumericalRange(AttributeType.INT).getMedian(),
+						na.getNumericalRange(AttributeType.INT).getIQR());
 				rs.add(wtr);
 			}
 			else if(at.equals(AttributeType.STRING)) {
