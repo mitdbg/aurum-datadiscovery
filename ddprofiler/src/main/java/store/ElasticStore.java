@@ -29,6 +29,7 @@ public class ElasticStore implements Store {
 	
 	@Override
 	public void initStore() {
+		this.silenceJestLogger();
 		factory.setHttpClientConfig(new HttpClientConfig
                 .Builder(serverUrl)
                 .multiThreaded(true)
@@ -145,6 +146,21 @@ public class ElasticStore implements Store {
 			sb.append(separator);
 		}
 		return sb.toString();
+	}
+	
+	private void silenceJestLogger() {
+		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("io.searchbox.client");
+		final org.slf4j.Logger logger2 = org.slf4j.LoggerFactory.getLogger("io.searchbox.action");
+		if (!(logger instanceof ch.qos.logback.classic.Logger)) {
+		    return;
+		}
+		if (!(logger2 instanceof ch.qos.logback.classic.Logger)) {
+		    return;
+		}
+		ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
+		ch.qos.logback.classic.Logger logbackLogger2 = (ch.qos.logback.classic.Logger) logger2;
+		logbackLogger.setLevel(ch.qos.logback.classic.Level.INFO);
+		logbackLogger2.setLevel(ch.qos.logback.classic.Level.INFO);
 	}
 
 }

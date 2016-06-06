@@ -16,6 +16,7 @@ import analysis.modules.NumericalSignature;
 import analysis.modules.NumericalSignatureAnalyzer;
 import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
+import inputoutput.Attribute.AttributeType;
 
 
 public class NumericalAnalyzer implements NumericalAnalysis {
@@ -90,8 +91,14 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	}
 
 	@Override
-	public Range getNumericalRange() {
-		return ra.getFloatRange();
+	public Range getNumericalRange(AttributeType type) {
+		if(type.equals(AttributeType.FLOAT)) {
+			return ra.getFloatRange();
+		}
+		else if(type.equals(AttributeType.INT)) {
+			return ra.getIntegerRange();
+		}
+		return null;
 	}
 
 	@Override

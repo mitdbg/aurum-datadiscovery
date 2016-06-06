@@ -5,7 +5,7 @@ import celeryconfig as CC
 import api as API
 import config as C
 from dataanalysis import dataanalysis as da
-from modelstore import modelstore as MS
+from modelstore import mongomodelstore as MS
 from inputoutput import inputoutput as iod
 
 app = Celery('fullworker',backend=CC.CELERY_RESULT_BACKEND,broker=CC.BROKER_URL)

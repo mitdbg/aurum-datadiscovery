@@ -3,12 +3,10 @@ package core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import analysis.Analysis;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
-import analysis.modules.Entities;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 
@@ -31,9 +29,9 @@ public class WorkerTaskResultHolder {
 						"N",
 						(int)na.getCardinality().getTotalRecords(),
 						(int)na.getCardinality().getUniqueElements(),
-						na.getNumericalRange().getMinF(),
-						na.getNumericalRange().getMaxF(),
-						na.getNumericalRange().getAvg());
+						na.getNumericalRange(AttributeType.FLOAT).getMinF(),
+						na.getNumericalRange(AttributeType.FLOAT).getMaxF(),
+						na.getNumericalRange(AttributeType.FLOAT).getAvg());
 				rs.add(wtr);
 			}
 			else if(at.equals(AttributeType.INT)) {
@@ -45,18 +43,20 @@ public class WorkerTaskResultHolder {
 						"N",
 						(int)na.getCardinality().getTotalRecords(),
 						(int)na.getCardinality().getUniqueElements(),
-						na.getNumericalRange().getMin(),
-						na.getNumericalRange().getMax(),
-						na.getNumericalRange().getAvg());
+						na.getNumericalRange(AttributeType.INT).getMin(),
+						na.getNumericalRange(AttributeType.INT).getMax(),
+						na.getNumericalRange(AttributeType.INT).getAvg());
 				rs.add(wtr);
 			}
 			else if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = ((TextualAnalysis)an);
 				List<String> ents = ta.getEntities().getEntities();
-				String[] entities = new String[ents.size()];
-				for(int i = 0; i < entities.length; i++) {
-					entities[i] = ents.get(i);
+				StringBuffer sb = new StringBuffer();
+				for(String str : ents) {
+					sb.append(str);
+					sb.append(" ");
 				}
+				String entities = sb.toString();
 				
 				WorkerTaskResult wtr = new WorkerTaskResult(
 						id,

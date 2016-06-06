@@ -3,7 +3,7 @@ from celery import Task
 
 import celeryconfig as CC
 from dataanalysis import dataanalysis as da
-from modelstore import modelstore as MS
+from modelstore import mongomodelstore as MS
 
 app = Celery('ddworker', backend=CC.CELERY_RESULT_BACKEND, broker=CC.BROKER_URL)
 

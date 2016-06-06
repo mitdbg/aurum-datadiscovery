@@ -87,6 +87,10 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 				analysis = AnalyzerFactory.makeNumericalAnalyzer();
 				((NumericalAnalysis)analysis).feedFloatData(entry.getValue().getFloats());
 			}
+			else if(at.equals(AttributeType.INT)) {
+				analysis = AnalyzerFactory.makeNumericalAnalyzer();
+				((NumericalAnalysis)analysis).feedIntegerData(entry.getValue().getIntegers());
+			}
 			else if(at.equals(AttributeType.STRING)) {
 				analysis = AnalyzerFactory.makeTextualAnalyzer();
 				((TextualAnalysis)analysis).feedTextData(entry.getValue().getStrings());

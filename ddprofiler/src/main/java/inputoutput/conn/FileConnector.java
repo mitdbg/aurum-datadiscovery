@@ -121,6 +121,7 @@ public class FileConnector extends Connector {
 	 * it should be splited into (|A|, |B|, |"C DDD "" EEE|, F). 
 	 * however, current function will return  (|A|, |B|, |"C DDD "" EEE, F|) since it escape comma inside quotes.
 	 */
+	@Deprecated
 	public List<String> csv_spliter(String attributes){
 		Vector<String> results = new Vector<String>();
 		int start_pos = 0;
