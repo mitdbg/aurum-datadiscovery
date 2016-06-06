@@ -63,7 +63,7 @@ public class PreAnalyzerTest {
 	public void workloadTest(List<String> test_strings, PreAnalyzer pa){
 		long startTime = System.currentTimeMillis();
 		for(int i=0; i<test_strings.size(); i++){
-			pa.isNumbericalExpcetion(test_strings.get(i));
+			pa.isNumericalException(test_strings.get(i));
 		}
 		long endTime = System.currentTimeMillis();
 		System.out.println("Exception method took: " + (endTime - startTime) + " milliseconds");
@@ -72,7 +72,7 @@ public class PreAnalyzerTest {
 		System.out.println("Using Reg Exp based solution with workloads that are all numerical values");
 		startTime = System.currentTimeMillis();
 		for(int i=0; i<test_strings.size(); i++){
-			pa.isNumberical(test_strings.get(i));
+			pa.isNumerical(test_strings.get(i));
 		}
 		endTime = System.currentTimeMillis();
 		System.out.println("Reg Exp based method took: " + (endTime - startTime) + " milliseconds");
