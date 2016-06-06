@@ -29,23 +29,14 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-core:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
-	
 	// opencsv
 	compile 'net.sf.opencsv:opencsv:2.3'
-
     // jest for elasticsearch
     compile 'io.searchbox:jest:2.0.0'
-
 	//count-min sketch
 	compile 'com.clearspring.analytics:stream:2.7.0'
-	
 	// mysql driver
 	compile 'mysql:mysql-connector-java:5.1.6'
-	
-	
-	//oracle driver
-	compile 'com.oracle:ojdbc14:10.2.0.2.0'
-	
     testCompile 'junit:junit:4.11'
 }
 
