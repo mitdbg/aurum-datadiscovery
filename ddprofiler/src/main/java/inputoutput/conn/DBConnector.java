@@ -112,6 +112,8 @@ public class DBConnector extends Connector {
 
 	@Override
 	public List<Attribute> getAttributes() throws SQLException {
+		if(tb_info.getTableAttributes() != null)
+			return tb_info.getTableAttributes();
 		DatabaseMetaData metadata = conn.getMetaData();
 		ResultSet resultSet = metadata.getColumns(null, null, sourceName, null);
 		Vector<Attribute> attrs  = new Vector<Attribute>();
@@ -122,6 +124,7 @@ public class DBConnector extends Connector {
 			Attribute attr = new Attribute(name, type, size);
 			attrs.addElement(attr);
 		}
+		tb_info.setTableAttributes(attrs);
 		return attrs;
 	}
 	
@@ -200,11 +203,6 @@ public class DBConnector extends Connector {
 		this.stat = stat;
 	}
 
-	@Override
-	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public String getSourceName() {
