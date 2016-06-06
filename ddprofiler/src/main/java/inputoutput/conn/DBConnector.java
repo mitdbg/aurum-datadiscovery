@@ -26,30 +26,30 @@ public class DBConnector extends Connector {
 
 	private static final Logger log = Logger.getLogger(DBConnector.class.getName());
 
-	private String db_system_name;// db system name e.g., mysq/oracle etc.
-	private String user_name;// db conn user name;
+	private String db;// db system name e.g., mysq/oracle etc.
+	private String username;// db conn user name;
 	private String password; // db conn password;
-	private String conn_ip;// for database
-	private int port;// db connection port
+	private String connIP;// for database
+	private String port;// db connection port
 	Connection conn = null;
-	private TableInfo tb_info;
+	private TableInfo tbInfo;
 	private Statement stat;	
-	private long curr_offset = 0;
+	private long currOffset = 0;
 	
 	public DBConnector() {
-		this.tb_info = new TableInfo();
+		this.tbInfo = new TableInfo();
 	}
 	
-	public DBConnector(String db_system_name, String conn_ip, int port,
-			String connectPath, String filename, String user_name, String password) throws IOException{
-		this.db_system_name = db_system_name;
-		this.conn_ip = conn_ip;
+	public DBConnector(String db, String connIP, String port,
+			String connectPath, String filename, String username, String password) throws IOException{
+		this.db = db;
+		this.connIP = connIP;
 		this.port = port;
 		this.connectPath = connectPath;
 		this.sourceName = filename;
-		this.user_name =user_name;
+		this.username =username;
 		this.password = password;
-		this.tb_info = new TableInfo();
+		this.tbInfo = new TableInfo();
 		this.initConnector();
 	}
 
@@ -58,11 +58,11 @@ public class DBConnector extends Connector {
 	public void initConnector() throws IOException {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			conn = DriverManager.getConnection("jdbc:" + db_system_name + "://" + conn_ip + ":" + port + connectPath,
-					user_name, password);
+			conn = DriverManager.getConnection("jdbc:" + db + "://" + connIP + ":" + port + connectPath,
+					username, password);
 
 			List<Attribute> attrs = this.getAttributes();
-			this.tb_info.setTableAttributes(attrs);
+			this.tbInfo.setTableAttributes(attrs);
 
 		} catch (ClassNotFoundException e) {
 			log.log(Level.SEVERE, "DB connection driver not found");
@@ -77,7 +77,7 @@ public class DBConnector extends Connector {
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		stat = conn.createStatement();
-		String sql = "select * from "+sourceName+ " LIMIT "+ curr_offset+","+num;
+		String sql = "select * from "+sourceName+ " LIMIT "+ currOffset+","+num;
 		//String sql = "select * from "+filename+ " LIMIT "+ num;
 
 		//System.out.println(sql);
@@ -86,7 +86,7 @@ public class DBConnector extends Connector {
 		while(rs.next()){
 			new_row = true;
 			Record rec = new Record();
-			for(int i=0; i<this.tb_info.getTableAttributes().size(); i++){
+			for(int i=0; i<this.tbInfo.getTableAttributes().size(); i++){
 				String v1 = rs.getObject(i+1).toString();
 				//System.out.println(v1);
 				rec.getTuples().add(v1);
@@ -94,7 +94,7 @@ public class DBConnector extends Connector {
 			rec_list.add(rec);
 			//System.out.println(rec);
 		}
-		curr_offset+=rec_list.size();
+		currOffset+=rec_list.size();
 		rs.close();
 		return new_row;
 	}
@@ -112,6 +112,8 @@ public class DBConnector extends Connector {
 
 	@Override
 	public List<Attribute> getAttributes() throws SQLException {
+		if(tbInfo.getTableAttributes() != null)
+			return tbInfo.getTableAttributes();
 		DatabaseMetaData metadata = conn.getMetaData();
 		ResultSet resultSet = metadata.getColumns(null, null, sourceName, null);
 		Vector<Attribute> attrs  = new Vector<Attribute>();
@@ -122,6 +124,7 @@ public class DBConnector extends Connector {
 			Attribute attr = new Attribute(name, type, size);
 			attrs.addElement(attr);
 		}
+		tbInfo.setTableAttributes(attrs);
 		return attrs;
 	}
 	
@@ -144,20 +147,20 @@ public class DBConnector extends Connector {
 		this.sourceName = filename;
 	}
 	
-	public String getDb_system_name() {
-		return db_system_name;
+	public String getDB() {
+		return db;
 	}
 
-	public void setDb_system_name(String db_system_name) {
-		this.db_system_name = db_system_name;
+	public void setDB(String db) {
+		this.db = db;
 	}
 
-	public String getUser_name() {
-		return user_name;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setUser_name(String user_name) {
-		this.user_name = user_name;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 	public String getPassword() {
@@ -168,29 +171,22 @@ public class DBConnector extends Connector {
 		this.password = password;
 	}
 
-	public String getConn_ip() {
-		return conn_ip;
+	public String getConnIP() {
+		return connIP;
 	}
 
-	public void setConn_ip(String conn_ip) {
-		this.conn_ip = conn_ip;
+	public void setConnIP(String connIP) {
+		this.connIP = connIP;
 	}
 
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
 
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.port = port;
 	}
 
-	public TableInfo getTb_info() {
-		return tb_info;
-	}
-
-	public void setTb_info(TableInfo tb_info) {
-		this.tb_info = tb_info;
-	}
 
 	public Statement getStat() {
 		return stat;
@@ -200,14 +196,9 @@ public class DBConnector extends Connector {
 		this.stat = stat;
 	}
 
-	@Override
-	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public String getSourceName() {
-		return this.db_system_name;
+		return this.db;
 	}
 }

@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
+import inputoutput.conn.DBConnector;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
@@ -23,17 +24,18 @@ public class PreAnalyzerTest {
 	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	private int numRecords = 10;
+	private String db = "mysql";
+	private String connIP ="localhost";
+	private String port = "3306";
+	private String sourceName = "/test";
+	private String tableName = "nellsimple";
+	private String username = "root";
+	private String password = "Qatar";
 	
-	@Test
-	public void testPreAnalyzerForTypes() throws IOException {
-				
-		FileConnector fc = new FileConnector(path, filename, separator);
-		
-		PreAnalyzer pa = new PreAnalyzer();
-		pa.composeConnector(fc);
+	
+	public void typeChecking(PreAnalyzer pa){
 		
 		pa.readRows(numRecords);
-		
 		List<Attribute> attrs = pa.getEstimatedDataTypes();
 		for(Attribute a : attrs) {
 			System.out.println(a);
@@ -60,6 +62,7 @@ public class PreAnalyzerTest {
 			}
 		}
 	}
+
 	public void workloadTest(List<String> test_strings, PreAnalyzer pa){
 		long startTime = System.currentTimeMillis();
 		for(int i=0; i<test_strings.size(); i++){
@@ -118,4 +121,33 @@ public class PreAnalyzerTest {
 		System.out.println("----------------------------------------------------------------\n\n");
 
 	}
+	
+	@Test
+	public void testPreAnalyzerForTypesCSVFile() throws IOException {
+				
+		FileConnector fc = new FileConnector(path, filename, separator);
+		
+		PreAnalyzer pa = new PreAnalyzer();
+		pa.composeConnector(fc);
+		System.out.println("------------begin type checking with FileConnector");
+		typeChecking(pa);
+		System.out.println("------------finish type checking with FileConnector");
+
+	}
+
+	@Test
+	public void testPreAnalyzerForTypesDB() throws IOException {
+				
+		DBConnector dbc = new DBConnector(db, connIP, port, sourceName, tableName, 
+				username, password);
+		
+		PreAnalyzer pa = new PreAnalyzer();
+		pa.composeConnector(dbc);
+		System.out.println("------------begin type checking with DBConnector");
+		typeChecking(pa);
+		System.out.println("------------finish type checking with DBConnector");
+
+	}
+	
+	
 }
