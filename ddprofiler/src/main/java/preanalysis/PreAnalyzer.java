@@ -108,7 +108,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		}
 	}
 
-	private static boolean isNumerical(String s) {
+	public static boolean isNumerical(String s) {
 		return DOUBLE_PATTERN.matcher(s).matches();
 	}
 

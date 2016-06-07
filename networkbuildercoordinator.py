@@ -40,6 +40,13 @@ def main():
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
+    # Content_sim num relation
+    start_num_sig_sim = time.time()
+    fields, num_signatures = store.get_all_fields_numsignatures()
+    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+    end_num_sig_sim = time.time()
+    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+
     topk = 100
     degree = network.fields_degree(topk)
     for node, val in degree:
@@ -57,9 +64,7 @@ def main():
     """
 
 
-    # Content_sim num relation
-    fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+
     # Overlap relation
     networkbuilder.build_overlap_relation()
     # PKFK relation
@@ -76,12 +81,12 @@ def test():
     network = FieldNetwork()
     store = StoreHandler()
 
-    # Content_sim text relation
-    start_text_sig_sim = time.time()
-    fields, text_signatures = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
-    end_text_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    # Content_sim num relation
+    start_num_sig_sim = time.time()
+    fields, num_signatures = store.get_all_fields_numsignatures()
+    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+    end_num_sig_sim = time.time()
+    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -90,5 +95,5 @@ def test():
     show()
 
 if __name__ == "__main__":
-    main()
-    #test()
+    #main()
+    test()

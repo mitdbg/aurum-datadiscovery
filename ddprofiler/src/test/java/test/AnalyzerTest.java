@@ -18,6 +18,7 @@ import analysis.modules.Range;
 import analysis.modules.TextualSignature;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
+import inputoutput.conn.DBConnector;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
@@ -30,13 +31,24 @@ public class AnalyzerTest {
 	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	private int numRecords = 100;
+	private String db = "mysql";
+	private String connIP ="localhost";
+	private String port = "3306";
+	private String sourceName = "/test";
+	private String tableName = "nellsimple";
+	private String username = "root";
+	private String password = "Qatar";
+	
 	
 	@Test
 	public void test() throws IOException {
 		
 		FileConnector fc = new FileConnector(path, filename, separator);
+
+		//DBConnector dbc = new DBConnector(db, connIP, port, sourceName, tableName, username, password);
 		PreAnalyzer pa = new PreAnalyzer();
 		pa.composeConnector(fc);
+		//pa.composeConnector(dbc);
 		
 		Map<Attribute, Values> data = pa.readRows(numRecords);
 		for(Entry<Attribute, Values> a : data.entrySet()) {

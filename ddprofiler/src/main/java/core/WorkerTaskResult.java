@@ -13,6 +13,8 @@ public class WorkerTaskResult {
 	final private float minValue;
 	final private float maxValue;
 	final private float avgValue;
+	final private long median;
+	final private long iqr;
 	
 	public WorkerTaskResult(
 			int id,
@@ -32,6 +34,8 @@ public class WorkerTaskResult {
 		this.minValue = 0; // non existent
 		this.maxValue = 0; // non existent
 		this.avgValue = 0; // non existent
+		this.median = 0;   // non existent
+		this.iqr = 0;	   // non existent
 	}
 	
 	public WorkerTaskResult(
@@ -43,7 +47,9 @@ public class WorkerTaskResult {
 			int uniqueValues,
 			float minValue,
 			float maxValue,
-			float avgValue) {
+			float avgValue,
+			long median,
+			long iqr) {
 		this.id = id;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
@@ -54,6 +60,8 @@ public class WorkerTaskResult {
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.avgValue = avgValue;
+		this.median = median;
+		this.iqr = iqr;
 	}
 	
 	public int getId() {
@@ -94,6 +102,14 @@ public class WorkerTaskResult {
 
 	public float getAvgValue() {
 		return avgValue;
+	}
+	
+	public long getMedian() {
+		return median;
+	}
+	
+	public long getIQR() {
+		return iqr;
 	}
 
 }

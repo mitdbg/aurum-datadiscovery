@@ -12,6 +12,8 @@ import core.Conductor;
 import core.WorkerTask;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
+import store.Store;
+import store.StoreFactory;
 
 public class AlmostE2ETest {
 
@@ -21,23 +23,19 @@ public class AlmostE2ETest {
 	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
+	private String db = "mysql";
+	private String connIP ="localhost";
+	private String port = "3306";
+	private String sourceName = "/test";
+	private String tableName = "nellsimple";
+	private String username = "root";
+	private String password = "Qatar";
+	
+	
 	private ObjectMapper om = new ObjectMapper();
 	
-	@Test
-	public void almostE2ETest() {
-		
-		Properties p = new Properties();
-		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
-		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
-		ProfilerConfig pc = new ProfilerConfig(p);
-		
-		Conductor c = new Conductor(pc, null);
-		
-		c.start();
-		
-		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
-		c.submitTask(wt);
-		
+	
+	public void finishTasks(Conductor c){
 		List<WorkerTaskResult> results = null;
 		do {
 			results = c.consumeResults(); // we know there is only one set of results
@@ -53,7 +51,42 @@ public class AlmostE2ETest {
 			}
 			System.out.println(textual);
 		}
+	}
+	
+	@Test
+	public void almostE2ETestCSVFile() {
 		
+		Properties p = new Properties();
+		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
+		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
+		ProfilerConfig pc = new ProfilerConfig(p);
+		Store es = StoreFactory.makeNullStore(pc);
+		Conductor c = new Conductor(pc, es);
+		
+		c.start();
+		
+		WorkerTask wt = WorkerTask.makeWorkerTaskForDB(db, connIP, port, sourceName, tableName, 
+				username, password);
+		c.submitTask(wt);
+		finishTasks(c);
+	}
+	
+	
+	@Test
+	public void almostE2ETestDB() {
+		
+		Properties p = new Properties();
+		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
+		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
+		ProfilerConfig pc = new ProfilerConfig(p);
+		Store es = StoreFactory.makeNullStore(pc);
+		Conductor c = new Conductor(pc, es);
+		
+		c.start();
+		
+		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
+		c.submitTask(wt);
+		finishTasks(c);
 	}
 
 }
