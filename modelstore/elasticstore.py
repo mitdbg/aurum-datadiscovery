@@ -1,8 +1,16 @@
 from elasticsearch import Elasticsearch
 import config as c
+from enum import Enum
+
+
+class KWType(Enum):
+    KW_TEXT = 0
+    KW_SCHEMA = 1
+    KW_ENTITIES = 2
 
 
 class StoreHandler:
+
     # Store client
     client = None
 
@@ -132,9 +140,31 @@ class StoreHandler:
         """
         Performs a search query on elastic_field_name to match the provided keywords
         :param keywords: the list of keyword to match
+        :param elasticfieldname: what is the field in the store where to apply the query
         :return: the list of documents that contain the keywords
         """
-        print("TODO")
+        index = None
+        query_body = None
+        filter_path = ['hits.hits._source.id',
+                       'hits.total',
+                       'hits.hits._source.sourceName',
+                       'hits.hits._source.columnName']
+        if elasticfieldname == KWType.KW_TEXT:
+            index = "text"
+            query_body = {"query": {"match": {"text": keywords}}}
+        elif elasticfieldname == KWType.KW_SCHEMA:
+            index = "profile"
+            query_body = {"query": {"match": {"columnName": keywords}}}
+        elif elasticfieldname == KWType.KW_ENTITIES:
+            index = "profile"
+            query_body = {"query": {"match": {"entities": keywords}}}
+        res = client.search(index=index, body=query_body, filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+        for el in res['hits']['hits']:
+            data = (el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'])
+            yield data
+
 
     def get_all_fields_entities(self):
         """

@@ -63,8 +63,6 @@ def main():
 
     """
 
-
-
     # Overlap relation
     networkbuilder.build_overlap_relation()
     # PKFK relation
