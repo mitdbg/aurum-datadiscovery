@@ -12,8 +12,6 @@ import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.DataType;
 import analysis.modules.DataTypeAnalyzer;
-import analysis.modules.NumericalSignature;
-import analysis.modules.NumericalSignatureAnalyzer;
 import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
 import inputoutput.Attribute.AttributeType;
@@ -25,7 +23,6 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
 	private RangeAnalyzer ra;
-	private NumericalSignatureAnalyzer sa;
 	
 	
 	private NumericalAnalyzer() {
@@ -33,11 +30,9 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		ra = new RangeAnalyzer();
-		sa = new NumericalSignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ra);
-		analyzers.add(sa);
 	}
 	
 	public static NumericalAnalyzer makeAnalyzer() {
@@ -78,11 +73,6 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	public DataType getDataType() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public NumericalSignature getSignature() {
-		return sa.getSignature();
 	}
 
 	@Override

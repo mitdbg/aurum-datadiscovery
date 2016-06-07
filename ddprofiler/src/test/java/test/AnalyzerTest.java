@@ -13,9 +13,7 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.Cardinality;
 import analysis.modules.Entities;
-import analysis.modules.NumericalSignature;
 import analysis.modules.Range;
-import analysis.modules.TextualSignature;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.DBConnector;
@@ -65,14 +63,11 @@ public class AnalyzerTest {
 				na.feedFloatData(floats);
 				Cardinality c = na.getCardinality();
 				Range r = na.getNumericalRange(AttributeType.FLOAT);
-				NumericalSignature s = na.getSignature();
 				System.out.println("Cardinality:");
 				System.out.println(c);
 				System.out.println("Range:");
 				System.out.println(r);
-				System.out.println("Signature:");
-				System.out.println(s);
-				System.out.println("medium: "+na.getQuantile(0.5));
+				System.out.println("median: "+na.getQuantile(0.5));
 			}
 			if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer();
@@ -84,13 +79,10 @@ public class AnalyzerTest {
 				ta.feedTextData(strs);
 				Cardinality c = ta.getCardinality();
 				Entities e = ta.getEntities();
-				TextualSignature s = ta.getSignature();
 				System.out.println("Cardinality:");
 				System.out.println(c);
 				System.out.println("Entities:");
 				System.out.println(e);
-				System.out.println("Signature:");
-				System.out.println(s);
 			}
 		}
 		

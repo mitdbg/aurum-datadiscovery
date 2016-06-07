@@ -14,8 +14,7 @@ import analysis.modules.DataType;
 import analysis.modules.DataTypeAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
-import analysis.modules.TextualSignature;
-import analysis.modules.TextualSignatureAnalyzer;
+
 
 public class TextualAnalyzer implements TextualAnalysis {
 
@@ -23,18 +22,15 @@ public class TextualAnalyzer implements TextualAnalysis {
 	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
 	private EntityAnalyzer ea;
-	private TextualSignatureAnalyzer sa;
 	
 	private TextualAnalyzer(EntityAnalyzer ea) {
 		analyzers = new ArrayList<>();
 		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		this.ea = ea;
-		sa = new TextualSignatureAnalyzer();
 		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ea);
-		analyzers.add(sa);
 	}
 	
 	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
@@ -63,11 +59,6 @@ public class TextualAnalyzer implements TextualAnalysis {
 	public DataType getDataType() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public TextualSignature getSignature() {
-		return sa.getSignature();
 	}
 
 	@Override

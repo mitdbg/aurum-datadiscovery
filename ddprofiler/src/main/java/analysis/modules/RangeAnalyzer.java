@@ -46,10 +46,10 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	public Range getIntegerRange() {
 		avg = (float) (totalSum*1.0/totalRecords);
 		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg * avg);
-		long quantile75 = this.getQuantile(75);
-		long quantile25 = this.getQuantile(25);
+		long quantile75 = this.getQuantile(0.75);
+		long quantile25 = this.getQuantile(0.25);
 		long iqr = quantile75 - quantile25;
-		long median = this.getQuantile(50);
+		long median = this.getQuantile(0.5);
 		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation, median, iqr);
 		return r;
 	}
@@ -57,10 +57,10 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	public Range getFloatRange() {
 		avg = totalSumF / totalRecords;
 		stdDeviation = (float) Math.sqrt(squareSum/totalRecords - avg * avg);
-		long quantile75 = this.getQuantile(75);
-		long quantile25 = this.getQuantile(25);
+		long quantile75 = this.getQuantile(0.75);
+		long quantile25 = this.getQuantile(0.25);
 		long iqr = quantile75 - quantile25;
-		long median = this.getQuantile(50);
+		long median = this.getQuantile(0.5);
 		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
 		return r;
 	}

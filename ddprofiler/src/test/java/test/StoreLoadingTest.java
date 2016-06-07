@@ -47,9 +47,7 @@ public class StoreLoadingTest {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-//		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
-//		c.submitTask(wt);
+
 		long start = System.currentTimeMillis();
 		while(c.isTherePendingWork()) {
 			List<WorkerTaskResult> results = null;
