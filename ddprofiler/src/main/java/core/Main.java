@@ -4,6 +4,7 @@
  */
 package core;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -22,7 +23,7 @@ public class Main {
 	
 	public enum ExecutionMode {
 		ONLINE(0),
-		OFFLINE(0);
+		OFFLINE(1);
 		
 		int mode;
 		
@@ -35,6 +36,9 @@ public class Main {
 		
 		// Default is elastic, if we have more in the future, just pass a property to configure this
 		Store s = StoreFactory.makeElasticStore(pc);
+		
+		//for test purpose, use this and comment above line when elasticsearch is not configured
+		//Store s = StoreFactory.makeNullStore(pc);
 		
 		Conductor c = new Conductor(pc, s);
 		c.start();
@@ -82,9 +86,9 @@ public class Main {
 		try {
 			Files.walk(Paths.get(pathToSources)).forEach(filePath -> {
 			    if (Files.isRegularFile(filePath)) {
-			    	String path = null; // TODO:
-			    	String name = null; // TODO:
-			    	String separator = null; // TODO:
+			    	String path = filePath.getParent().toString()+File.separator;
+			    	String name = filePath.getFileName().toString();
+			    	String separator = ",";
 			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
 			    	c.submitTask(wt);
 			    }
@@ -95,7 +99,7 @@ public class Main {
 		}
 	}
 	
-	private static Properties validateProperties(Properties p) {
+	public static Properties validateProperties(Properties p) {
 		// TODO: Go over all properties configured here and validate their ranges, values
 		// etc. Stop the program and spit useful doc message when something goes wrong.
 		// Return the unmodified properties if everything goes well.
