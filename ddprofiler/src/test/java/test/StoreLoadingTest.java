@@ -25,17 +25,16 @@ public class StoreLoadingTest {
 	public void storeLoadingE2ETest() {
 		
 		Properties p = new Properties();
-		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "3");
+		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "8");
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
 		// Create store
 		Store elasticStore = StoreFactory.makeElasticStore(pc);
-		elasticStore.initStore();
+		//elasticStore.initStore();
 		
 		Conductor c = new Conductor(pc, elasticStore);
 		c.start();
-		
 		try {
 			Files.walk(Paths.get(path)).forEach(filePath -> {
 			    if (Files.isRegularFile(filePath)) {
@@ -51,7 +50,7 @@ public class StoreLoadingTest {
 		
 //		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, filename, separator);
 //		c.submitTask(wt);
-		
+		long start = System.currentTimeMillis();
 		while(c.isTherePendingWork()) {
 			List<WorkerTaskResult> results = null;
 			do {
@@ -62,9 +61,9 @@ public class StoreLoadingTest {
 				elasticStore.storeDocument(wtr);
 			}
 		}
+		long end = System.currentTimeMillis();
 		
-		
-		System.out.println("DONE!");
+		System.out.println("DONE: " + (end-start));
 	}
 
 }

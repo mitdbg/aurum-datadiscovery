@@ -24,6 +24,7 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 	private WorkerTask task;
 	private int numRecordChunk;
 	private Store store;
+	private Map<String, EntityAnalyzer> cachedEntityAnalyzers;
 	
 	// cached object
 	private EntityAnalyzer ea;
@@ -32,12 +33,15 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 		this.task = task;
 		this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
 		this.store = store;
-		String threadName = Thread.currentThread().getName();
-		this.ea = cachedEntityAnalyzers.get(threadName);
+		this.cachedEntityAnalyzers = cachedEntityAnalyzers;
 	}
 
 	@Override
 	public List<WorkerTaskResult> call() throws Exception {
+		// Get thread name and configure entityAnalyzer
+		String threadName = Thread.currentThread().getName();
+		this.ea = cachedEntityAnalyzers.get(threadName);
+		
 		// Collection to hold analyzers
 		Map<String, Analysis> analyzers = new HashMap<>();
 		

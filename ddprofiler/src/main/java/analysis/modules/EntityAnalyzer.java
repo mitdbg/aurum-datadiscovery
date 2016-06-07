@@ -27,26 +27,44 @@ public class EntityAnalyzer implements TextualDataConsumer {
 	private List<NameFinderME> nameFinderList = null;
 	private Properties prop = null;
 
+	private List<TokenNameFinderModel> modelList = null;
+	
+	public EntityAnalyzer(List<TokenNameFinderModel> modelList) {
+		prop = new Properties(); 
+		entities = new HashSet<>();
+		nameFinderList = new Vector<NameFinderME>();
+		
+		for (TokenNameFinderModel tf_model : modelList) {
+			NameFinderME nameFinder = new NameFinderME(tf_model);
+			nameFinderList.add(nameFinder);
+		}
+	}
+	
 	public EntityAnalyzer() {
 		prop = new Properties(); 
 		entities = new HashSet<>();
 		nameFinderList = new Vector<NameFinderME>();
-		InputStream NLPModeConfigStream;
-		List<TokenNameFinderModel> modelList;
+		
+		InputStream nlpModeConfigStream;
 		try {
-			NLPModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
-					"config"+ File.separator+"nlpmodel.config").openStream();
-			modelList = loadModel(NLPModeConfigStream);
+			nlpModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
+					"config" + File.separator + "nlpmodel.config").openStream();
+			modelList = loadModel(nlpModeConfigStream);
 			System.out.println(modelList.size());
-			for (TokenNameFinderModel tf_model : modelList) {
-				NameFinderME nameFinder = new NameFinderME(tf_model);
-				nameFinderList.add(nameFinder);
-			}
-		} catch (IOException e) {
+			
+		} 
+		catch (IOException e) {
 			e.printStackTrace();
 		}
-
-
+		
+		for (TokenNameFinderModel tf_model : modelList) {
+			NameFinderME nameFinder = new NameFinderME(tf_model);
+			nameFinderList.add(nameFinder);
+		}
+	}
+	
+	public List<TokenNameFinderModel> getCachedModelList() {
+		return modelList;
 	}
 
 	public Entities getEntities() {
@@ -98,9 +116,11 @@ public class EntityAnalyzer implements TextualDataConsumer {
 					modelIn = new FileInputStream(value);
 					model = new TokenNameFinderModel(modelIn);
 					modelList.add(model);
-				} catch (IOException e) {
+				} 
+				catch (IOException e) {
 					e.printStackTrace();
-				} finally {
+				} 
+				finally {
 					if (modelIn != null) {
 						try {
 							modelIn.close();
@@ -109,8 +129,8 @@ public class EntityAnalyzer implements TextualDataConsumer {
 					}
 				}
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+		} 
+		catch (IOException e1) {
 			e1.printStackTrace();
 		}
 

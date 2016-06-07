@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
+import opennlp.tools.namefind.TokenNameFinderModel;
 import store.Store;
 
 public class Conductor {
@@ -30,6 +31,8 @@ public class Conductor {
 	private ExecutorService pool;
 	private List<Future<List<WorkerTaskResult>>> futures;
 	private BlockingQueue<WorkerTaskResult> results;
+	
+	private boolean used = false;
 	
 	private Store store;
 	
@@ -47,10 +50,18 @@ public class Conductor {
 		int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
 		List<String> uniqueThreadNames = new ArrayList<>();
 		cachedEntityAnalyzers = new HashMap<>();
+		List<TokenNameFinderModel> modelList = new ArrayList<>();
 		for(int i = 0; i < numWorkers; i++) {
-			String name = new Integer(i).toString();
+			String name = "Thread-"+new Integer(i).toString();
 			uniqueThreadNames.add(name);
-			cachedEntityAnalyzers.put(name, new EntityAnalyzer());
+			if(modelList == null) {
+				EntityAnalyzer first = new EntityAnalyzer();
+				cachedEntityAnalyzers.put(name, first); // pay cost of loading model
+				modelList = first.getCachedModelList();
+			}
+			else{
+				cachedEntityAnalyzers.put(name, new EntityAnalyzer(modelList));
+			}
 		}
 		this.pool = Executors.newFixedThreadPool(numWorkers, new DDThreadFactory(uniqueThreadNames));
 		LOG.info("Create worker pool, num workers: {}", numWorkers);
@@ -73,7 +84,7 @@ public class Conductor {
 	}
 	
 	public boolean isTherePendingWork() {
-		return futures.size() > 0;
+		return !used || futures.size() > 0;
 	}
 	
 	public List<WorkerTaskResult> consumeResults() {
@@ -121,6 +132,7 @@ public class Conductor {
 					Future<List<WorkerTaskResult>> future = pool.submit(w);
 					// Store future
 					futures.add(future);
+					used = true;
 				}
 				
 				// Check if there are futures that have finished at this point
