@@ -1,106 +1,49 @@
+## Aurum: Data Discovery at Scale
 
-Deploy requirements:
-#####################
+The prototype consists of three layers that cooperate with each other. L1 is the
+profiler, in charge of extracting profiling information from multiple data
+sources. L2 is the network builder in charge of organizing the profiling
+information into a network of knowledge and inferring hidden relationships among
+the data. L3 is the query processing layer, in charge of querying and ranking
+results that answer users queries.
 
-- Install mongo (with full text search).  If using version 2.4 on a numa
-  machine, then run like this: 
+### Deploying L1
 
-$> numactl --interleave=all mongod --dbpath data/db/ --setParameter textSearchEnabled=true 
+The high-performance profiler is built in Java (/ddprofiler) and is meant to be
+deployed standalone. The input to L1 are data sources to analyze, the output is
+stored in a store. Elasticsearch is the store supported at the moment. Next, you
+can find instructions to build and deploy L1 as well as to install and configure
+Elasticsearch.
 
-make sure data/db exists in the current directory
+#### Building L1
 
-In modern OS do:
+Just go to 'ddprofiler' (visible from the project root) and do:
 
-$> sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
-$> echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list
-$> sudo apt-get update
-$> sudo apt-get install mongodb-org
+$> ./gradlew clean fatJar
 
-- Install python3. It is easy to do this in userspace
+L1 is built into a single jar file that you can find in
+ddprofiler/build/libs/ddprofiler.jar
 
-- Create a virtualenv with python3
+#### Deployinst Elasticsearch (tested with 2.3)
 
-$> sudo apt-get install python-virtualenv
-$> virtualenv -p /usr/bin/python3.4 <name-venv>
+Download the software from:
 
-- Install math libraries for highest performance
+https://www.elastic.co/products/elasticsearch
 
-$> sudo apt-get install gfortran libopenblas-dev liblapack-dev
+Uncompress it and then simply run from the root directory:
 
-- Install all requirements. There are some version problems, iterate a few times
-  removing hard constraints on versions. When a system wide dependency for
-  scipy, scikit-learn or numpy exists, try to leverage it.
+$> ./bin/elasticsearch
 
-Some of the additional packages asked (in a ubuntu machine):
+that will start the server in localhost:9200 by default, which is the address
+you should use to configure L1
 
-$> sudo apt-get install python3.4-dev (or whatever version is present)
-$> sudo apt-get install lib32ncurses5-dev
-$> sudo apt-get install python-numpy
+#### Configuration of L1
 
-may need to install scipy individually first
+L1 can run in online mode, in which it receives commands and data sources to
+analyze through a REST API, or offline mode, in which you can indicate the
+folder with data sources to analyze.
 
-$> pip install scipy
-
-WEB:
-##
-Install the web server, uwsgi and uwsgi-plugin-python (system wide):
-
-$> deactivate
-$> sudo apt-get install nginx uwsgi uwsgi-plugin-python
-
-use this command to restart nginx whenever a configuration changes:
-
-$> sudo /etc/init.d/nginx restart
-
-Create nginx folders and delete default config:
-
-$> sudo mkdir /var/www/aurum
-$> sudo chown -R ra:ra /var/www/aurum (change ra for your user)
-$> sudo rm /etc/nginx/sites-enabled/default
-
-Move the file webserverconfig/aurum.conf to
-/var/www/aurum/aurum.conf
-
-then copy webgui (static files) to /var/www/aurum/static
-
-$> cp -r webgui/ /var/www/aurum/static/
-
-and then symlink the file to nginx configuration directory:
-
-$> sudo ln -s /var/www/aurum/aurum.conf /etc/nginx/conf.d/
-
-Move the file webserverconfig/uwsgi.ini to 
-/var/www/aurum/uwsgi.ini
-
-Create files for uwsgi logs:
-
-$> sudo mkdir -p /var/log/uwsgi
-$> sudo chown -R ra:ra /var/log/uwsgi (change ra for your user)
-
-Test that uwsgi works, i.e., that nginx can connect to uwsgi:
-
-$> uwsgi --ini /var/www/aurum/uwsgi.ini
-
-Change endpoint for webclient app. In js/controller.js indicate the correct one
-
-Different loading techniques:
-#############################
-
-- dataloader is a single threaded impl build_idx_coordinator is a multi-thread
-  multi machine impl
-
-- ddworker is a simple worker in charge of computing n^2 pairs for similarity
-  and overlap, it is coordinated by build_idx_coordinator
-
-- fullworker is a worker in charge of: loading, computing signature,
-  communicating to coordinator
-
-Start load:
-#########
-
-workers:
-celery -A fullworker worker --loglevel=INFO --concurrency 1 -n worker1 -Q w1
-
-master:
-python indexer.py --mode ALL --input csvfiles ~/Desktop/slicemitdwh/ --dataset fakeagain --workers w1
+You can configure the mode as well as a bunch of other configuration parameters
+through command line parameters. These can be found in
+core.config.ProfilerConfig.
 
