@@ -44,6 +44,6 @@ analyze through a REST API, or offline mode, in which you can indicate the
 folder with data sources to analyze.
 
 You can configure the mode as well as a bunch of other configuration parameters
-through command line parameters. These can be found in
-core.config.ProfilerConfig.
+through command line parameters. You can consult all configuration parameters by
+appending <help> or <?> as a parameter.
 
