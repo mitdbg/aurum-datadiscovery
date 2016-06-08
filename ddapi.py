@@ -18,27 +18,35 @@ class DDPrimitiveAPI:
     def kw_search(self, kw):
         return store_client.search_keywords(kw, KWType.KW_TEXT)
 
-    def schema_sim_search(self, kw):
+    def schema_search(self, kw):
         return store_client.search_keywords(kw, KWType.KW_SCHEMA)
 
     def entity_search(self, kw):
         return store_client.search_keywords(kw, KWType.KW_ENTITIES)
 
     def schema_neighbors(self, field):
-        node = self.__network.neighbors(field, Relation.SCHEMA)
-        return node
+        nodes = self.__network.neighbors(field, Relation.SCHEMA)
+        return nodes
+
+    def schema_sim_fields(self, field):
+        nodes = self.__network.neighbors(field, Relation.SCHEMA_SIM)
+        return nodes
 
     def similar_content_fields(self, field):
-        print("TODO")
+        nodes = self.__network.neighbors(field, Relation.CONTENT_SIM)
+        return nodes
 
     def similar_entities_fields(self, field):
-        print("TODO")
+        nodes = self.__network.neighbors(field, Relation.ENTITY_SIM)
+        return nodes
 
     def overlap_fields(self, field):
-        print("TODO")
+        nodes = self.__network.neighbors(field, Relation.OVERLAP)
+        return nodes
 
     def pkfk_fields(self, field):
-        print("TODO")
+        nodes = self.__network.neighbors(field, Relation.PKFK)
+        return nodes
 
 
 class DDFunctionAPI:
@@ -67,13 +75,17 @@ if __name__ == '__main__':
     network = fieldnetwork.deserialize_network(path)
     api = API(network)
 
+    #####
+    # testing index primitives
+    #####
+
     print("Keyword search in text")
     results = api.kw_search("Michael")
     for r in results:
         print(str(r))
 
     print("Keyword search in schema names")
-    results = api.schema_sim_search("MIT")
+    results = api.schema_search("MIT")
     for r in results:
         print(str(r))
 
@@ -82,7 +94,52 @@ if __name__ == '__main__':
     for r in results:
         print(str(r))
 
+    #####
+    # testing graph primitives
+    #####
+
     field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+    print("")
+    print("Relations of: " + str(field))
+
+    print("")
+    print("Schema conn")
+    print("")
     nodes = api.schema_neighbors(field)
+    for node in nodes:
+        print(node)
+
+    print("")
+    print("Schema SIM")
+    print("")
+    nodes = api.schema_sim_fields(field)
+    for node in nodes:
+        print(node)
+
+    print("")
+    print("Content sim")
+    print("")
+    nodes = api.similar_content_fields(field)
+    for node in nodes:
+        print(node)
+
+    print("")
+    print("Entity sim")
+    print("")
+    nodes = api.similar_entities_fields(field)
+    for node in nodes:
+        print(node)
+
+    print("")
+    print("Overlap")
+    print("")
+    nodes = api.overlap_fields(field)
+    for node in nodes:
+        print(node)
+
+    print("")
+    print("PKFK")
+    print("")
+    nodes = api.pkfk_fields(field)
     for node in nodes:
         print(node)
