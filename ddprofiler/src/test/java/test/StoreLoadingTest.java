@@ -31,7 +31,6 @@ public class StoreLoadingTest {
 		
 		// Create store
 		Store elasticStore = StoreFactory.makeElasticStore(pc);
-		//elasticStore.initStore();
 		
 		Conductor c = new Conductor(pc, elasticStore);
 		c.start();

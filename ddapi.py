@@ -68,6 +68,6 @@ if __name__ == '__main__':
         print(str(r))
 
     print("Keyword search in entities")
-    results = api.entity_search('location')
+    results = api.entity_search('person')
     for r in results:
         print(str(r))

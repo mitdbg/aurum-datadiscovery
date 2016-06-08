@@ -54,7 +54,7 @@ public class Conductor {
 		for(int i = 0; i < numWorkers; i++) {
 			String name = "Thread-"+new Integer(i).toString();
 			uniqueThreadNames.add(name);
-			if(modelList == null) {
+			if(modelList.isEmpty()) {
 				EntityAnalyzer first = new EntityAnalyzer();
 				cachedEntityAnalyzers.put(name, first); // pay cost of loading model
 				modelList = first.getCachedModelList();
