@@ -40,6 +40,24 @@ dependencies {
     testCompile 'junit:junit:4.11'
 }
 
+task fatJar(type: Jar) {
+    description "Creates self-contained fat jar"
+    from {
+        configurations.compile.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    {
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+    }
+    with jar
+    manifest {
+        attributes 'Main-Class': 'core.Main'
+    }
+}
+
 task wrapper(type: Wrapper) {
     gradleVersion = '2.13'
 }

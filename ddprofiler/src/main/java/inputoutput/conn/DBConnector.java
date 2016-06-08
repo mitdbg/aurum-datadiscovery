@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +52,6 @@ public class DBConnector extends Connector {
 		this.initConnector();
 	}
 
-
 	@Override
 	public void initConnector() throws IOException {
 		try {
@@ -64,14 +62,14 @@ public class DBConnector extends Connector {
 			List<Attribute> attrs = this.getAttributes();
 			this.tbInfo.setTableAttributes(attrs);
 
-		} catch (ClassNotFoundException e) {
+		} 
+		catch (ClassNotFoundException e) {
 			log.log(Level.SEVERE, "DB connection driver not found");
 			e.printStackTrace();
 		} catch (SQLException e) {
 			log.log(Level.SEVERE, "Cannot connect to the database");
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -104,7 +102,8 @@ public class DBConnector extends Connector {
 		try {
 			conn.close();
 			stat.close();
-		} catch (SQLException e) {
+		} 
+		catch (SQLException e) {
 			log.log(Level.SEVERE, "Cannot close the connection to the database");
 			e.printStackTrace();
 		}

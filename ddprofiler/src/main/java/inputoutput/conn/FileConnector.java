@@ -9,15 +9,10 @@ package inputoutput.conn;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import au.com.bytecode.opencsv.CSVReader;
-
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
@@ -110,38 +105,5 @@ public class FileConnector extends Connector {
 		}
 		return read_lines;
 	}
-
-	int debug_cnt=0;
-
-
-	
-	/*
-	 * obsoleted function, buggy when handling cvs files like below
-	 * A,B,"C DDD "" EEE, F
-	 * it should be splited into (|A|, |B|, |"C DDD "" EEE|, F). 
-	 * however, current function will return  (|A|, |B|, |"C DDD "" EEE, F|) since it escape comma inside quotes.
-	 */
-	@Deprecated
-	public List<String> csv_spliter(String attributes){
-		Vector<String> results = new Vector<String>();
-		int start_pos = 0;
-		boolean inside_qutation=false;
-		for(int i=0; i<attributes.length(); i++){
-			
-			if(lineSplitter == attributes.charAt(i) && inside_qutation == false){
-				String store_str = attributes.substring(start_pos, i);
-				results.addElement(store_str.trim());				
-				start_pos = i+1;
-			}
-			
-			if(attributes.charAt(i) == '\"'){
-				inside_qutation = !inside_qutation;
-			}			
-		}
-		String last_str = attributes.substring(start_pos, attributes.length());
-		results.addElement(last_str.trim());
-		return results;
-	}
-	
 	
 }
