@@ -55,6 +55,7 @@ def index_in_text_engine(fields, tfidf):
 
 
 def build_schema_relation(network, fields):
+    # TODO: slow. make it faster
     for (nid, sn_outer, fn_outer) in fields:
         n_outer = network.add_field(sn_outer, fn_outer)
         for(nid, sn, fn) in fields:

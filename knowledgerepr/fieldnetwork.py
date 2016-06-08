@@ -12,27 +12,27 @@ class Relation(Enum):
     PKFK = 5
 
 
-def compute_field_id(source_name, field_name):
-    def java_hash_code(string):
-        str_len = len(string)
-        h = 0  # will keep the hash
-        for char in string:
-            for i in range(str_len):
-                h = 31 * h + ord(char)
-        return h
-
-    string = source_name + field_name
-    nid = java_hash_code(string)
-    return nid
-
-
 class Node:
     __nid = None
     __source_name = None
     __field_name = None
 
+    @staticmethod
+    def compute_field_id(source_name, field_name):
+        def java_hash_code(string):
+            str_len = len(string)
+            h = 0  # will keep the hash
+            for char in string:
+                for i in range(str_len):
+                    h = 31 * h + ord(char)
+            return h
+
+        string = source_name + field_name
+        nid = java_hash_code(string)
+        return nid
+
     def __init__(self, source_name, field_name):
-        self.__nid = compute_field_id(source_name, field_name)
+        self.__nid = self.compute_field_id(source_name, field_name)
         self.__source_name = source_name
         self.__field_name = field_name
 
@@ -55,7 +55,10 @@ class Node:
         return self.__nid
 
     def __eq__(self, y):
-        if self.__nid == y.__nid:
+        if isinstance(y, int):  # cover the case when id is provided directly
+            if self.__nid == y:
+                return True
+        elif self.__nid == y.__nid:  # cover the case of comparing two nodes
             return True
         return False
 
@@ -122,9 +125,17 @@ class FieldNetwork:
         topk_nodes = sorted_degree[:topk]
         return topk_nodes
 
+    def neighbors(self, field, relation):
+        sn, cn = field
+        nid = Node.compute_field_id(sn, cn)
+        neighbours = self.__G[nid]
+        for k, v in neighbours.items():
+            if relation in v:
+                yield (k.source_name, k.field_name)
+        return []
 
 def serialize_network(network, path):
-    G = network.G
+    G = network._get_underlying_repr()
     nx.write_gpickle(G, path)
 
 

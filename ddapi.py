@@ -1,5 +1,9 @@
 from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
+from knowledgerepr.fieldnetwork import Node
+from knowledgerepr.fieldnetwork import Relation
+from knowledgerepr import fieldnetwork
+
 
 store_client = None
 
@@ -21,7 +25,8 @@ class DDPrimitiveAPI:
         return store_client.search_keywords(kw, KWType.KW_ENTITIES)
 
     def schema_neighbors(self, field):
-        print("TODO")
+        node = self.__network.neighbors(field, Relation.SCHEMA)
+        return node
 
     def similar_content_fields(self, field):
         print("TODO")
@@ -54,8 +59,13 @@ class API(DDPrimitiveAPI, DDFunctionAPI):
         super(API, self).__init__(*args, **kwargs)
 
 if __name__ == '__main__':
+
+    # create store handler
     store_client = StoreHandler()
-    api = API(None)
+    # read graph
+    path = 'test/network.pickle'
+    network = fieldnetwork.deserialize_network(path)
+    api = API(network)
 
     print("Keyword search in text")
     results = api.kw_search("Michael")
@@ -71,3 +81,8 @@ if __name__ == '__main__':
     results = api.entity_search('person')
     for r in results:
         print(str(r))
+
+    field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+    nodes = api.schema_neighbors(field)
+    for node in nodes:
+        print(node)

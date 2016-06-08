@@ -52,11 +52,11 @@ def main():
     for node, val in degree:
         print("N - " + str(node) + " degree: " + str(val))
 
-    import networkx as nx
-    from matplotlib.pyplot import show
+    #import networkx as nx
+    #from matplotlib.pyplot import show
     #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
-    nx.draw(network._get_underlying_repr())
-    show()
+    #nx.draw(network._get_underlying_repr())
+    #show()
 
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
@@ -68,9 +68,10 @@ def main():
     # PKFK relation
     networkbuilder.build_pkfk_relation()
 
-    path = "test/"
-    fieldnetwork.serialize_network(network, path)
     """
+
+    path = "test/network.pickle"
+    fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
 
@@ -93,5 +94,5 @@ def test():
     show()
 
 if __name__ == "__main__":
-    #main()
-    test()
+    main()
+    #test()
