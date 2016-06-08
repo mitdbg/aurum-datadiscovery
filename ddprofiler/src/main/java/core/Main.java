@@ -66,7 +66,21 @@ public class Main {
 		CommandLineArgs cla = new CommandLineArgs(args, parser, configKeys);
 		Properties commandLineProperties = cla.getProperties();
 		
-		// TODO: Get additional properties defined in files, etc
+		// Check if the user requests help
+		for (String a : args) {
+			if(a.contains("help") || a.equals("?")) {
+				try {
+					parser.printHelpOn(System.out);
+					System.exit(0);
+				} 
+				catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		// TODO: get properties from file ? 
 		
 		// TODO: Merge all properties into one single Properties object to be validated
 		// Pay attention to redefinition of properties and define a priority to fix
