@@ -24,7 +24,7 @@ $> ./gradlew clean fatJar
 L1 is built into a single jar file that you can find in
 ddprofiler/build/libs/ddprofiler.jar
 
-####Deployinst Elasticsearch (tested with 2.3)
+####Deploying Elasticsearch (tested with 2.3)
 
 Download the software from:
 
