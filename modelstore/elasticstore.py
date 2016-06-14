@@ -1,6 +1,7 @@
 from elasticsearch import Elasticsearch
 import config as c
 from enum import Enum
+from knowledgerepr.fieldnetwork import Hit
 
 
 class KWType(Enum):
@@ -146,6 +147,7 @@ class StoreHandler:
         index = None
         query_body = None
         filter_path = ['hits.hits._source.id',
+                       'hits.hits._score',
                        'hits.total',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
@@ -162,7 +164,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = (el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'])
+            data = Hit(el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'], el['_score'])
             yield data
 
 

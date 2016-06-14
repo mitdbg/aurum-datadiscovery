@@ -1,6 +1,18 @@
+from collections import namedtuple
 from enum import Enum
 import operator
 import networkx as nx
+
+BaseHit = namedtuple('Hit', 'nid, sourcename, fieldname, score', verbose=False)
+
+
+class Hit(BaseHit):
+    def __hash__(self):
+        hsh = int(self.nid)
+        return hsh
+
+    def __eq__(self, other):
+        return self.nid == other.nid
 
 
 class Relation(Enum):
@@ -131,7 +143,8 @@ class FieldNetwork:
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
             if relation in v:
-                yield (k.source_name, k.field_name)
+                score = v[relation]['score']
+                yield Hit(k.nid, k.source_name, k.field_name, score)
         return []
 
 def serialize_network(network, path):

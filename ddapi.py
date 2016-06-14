@@ -16,38 +16,57 @@ class DDPrimitiveAPI:
         self.__network = network
 
     def kw_search(self, kw):
-        return store_client.search_keywords(kw, KWType.KW_TEXT)
+        hits = store_client.search_keywords(kw, KWType.KW_TEXT)
+        return hits
 
     def schema_search(self, kw):
-        return store_client.search_keywords(kw, KWType.KW_SCHEMA)
+        hits = store_client.search_keywords(kw, KWType.KW_SCHEMA)
+        return hits
 
     def entity_search(self, kw):
-        return store_client.search_keywords(kw, KWType.KW_ENTITIES)
+        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES)
+        return hits
 
     def schema_neighbors(self, field):
-        nodes = self.__network.neighbors(field, Relation.SCHEMA)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.SCHEMA)
+        return hits
 
     def schema_sim_fields(self, field):
-        nodes = self.__network.neighbors(field, Relation.SCHEMA_SIM)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
+        return hits
 
     def similar_content_fields(self, field):
-        nodes = self.__network.neighbors(field, Relation.CONTENT_SIM)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.CONTENT_SIM)
+        return hits
 
     def similar_entities_fields(self, field):
-        nodes = self.__network.neighbors(field, Relation.ENTITY_SIM)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
+        return hits
 
     def overlap_fields(self, field):
-        nodes = self.__network.neighbors(field, Relation.OVERLAP)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.OVERLAP)
+        return hits
 
     def pkfk_fields(self, field):
-        nodes = self.__network.neighbors(field, Relation.PKFK)
-        return nodes
+        hits = self.__network.neighbors(field, Relation.PKFK)
+        return hits
 
+class DDCombinerAPI:
+
+    __network = None
+
+    def __init__(self, network):
+        self.__network = network
+
+    def and_conjunctive(self, a, b):
+        sa = set(a)
+        sb = set(b)
+        res = sa.intersection(sb)
+        return res
+
+    def or_conjunctive(self, a, b):
+        res = set(a).union(set(b))
+        return res
 
 class DDFunctionAPI:
 
@@ -57,11 +76,17 @@ class DDFunctionAPI:
     def join_path(self):
         print("TODO")
 
-    def may_join_path(self):
+    def add_columns(self):
+        print("TODO")
+
+    def add_rows(self):
+        print("TODO")
+
+    def fill_schema(self):
         print("TODO")
 
 
-class API(DDPrimitiveAPI, DDFunctionAPI):
+class API(DDPrimitiveAPI, DDFunctionAPI, DDCombinerAPI):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
@@ -143,3 +168,19 @@ if __name__ == '__main__':
     nodes = api.pkfk_fields(field)
     for node in nodes:
         print(node)
+
+    ######
+    # Combiner functions
+    ######
+
+    print("Combiner AND")
+    results1 = api.kw_search("Michael")
+    #r1 = {x for x in results1}
+    results2 = api.kw_search("Barbara")
+    #r2 = {x for x in results2}
+    final = api.and_conjunctive(results1, results2)
+
+    print(str(len(final)))
+
+    for el in final:
+        print(str(el))
