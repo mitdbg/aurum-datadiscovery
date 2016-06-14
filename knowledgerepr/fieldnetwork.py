@@ -2,6 +2,7 @@ from collections import namedtuple
 from enum import Enum
 import operator
 import networkx as nx
+import binascii
 
 BaseHit = namedtuple('Hit', 'nid, sourcename, fieldname, score', verbose=False)
 
@@ -31,16 +32,8 @@ class Node:
 
     @staticmethod
     def compute_field_id(source_name, field_name):
-        def java_hash_code(string):
-            str_len = len(string)
-            h = 0  # will keep the hash
-            for char in string:
-                for i in range(str_len):
-                    h = 31 * h + ord(char)
-            return h
-
         string = source_name + field_name
-        nid = java_hash_code(string)
+        nid = binascii.crc32(bytes(string, encoding="UTF-8"))
         return nid
 
     def __init__(self, source_name, field_name):
@@ -157,8 +150,36 @@ def deserialize_network(path):
     network = FieldNetwork(G)
     return network
 
+def test():
+    sn = "sourcename"
+    fn = "fieldname"
+    import time
+    id = ""
+    strng = sn + fn
+    s = time.time()
+    for i in range(1000000):
+        id = hash(strng)
+    e = time.time()
+    print("builtin hash: " + str(e - s))
+    print(str(id))
+    s = time.time()
+    for i in range(1000000):
+        id = Node.compute_field_id(sn, fn)
+    e = time.time()
+    print(str(id))
+    print("custom hash: " + str(e-s))
+    import binascii
+    s = time.time()
+
+    for i in range(1000000):
+        id = binascii.crc32(bytes(strng, encoding="UTF-8"))
+    e = time.time()
+    print(str(id))
+    print("binascii hash: " + str(e - s))
 
 if __name__ == "__main__":
+    test()
+    exit()
     print("Field Network")
     node1 = Node("source1", "field1")
     node2 = Node("source1", "field2")
