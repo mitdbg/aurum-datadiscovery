@@ -1,6 +1,5 @@
 from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
-from knowledgerepr.fieldnetwork import Node
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
 
@@ -51,6 +50,7 @@ class DDPrimitiveAPI:
         hits = self.__network.neighbors(field, Relation.PKFK)
         return hits
 
+
 class DDCombinerAPI:
 
     __network = None
@@ -68,20 +68,42 @@ class DDCombinerAPI:
         res = set(a).union(set(b))
         return res
 
-    def in_context_with(self, a, b, relation):
-        path = self.__network.find_path(a, b, relation)
+    def has_path(self, source, target, relation):
+        path = self.__network.find_path(source, target, relation)
         return path
+
+    def in_context_with(self, a, b, relation):
+        res = set()
+        for el1 in a:
+            for el2 in b:
+                path = self.__network.find_path(el1, el2, relation)
+                if el1 in path:
+                    res.add(el1)
+        return res
+
 
 class DDFunctionAPI:
 
-    def __init__(self):
-        print("TODO")
+    __network = None
 
-    def join_path(self):
-        print("TODO")
+    def __init__(self, network):
+        self.__network = network
 
-    def add_columns(self):
+    def join_path(self, source, target):
+        first_class_path = self.__network.find_path(source, target, Relation.PKFK)
+        second_class_path = self.__network.find_path(source, target, Relation.CONTENT_SIM)
+        path = ([].extend(first_class_path)).extend(second_class_path)
+        return path
+
+    def add_columns(self, source_name):
         print("TODO")
+        # Retrieve all fields of the given source
+
+        # Find if there are pkfk connections for any of the columns
+
+        # Find if there are any content_sim connection
+
+        # Put them all together
 
     def add_rows(self):
         print("TODO")
@@ -90,8 +112,8 @@ class DDFunctionAPI:
         print("TODO")
         # Find set of schema_sim for each field provided in the virtual schema
 
-        # Find the most suitable table, by checking which of the previous fields are schema- connected,
-        # an selecting the set with the biggest size
+        # Find the most suitable table, by checking which of the previous fields are schema-connected,
+        # and selecting the set with the biggest size.
 
         # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
         # requested attributes
@@ -102,6 +124,7 @@ class API(DDPrimitiveAPI, DDFunctionAPI, DDCombinerAPI):
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
         DDCombinerAPI.__init__(self, *args, **kwargs)
+        DDFunctionAPI.__init__(self, *args, **kwargs)
 
 if __name__ == '__main__':
 
@@ -206,9 +229,11 @@ if __name__ == '__main__':
         print(str(el))
 
     print("Context combiner")
-    n1 = Node('Hr_faculty_roster.csv', 'First Name')
-    n2 = Node('Iap_subject_person.csv', 'Person Name')
-    n3 = Node('Hr_faculty_roster.csv', 'Directory Org Unit Title')
-    path = api.in_context_with(n1, n3, Relation.SCHEMA)
+    #n1 = Node('Hr_faculty_roster.csv', 'First Name')
+    #n2 = Node('Iap_subject_person.csv', 'Person Name')
+    #n3 = Node('Hr_faculty_roster.csv', 'Directory Org Unit Title')
+    results1 = api.kw_search("Michael")
+    results2 = api.kw_search("Barbara")
+    path = api.in_context_with(results1, results2, Relation.SCHEMA)
     for el in path:
         print(str(el))

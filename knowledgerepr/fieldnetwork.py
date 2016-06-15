@@ -187,7 +187,7 @@ class FieldNetwork:
                             reverse_fringe.append(w)
                         if w in pred: return pred, succ, w  # found path
 
-        raise nx.NetworkXNoPath("No path between %s and %s." % (source, target))
+        return None
 
     def bidirectional_shortest_path(self, source, target, relation):
         """
@@ -199,6 +199,8 @@ class FieldNetwork:
         """
         # call helper to do the real work
         results = self._bidirectional_pred_succ(source, target, relation)
+        if results == None:  # check for None result
+            return []
         pred, succ, w = results
 
         # build path from pred+w+succ
