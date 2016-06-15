@@ -68,6 +68,10 @@ class DDCombinerAPI:
         res = set(a).union(set(b))
         return res
 
+    def in_context_with(self, a, b, relation):
+        path = self.__network.find_path(a, b, relation)
+        return path
+
 class DDFunctionAPI:
 
     def __init__(self):
@@ -84,12 +88,20 @@ class DDFunctionAPI:
 
     def fill_schema(self):
         print("TODO")
+        # Find set of schema_sim for each field provided in the virtual schema
+
+        # Find the most suitable table, by checking which of the previous fields are schema- connected,
+        # an selecting the set with the biggest size
+
+        # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
+        # requested attributes
 
 
 class API(DDPrimitiveAPI, DDFunctionAPI, DDCombinerAPI):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
+        DDCombinerAPI.__init__(self, *args, **kwargs)
 
 if __name__ == '__main__':
 
@@ -175,12 +187,28 @@ if __name__ == '__main__':
 
     print("Combiner AND")
     results1 = api.kw_search("Michael")
-    #r1 = {x for x in results1}
     results2 = api.kw_search("Barbara")
-    #r2 = {x for x in results2}
     final = api.and_conjunctive(results1, results2)
 
     print(str(len(final)))
 
     for el in final:
+        print(str(el))
+
+    print("Combiner OR")
+    results1 = api.kw_search("Michael")
+    results2 = api.kw_search("Barbara")
+    final = api.or_conjunctive(results1, results2)
+
+    print(str(len(final)))
+
+    for el in final:
+        print(str(el))
+
+    print("Context combiner")
+    n1 = Node('Hr_faculty_roster.csv', 'First Name')
+    n2 = Node('Iap_subject_person.csv', 'Person Name')
+    n3 = Node('Hr_faculty_roster.csv', 'Directory Org Unit Title')
+    path = api.in_context_with(n1, n3, Relation.SCHEMA)
+    for el in path:
         print(str(el))

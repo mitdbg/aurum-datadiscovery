@@ -4,7 +4,7 @@ import operator
 import networkx as nx
 import binascii
 
-BaseHit = namedtuple('Hit', 'nid, sourcename, fieldname, score', verbose=False)
+BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
 
 
 class Hit(BaseHit):
@@ -62,6 +62,9 @@ class Node:
     def __eq__(self, y):
         if isinstance(y, int):  # cover the case when id is provided directly
             if self.__nid == y:
+                return True
+        elif isinstance(y, Hit):  # cover the case of comparing a Node with a Hit
+            if self.__nid == y.nid:
                 return True
         elif self.__nid == y.__nid:  # cover the case of comparing two nodes
             return True
@@ -139,6 +142,82 @@ class FieldNetwork:
                 score = v[relation]['score']
                 yield Hit(k.nid, k.source_name, k.field_name, score)
         return []
+
+    def _bidirectional_pred_succ(self, source, target, relation):
+        """Bidirectional shortest path helper.
+           :returns (pred,succ,w) where
+           :param pred is a dictionary of predecessors from w to the source, and
+           :param succ is a dictionary of successors from w to the target.
+        """
+        # does BFS from both source and target and meets in the middle
+        if target == source:
+            return ({target: None}, {source: None}, source)
+
+        # we always have an undirected graph
+        Gpred = self.neighbors
+        Gsucc = self.neighbors
+
+        # predecesssor and successors in search
+        pred = {source: None}
+        succ = {target: None}
+
+        # initialize fringes, start with forward
+        forward_fringe = [source]
+        reverse_fringe = [target]
+
+        while forward_fringe and reverse_fringe:
+            if len(forward_fringe) <= len(reverse_fringe):
+                this_level = forward_fringe
+                forward_fringe = []
+                for v in this_level:
+                    n = (v.source_name, v.field_name)
+                    for w in Gsucc(n, relation):
+                        if w not in pred:
+                            forward_fringe.append(w)
+                            pred[w] = v
+                        if w in succ: return pred, succ, w  # found path
+            else:
+                this_level = reverse_fringe
+                reverse_fringe = []
+                for v in this_level:
+                    n = (v.source_name, v.field_name)
+                    for w in Gpred(n, relation):
+                        if w not in succ:
+                            succ[w] = v
+                            reverse_fringe.append(w)
+                        if w in pred: return pred, succ, w  # found path
+
+        raise nx.NetworkXNoPath("No path between %s and %s." % (source, target))
+
+    def bidirectional_shortest_path(self, source, target, relation):
+        """
+        Return a list of nodes in a shortest path between source and target.
+        :param source is one extreme of the potential path
+        :param target is the other extreme of the potential path
+        :return path is a list of Node/Hit
+        Note: This code is based on the networkx implementation
+        """
+        # call helper to do the real work
+        results = self._bidirectional_pred_succ(source, target, relation)
+        pred, succ, w = results
+
+        # build path from pred+w+succ
+        path = []
+        # from source to w
+        while w is not None:
+            path.append(w)
+            w = pred[w]
+        path.reverse()
+        # from w to target
+        w = succ[path[-1]]
+        while w is not None:
+            path.append(w)
+            w = succ[w]
+        return path
+
+    def find_path(self, source, target, relation):
+        path = self.bidirectional_shortest_path(source, target, relation)
+        return path
 
 def serialize_network(network, path):
     G = network._get_underlying_repr()
