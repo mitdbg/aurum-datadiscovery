@@ -105,9 +105,6 @@ class DDFunctionAPI:
 
         # Put them all together
 
-    def add_rows(self):
-        print("TODO")
-
     def fill_schema(self):
         print("TODO")
         # Find set of schema_sim for each field provided in the virtual schema
@@ -117,6 +114,9 @@ class DDFunctionAPI:
 
         # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
         # requested attributes
+
+    def add_rows(self):
+        print("TODO")
 
 
 class API(DDPrimitiveAPI, DDFunctionAPI, DDCombinerAPI):
