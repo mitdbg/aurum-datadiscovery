@@ -93,7 +93,11 @@ class DDAPI:
         path = ([].extend(first_class_path)).extend(second_class_path)
         return path
 
-    def add_columns(self, source_name):
+    def schema_complement(self, source_name):
+        """
+        Given a table of reference (table_to_enrich) it uses information from
+        other available tables (tables) to enrich the schema -- to add columns
+        """
         # Retrieve all fields of the given source
         results = store_client.get_all_fields_of_source(source_name)
         res = [x for x in results]
@@ -116,6 +120,13 @@ class DDAPI:
 
         return res
 
+    def entity_complement(self):
+        """
+        Given a table of reference (table_to_enrich) it uses information from
+        other available tables (tables) to add entities -- to add rows
+        """
+        print("TODO")
+
     def fill_schema(self, virtual_schema):
         tokens = virtual_schema.split(",")
         tokens = [t.strip() for t in tokens]
@@ -135,8 +146,151 @@ class DDAPI:
 
         return aprox
 
-    def add_rows(self):
-        print("TODO")
+    def find_tables_matching_schema(self, list_keywords, topk):
+        """
+        def _attr_similar_to(keyword, topk, score):
+            # TODO: handle multiple input keywords
+            similarity_map = dict()
+            kw = keyword.lower()
+            for (fname, cname) in concepts:
+                p = cname.lower()
+                p_tokens = p.split(' ')
+                for tok in p_tokens:
+                    # compute similarity and put in dict if beyond a
+                    distance = editdistance.eval(kw, tok)
+                    # minimum threshold
+                    if distance < C.max_distance_schema_similarity:
+                        similarity_map[(fname, cname)] = distance
+                        break  # to avoid potential repetitions
+            sorted_sim_map = sorted(similarity_map.items(), key=operator.itemgetter(1))
+            if score:
+                return sorted_sim_map[:topk]
+            else:
+                noscore_res = [n for (n, score) in sorted_sim_map[:topk]]
+                return noscore_res
+        """
+        def attr_similar_to(keyword, topk, score):
+            results = api.schema_sim_fields(keyword)
+            r = [(sn, fn) for (id, sn, fn, score) in results[:topk]]
+            return r
+
+        '''
+        Return list of tables that contain the required schema
+        '''
+        all_res = []
+        # First get results for each of the provided keywords
+        # (input_keyword , [((table, column), score)]
+        for keyword in list_keywords:
+            res = attr_similar_to(keyword, 30, False)
+            all_res.append((keyword, res))
+
+        # Group by tables, and include the (kw, score) that matched
+        group_by_table_keyword = dict()
+        for (keyword, res) in all_res:
+            for (n, score) in res:
+                (fname, cname) = n
+                if fname not in group_by_table_keyword:
+                    group_by_table_keyword[fname] = []
+                included = False
+                for kw, score in group_by_table_keyword[fname]:
+                    if keyword.lower() == kw.lower():
+                        included = True  # don't include more than once
+                if not included:
+                    group_by_table_keyword[fname].append((keyword, score))
+                else:
+                    continue
+
+        # Create final output
+        to_return = sorted(group_by_table_keyword.items(), key=lambda x: len(x[1]), reverse=True)
+        return to_return[:topk]
+
+
+class ResultFormatter:
+
+    @staticmethod
+    def format_output_for_webclient(raw_output, consider_col_sel):
+        """
+        Format raw output into something client understands,
+        mostly, enrich the data with schema and samples
+        """
+
+        def get_repr_columns(source_name, columns, consider_col_sel):
+            def set_selected(c):
+                if consider_col_sel:
+                    if c in columns:
+                        return 'Y'
+                return 'N'
+            # Get all fields in source_name
+            all_fields = store_client.get_all_fields_of_source(source_name)
+            colsrepr = []
+            for (nid, sn, fn, s) in all_fields:
+                colrepr = {
+                    'colname': fn,
+                    'samples': store_client.peek_values((sn, fn), 15),  # ['fake1', 'fake2'], p.peek((fname, c), 15),
+                    'selected': set_selected(fn)
+                }
+                colsrepr.append(colrepr)
+            return colsrepr
+
+        entries = []
+        # Group results into a dict with file -> [column]
+        group_by_file = dict()
+        for (fname, cname) in raw_output:
+            if fname not in group_by_file:
+                group_by_file[fname] = []
+            group_by_file[fname].append(cname)
+        # Create entry per filename
+        for fname, columns in group_by_file.items():
+            entry = {'filename': fname,
+                     'schema': get_repr_columns(
+                         fname,
+                         columns,
+                         consider_col_sel)
+                     }
+            entries.append(entry)
+        return entries
+
+    @staticmethod
+    def format_output_for_webclient_ss(raw_output, consider_col_sel):
+        """
+        Format raw output into something client understands.
+        The output in this case is the result of a table search.
+        """
+        def get_repr_columns(source_name, columns, consider_col_sel):
+            def set_selected(c):
+                if consider_col_sel:
+                    if c in columns:
+                        return 'Y'
+                return 'N'
+            # Get all fields of source_name
+            all_fields = store_client.get_all_fields_of_source(source_name)
+            all_cols = [fn for (nid, sn, fn, s) in all_fields]
+            for myc in columns:
+                all_cols.append(myc)
+            colsrepr = []
+            for c in all_cols:
+                colrepr = {
+                    'colname': c,
+                    'samples': store_client.peek_values((source_name, c), 15),
+                    'selected': set_selected(c)
+                }
+                colsrepr.append(colrepr)
+            return colsrepr
+
+        entries = []
+
+        # Create entry per filename
+        # for fname, columns in group_by_file.items():
+        for fname, column_scores in raw_output:
+            columns = [c for (c, _) in column_scores]
+            entry = {'filename': fname,
+                     'schema': get_repr_columns(
+                         fname,
+                         columns,
+                         consider_col_sel)
+                     }
+            entries.append(entry)
+        return entries
 
 
 class API(DDAPI):
@@ -261,7 +415,7 @@ if __name__ == '__main__':
     print("Function API")
     print("Add column")
     sn = "Hr_faculty_roster.csv"
-    list_of_results = api.add_columns(sn)
+    list_of_results = api.schema_complement(sn)
     for l in list_of_results:
         print(str(l))
 

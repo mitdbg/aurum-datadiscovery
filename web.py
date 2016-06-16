@@ -1,8 +1,7 @@
 from flask import Flask
 from flask import request
 from flask import jsonify
-from flask import send_from_directory
-from flask import make_response 
+from flask import make_response
 from flask import current_app
 from flask.ext.cors import CORS
 
@@ -10,16 +9,17 @@ import sys
 from datetime import timedelta
 from functools import update_wrapper
 
-from api import p as API
-from api import format_output_for_webclient
-from api import format_output_for_webclient_ss
-from api import load_precomputed_model_DBVersion
+from knowledgerepr import fieldnetwork
+from ddapi import API
+from ddapi import ResultFormatter as formatter
 
 import webconfig as C
 
 app = Flask(__name__)
 app.debug = C.appdebug
 CORS(app)
+api = None
+
 
 def cors(origin=None, methods=None, headers=None,
                 max_age=21600, attach_to_all=True,
@@ -27,10 +27,8 @@ def cors(origin=None, methods=None, headers=None,
     if methods is not None:
         methods = ', '.join(sorted(x.upper() for x in methods))
     if headers is not None:
-    # and not isinstance(headers, basestring):
+        # and not isinstance(headers, basestring):
         headers = ', '.join(x.upper() for x in headers)
-    #if not isinstance(origin, basestring):
-    #    origin = ', '.join(origin)
     if isinstance(max_age, timedelta):
         max_age = max_age.total_seconds()
 
@@ -63,37 +61,42 @@ def cors(origin=None, methods=None, headers=None,
         return update_wrapper(wrapped_function, f)
     return decorator
 
+
 @app.route('/')
 def root():
     return 'hello world'
 
+
 @app.route('/kwsearch')
 def kwsearch():
     kw = request.args.get('kw')
-    result = API.search_keyword(kw)
-    format_result = format_output_for_webclient(result, False)
+    result = api.kw_search(kw)
+    format_result = formatter.format_output_for_webclient(result, False)
     json = {'result': format_result}
     return jsonify(json)
+
 
 @app.route('/ssearch')
 def ssearch():
     ss = request.args.get('attrs')
     attrs = ss.split(',')
-    result = API.tables_with_schema(attrs, 5)
-    format_result = format_output_for_webclient_ss(result, True)
+    result = api.find_tables_matching_schema(attrs, 5)
+    format_result = formatter.format_output_for_webclient_ss(result, True)
     json = {'result': format_result}
     return jsonify(json)
+
 
 @app.route('/colsim')
 def colsim():
     filename = request.args.get('filename')
     colname = request.args.get('colname')
     key = (filename, colname)
-    result = API.columns_like(key)
-    format_result = format_output_for_webclient(result, True)
+    result = api.similar_content_fields(key)
+    format_result = formatter.format_output_for_webclient(result, True)
     json = {'result': format_result}
     return jsonify(json)
 
+"""
 @app.route('/colove')
 def colove():
     filename = request.args.get('filename')
@@ -103,6 +106,8 @@ def colove():
     format_result = format_output_for_webclient(result, True)
     json = {'result': format_result}
     return jsonify(json)
+"""
+
 
 @app.route('/test')
 def test():
@@ -173,15 +178,23 @@ def test():
     ]}
     return jsonify(json)
 
+
+def main(path_to_serialized_model):
+    print('Loading: ' + str(path_to_serialized_model))
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    global api
+    api = API(network)
+    api.init_store()
+    # Start web framework
+    app.run(host=C.host)
+
 if __name__ == '__main__':
     if len(sys.argv) >= 2:
-        modelname = sys.argv[2]
+        path_to_serialized_model = sys.argv[2]
 
     else:
         print("USAGE")
         print("db: the name of the model to serve")
         print("python web.py --db <db>")
         exit()
-    modelname
-    load_precomputed_model_DBVersion(modelname)
-    app.run(host=C.host)
+    main(path_to_serialized_model)

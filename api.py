@@ -7,7 +7,6 @@ import editdistance
 from collections import OrderedDict
 import operator
 
-import utils
 import config as C
 from inputoutput import inputoutput as iod
 from inputoutput import serde
