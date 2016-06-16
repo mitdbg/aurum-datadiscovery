@@ -13,7 +13,15 @@ class Hit(BaseHit):
         return hsh
 
     def __eq__(self, other):
-        return self.nid == other.nid
+        if isinstance(other, int):  # cover the case when id is provided directly
+            if self.nid == other:
+                return True
+        elif isinstance(other, Hit):  # cover the case of comparing a Node with a Hit
+            if self.nid == other.nid:
+                return True
+        elif self.nid == other.nid:  # cover the case of comparing two nodes
+            return True
+        return False
 
 
 class Relation(Enum):

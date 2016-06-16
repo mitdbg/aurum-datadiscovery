@@ -105,7 +105,7 @@ class DB_adapted_API():
                 included = False
                 for kw, score in group_by_table_keyword[fname]:
                     if keyword.lower() == kw.lower():
-                        included = True# dont include more than once
+                        included = True  # don't include more than once
                 if not included:
                     group_by_table_keyword[fname].append((keyword, score))
                 else:

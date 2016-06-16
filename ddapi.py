@@ -3,6 +3,7 @@ from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
 
+from collections import defaultdict
 
 store_client = None
 
@@ -115,15 +116,24 @@ class DDAPI:
 
         return res
 
-    def fill_schema(self):
-        print("TODO")
+    def fill_schema(self, virtual_schema):
+        tokens = virtual_schema.split(",")
+        tokens = [t.strip() for t in tokens]
+        aprox = dict()
         # Find set of schema_sim for each field provided in the virtual schema
+        for t in tokens:
+            hits = self.schema_search(t)
+            aprox[t] = hits
 
         # Find the most suitable table, by checking which of the previous fields are schema-connected,
         # and selecting the set with the biggest size.
+        # TODO:
 
         # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
         # requested attributes
+        # TODO:
+        
+        return aprox
 
     def add_rows(self):
         print("TODO")
@@ -237,9 +247,6 @@ if __name__ == '__main__':
         print(str(el))
 
     print("Context combiner")
-    #n1 = Node('Hr_faculty_roster.csv', 'First Name')
-    #n2 = Node('Iap_subject_person.csv', 'Person Name')
-    #n3 = Node('Hr_faculty_roster.csv', 'Directory Org Unit Title')
     results1 = api.kw_search("Michael")
     results2 = api.kw_search("Barbara")
     path = api.in_context_with(results1, results2, Relation.SCHEMA)
@@ -252,3 +259,11 @@ if __name__ == '__main__':
     list_of_results = api.add_columns(sn)
     for l in list_of_results:
         print(str(l))
+
+    list_of_results = api.fill_schema("First name, department, schedule")
+    for k,v in list_of_results.items():
+        print("###")
+        print("")
+        print(str(k))
+        for value in v:
+            print(str(value))
