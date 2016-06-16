@@ -56,6 +56,32 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
+    def get_all_fields_of_source(self, source_name):
+        body = {"query": {"match": {"sourceName": source_name}}}
+        res = client.search(index='profile', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
+                yield id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def get_all_fields_with(self, attrs):
         """
         Reads all fields, described as (id, source_name, field_name) from the store.
@@ -166,7 +192,6 @@ class StoreHandler:
         for el in res['hits']['hits']:
             data = Hit(el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'], el['_score'])
             yield data
-
 
     def get_all_fields_entities(self):
         """

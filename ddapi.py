@@ -96,14 +96,27 @@ class DDFunctionAPI:
         return path
 
     def add_columns(self, source_name):
-        print("TODO")
         # Retrieve all fields of the given source
-
+        results = store_client.get_all_fields_of_source(source_name)
+        res = [x for x in results]
+        matches = list()
         # Find if there are pkfk connections for any of the columns
+        for r in res:
+            id, source_name, field_name = r
+            q = (source_name, field_name)
+            ns = self.__network.neighbors(q, Relation.PKFK)
+            for neighbor in ns:
+                matches.append(neighbor)
 
         # Find if there are any content_sim connection
+        for r in res:
+            id, source_name, field_name = r
+            q = (source_name, field_name)
+            ns = self.__network.neighbors(q, Relation.SCHEMA_SIM)
+            for neighbor in ns:
+                matches.append(neighbor)
 
-        # Put them all together
+        return res
 
     def fill_schema(self):
         print("TODO")
@@ -237,3 +250,10 @@ if __name__ == '__main__':
     path = api.in_context_with(results1, results2, Relation.SCHEMA)
     for el in path:
         print(str(el))
+
+    print("Function API")
+    print("Add column")
+    sn = "Hr_faculty_roster.csv"
+    list_of_results = api.add_columns(sn)
+    for l in list_of_results:
+        print(str(l))
