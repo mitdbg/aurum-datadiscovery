@@ -7,6 +7,17 @@ import binascii
 BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
 
 
+def compute_field_id(source_name, field_name):
+    string = source_name + field_name
+    nid = binascii.crc32(bytes(string, encoding="UTF-8"))
+    return nid
+
+
+def build_hit(sn, fn):
+    nid = compute_field_id(sn, fn)
+    return Hit(nid, sn, fn, -1)
+
+
 class Hit(BaseHit):
     def __hash__(self):
         hsh = int(self.nid)
@@ -31,52 +42,6 @@ class Relation(Enum):
     ENTITY_SIM = 3
     OVERLAP = 4
     PKFK = 5
-
-
-class Node:
-    __nid = None
-    __source_name = None
-    __field_name = None
-
-    @staticmethod
-    def compute_field_id(source_name, field_name):
-        string = source_name + field_name
-        nid = binascii.crc32(bytes(string, encoding="UTF-8"))
-        return nid
-
-    def __init__(self, source_name, field_name):
-        self.__nid = self.compute_field_id(source_name, field_name)
-        self.__source_name = source_name
-        self.__field_name = field_name
-
-    @property
-    def nid(self):
-        return self.__nid
-
-    @property
-    def field_name(self):
-        return self.__field_name
-
-    @property
-    def source_name(self):
-        return self.__source_name
-
-    def __str__(self):
-        return self.__source_name + " - " + self.__field_name
-
-    def __hash__(self):
-        return self.__nid
-
-    def __eq__(self, y):
-        if isinstance(y, int):  # cover the case when id is provided directly
-            if self.__nid == y:
-                return True
-        elif isinstance(y, Hit):  # cover the case of comparing a Node with a Hit
-            if self.__nid == y.nid:
-                return True
-        elif self.__nid == y.__nid:  # cover the case of comparing two nodes
-            return True
-        return False
 
 
 class FieldNetwork:
@@ -105,7 +70,8 @@ class FieldNetwork:
         :param field_name: of the field
         :return: the newly added field node
         """
-        n = Node(source_name, field_name)
+        nid = compute_field_id(source_name, field_name)
+        n = Hit(nid, source_name, field_name, -1)
         self.__G.add_node(n)
         return n
 
@@ -116,8 +82,8 @@ class FieldNetwork:
         :return: the newly added list of field nodes
         """
         nodes = []
-        for sn, fn in list_of_fields:
-            n = Node(sn, fn)
+        for nid, sn, fn in list_of_fields:
+            n = Hit(nid, sn, fn, -1)
             nodes.append(n)
         self.__G.add_nodes_from(nodes)
         return nodes
@@ -143,7 +109,7 @@ class FieldNetwork:
 
     def neighbors(self, field, relation):
         sn, cn = field
-        nid = Node.compute_field_id(sn, cn)
+        nid = compute_field_id(sn, cn)
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
             if relation in v:
@@ -229,6 +195,7 @@ class FieldNetwork:
         path = self.bidirectional_shortest_path(source, target, relation)
         return path
 
+
 def serialize_network(network, path):
     G = network._get_underlying_repr()
     nx.write_gpickle(G, path)
@@ -238,6 +205,7 @@ def deserialize_network(path):
     G = nx.read_gpickle(path)
     network = FieldNetwork(G)
     return network
+
 
 def test():
     sn = "sourcename"
@@ -253,7 +221,7 @@ def test():
     print(str(id))
     s = time.time()
     for i in range(1000000):
-        id = Node.compute_field_id(sn, fn)
+        id = compute_field_id(sn, fn)
     e = time.time()
     print(str(id))
     print("custom hash: " + str(e-s))
@@ -267,12 +235,12 @@ def test():
     print("binascii hash: " + str(e - s))
 
 if __name__ == "__main__":
-    test()
-    exit()
+    #test()
+    #exit()
     print("Field Network")
-    node1 = Node("source1", "field1")
-    node2 = Node("source1", "field2")
-    node3 = Node("source1", "field1")
+    node1 = build_hit("source1", "field1")
+    node2 = build_hit("source1", "field2")
+    node3 = build_hit("source1", "field1")
 
     assert node1 != node2
     assert node2 != node3
