@@ -7,12 +7,16 @@ from knowledgerepr import fieldnetwork
 store_client = None
 
 
-class DDPrimitiveAPI:
+class DDAPI:
 
     __network = None
 
     def __init__(self, network):
         self.__network = network
+
+    """
+    Primitive API
+    """
 
     def kw_search(self, kw):
         hits = store_client.search_keywords(kw, KWType.KW_TEXT)
@@ -50,13 +54,9 @@ class DDPrimitiveAPI:
         hits = self.__network.neighbors(field, Relation.PKFK)
         return hits
 
-
-class DDCombinerAPI:
-
-    __network = None
-
-    def __init__(self, network):
-        self.__network = network
+    """
+    Combiner API
+    """
 
     def and_conjunctive(self, a, b):
         sa = set(a)
@@ -82,12 +82,9 @@ class DDCombinerAPI:
         return res
 
 
-class DDFunctionAPI:
-
-    __network = None
-
-    def __init__(self, network):
-        self.__network = network
+    """
+    Function API
+    """
 
     def join_path(self, source, target):
         first_class_path = self.__network.find_path(source, target, Relation.PKFK)
@@ -132,12 +129,10 @@ class DDFunctionAPI:
         print("TODO")
 
 
-class API(DDPrimitiveAPI, DDFunctionAPI, DDCombinerAPI):
+class API(DDAPI):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
-        DDCombinerAPI.__init__(self, *args, **kwargs)
-        DDFunctionAPI.__init__(self, *args, **kwargs)
 
 if __name__ == '__main__':
 
