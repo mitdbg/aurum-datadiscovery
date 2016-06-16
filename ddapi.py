@@ -132,7 +132,7 @@ class DDAPI:
         # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
         # requested attributes
         # TODO:
-        
+
         return aprox
 
     def add_rows(self):
@@ -143,6 +143,11 @@ class API(DDAPI):
 
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
+
+    def init_store(self):
+        # create store handler
+        global store_client
+        store_client = StoreHandler()
 
 if __name__ == '__main__':
 
