@@ -170,9 +170,9 @@ class DDAPI:
                 return noscore_res
         """
         def attr_similar_to(keyword, topk, score):
-            results = api.schema_sim_fields(keyword)
-            r = [(sn, fn) for (id, sn, fn, score) in results[:topk]]
-            return r
+            results = self.schema_search(keyword)
+            r = [(x.source_name, x.field_name, x.score) for x in results]
+            return r[:topk]
 
         '''
         Return list of tables that contain the required schema
@@ -187,8 +187,7 @@ class DDAPI:
         # Group by tables, and include the (kw, score) that matched
         group_by_table_keyword = dict()
         for (keyword, res) in all_res:
-            for (n, score) in res:
-                (fname, cname) = n
+            for (fname, cname, score) in res:
                 if fname not in group_by_table_keyword:
                     group_by_table_keyword[fname] = []
                 included = False
@@ -223,7 +222,7 @@ class ResultFormatter:
             # Get all fields in source_name
             all_fields = store_client.get_all_fields_of_source(source_name)
             colsrepr = []
-            for (nid, sn, fn, s) in all_fields:
+            for (nid, sn, fn) in all_fields:
                 colrepr = {
                     'colname': fn,
                     'samples': store_client.peek_values((sn, fn), 15),  # ['fake1', 'fake2'], p.peek((fname, c), 15),
@@ -264,7 +263,7 @@ class ResultFormatter:
                 return 'N'
             # Get all fields of source_name
             all_fields = store_client.get_all_fields_of_source(source_name)
-            all_cols = [fn for (nid, sn, fn, s) in all_fields]
+            all_cols = [fn for (nid, sn, fn) in all_fields]
             for myc in columns:
                 all_cols.append(myc)
             colsrepr = []

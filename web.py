@@ -70,7 +70,8 @@ def root():
 @app.route('/kwsearch')
 def kwsearch():
     kw = request.args.get('kw')
-    result = api.kw_search(kw)
+    res_gen = api.kw_search(kw)
+    result = [(x.source_name, x.field_name) for x in res_gen]
     format_result = formatter.format_output_for_webclient(result, False)
     json = {'result': format_result}
     return jsonify(json)
@@ -91,7 +92,8 @@ def colsim():
     filename = request.args.get('filename')
     colname = request.args.get('colname')
     key = (filename, colname)
-    result = api.similar_content_fields(key)
+    res_gen = api.similar_content_fields(key)
+    result = [(x.source_name, x.field_name) for x in res_gen]
     format_result = formatter.format_output_for_webclient(result, True)
     json = {'result': format_result}
     return jsonify(json)
