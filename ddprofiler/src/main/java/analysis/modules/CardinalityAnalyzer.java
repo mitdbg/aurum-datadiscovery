@@ -19,7 +19,8 @@ public class CardinalityAnalyzer implements IntegerDataConsumer, FloatDataConsum
 	private ICardinality ic;
 	
 	public CardinalityAnalyzer() {
-		ic = new HyperLogLogPlus(4, 16);
+		//ic = new HyperLogLogPlus(4, 16);
+		ic = new HyperLogLogPlus(18, 25);
 	}
 	
 	public Cardinality getCardinality() {
