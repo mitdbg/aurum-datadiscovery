@@ -68,7 +68,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					}
 					castValues.add(f);
 				}
-			} 
+			}
 			else if (at.equals(AttributeType.INT)) {
 				List<Integer> castValues = new ArrayList<>();
 				vs = Values.makeIntegerValues(castValues);
@@ -90,10 +90,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
 
 			castData.put(e.getKey(), vs);
 		}
-
-		// TODO: update quality report
-		// TODO: % of different data types, null values, values that look like
-		// NULL e.g. X, "", etc
 
 		return castData;
 	}
