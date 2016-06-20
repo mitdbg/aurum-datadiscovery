@@ -13,7 +13,7 @@ import inputoutput.Attribute.AttributeType;
 import utils.NumericalColumnGenerator;
 import utils.NumericalColumnGenerator.Distribution;
 
-public class RandomGeneratorTest {
+public class NumericalEstimatorAccuracyTest {
 	public final int RANDOM_SEQ_LENGTH=100000;
 	
 	public void loadGenerator(List<Float> randomList) {
@@ -40,7 +40,7 @@ public class RandomGeneratorTest {
 	
 	
 	@Test
-	public void testGaussianGenerator() {
+	public void testGaussianInput() {
 		System.out.println("------------------begining of Gaussian workload test---------------------");
 		NumericalColumnGenerator ncg = new NumericalColumnGenerator(Distribution.GAUSSIAN);
 		List<Float> randomList = ncg.generateRandomSequence(175, 15, RANDOM_SEQ_LENGTH);
@@ -63,7 +63,7 @@ public class RandomGeneratorTest {
 	
 	
 	@Test
-	public void testUniformGenerator(){
+	public void testUniformInput(){
 		System.out.println("------------------begining of Uniform workload test---------------------");
 
 		NumericalColumnGenerator ncg = new NumericalColumnGenerator(Distribution.UNIFORM);
