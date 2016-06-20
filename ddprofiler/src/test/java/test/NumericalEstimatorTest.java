@@ -7,7 +7,6 @@ import org.junit.Test;
 import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.modules.Cardinality;
-import analysis.modules.NumericalSignature;
 import analysis.modules.Range;
 import inputoutput.Attribute.AttributeType;
 import utils.NumericalColumnGenerator;
@@ -25,14 +24,12 @@ public class NumericalEstimatorTest {
 		na.feedFloatData(randomList);
 		Cardinality c = na.getCardinality();
 		Range r = na.getNumericalRange(AttributeType.FLOAT);
-		NumericalSignature s = na.getSignature();
 
 		System.out.println("Cardinality:");
 		System.out.println(c);
 		System.out.println("Range:");
 		System.out.println(r);
 		System.out.println("Signature:");
-		System.out.println(s);
 		System.out.println("25 percentile: "+na.getQuantile(0.25));
 		System.out.println("50 percentile: "+na.getQuantile(0.5));
 		System.out.println("75 percentile: "+na.getQuantile(0.75));
