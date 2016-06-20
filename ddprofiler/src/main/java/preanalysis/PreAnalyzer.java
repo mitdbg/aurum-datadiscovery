@@ -30,6 +30,8 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
 	
 	private static final Pattern INT_PATTERN = Pattern.compile("^(\\+|-)?\\d+$");
+	
+	private final static String[] BANNED = {"", "nan"};
 
 	/**
 	 * Implementation of IO interface
@@ -103,9 +105,12 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		for (Entry<Attribute, List<String>> e : data.entrySet()) {
 			Attribute a = e.getKey();
 			// Only if the type is not already known
-			if (!a.getColumnType().equals(AttributeType.UNKNOWN))
+			if ( !a.getColumnType().equals(AttributeType.UNKNOWN))
 				continue;
 			AttributeType aType = typeOfValue(e.getValue());
+			if(aType == null) {
+				continue; // Means that data was dirty/anomaly, so skip value
+			}
 			a.setColumnType(aType);
 		}
 	}
@@ -152,22 +157,23 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	}
 
 	/**
-	 * FIXME: Will always choose FLOAT or STRING. fix it to choose INT when
-	 * appropriate
-	 * 
-	 * Fixed the type checking issue
-	 * 
+	 * Figure out data type
 	 * @param values
 	 * @return
 	 */
 
-	private AttributeType typeOfValue(List<String> values) {
+	public static AttributeType typeOfValue(List<String> values) {
 		boolean isFloat = false;
 		boolean isInt = false;
 		int floatMatches = 0;
 		int intMatches = 0;
 		int strMatches = 0;
 		for (String s : values) {
+			s = s.trim();
+			if (isBanned(s)) {
+				// TODO: we'll piggyback at this point to figure out how to report cleanliness profile
+				continue;
+			}
 			if (isNumerical(s)) {
 				if (isInteger(s))
 					intMatches++;
@@ -190,6 +196,16 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		if (isInt)
 			return AttributeType.INT;
 		return AttributeType.STRING;
+	}
+	
+	private static boolean isBanned(String s) {
+		String toCompare = s.trim().toLowerCase();
+		for (String ban : BANNED) {
+			if(toCompare.equals(ban)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

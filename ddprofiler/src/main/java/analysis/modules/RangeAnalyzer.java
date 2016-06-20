@@ -74,7 +74,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value < min) min = value;
 			totalSum += value;
 			squareSum += value * value;
-			if(value < 0) continue;
+			if(value < 0) value = value * -1; // transforming negative to positive will create false positives
 			quantileEstimator.offer(value);
 		}
 		
@@ -90,8 +90,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 			if(value < minF) minF = value;
 			totalSumF += value;
 			squareSum += value * value;
-			if(value < 0) continue;
-			quantileEstimator.offer((long) value);
+			if(value < 0) value = value * -1; // transforming negative to positive will create false positives
+			int newValue = (int)value;
+			quantileEstimator.offer(newValue);
 		}
 		return true;
 	}
