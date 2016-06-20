@@ -28,6 +28,8 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					+ "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
 					+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
 					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
+	
+	private static final Pattern INT_PATTERN = Pattern.compile("^(\\+|-)?\\d+$");
 
 	/**
 	 * Implementation of IO interface
@@ -61,10 +63,11 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				vs = Values.makeFloatValues(castValues);
 				for (String s : e.getValue()) {
 					float f = 0f;
-					try {
+					if(DOUBLE_PATTERN.matcher(s).matches()) {
 						f = Float.valueOf(s).floatValue();
-					} catch (NumberFormatException nfe) {
-						continue; // SKIP data that does not parse correctly
+					}
+					else {
+						continue;
 					}
 					castValues.add(f);
 				}
@@ -74,10 +77,11 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				vs = Values.makeIntegerValues(castValues);
 				for (String s : e.getValue()) {
 					int f = 0;
-					try {
+					if(INT_PATTERN.matcher(s).matches()) {
 						f = Integer.valueOf(s).intValue();
-					} catch (NumberFormatException nfe) {
-						continue; // SKIP data that does not parse correctly
+					}
+					else {
+						continue;
 					}
 					castValues.add(f);
 				}

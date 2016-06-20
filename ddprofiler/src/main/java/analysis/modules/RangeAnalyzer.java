@@ -12,12 +12,12 @@ import analysis.IntegerDataConsumer;
 public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 
 	private int totalRecords;
-	private int max;
-	private int min;
+	private int max = Integer.MIN_VALUE;
+	private int min = Integer.MAX_VALUE;
 	private int totalSum;
 	
-	private float maxF;
-	private float minF;
+	private float maxF = Float.MIN_VALUE;
+	private float minF = Float.MAX_VALUE;
 	private float totalSumF;
 	
 	
@@ -50,7 +50,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 		long quantile25 = this.getQuantile(0.25);
 		long iqr = quantile75 - quantile25;
 		long median = this.getQuantile(0.5);
-		Range r = new Range(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation, median, iqr);
+		Range r = Range.makeIntegerRange(DataType.Type.INT, totalRecords, max, min, avg, stdDeviation, median, iqr);
 		return r;
 	}
 	
@@ -61,14 +61,14 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 		long quantile25 = this.getQuantile(0.25);
 		long iqr = quantile75 - quantile25;
 		long median = this.getQuantile(0.5);
-		Range r = new Range(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
+		Range r = Range.makeFloatRange(DataType.Type.FLOAT, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
 		return r;
 	}
 
 	@Override
 	public boolean feedIntegerData(List<Integer> records) {
 		
-		for(int value : records) {
+ 		for(int value : records) {
 			totalRecords++;
 			if(value > max) max = value;
 			if(value < min) min = value;

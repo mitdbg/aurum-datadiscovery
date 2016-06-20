@@ -20,16 +20,18 @@ public class Range {
 	private long median;
 	private long iqr;
 	
-	public Range(Type t, int totalRecords, int max, int min, float avg, float stdDeviation) {
+	private Range(Type t, int totalRecords, int max, int min, float avg, float stdDeviation, long median, long iqr) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.max = max;
 		this.min = min;
 		this.avg = avg;
 		this.stdDeviation = stdDeviation;
+		this.median = median;
+		this.iqr = iqr;
 	}
 	
-	public Range(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
+	private Range(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.maxF = maxF;
@@ -38,6 +40,14 @@ public class Range {
 		this.stdDeviation = stdDeviation;
 		this.median = median;
 		this.iqr = iqr;
+	}
+	
+	public static Range makeIntegerRange(Type t, int totalRecords, int max, int min, float avg, float stdDeviation, long median, long iqr) {
+		return new Range(t, totalRecords, max, min, avg, stdDeviation, median, iqr);
+	}
+	
+	public static Range makeFloatRange(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
+		return new Range(t, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
 	}
 	
 	public Type getType() {

@@ -19,7 +19,6 @@ public class PatternTest {
 		String input6 = "-23432456";
 		String input7 = "13457143587";
 		
-		String regex = "^(\\+|-)?\\d+$";
 		Pattern intPattern = Pattern.compile("^(\\+|-)?\\d+$");
 		
 		boolean r0 = intPattern.matcher(input0).matches();
@@ -39,6 +38,41 @@ public class PatternTest {
 		assertTrue("5 - OK", r5);
 		assertTrue("6 - OK", r6);
 		assertTrue("7 - OK", r7);
+		
+		Pattern doublePattern = Pattern
+				.compile("[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
+						+ "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
+						+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
+						+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
+		
+		String input8 = "-3";
+		String input9 = "-4.5";
+		String input10 = "83.324";
+		String input11 = "45f";
+		String input12 = "-324235.4558294";
+		String input13 = "0.0001";
+		String input14 = "-23432456";
+		String input15 = "234.32452";
+		
+		boolean r8 = doublePattern.matcher(input8).matches();
+		boolean r9 = doublePattern.matcher(input9).matches();
+		boolean r10 = doublePattern.matcher(input10).matches();
+		boolean r11 = doublePattern.matcher(input11).matches();
+		boolean r12 = doublePattern.matcher(input12).matches();
+		boolean r13 = doublePattern.matcher(input13).matches();
+		boolean r14 = doublePattern.matcher(input14).matches();
+		boolean r15 = doublePattern.matcher(input15).matches();
+		
+		assertTrue("8 - OK", r8);
+		assertTrue("9 - OK", r9);
+		assertTrue("10 - OK", r10);
+		assertTrue("11 - OK", r11);
+		assertTrue("12 - OK", r12);
+		assertTrue("13 - OK", r13);
+		assertTrue("14 - OK", r14);
+		assertTrue("15 - OK", r15);
+		
+		
 	}
 	
 }

@@ -66,12 +66,8 @@ public class FileConnector extends Connector {
 	}
 	
 	public List<Attribute> getAttributes() throws IOException {
-		
 		//assume that the first row is the attributes;
-		
 		if(lineCounter != 0){
-			// FIXME: What does this comment mean?
-			// wrong usage of the getAttributes function
 			return tableInfo.getTableAttributes();
 		}
 		String[] attributes = fileReader.readNext();
