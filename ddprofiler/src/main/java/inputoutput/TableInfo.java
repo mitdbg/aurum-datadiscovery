@@ -12,12 +12,12 @@ public class TableInfo {
 	
 	private List<Attribute> tableAttributes;
 	
-	public TableInfo(){
-		
-	}
+	public TableInfo(){	}
+	
 	public List<Attribute> getTableAttributes() {
 		return tableAttributes;
 	}
+	
 	public void setTableAttributes(List<Attribute> tableAttributes) {
 		this.tableAttributes = tableAttributes;
 	}

@@ -40,13 +40,15 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			data = c.readRows(num);
 			if (data == null)
 				return null;
-		} catch (IOException | SQLException e) {
+		}
+		catch (IOException | SQLException e) {
 			e.printStackTrace();
 		}
 
 		// Calculate data types if not known yet
 		if (!knownDataTypes) {
 			calculateDataTypes(data);
+			//knownDataTypes = true;
 		}
 
 		Map<Attribute, Values> castData = new HashMap<>();

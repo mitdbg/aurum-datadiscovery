@@ -55,7 +55,6 @@ public class FileConnector extends Connector {
 	@Override
 	void initConnector() throws FileNotFoundException {
 		fileReader = new CSVReader(new FileReader(connectPath+sourceName), this.lineSplitter);
-		//fileReader = new BufferedReader(new FileReader(connectPath+sourceName));
 	}
 	
 	void destroyConnector(){
@@ -66,27 +65,25 @@ public class FileConnector extends Connector {
 		}
 	}
 	
-
 	public List<Attribute> getAttributes() throws IOException {
 		
 		//assume that the first row is the attributes;
 		
-		if(lineCounter!=0){
-			//wrong usage of the getAttributes function
+		if(lineCounter != 0){
+			// FIXME: What does this comment mean?
+			// wrong usage of the getAttributes function
 			return tableInfo.getTableAttributes();
 		}
 		String[] attributes = fileReader.readNext();
 		lineCounter++;
-		//List<String> attr_name_list =  csv_spliter(attributes);
 		
-		Vector<Attribute> attr_list = new Vector<Attribute>();
-		for(int i=0; i< attributes.length; i++){
+		Vector<Attribute> attrList = new Vector<Attribute>();
+		for(int i = 0; i < attributes.length; i++) {
 			Attribute attr = new Attribute(attributes[i]);
-			attr_list.addElement(attr);
+			attrList.addElement(attr);
 		}
-		return attr_list;
+		return attrList;
 	}
-	
 	
 	public Vector<Record> getRecords(int num){
 		return records;
@@ -96,7 +93,7 @@ public class FileConnector extends Connector {
 	public boolean readRows(int num, List<Record> rec_list) throws IOException {
 		boolean read_lines = false;
 		String[] res = null;
-		for(int i=0; i<num && (res = fileReader.readNext()) != null; i++) {
+		for(int i = 0; i < num && (res = fileReader.readNext()) != null; i++) {
 			lineCounter++;
 			read_lines = true;
 			Record rec = new Record();

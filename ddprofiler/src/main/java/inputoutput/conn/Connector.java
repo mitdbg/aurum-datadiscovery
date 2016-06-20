@@ -50,7 +50,7 @@ public abstract class Connector {
 			return null;
 		}
 		for(Record r : recs) {
-			List<String> values = r.getTuples();			
+			List<String> values = r.getTuples();
 			int currentIdx = 0;
 			for(List<String> vals : data.values()) { // ordered iteration
 				vals.add(values.get(currentIdx));
