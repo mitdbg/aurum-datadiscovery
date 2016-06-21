@@ -110,6 +110,27 @@ def test():
     nx.draw(network._get_underlying_repr())
     show()
 
+def plot_num():
+    network = FieldNetwork()
+    store = StoreHandler()
+    fields, num_signatures = store.get_all_fields_numsignatures()
+
+    xaxis = []
+    yaxis = []
+    numpoints = 0
+    for x,y in num_signatures:
+        numpoints = numpoints + 1
+        xaxis.append(x)
+        yaxis.append(y)
+    print("Num points: " + str(numpoints))
+    import matplotlib.pyplot as plt
+    plt.plot(xaxis, yaxis, 'ro')
+    plt.axis([0, 600000, 0, 600000])
+    plt.axis([0, 10000, 0, 10000])
+    plt.axis([0, 500, 0, 500])
+    plt.show()
+
 if __name__ == "__main__":
     #main()
     test()
+    plot_num()

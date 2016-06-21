@@ -10,6 +10,7 @@ from nearpy.distances import CosineDistance
 
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
+import numpy as np
 
 from collections import defaultdict
 
@@ -96,9 +97,11 @@ def build_content_sim_relation_text(network, fields, signatures):
 
 
 def build_content_sim_relation_num(network, fields, features):
-    X = StandardScaler().fit_transform(features)
-    db = DBSCAN(eps=0.3, min_samples=3).fit(X)
+    #X = StandardScaler().fit_transform(features)
+    X = np.asarray(features)
+    db = DBSCAN(eps=0.3, min_samples=2).fit(X)
     labels = db.labels_
+    #print(str(labels))
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
     print("Total num clusters found: " + str(n_clusters))
     # group indices by label
@@ -107,6 +110,10 @@ def build_content_sim_relation_num(network, fields, features):
         clusters[labels[i]].append(i)
     # create relations
     for k, v in clusters.items():
+        #print("K: " + str(k))
+        #print("V: " + str(v))
+        if k == -1:
+            continue
         for el1 in v:
             for el2 in v:
                 if el1 != el2:
@@ -114,6 +121,7 @@ def build_content_sim_relation_num(network, fields, features):
                     nid2, sn2, fn2 = fields[el2]
                     n1 = network.add_field(sn1, fn1)
                     n2 = network.add_field(sn2, fn2)
+                    #print(str(n1) +" issimto "+ str(n2))
                     network.add_relation(n1, n2, Relation.CONTENT_SIM, 1)
 
 
