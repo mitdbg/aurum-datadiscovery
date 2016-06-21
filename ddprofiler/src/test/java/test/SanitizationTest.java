@@ -31,7 +31,7 @@ public class SanitizationTest {
 		// parsing commas
 		
 		String value = "160,124.08";
-		String value2 = "34.432";
+		String value2 = "-71.0924";
 		String value3 = "23.4353543";
 		String value4 = "234,234.54";
 		boolean num = PreAnalyzer.isNumerical(value);
