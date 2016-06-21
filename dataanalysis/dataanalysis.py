@@ -11,7 +11,6 @@ import string
 import time
 
 import config as C
-import utils as U
 
 def build_dict_values(values):
     d = dict()

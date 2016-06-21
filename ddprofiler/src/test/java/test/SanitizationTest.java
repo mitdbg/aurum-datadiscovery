@@ -2,11 +2,8 @@ package test;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
-import inputoutput.Attribute.AttributeType;
 import preanalysis.PreAnalyzer;
 
 public class SanitizationTest {
@@ -31,32 +28,29 @@ public class SanitizationTest {
 		assertTrue(tc2.equals(""));
 		assertTrue(tc3.equals(""));
 		
-		String[] vals = values.split(",");
-		for(String v : vals) {
-			System.out.println(v);
-		}
-		System.out.println(vals.length);
-		AttributeType type = PreAnalyzer.typeOfValue(Arrays.asList(vals));
-		System.out.println(type.toString());
+		// parsing commas
 		
-		String[] vals1 = values1.split(",");
-		System.out.println(vals1.length);
-		AttributeType type1 = PreAnalyzer.typeOfValue(Arrays.asList(vals1));
-		System.out.println(type1.toString());
+		String value = "160,124.08";
+		String value2 = "34.432";
+		String value3 = "23.4353543";
+		String value4 = "234,234.54";
+		boolean num = PreAnalyzer.isNumerical(value);
+		boolean num2 = PreAnalyzer.isNumerical(value2);
+		boolean num3 = PreAnalyzer.isNumerical(value3);
+		boolean num4 = PreAnalyzer.isNumerical(value4);
+		System.out.println(num);
+		System.out.println(num2);
+		System.out.println(num3);
+		System.out.println(num4);
 		
-		String[] vals2 = values2.split(",");
-		System.out.println(vals2.length);
-		AttributeType type2 = PreAnalyzer.typeOfValue(Arrays.asList(vals2));
-		System.out.println(type2.toString());
+		value = value.replace(",", "");
+		float f = Float.valueOf(value).floatValue();
+		value2 = value2.replace(",", "");
+		float f2= Float.valueOf(value2).floatValue();
+		value3 = value3.replace(",", "");
+		float f3= Float.valueOf(value3).floatValue();
+		value4 = value4.replace(",", "");
+		float f4= Float.valueOf(value4).floatValue();
 		
-		String[] vals3 = values3.split(",");
-		System.out.println(vals3.length);
-		AttributeType type3 = PreAnalyzer.typeOfValue(Arrays.asList(vals3));
-		System.out.println(type3.toString());
-		
-		String[] vals4 = values4.split(",");
-		System.out.println(vals4.length);
-		AttributeType type4 = PreAnalyzer.typeOfValue(Arrays.asList(vals4));
-		System.out.println(type4.toString());
 	}
 }

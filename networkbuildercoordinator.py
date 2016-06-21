@@ -80,6 +80,7 @@ def test():
     network = FieldNetwork()
     store = StoreHandler()
 
+    """
     # Get all fields from store
     fields_gen = store.get_all_fields()
     fields = [f for f in fields_gen]
@@ -94,15 +95,14 @@ def test():
     networkbuilder.build_schema_sim_relation(network, fields)
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
-
     """
+
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
     networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
     end_num_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
-    """
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -111,5 +111,5 @@ def test():
     show()
 
 if __name__ == "__main__":
-    main()
-    #test()
+    #main()
+    test()
