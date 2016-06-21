@@ -26,6 +26,8 @@ public abstract class Connector {
 	abstract void destroyConnector();
 	public abstract List<Attribute> getAttributes() throws IOException, SQLException;
 	public abstract boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException;
+	public abstract boolean readRows(int num, Map<Attribute, List<String>> data) throws IOException, SQLException;
+
 	
 	/**
 	 * Returns a map with Attribute of table as key and a list of num values as value.
@@ -35,7 +37,7 @@ public abstract class Connector {
 	 * @throws IOException
 	 * @throws SQLException
 	 */
-	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
+	public Map<Attribute, List<String>> readRowsBaseline(int num) throws IOException, SQLException {
 		
 		Map<Attribute, List<String>> data = new LinkedHashMap<>();
 		// Make sure attrs is populated, if not, populate it here
@@ -57,6 +59,23 @@ public abstract class Connector {
 				vals.add(values.get(currentIdx));
 				currentIdx++;
 			}
+		}
+		return data;
+	}
+	
+	public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {	
+		Map<Attribute, List<String>> data = new LinkedHashMap<>();
+		// Make sure attrs is populated, if not, populate it here
+		if(data.isEmpty()) {
+			List<Attribute> attrs = this.getAttributes();
+			attrs.forEach(a -> data.put(a, new ArrayList<>()));
+		}
+		
+		// Read data and insert in order
+
+		boolean readData = this.readRows(num, data);
+		if(!readData) {
+			return null;
 		}
 		return data;
 	}
