@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,6 +98,25 @@ public class DBConnector extends Connector {
 		return new_row;
 	}
 
+	public boolean readRows(int num, Map<Attribute, List<String>> data) throws SQLException{
+		stat = conn.createStatement();
+		String sql = "select * from "+sourceName+ " LIMIT "+ currOffset+","+num;
+
+		ResultSet rs = stat.executeQuery(sql);
+		boolean readLines = false;
+		while(rs.next()){
+			readLines = true;
+			int id=0;
+			for(List<String> vals : data.values()) { // ordered iteration
+				vals.add(rs.getObject(id+1).toString());
+				id++;
+			}
+			currOffset++;
+		}
+		rs.close();
+		return readLines;
+	}
+	
 	@Override
 	void destroyConnector() {
 		try {
