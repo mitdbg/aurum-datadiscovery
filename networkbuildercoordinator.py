@@ -97,12 +97,21 @@ def test():
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
     """
 
+    """
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
     networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
     end_num_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    """
+
+    # Content_sim text relation
+    start_text_sig_sim = time.time()
+    fields, text_signatures = store.get_all_fields_textsignatures()
+    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    end_text_sig_sim = time.time()
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -133,4 +142,4 @@ def plot_num():
 if __name__ == "__main__":
     #main()
     test()
-    plot_num()
+    #plot_num()

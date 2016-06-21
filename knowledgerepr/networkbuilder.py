@@ -21,17 +21,25 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
     # FIXME: bottleneck. parallelize this
     rowidx = 0
     for (nid, sn, fn) in fields:
+        if fn == "Subject Short Title":
+            print("subject short tiel")
         node1 = network.add_field(sn, fn)
         sparse_row = tfidf.getrow(rowidx)
         rowidx += 1
         dense_row = sparse_row.todense()
         array = dense_row.A[0]
         N = text_engine.neighbours(array)
-        for n in N:
-            (data, label, value) = n
-            tokens = label.split('%&%&%')
-            node2 = network.add_field(tokens[0], tokens[1])
-            network.add_relation(node1, node2, relation, value)
+        if len(N) > 1:
+            print(" ")
+            for n in N:
+                print(str(n))
+        if len(N) > 1:
+            for n in N:
+                (data, label, value) = n
+                tokens = label.split('%&%&%')
+                node2 = network.add_field(tokens[0], tokens[1])
+                if node1 is not node2:
+                    network.add_relation(node1, node2, relation, value)
 
 
 def index_in_text_engine(fields, tfidf):
