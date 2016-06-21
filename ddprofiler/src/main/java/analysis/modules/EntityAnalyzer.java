@@ -24,41 +24,40 @@ import opennlp.tools.util.Span;
 public class EntityAnalyzer implements TextualDataConsumer {
 
 	private Set<String> entities = null;
-	private List<NameFinderME> nameFinderList = null;
-	private Properties prop = null;
+	private static List<NameFinderME> nameFinderList = null;
+	private static List<TokenNameFinderModel> modelList = null;
 
-	private List<TokenNameFinderModel> modelList = null;
-	
-	public EntityAnalyzer(List<TokenNameFinderModel> modelList) {
-		prop = new Properties(); 
-		entities = new HashSet<>();
-		nameFinderList = new Vector<NameFinderME>();
-		
-		for (TokenNameFinderModel tf_model : modelList) {
-			NameFinderME nameFinder = new NameFinderME(tf_model);
-			nameFinderList.add(nameFinder);
-		}
-	}
-	
-	public EntityAnalyzer() {
-		prop = new Properties(); 
-		entities = new HashSet<>();
-		nameFinderList = new Vector<NameFinderME>();
-		
+	static{
+		//System.out.println("we should print this initialization message only once");
 		InputStream nlpModeConfigStream;
 		try {
 			nlpModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
 					"config" + File.separator + "nlpmodel.config").openStream();
 			modelList = loadModel(nlpModeConfigStream);
-			System.out.println(modelList.size());
 			
-		} 
+		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		//System.out.println("finished the first time initializing");
+	}
+	
+	
+	public EntityAnalyzer(List<TokenNameFinderModel> modelList) {
+		entities = new HashSet<>();
+		nameFinderList = new Vector<NameFinderME>();
 		
-		for (TokenNameFinderModel tf_model : modelList) {
-			NameFinderME nameFinder = new NameFinderME(tf_model);
+		for (TokenNameFinderModel tfModel : modelList) {
+			NameFinderME nameFinder = new NameFinderME(tfModel);
+			nameFinderList.add(nameFinder);
+		}
+	}
+	
+	public EntityAnalyzer() {
+		entities = new HashSet<>();
+		nameFinderList = new Vector<NameFinderME>();
+		for (TokenNameFinderModel tfModel : modelList) {
+			NameFinderME nameFinder = new NameFinderME(tfModel);
 			nameFinderList.add(nameFinder);
 		}
 	}
@@ -93,13 +92,16 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		return false;
 	}
 
-	public List<TokenNameFinderModel> loadModel(InputStream modelConfigStream) {
+	
+	
+	public static List<TokenNameFinderModel> loadModel(InputStream modelConfigStream) {
 		// TODO: what model/models do we need to load?
 		/*
 		 * currently, we adopted the models provided by openNLP the detailed
 		 * models are listed in the model_list_file_name
 		 */
 		List<TokenNameFinderModel> modelList = new Vector<TokenNameFinderModel>();
+		Properties prop = new Properties();
 		InputStream input = null;
 		try {
 			input = modelConfigStream;
