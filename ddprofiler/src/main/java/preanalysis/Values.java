@@ -10,7 +10,7 @@ public class Values {
 	
 	private List<Float> floats;
 	private List<String> strings;
-	private List<Integer> integers;
+	private List<Long> integers;
 	
 	private Values(AttributeType type) { 
 		this.type = type;
@@ -24,7 +24,7 @@ public class Values {
 		this.strings = values;
 	}
 	
-	private void setIntegers(List<Integer> values) {
+	private void setIntegers(List<Long> values) {
 		this.integers = values;
 	}
 
@@ -40,7 +40,7 @@ public class Values {
 		return vs;
 	}
 	
-	public static Values makeIntegerValues(List<Integer> castValues) {
+	public static Values makeIntegerValues(List<Long> castValues) {
 		Values vs = new Values(AttributeType.INT);
 		vs.setIntegers(castValues);
 		return vs;
@@ -66,7 +66,7 @@ public class Values {
 		return strings;
 	}
 	
-	public List<Integer> getIntegers() {
+	public List<Long> getIntegers() {
 		return integers;
 	}
 	

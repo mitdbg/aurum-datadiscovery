@@ -17,7 +17,8 @@ import store.StoreFactory;
 
 public class StoreLoadingTest {
 
-	private String path = "/Users/ra-mit/Desktop/mitdwh_test/";
+	//private String path = "/Users/ra-mit/Desktop/mitdwh_test/";
+	private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
 	private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
@@ -25,7 +26,7 @@ public class StoreLoadingTest {
 	public void storeLoadingE2ETest() {
 		
 		Properties p = new Properties();
-		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "8");
+		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "12");
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
@@ -38,8 +39,10 @@ public class StoreLoadingTest {
 			Files.walk(Paths.get(path)).forEach(filePath -> {
 			    if (Files.isRegularFile(filePath)) {
 			    	String name = filePath.getFileName().toString();
-			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
-			    	c.submitTask(wt);
+			    	if(! name.equals(".DS_Store")) { // Make sure only valid files are in the folder
+			    		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
+				    	c.submitTask(wt);
+			    	}
 			    }
 			});
 		}

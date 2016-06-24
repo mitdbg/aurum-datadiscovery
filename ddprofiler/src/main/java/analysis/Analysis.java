@@ -10,7 +10,6 @@ import analysis.modules.DataType;
 public interface Analysis {
 
 	public DataProfile getProfile();
-	public DataType getDataType();
 	public Cardinality getCardinality();
 	
 }

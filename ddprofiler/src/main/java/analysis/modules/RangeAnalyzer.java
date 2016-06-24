@@ -11,10 +11,10 @@ import analysis.IntegerDataConsumer;
 
 public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 
-	private int totalRecords;
-	private int max = Integer.MIN_VALUE;
-	private int min = Integer.MAX_VALUE;
-	private int totalSum;
+	private long totalRecords;
+	private long max = Integer.MIN_VALUE;
+	private long min = Integer.MAX_VALUE;
+	private long totalSum;
 	
 	private float maxF = Float.MIN_VALUE;
 	private float minF = Float.MAX_VALUE;
@@ -66,9 +66,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	}
 
 	@Override
-	public boolean feedIntegerData(List<Integer> records) {
+	public boolean feedIntegerData(List<Long> records) {
 		
- 		for(int value : records) {
+ 		for(long value : records) {
 			totalRecords++;
 			if(value > max) max = value;
 			if(value < min) min = value;

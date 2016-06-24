@@ -7,7 +7,7 @@ package inputoutput;
 public class Attribute {
 	
 	public enum AttributeType {
-		INT, FLOAT, STRING, UNKNOWN;
+		INT, FLOAT, LONG, STRING, UNKNOWN;
 	}
 	
 	private String columnName;

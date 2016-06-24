@@ -48,8 +48,8 @@ public class RangeAnalyzerTest {
 				System.out.println(q25 + " - " + q50 + " - " + q75);
 			}
 			else if(at.equals(AttributeType.INT)) {
-				List<Integer> integers = new ArrayList<>();
-				for(Integer s : a.getValue().getIntegers()) {
+				List<Long> integers = new ArrayList<>();
+				for(Long s : a.getValue().getIntegers()) {
 					integers.add(s);
 				}
 

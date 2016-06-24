@@ -52,9 +52,9 @@ public class CardinalityAnalyzer implements IntegerDataConsumer, FloatDataConsum
 	}
 
 	@Override
-	public boolean feedIntegerData(List<Integer> records) {
+	public boolean feedIntegerData(List<Long> records) {
 		
-		for(int r : records) {
+		for(long r : records) {
 			totalRecords++;
 			ic.offer(r);
 		}

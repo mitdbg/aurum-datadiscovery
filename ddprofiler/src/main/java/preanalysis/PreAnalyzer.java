@@ -28,9 +28,10 @@ public class PreAnalyzer implements PreAnalysis, IO {
 					+ "([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|"
 					+ "(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))"
 					+ "[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*");
-	private static final Pattern DOUBLE_PATTERN = Pattern.compile("^(\\+|-)?\\d+([\\,]\\d+)*([\\.]\\d+)?$");
 	
+	private static final Pattern DOUBLE_PATTERN = Pattern.compile("^(\\+|-)?\\d+([\\,]\\d+)*([\\.]\\d+)?$");
 	private static final Pattern INT_PATTERN = Pattern.compile("^(\\+|-)?\\d+$");
+	private static final Pattern LONG_PATTERN = Pattern.compile("");
 	
 	private final static String[] BANNED = {"", "nan"};
 
@@ -77,12 +78,12 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				}
 			}
 			else if (at.equals(AttributeType.INT)) {
-				List<Integer> castValues = new ArrayList<>();
+				List<Long> castValues = new ArrayList<>();
 				vs = Values.makeIntegerValues(castValues);
 				for (String s : e.getValue()) {
-					int f = 0;
+					long f = 0;
 					if(INT_PATTERN.matcher(s).matches()) {
-						f = Integer.valueOf(s).intValue();
+						f = Long.valueOf(s).longValue();
 					}
 					else {
 						continue;
@@ -99,6 +100,9 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			castData.put(e.getKey(), vs);
 		}
 
+		if(castData == null) {
+			System.out.println();
+		}
 		return castData;
 	}
 
@@ -177,11 +181,14 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				continue;
 			}
 			if (isNumerical(s)) {
-				if (isInteger(s))
+				if (isInteger(s)) {
 					intMatches++;
-				else
+				}
+				else {
 					floatMatches++;
-			} else {
+				}
+			} 
+			else {
 				strMatches++;
 			}
 		}

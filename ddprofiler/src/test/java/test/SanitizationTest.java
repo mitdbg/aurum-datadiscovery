@@ -52,5 +52,13 @@ public class SanitizationTest {
 		value4 = value4.replace(",", "");
 		float f4= Float.valueOf(value4).floatValue();
 		
+		// Other tests:
+		
+		String v = "6005262010";
+		boolean integer = PreAnalyzer.isNumerical(v);
+		System.out.println(integer);
+		System.out.println(Integer.MAX_VALUE);
+		long vint = Long.valueOf(v).longValue();
+		
 	}
 }

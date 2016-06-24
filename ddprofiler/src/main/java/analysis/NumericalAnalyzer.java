@@ -10,8 +10,6 @@ import java.util.List;
 
 import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
-import analysis.modules.DataType;
-import analysis.modules.DataTypeAnalyzer;
 import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
 import inputoutput.Attribute.AttributeType;
@@ -20,17 +18,14 @@ import inputoutput.Attribute.AttributeType;
 public class NumericalAnalyzer implements NumericalAnalysis {
 	
 	private List<DataConsumer> analyzers;
-	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
 	private RangeAnalyzer ra;
 	
 	
 	private NumericalAnalyzer() {
 		analyzers = new ArrayList<>();
-		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		ra = new RangeAnalyzer();
-		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ra);
 	}
@@ -40,7 +35,7 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	}
 	
 	@Override
-	public boolean feedIntegerData(List<Integer> records) {
+	public boolean feedIntegerData(List<Long> records) {
 		
 		Iterator<DataConsumer> dcs = analyzers.iterator();
 		while(dcs.hasNext()) {
@@ -65,12 +60,6 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 	
 	@Override
 	public DataProfile getProfile() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public DataType getDataType() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -11,7 +11,6 @@ import java.util.List;
 import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.DataType;
-import analysis.modules.DataTypeAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
 
@@ -19,16 +18,13 @@ import analysis.modules.EntityAnalyzer;
 public class TextualAnalyzer implements TextualAnalysis {
 
 	private List<DataConsumer> analyzers;
-	private DataTypeAnalyzer dta;
 	private CardinalityAnalyzer ca;
 	private EntityAnalyzer ea;
 	
 	private TextualAnalyzer(EntityAnalyzer ea) {
 		analyzers = new ArrayList<>();
-		dta = new DataTypeAnalyzer();
 		ca = new CardinalityAnalyzer();
 		this.ea = ea;
-		analyzers.add(dta);
 		analyzers.add(ca);
 		analyzers.add(ea);
 	}
@@ -51,12 +47,6 @@ public class TextualAnalyzer implements TextualAnalysis {
 	
 	@Override
 	public DataProfile getProfile() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public DataType getDataType() {
 		// TODO Auto-generated method stub
 		return null;
 	}

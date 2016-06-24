@@ -10,17 +10,17 @@ public class Range {
 
 	private Type type;
 
-	private int totalRecords;
-	private int max;
+	private long totalRecords;
+	private long max;
 	private float maxF;
-	private int min;
+	private long min;
 	private float minF;
 	private float avg;
 	private float stdDeviation;
 	private long median;
 	private long iqr;
 	
-	private Range(Type t, int totalRecords, int max, int min, float avg, float stdDeviation, long median, long iqr) {
+	private Range(Type t, long totalRecords, long max, long min, float avg, float stdDeviation, long median, long iqr) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.max = max;
@@ -31,7 +31,7 @@ public class Range {
 		this.iqr = iqr;
 	}
 	
-	private Range(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
+	private Range(Type t, long totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
 		this.type = t;
 		this.totalRecords = totalRecords;
 		this.maxF = maxF;
@@ -42,11 +42,11 @@ public class Range {
 		this.iqr = iqr;
 	}
 	
-	public static Range makeIntegerRange(Type t, int totalRecords, int max, int min, float avg, float stdDeviation, long median, long iqr) {
+	public static Range makeIntegerRange(Type t, long totalRecords, long max, long min, float avg, float stdDeviation, long median, long iqr) {
 		return new Range(t, totalRecords, max, min, avg, stdDeviation, median, iqr);
 	}
 	
-	public static Range makeFloatRange(Type t, int totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
+	public static Range makeFloatRange(Type t, long totalRecords, float maxF, float minF, float avg, float stdDeviation, long median, long iqr) {
 		return new Range(t, totalRecords, maxF, minF, avg, stdDeviation, median, iqr);
 	}
 	
@@ -54,11 +54,11 @@ public class Range {
 		return type;
 	}
 
-	public int getTotalRecords() {
+	public long getTotalRecords() {
 		return totalRecords;
 	}
 
-	public int getMax() {
+	public long getMax() {
 		return max;
 	}
 
@@ -66,7 +66,7 @@ public class Range {
 		return maxF;
 	}
 
-	public int getMin() {
+	public long getMin() {
 		return min;
 	}
 
