@@ -129,6 +129,7 @@ def test():
     nx.draw(network._get_underlying_repr())
     show()
 
+
 def plot_num():
     network = FieldNetwork()
     store = StoreHandler()
@@ -150,6 +151,6 @@ def plot_num():
     plt.show()
 
 if __name__ == "__main__":
-    #main()
-    test()
+    main()
+    #test()
     #plot_num()

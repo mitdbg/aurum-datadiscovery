@@ -6,15 +6,15 @@ from knowledgerepr.fieldnetwork import FieldNetwork
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
+from nearpy.hashes import RandomDiscretizedProjections
 from nearpy.distances import CosineDistance
 
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 from collections import defaultdict
 
-rbp = RandomBinaryProjections('default', 25)
+rbp = RandomBinaryProjections('default', 30)
 
 
 def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
@@ -37,16 +37,16 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
                 (data, label, value) = n
                 tokens = label.split('%&%&%')
                 node2 = network.add_field(tokens[0], tokens[1])
-                if node1 is not node2:
+                if node1.nid != node2.nid:
                     network.add_relation(node1, node2, relation, value)
         print("")
 
 
-def index_in_text_engine(fields, tfidf):
+def index_in_text_engine(fields, tfidf, lsh_projections):
     num_features = tfidf.shape[1]
     print("tfidf shape: " + str(tfidf.shape))
     text_engine = Engine(num_features,
-                         lshashes=[rbp],
+                         lshashes=[lsh_projections],
                          distance=CosineDistance())
 
     st = time.time()
@@ -79,7 +79,7 @@ def build_schema_sim_relation(network, fields):
         docs.append(fn)
 
     tfidf = da.get_tfidf_docs(docs)
-    text_engine = index_in_text_engine(fields, tfidf)
+    text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.SCHEMA_SIM)
 
 
@@ -89,7 +89,7 @@ def build_entity_sim_relation(network, fields, entities):
         docs.append(e)
 
     tfidf = da.get_tfidf_docs(docs)
-    text_engine = index_in_text_engine(fields, tfidf)
+    text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
 
 
@@ -99,7 +99,9 @@ def build_content_sim_relation_text(network, fields, signatures):
         docs.append(' '.join(e))
 
     tfidf = da.get_tfidf_docs(docs)  # this may become redundant if we exploit the store characteristics
-    text_engine = index_in_text_engine(fields, tfidf)
+    # rbp = RandomBinaryProjections('default', 1000)
+    lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
+    text_engine = index_in_text_engine(fields, tfidf, lsh_projections)
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.CONTENT_SIM)
 
 

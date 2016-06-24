@@ -438,8 +438,10 @@ def test():
     field3 = ('short_subjects_offered.csv', 'Offer Dept Name')
     field4 = ('Sis_department.csv', 'Dept Name In Commencement Bk')
     field5 = ('short_cis_course_catalog.csv', 'Department Name')
+    field6 = ('Fac_building.csv', 'Building Name Long')
+    field7 = ('Fac_building.csv', 'Site')
 
-    similar_set = api.similar_content_fields(field5)
+    similar_set = api.similar_content_fields(field7)
     ss = [x for x in similar_set]
     print(str(len(ss)))
     for el in ss:
