@@ -95,7 +95,7 @@ public class ElasticStore implements Store {
 	}
 
 	@Override
-	public boolean indexData(int id, String sourceName, String columnName, List<String> values) {
+	public boolean indexData(int id,String sourceName, String columnName, List<String> values) {
 		String strId = Integer.toString(id);
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		String v = concatValues(values);

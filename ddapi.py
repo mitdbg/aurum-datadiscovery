@@ -302,8 +302,7 @@ class API(DDAPI):
         global store_client
         store_client = StoreHandler()
 
-if __name__ == '__main__':
-
+def test_all():
     # create store handler
     store_client = StoreHandler()
     # read graph
@@ -419,9 +418,242 @@ if __name__ == '__main__':
         print(str(l))
 
     list_of_results = api.fill_schema("First name, department, schedule")
-    for k,v in list_of_results.items():
+    for k, v in list_of_results.items():
         print("###")
         print("")
         print(str(k))
         for value in v:
             print(str(value))
+
+def test():
+    # create store handler
+    store_client = StoreHandler()
+    # read graph
+    path = 'test/network.pickle'
+    network = fieldnetwork.deserialize_network(path)
+    api = API(network)
+
+    field1 = ('short_subjects_offered.csv', 'Responsible Faculty Name')
+    field2 = ('short_subjects_offered.csv', 'Responsible Faculty Mit Id')
+    field3 = ('short_subjects_offered.csv', 'Offer Dept Name')
+    field4 = ('Sis_department.csv', 'Dept Name In Commencement Bk')
+    field5 = ('short_cis_course_catalog.csv', 'Department Name')
+
+    similar_set = api.similar_content_fields(field5)
+    ss = [x for x in similar_set]
+    print(str(len(ss)))
+    for el in ss:
+        print(str(el))
+
+
+    ### test vectors from signatures with 25 term
+
+    v1 = ['asada', 'haruhiko', 'mark', 'cynthia', 'dow', 'dutta', 'watenpaugh', 'stewart', 'david', 'caso', 'krzysztof', 'haywood', 'qingyan', 'kausel', 'troxel', 'tarkowski', 'hadjiconstantin', 'rene', 'arindam', 'jame', 'gibbon', 'eduardo', 'joe', 'wodiczko', 'john']
+    v2 = ['carmichael', 'peter', 'jackson', 'rene', 'fitzgerald', 'cynthia', 'mohr', 'thoma', 'stewart', 'michael', 'david', 'caso', 'jame', 'georg', 'sue', 'sonenberg', 'ann', 'harri', 'mark', 'peterson', 'jean', 'murrai', 'daniel', 'john', 'zhiyuan']
+    v3 = ['jane', 'jaim', 'totten', 'paradi', 'yuehua', 'margeri', 'ellen', 'bishwapriya', 'stewart', 'jame', 'peirson', 'charl', 'sabin', 'dan', 'crocker', 'monika', 'perair', 'resnick', 'dunphi', 'levet', 'sanyal', 'samuel', 'jenkin', 'burn', 'fintel']
+    v4 = ['kemp', 'peter', 'sadock', 'ayumi', 'lissett', 'fravel', 'nagatomi', 'ellen', 'kardar', 'tegmark', 'michael', 'david', 'jame', 'ann', 'crocker', 'goethert', 'stephen', 'friedman', 'mehrotra', 'robert', 'lee', 'geraldin', 'daniel', 'john', 'grimm']
+    v5 = ['sewel', 'peter', 'roylanc', 'smith', 'tonegawa', 'donald', 'alan', 'sawin', 'michael', 'david', 'caso', 'hein', 'georg', 'peirson', 'kausel', 'alvin', 'temin', 'arthur', 'hobb', 'harri', 'scott', 'nigel', 'samuel', 'linn', 'susumu']
+    v6 = ['belcher', 'schulz', 'ochsendorf', 'gruber', 'yue', 'schuh', 'chung', 'van', 'singer', 'leiserson', 'white', 'verghes', 'wang', 'dedon', 'sussman', 'grossman', 'miller', 'bowr', 'stephanopoulo', 'lozano', 'paxson', 'sarma', 'sanyal', 'kaiser', 'lee']
+
+    d1 = ' '.join(v1)
+    d2 = ' '.join(v2)
+    d3 = ' '.join(v3)
+    d4 = ' '.join(v4)
+    d5 = ' '.join(v5)
+    d6 = ' '.join(v6)
+
+    from dataanalysis import dataanalysis as da
+    tfidf = da.get_tfidf_docs((d1, d2, d3, d4, d5, d6))
+    sparse_r1 = tfidf.getrow(0)
+    sparse_r2 = tfidf.getrow(1)
+    sparse_r3 = tfidf.getrow(2)
+    sparse_r4 = tfidf.getrow(3)
+    sparse_r5 = tfidf.getrow(4)
+    sparse_r6 = tfidf.getrow(5)
+
+    dense_r1 = sparse_r1.todense()
+    dense_r2 = sparse_r2.todense()
+    dense_r3 = sparse_r3.todense()
+    dense_r4 = sparse_r4.todense()
+    dense_r5 = sparse_r5.todense()
+    dense_r6 = sparse_r6.todense()
+
+    from scipy import spatial
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r2)
+    print("1-2: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r3)
+    print("1-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r4)
+    print("1-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r5)
+    print("1-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r6)
+    print("1-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r3)
+    print("2-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r4)
+    print("2-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r5)
+    print("2-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r6)
+    print("2-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r4)
+    print("3-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r5)
+    print("3-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r6)
+    print("3-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r5)
+    print("4-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r6)
+    print("4-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r5, dense_r6)
+    print("5-6: " + str(cs))
+
+    ## Check vectors from signatures with 50 term
+
+    v1 = ['ayumi', 'steven', 'nichola', 'dunphi', 'dagmar', 'sadock', 'daniel', 'geraldin', 'chiang', 'jae', 'goethert', 'lee', 'min', 'ben', 'paulin', 'grimm', 'jaeger', 'ann', 'grave', 'david', 'fravel', 'arian', 'soto', 'ian', 'mehrotra', 'spirn', 'robert', 'peter', 'jame', 'john', 'terri', 'tegmark', 'nagatomi', 'maier', 'harri', 'stephen', 'ellen', 'lissett', 'mehran', 'culot', 'michael', 'joseph', 'patricia', 'crocker', 'levet', 'kardar', 'kemp', 'susskind', 'friedman', 'reinhard']
+    v2 = ['zemba', 'hashemi', 'frederick', 'fernandez', 'jona', 'garri', 'robert', 'mark', 'saka', 'millon', 'heghnar', 'gibbon', 'harold', 'haruhiko', 'leist', 'caso', 'david', 'william', 'john', 'schrenk', 'kausel', 'mc', 'belang', 'arindam', 'jame', 'stewart', 'chen', 'brisson', 'dutta', 'rene', 'cynthia', 'naginski', 'reiner', 'qingyan', 'dubowski', 'eduardo', 'asada', 'haywood', 'troxel', 'joe', 'tarkowski', 'dow', 'watenpaugh', 'jarzombek', 'christin', 'krzysztof', 'nannaji', 'joan', 'wodiczko', 'hadjiconstantin']
+    v3 = ['sanyal', 'amarasingh', 'rene', 'j', 'daniel', 'perair', 'william', 'mark', 'schneider', 'bishwapriya', 'kenneth', 'cui', 'ferreira', 'donald', 'jaim', 'thoma', 'caso', 'david', 'jo', 'sue', 'jackson', 'arthur', 'brown', 'mohr', 'yue', 'robert', 'peter', 'chen', 'stewart', 'john', 'charl', 'ann', 'carmichael', 'peterson', 'sonenberg', 'cynthia', 'henni', 'harri', 'zhiyuan', 'georg', 'jame', 'janet', 'cohen', 'frederick', 'michael', 'paul', 'jean', 'linda', 'fitzgerald', 'murrai']
+    v4 = ['wilson', 'cohen', 'linn', 'rene', 'daniel', 'herbert', 'tonegawa', 'sewel', 'hobb', 'schneider', 'scott', 'kenneth', 'peirson', 'alan', 'donald', 'thoma', 'caso', 'david', 'jeffrei', 'john', 'arthur', 'kausel', 'mc', 'smith', 'peter', 'jame', 'chen', 'alvin', 'w', 'joshua', 'harri', 'gregori', 'eduardo', 'georg', 'nigel', 'g', 'temin', 'sawin', 'roylanc', 'michael', 'samuel', 'susan', 'hein', 'susumu', 'ronald', 's', 'roger', 'richard', 'bruce', 'jack']
+    v5 = ['henri', 'sanyal', 'robert', 'perair', 'dunphi', 'elizabeth', 'jame', 'iren', 'lawrenc', 'margeri', 'totten', 'levet', 'sabin', 'monika', 'stewart', 'liu', 'ellen', 'fintel', 'charl', 'burn', 'bishwapriya', 'jenkin', 'peter', 'jane', 'michael', 'samuel', 'jaim', 'yuehua', 'von', 'crocker', 'paradi', 'kai', 'richard', 'dan', 'resnick', 'peirson']
+    v6 = ['winston', 'verghes', 'yue', 'sanyal', 'miller', 'stephanopoulo', 'doyl', 'singer', 'kaiser', 'chen', 'hu', 'freeman', 'zhang', 'paxson', 'von', 'lee', 'wang', 'schulz', 'ochsendorf', 'gruber', 'perez', 'chung', 'white', 'grossman', 'sussman', 'van', 'smith', 'lozano', 'ting', 'cohen', 'leiserson', 'schuh', 'sarma', 'johnson', 'rose', 'hart', 'bowr', 'ross', 'dedon', 'william', 'thompson', 'belcher', 'zhao']
+
+    d1 = ' '.join(v1)
+    d2 = ' '.join(v2)
+    d3 = ' '.join(v3)
+    d4 = ' '.join(v4)
+    d5 = ' '.join(v5)
+    d6 = ' '.join(v6)
+
+    from dataanalysis import dataanalysis as da
+    tfidf = da.get_tfidf_docs((d1, d2, d3, d4, d5, d6))
+    sparse_r1 = tfidf.getrow(0)
+    sparse_r2 = tfidf.getrow(1)
+    sparse_r3 = tfidf.getrow(2)
+    sparse_r4 = tfidf.getrow(3)
+    sparse_r5 = tfidf.getrow(4)
+    sparse_r6 = tfidf.getrow(5)
+
+    dense_r1 = sparse_r1.todense()
+    dense_r2 = sparse_r2.todense()
+    dense_r3 = sparse_r3.todense()
+    dense_r4 = sparse_r4.todense()
+    dense_r5 = sparse_r5.todense()
+    dense_r6 = sparse_r6.todense()
+
+    from scipy import spatial
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r2)
+    print("1-2: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r3)
+    print("1-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r4)
+    print("1-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r5)
+    print("1-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r6)
+    print("1-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r3)
+    print("2-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r4)
+    print("2-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r5)
+    print("2-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r6)
+    print("2-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r4)
+    print("3-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r5)
+    print("3-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r6)
+    print("3-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r5)
+    print("4-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r6)
+    print("4-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r5, dense_r6)
+    print("5-6: " + str(cs))
+
+    ## Check vectors from signatures with 100 term
+
+    v1 = ['gregori', 'levet', 'brouillett', 'fravel', 'susskind', 'nanci', 'ayumi', 'm', 'correa', 'faeri', 'david', 'fernandez', 'sadock', 'dagmar', 'murga', 'ben', 'mehrotra', 'kardar', 'twardowski', 'lissett', 'alar', 'ian', 'grove', 'judith', 'thoma', 'culot', 'mikel', 'geraldin', 'patricia', 'friedman', 'tegmark', 'sarah', 'grimm', 'orit', 'movassaghi', 'kemp', 'autor', 'chakraborti', 'daniel', 'georg', 'parag', 'paul', 'lee', 'grave', 'mariusz', 'harri', 'patrick', 'soto', 'roi', 'wallon', 'stroock', 'levitov', 'mehran', 'crocker', 'terri', 'johann', 'hadjiconstantin', 'ellen', 'kedar', 'reinhard', 'joseph', 'peter', 'arian', 'edward', 'layzer', 'jaeger', 'thompson', 'jame', 'nagatomi', 'kocur', 'jung', 'nichola', 'szold', 'michael', 'wornel', 'akintund', 'dunphi', 'jae', 'john', 'goethert', 'paulin', 'min', 'chri', 'inam', 'steven', 'sabin', 'chiang', 'spirn', 'max', 'denni', 'aseem', 'hosoi', 'j', 'ann', 'toomr', 'robert', 'nondita', 'gang', 'stephen', 'maier']
+    v2 = ['nannaji', 'eduardo', 'rabbat', 'arindam', 'ceyer', 'janet', 'dow', 'william', 'stewart', 'haruhiko', 'reiner', 'david', 'fernandez', 'tarkowski', 'leist', 'erika', 'klau', 'ghoniem', 'hadjiconstantin', 'gill', 'sodini', 'charl', 'henri', 'mari', 'bath', 'schrenk', 'troxel', 'joan', 'haywood', 'saka', 'ahm', 'caso', 'gibbon', 'mitchel', 'kausel', 'dubowski', 'asada', 'hemond', 'qingyan', 'millon', 'frederick', 'rene', 'pratt', 'naginski', 'hashemi', 'bale', 'cynthia', 'nichola', 'garri', 'john', 'ernst', 'mark', 'watenpaugh', 'carl', 'jame', 'lallit', 'jona', 'brisson', 'jarzombek', 'boyc', 'michael', 'robert', 'nasser', 'belang', 'cravalho', 'ernest', 'mc', 'chen', 'christin', 'yanna', 'h', 'donald', 'steven', 'sylvia', 'zemba', 'krzysztof', 'ioanni', 'harold', 'hardt', 'heghnar', 'j', 'anand', 'wodiczko', 'w', 'joe', 'stephen', 'dutta']
+    v3 = ['henni', 'william', 'carmichael', 'baggero', 'jean', 'koster', 'sanyal', 'bishwapriya', 'david', 'kenneth', 'linda', 'burchfiel', 'sonenberg', 'jackson', 'cohen', 'chorov', 'zhiyuan', 'charl', 'judith', 'thoma', 'jo', 'richard', 'edward', 'wheaton', 'gyftopoulo', 'mujid', 'caso', 'allen', 'vandiv', 'daniel', 'georg', 'leonard', 'merrick', 'perair', 'janet', 'paul', 'alan', 'rubner', 'dick', 'harri', 'bernhardt', 'peterson', 'hoon', 'fitzgerald', 'stewart', 'guttag', 'frederick', 'freidberg', 'rene', 'reinhard', 'wilson', 'sibel', 'peter', 'cynthia', 'bozdogan', 'sue', 'john', 'mohr', 'mark', 'ferreira', 'jame', 'tuller', 'wedgwood', 'kazimi', 'michael', 'hein', 'sucharewicz', 'blankschtein', 'welsh', 'jaim', 'schneider', 'blackmer', 'goethert', 'chen', 'arthur', 'magnanti', 'loui', 'yue', 'donald', 'steven', 'murrai', 'wuensch', 's', 'susan', 'genannt', 'riddiough', 'argon', 'essigmann', 'e', 'j', 'ann', 'donaldson', 'gould', 'hine', 'cui', 'amarasingh', 'abelmann', 'robert', 'orlin', 'brown']
+    v4 = ['gregori', 'tonegawa', 'herbert', 'linn', 'eduardo', 'roylanc', 'rene', 'david', 'wilson', 'c', 'peter', 'jack', 'kenneth', 'nigel', 'john', 'schneider', 'hobb', 'jame', 'sewel', 'alvin', 'cohen', 's', 'joshua', 'michael', 'hein', 'thoma', 'richard', 'mc', 'susumu', 'caso', 'arthur', 'chen', 'temin', 'roger', 'g', 'samuel', 'donald', 'jeffrei', 'daniel', 'georg', 'kausel', 'susan', 'sawin', 'scott', 'alan', 't', 'm', 'harri', 'peirson', 'ronald', 'w', 'bruce', 'smith']
+    v5 = ['levet', 'crocker', 'richard', 'fintel', 'dunphi', 'ellen', 'elizabeth', 'iren', 'totten', 'sanyal', 'samuel', 'bishwapriya', 'peter', 'jaim', 'resnick', 'von', 'paradi', 'perair', 'jane', 'jenkin', 'burn', 'jame', 'sabin', 'lawrenc', 'margeri', 'peirson', 'charl', 'dan', 'monika', 'henri', 'robert', 'liu', 'michael', 'yuehua', 'kai', 'stewart']
+    v6 = ['miller', 'hu', 'chung', 'ochsendorf', 'ross', 'chen', 'rose', 'zhao', 'doyl', 'sussman', 'perez', 'sanyal', 'dedon', 'william', 'johnson', 'grossman', 'zhang', 'hart', 'von', 'paxson', 'van', 'yue', 'singer', 'sarma', 'kaiser', 'gruber', 'lee', 'bowr', 'belcher', 'schulz', 'cohen', 'white', 'freeman', 'leiserson', 'schuh', 'wang', 'thompson', 'winston', 'lozano', 'ting', 'stephanopoulo', 'smith', 'verghes']
+
+    d1 = ' '.join(v1)
+    d2 = ' '.join(v2)
+    d3 = ' '.join(v3)
+    d4 = ' '.join(v4)
+    d5 = ' '.join(v5)
+    d6 = ' '.join(v6)
+
+    from dataanalysis import dataanalysis as da
+    tfidf = da.get_tfidf_docs((d1, d2, d3, d4, d5, d6))
+    sparse_r1 = tfidf.getrow(0)
+    sparse_r2 = tfidf.getrow(1)
+    sparse_r3 = tfidf.getrow(2)
+    sparse_r4 = tfidf.getrow(3)
+    sparse_r5 = tfidf.getrow(4)
+    sparse_r6 = tfidf.getrow(5)
+
+    dense_r1 = sparse_r1.todense()
+    dense_r2 = sparse_r2.todense()
+    dense_r3 = sparse_r3.todense()
+    dense_r4 = sparse_r4.todense()
+    dense_r5 = sparse_r5.todense()
+    dense_r6 = sparse_r6.todense()
+
+    from scipy import spatial
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r2)
+    print("1-2: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r3)
+    print("1-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r4)
+    print("1-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r5)
+    print("1-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r1, dense_r6)
+    print("1-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r3)
+    print("2-3: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r4)
+    print("2-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r5)
+    print("2-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r2, dense_r6)
+    print("2-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r4)
+    print("3-4: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r5)
+    print("3-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r3, dense_r6)
+    print("3-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r5)
+    print("4-5: " + str(cs))
+    cs = 1 - spatial.distance.cosine(dense_r4, dense_r6)
+    print("4-6: " + str(cs))
+
+    cs = 1 - spatial.distance.cosine(dense_r5, dense_r6)
+    print("5-6: " + str(cs))
+
+
+
+
+if __name__ == '__main__':
+
+    #test_all()
+    test()

@@ -23,7 +23,7 @@ odsvm = {
         }
 
 # Configuration specific to holistic signature method
-sig_v_size = 30
+sig_v_size = 100
 
 # Configuration specific to each similarity method
 

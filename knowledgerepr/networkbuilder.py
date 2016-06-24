@@ -14,25 +14,24 @@ import numpy as np
 
 from collections import defaultdict
 
-rbp = RandomBinaryProjections('rbp', 30)
+rbp = RandomBinaryProjections('default', 25)
 
 
 def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
     # FIXME: bottleneck. parallelize this
     rowidx = 0
     for (nid, sn, fn) in fields:
-        if fn == "Subject Short Title":
-            print("subject short tiel")
         node1 = network.add_field(sn, fn)
         sparse_row = tfidf.getrow(rowidx)
         rowidx += 1
         dense_row = sparse_row.todense()
         array = dense_row.A[0]
         N = text_engine.neighbours(array)
+        print(str(sn) + str(fn) + " simto: ")
         if len(N) > 1:
             print(" ")
-            for n in N:
-                print(str(n))
+            for (data, label, value) in N:
+                print(str(label) + " value: " + str(value))
         if len(N) > 1:
             for n in N:
                 (data, label, value) = n
@@ -40,6 +39,7 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
                 node2 = network.add_field(tokens[0], tokens[1])
                 if node1 is not node2:
                     network.add_relation(node1, node2, relation, value)
+        print("")
 
 
 def index_in_text_engine(fields, tfidf):
@@ -64,7 +64,6 @@ def index_in_text_engine(fields, tfidf):
 
 
 def build_schema_relation(network, fields):
-    # TODO: slow. make it faster
     for (nid, sn_outer, fn_outer) in fields:
         n_outer = network.add_field(sn_outer, fn_outer)
         for(nid, sn, fn) in fields:

@@ -33,6 +33,8 @@ def main():
     end_entity_sim = time.time()
     print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
+    print("BREAK")
+
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
@@ -109,9 +111,17 @@ def test():
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
+
+    num = [x for x in fields]
+    print("NUM: " + str(len(num)))
+
+    for i in range(len(fields)):
+        print(str(fields[i]) + " -> " + str(text_signatures[i]))
+
     networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -135,8 +145,8 @@ def plot_num():
     import matplotlib.pyplot as plt
     plt.plot(xaxis, yaxis, 'ro')
     plt.axis([0, 600000, 0, 600000])
-    plt.axis([0, 10000, 0, 10000])
-    plt.axis([0, 500, 0, 500])
+    #plt.axis([0, 10000, 0, 10000])
+    #plt.axis([0, 500, 0, 500])
     plt.show()
 
 if __name__ == "__main__":

@@ -126,6 +126,7 @@ class StoreHandler:
         Reads all fields, described as (id, source_name, field_name) from the store (text index).
         :return: a list of all fields with the form (id, source_name, field_name)
         """
+
         body = {"query": {"match_all": {}}}
         res = client.search(index='text', body=body, scroll="10m",
                             filter_path=['_scroll_id',
@@ -212,23 +213,24 @@ class StoreHandler:
         Retrieves textual fields and signatures from the store
         :return: (fields, textsignatures)
         """
-        # TODO: do this only for textual columns
-        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": 25}}
-
+        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
         fields = []
         seen_nid = []
         text_signatures = []
         text_fields_gen = self.get_fields_text_index()
         for (rawid, nid, sn, fn) in text_fields_gen:
             if nid not in seen_nid:
-                fields.append((nid, sn, fn))
                 ans = client.termvectors(index='text', id=rawid, doc_type='column', body=term_body)
                 terms = []
                 if ans['found']:
                     term_vectors = ans['term_vectors']
                     if 'text' in term_vectors:
                         terms = list(ans['term_vectors']['text']['terms'].keys())
-                text_signatures.append(terms)
+                # Note that we filter out fields for which we don't get terms
+                # This can be due to empty source data, or noisy data with all-stopwords, etc.
+                if len(terms) > 0:
+                    fields.append((nid, sn, fn))
+                    text_signatures.append(terms)
             seen_nid.append(nid)
         return (fields, text_signatures)
 
@@ -274,18 +276,16 @@ class StoreHandler:
 if __name__ == "__main__":
     print("Elastic Store")
     handler = StoreHandler()
-    # all_fields = handler.get_all_fields_with(['maxValue', 'minValue'])
-    # i = 0
-    # for el in all_fields:
-    #    print(str(el))
-    # print("Total fields: " + str(i))
+    all_fields = handler.get_all_fields()
+    total = [x for x in all_fields]
+    print("Total fields: " + str(len(total)))
 
-    #data = handler.get_all_fields_textsignatures()
-    #fields, text_sig = data
-    #for sig in text_sig:
-    #    print(str(sig))
+    data = handler.get_all_fields_textsignatures()
+    fields, text_sig = data
+    all_text = [x for x in fields]
+    print("Text fields: " + str(len(all_text)))
 
     data = handler.get_all_fields_numsignatures()
     fields, num_sig = data
-    for sig in num_sig:
-        print(str(sig))
+    all_num = [x for x in fields]
+    print("Num fields: " + str(len(all_num)))
