@@ -54,8 +54,17 @@ class FieldNetwork:
         else:
             self.__G = graph
 
+    def get_cardinality_of(self, node):
+        c = self.__G[node]
+        card = c['cardinality']
+        return card
+
     def _get_underlying_repr(self):
         return self.__G
+
+    def enumerate_fields(self):
+        for n in self.__G.nodes():
+            yield n
 
     def relations_between(self, node1, node2):
         return self.__G[node1][node2]
@@ -63,7 +72,7 @@ class FieldNetwork:
     def relation_between(self, node1, node2, relation):
         return self.__G[node1][node2][relation]
 
-    def add_field(self, source_name, field_name):
+    def add_field(self, source_name, field_name, cardinality=None):
         """
         Creates a graph node for this field and adds it to the graph
         :param source_name: of the field
@@ -73,6 +82,8 @@ class FieldNetwork:
         nid = compute_field_id(source_name, field_name)
         n = Hit(nid, source_name, field_name, -1)
         self.__G.add_node(n)
+        if cardinality is not None:
+            self.__G[n]['cardinality'] = cardinality
         return n
 
     def add_fields(self, list_of_fields):
@@ -107,11 +118,19 @@ class FieldNetwork:
         topk_nodes = sorted_degree[:topk]
         return topk_nodes
 
+    def enumerate_pkfk(self):
+        for n in self.__G.nodes():
+            neighbors = self.neighbors((n.source_name, n.field_name), Relation.PKFK)
+            for nid, sn, fn, score in neighbors:
+                print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+
     def neighbors(self, field, relation):
         sn, cn = field
         nid = compute_field_id(sn, cn)
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
+            if k is 'cardinality':
+                continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
                 yield Hit(k.nid, k.source_name, k.field_name, score)

@@ -37,21 +37,26 @@ class StoreHandler:
                                          'hits.hits._id',
                                          'hits.total',
                                          'hits.hits._source.sourceName',
-                                         'hits.hits._source.columnName']
+                                         'hits.hits._source.columnName',
+                                         'hits.hits._source.totalValues',
+                                         'hits.hits._source.uniqueValues']
                             )
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'],
+                                           h['_source']['totalValues'], h['_source']['uniqueValues'])
                 yield id_source_and_file_name
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
                                              'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName']
+                                             'hits.hits._source.columnName',
+                                             'hits.hits._source.totalValues',
+                                             'hits.hits._source.uniqueValues']
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
@@ -232,7 +237,7 @@ class StoreHandler:
                     fields.append((nid, sn, fn))
                     text_signatures.append(terms)
             seen_nid.append(nid)
-        return (fields, text_signatures)
+        return fields, text_signatures
 
     def get_all_fields_numsignatures(self):
         """

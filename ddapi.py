@@ -60,24 +60,50 @@ class DDAPI:
     """
 
     def and_conjunctive(self, a, b):
+        """
+        Returns elements that are both in a and b
+        :param a:
+        :param b:
+        :return:
+        """
         sa = set(a)
         sb = set(b)
         res = sa.intersection(sb)
         return res
 
     def or_conjunctive(self, a, b):
+        """
+        Returns elements that are in either a or b
+        :param a:
+        :param b:
+        :return:
+        """
         res = set(a).union(set(b))
         return res
 
-    def has_path(self, source, target, relation):
+    def get_path(self, source, target, relation):
+        """
+        Returns the path that connects source and target if any
+        :param source:
+        :param target:
+        :param relation:
+        :return:
+        """
         path = self.__network.find_path(source, target, relation)
         return path
 
     def in_context_with(self, a, b, relation):
+        """
+        Returns the nodes from a that are connected to any node in b
+        :param a:
+        :param b:
+        :param relation:
+        :return:
+        """
         res = set()
         for el1 in a:
             for el2 in b:
-                path = self.__network.find_path(el1, el2, relation)
+                path = self.get_path(el1, el2, relation)
                 if el1 in path:
                     res.add(el1)
         return res
@@ -309,6 +335,7 @@ def test_all():
     path = 'test/network.pickle'
     network = fieldnetwork.deserialize_network(path)
     api = API(network)
+    api.init_store()
 
     #####
     # testing index primitives
@@ -653,9 +680,29 @@ def test():
     print("5-6: " + str(cs))
 
 
+def test_g_prim():
+    # create store handler
+    store_client = StoreHandler()
+    # read graph
+    path = 'test/network.pickle'
+    network = fieldnetwork.deserialize_network(path)
+    api = API(network)
+    api.init_store()
+
+    field = ('Mit_student_directory.csv', 'Full Name')
+    print("")
+    print("Relations of: " + str(field))
+    print("")
+    print("Content sim")
+    print("")
+    nodes = api.similar_content_fields(field)
+    nodes = api.schema_sim_fields(field)
+    for node in nodes:
+        print(node)
 
 
 if __name__ == '__main__':
 
     #test_all()
-    test()
+    #test()
+    test_g_prim()

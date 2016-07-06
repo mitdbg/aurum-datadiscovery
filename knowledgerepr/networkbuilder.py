@@ -64,12 +64,21 @@ def index_in_text_engine(fields, tfidf, lsh_projections):
 
 
 def build_schema_relation(network, fields):
-    for (nid, sn_outer, fn_outer) in fields:
-        n_outer = network.add_field(sn_outer, fn_outer)
-        for(nid, sn, fn) in fields:
+    """
+    tvals = total values
+    uvals = unique values
+    :param network:
+    :param fields:
+    :return:
+    """
+    for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
+        card_outer = float(uvals_outer) / float(tvals_outer)
+        n_outer = network.add_field(sn_outer, fn_outer, card_outer)
+        for(nid, sn, fn, tvals, uvals) in fields:
             if sn_outer == sn and fn_outer != fn:
                 assert isinstance(network, FieldNetwork)
-                n_inner = network.add_field(sn, fn)
+                card = float(uvals) / float(tvals)
+                n_inner = network.add_field(sn, fn, card)
                 network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 
 
@@ -134,12 +143,22 @@ def build_content_sim_relation_num(network, fields, features):
                     network.add_relation(n1, n2, Relation.CONTENT_SIM, 1)
 
 
-def build_overlap_relation():
-    print("todo")
-
-
-def build_pkfk_relation():
-    print('todo')
+def build_pkfk_relation(network):
+    seen = set()
+    for n in network.enumerate_fields():
+        seen.add(n)
+        n_card = network.get_cardinality_of(n)
+        neighborhood = network.neighbors((n.source_name, n.field_name), Relation.CONTENT_SIM)
+        for ne in neighborhood:
+            if ne not in seen and ne is not n:
+                ne_card = network.get_cardinality_of(ne)
+                if n_card > 0.7 or ne_card > 0.7:
+                    if n_card > ne_card:
+                        highest_card = n_card
+                    else:
+                        highest_card = ne_card
+                    network.add_relation(n, ne, Relation.PKFK, highest_card)
+                    print(str(n) + " -> " + str(ne))
 
 
 if __name__ == "__main__":

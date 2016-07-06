@@ -17,6 +17,7 @@ def main():
     # Schema relation
     start_schema = time.time()
     networkbuilder.build_schema_relation(network, fields)
+    fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields]
     end_schema = time.time()
     print("Total schema: {0}".format(str(end_schema - start_schema)))
 
@@ -33,8 +34,6 @@ def main():
     end_entity_sim = time.time()
     print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
-    print("BREAK")
-
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
@@ -49,10 +48,16 @@ def main():
     end_num_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
-    topk = 100
-    degree = network.fields_degree(topk)
-    for node, val in degree:
-        print("N - " + str(node) + " degree: " + str(val))
+    # Primary Key / Foreign key relation
+    start_pkfk = time.time()
+    networkbuilder.build_pkfk_relation(network)
+    end_pkfk = time.time()
+    print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
+
+    #topk = 100
+    #degree = network.fields_degree(topk)
+    #for node, val in degree:
+    #    print("N - " + str(node) + " degree: " + str(val))
 
     #import networkx as nx
     #from matplotlib.pyplot import show
@@ -150,7 +155,62 @@ def plot_num():
     #plt.axis([0, 500, 0, 500])
     plt.show()
 
+def test_cardinality_propagation():
+    network = FieldNetwork()
+    store = StoreHandler()
+    # Get all fields from store
+    fields_gen = store.get_all_fields()
+    fields = [f for f in fields_gen]
+
+    # Schema relation
+    start_schema = time.time()
+    networkbuilder.build_schema_relation(network, fields)
+    end_schema = time.time()
+    print("Total schema: {0}".format(str(end_schema - start_schema)))
+    # Content_sim text relation
+    start_text_sig_sim = time.time()
+    fields, text_signatures = store.get_all_fields_textsignatures()
+    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    end_text_sig_sim = time.time()
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+
+    # Content_sim num relation
+    start_num_sig_sim = time.time()
+    fields, num_signatures = store.get_all_fields_numsignatures()
+    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+    end_num_sig_sim = time.time()
+    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+
+    # Primary Key / Foreign key relation
+    start_pkfk = time.time()
+    networkbuilder.build_pkfk_relation(network)
+    end_pkfk = time.time()
+    print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
+
+    network.enumerate_pkfk()
+
+    """
+    nxr = network._get_underlying_repr()
+    nodes = nxr.nodes(data=True)
+    total_candidates = 0
+    for n, d in nodes:
+        c = network.get_cardinality_of(n)
+        print(str(n) + " - " + str(c))
+        if c > 0.7:
+            total_candidates = total_candidates + 1
+    print(str("total candidates: " + str(total_candidates)))
+    """
+
+    sn = 'Sis_subject_code.csv'
+    fn = 'Subject Code Desc'
+    from knowledgerepr.fieldnetwork import Relation
+    output = network.neighbors((sn, fn), Relation.PKFK)
+    for o in output:
+        print(str(o))
+
+
 if __name__ == "__main__":
-    main()
+    #main()
     #test()
     #plot_num()
+    test_cardinality_propagation()
