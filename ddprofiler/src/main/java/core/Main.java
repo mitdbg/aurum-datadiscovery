@@ -141,6 +141,7 @@ public class Main {
 		
 		List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
 		for(String str : tables) {
+			LOG.info("Detected relational table: {}", str);
 			WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbType, ip, port, dbname, str, username, password);
 			c.submitTask(wt);
 		}
