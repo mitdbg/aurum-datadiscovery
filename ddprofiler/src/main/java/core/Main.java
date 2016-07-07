@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
 
@@ -15,6 +16,7 @@ import comm.WebServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
+import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
 import store.Store;
 import store.StoreFactory;
@@ -23,7 +25,8 @@ public class Main {
 	
 	public enum ExecutionMode {
 		ONLINE(0),
-		OFFLINE(1);
+		OFFLINE_FILES(1),
+		OFFLINE_DB(2);
 		
 		int mode;
 		
@@ -49,10 +52,13 @@ public class Main {
 			WebServer ws = new WebServer(pc, c);
 			ws.init();
 		}
-		else if (executionMode == ExecutionMode.OFFLINE.mode) {
+		else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
 			// Run with the configured input parameters and produce results to file (?)
 			String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
 			this.readDirectoryAndCreateTasks(c, pathToSources);
+		}
+		else if(executionMode == ExecutionMode.OFFLINE_DB.mode) {
+			this.readTablesFromDBAndCreateTasks(c);
 		}
 	}
 	
@@ -109,6 +115,25 @@ public class Main {
 		}
 		catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private void readTablesFromDBAndCreateTasks(Conductor c) {
+		Properties dbp = DBUtils.loadDBPropertiesFromFile();
+		String dbType = dbp.getProperty("db_system_name");
+		
+		
+		String ip = dbp.getProperty("conn_ip");
+		String port = dbp.getProperty("port");
+		String dbname = dbp.getProperty("conn_path");
+		String username = dbp.getProperty("username");
+		String password = dbp.getProperty("password");
+		
+		Connection dbConn = DBUtils.getPOSTGRESQLConnection(ip, 
+				port, dbname, username, password);
+		List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
+		for(String str : tables) {
+			WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbname, ip, port, dbname, str, username, password);
 		}
 	}
 	

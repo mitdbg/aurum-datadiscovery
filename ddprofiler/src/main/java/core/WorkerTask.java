@@ -36,7 +36,8 @@ public class WorkerTask {
 		return new WorkerTask(id, fc);
 	}
 	
-	public static WorkerTask makeWorkerTaskForDB(String db, String connIP, String port, String sourceName, String tableName, 
+	public static WorkerTask makeWorkerTaskForDB(String db, String connIP, 
+			String port, String sourceName, String tableName,
 			String username, String password ) {
 		DBConnector dbc = null;
 		try{

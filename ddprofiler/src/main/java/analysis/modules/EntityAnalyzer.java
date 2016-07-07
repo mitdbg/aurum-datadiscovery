@@ -47,8 +47,10 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		
 		InputStream nlpModeConfigStream;
 		try {
-			nlpModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
-					"config" + File.separator + "nlpmodel.config").openStream();
+//			nlpModeConfigStream = AnalyzerFactory.class.getClassLoader().getResource(
+//					"config" + File.separator + "nlpmodel.config").openStream();
+			nlpModeConfigStream = AnalyzerFactory.class.getClassLoader()
+					.getResource("nlpmodel.config").openStream();
 			modelList = loadModel(nlpModeConfigStream);
 			System.out.println(modelList.size());
 			
@@ -94,7 +96,6 @@ public class EntityAnalyzer implements TextualDataConsumer {
 	}
 
 	public List<TokenNameFinderModel> loadModel(InputStream modelConfigStream) {
-		// TODO: what model/models do we need to load?
 		/*
 		 * currently, we adopted the models provided by openNLP the detailed
 		 * models are listed in the model_list_file_name

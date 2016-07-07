@@ -22,7 +22,7 @@ import inputoutput.Record;
 import inputoutput.TableInfo;
 
 public class DBConnector extends Connector {
-
+	
 	private static final Logger log = Logger.getLogger(DBConnector.class.getName());
 
 	private String db;// db system name e.g., mysq/oracle etc.
@@ -61,7 +61,6 @@ public class DBConnector extends Connector {
 
 			List<Attribute> attrs = this.getAttributes();
 			this.tbInfo.setTableAttributes(attrs);
-
 		} 
 		catch (ClassNotFoundException e) {
 			log.log(Level.SEVERE, "DB connection driver not found");

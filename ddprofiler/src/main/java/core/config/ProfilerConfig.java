@@ -15,7 +15,7 @@ public class ProfilerConfig extends Config {
 	private static final ConfigDef config;
 	
 	public static final String EXECUTION_MODE = "execution.mode";
-	private static final String EXECUTION_MODE_DOC = "(online) for server mode and (offline) for one-shot";
+	private static final String EXECUTION_MODE_DOC = "(online - 0) for server mode and (offline files - 1) for one-shot read files from directory and (offline db - 2) for one-shot read tables from db";
 
 	public static final String WEB_SERVER_PORT = "web.server.port";
 	private static final String WEB_SERVER_PORT_DOC = "The port where web server listens";
@@ -35,6 +35,9 @@ public class ProfilerConfig extends Config {
 	public static final String SOURCES_TO_ANALYZE_FOLDER = "sources.folder.path";
 	private static final String SOURCES_TO_ANALYZE_FOLDER_DOC = "Path to a folder with files to analyze";
 	
+	public static final String SOURCES_TO_ANALYZE_DB = "sources.db.path";
+	private static final String SOURCES_TO_ANALYZE_DB_DOC = "Path to db with tables to analyze";
+	
 	
 	static{
 		config = new ConfigDef()
@@ -44,7 +47,8 @@ public class ProfilerConfig extends Config {
 				.define(NUM_RECORD_READ, Type.INT, 1000, Importance.MEDIUM, NUM_RECORD_READ_DOC)
 				.define(STORE_SERVER, Type.STRING, "localhost", Importance.HIGH, STORE_SERVER_DOC)
 				.define(STORE_PORT, Type.INT, 9200, Importance.HIGH, STORE_PORT_DOC)
-				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC);
+				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
+				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

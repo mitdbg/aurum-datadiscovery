@@ -1,5 +1,6 @@
 package core;
 
+
 public class Utils {
 
 	public static int computeAttrId(String sourceName, String columnName) {
