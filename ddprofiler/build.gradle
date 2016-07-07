@@ -8,6 +8,9 @@ applicationDefaultJvmArgs = []
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs "drivers"
+    }
 }
 
 dependencies {
@@ -37,6 +40,9 @@ dependencies {
 	compile 'com.clearspring.analytics:stream:2.7.0'
 	// mysql driver
 	compile 'mysql:mysql-connector-java:5.1.6'
+
+    compile 'postgresql:postgresql:9.4.1208.jre6'
+
     testCompile 'junit:junit:4.11'
 }
 
