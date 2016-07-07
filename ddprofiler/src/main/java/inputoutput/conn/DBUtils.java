@@ -46,7 +46,22 @@ public class DBUtils {
 		return prop;
 	}
 	
-	public static Connection getMYSQLConnection(String connIP, 
+	public static Connection getDBConnection(DBType type, String connIP, 
+			String port, String dbName, String username, String password) {
+		Connection conn = null;
+		if(type == DBType.MYSQL) {
+			conn = getMYSQLConnection(connIP, port, dbName, username, password);
+		}
+		else if(type == DBType.POSTGRESQL) {
+			conn = getPOSTGRESQLConnection(connIP, port, dbName, username, password);
+		}
+		else if(type == DBType.ORACLE) {
+			conn = getOracle10GConnection(connIP, port, dbName, username, password);
+		}
+		return conn;
+	}
+	
+	private static Connection getMYSQLConnection(String connIP, 
 			String port, String dbName, String username, String password) {
 		Connection conn = null;
 		try {
@@ -64,7 +79,7 @@ public class DBUtils {
 		return conn;
 	}
 	
-	public static Connection getPOSTGRESQLConnection(String connIP, 
+	private static Connection getPOSTGRESQLConnection(String connIP, 
 			String port, String dbName, String username, String password) {
 		Connection conn = null;
 		try {
@@ -82,7 +97,7 @@ public class DBUtils {
 		return conn;
 	}
 	
-	public static Connection getOracle10GConnection(String connIP, 
+	private static Connection getOracle10GConnection(String connIP, 
 			String port, String dbName, String username, String password) {
 		Connection conn = null;
 		try {

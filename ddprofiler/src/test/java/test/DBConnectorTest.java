@@ -10,6 +10,7 @@ import org.junit.Test;
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.conn.DBConnector;
+import inputoutput.conn.DBType;
 
 public class DBConnectorTest {
 
@@ -17,7 +18,7 @@ public class DBConnectorTest {
 	public void test() {
 		DBConnector conn = new DBConnector();
 		
-		conn.setDB("mysql");
+		conn.setDB(DBType.MYSQL);
 		conn.setConnIP("localhost");
 		conn.setPort("3306");
 		conn.setUsername("root");

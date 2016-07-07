@@ -12,16 +12,22 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import comm.WebServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
+import inputoutput.conn.DBType;
 import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
 import store.Store;
 import store.StoreFactory;
 
 public class Main {
+	
+	final private Logger LOG = LoggerFactory.getLogger(Main.class.getName());
 	
 	public enum ExecutionMode {
 		ONLINE(0),
@@ -120,21 +126,31 @@ public class Main {
 	
 	private void readTablesFromDBAndCreateTasks(Conductor c) {
 		Properties dbp = DBUtils.loadDBPropertiesFromFile();
-		String dbType = dbp.getProperty("db_system_name");
-		
+		String dbTypeStr = dbp.getProperty("db_system_name");
+		DBType dbType = getType(dbTypeStr);
 		
 		String ip = dbp.getProperty("conn_ip");
 		String port = dbp.getProperty("port");
 		String dbname = dbp.getProperty("conn_path");
-		String username = dbp.getProperty("username");
+		String username = dbp.getProperty("user_name");
 		String password = dbp.getProperty("password");
 		
-		Connection dbConn = DBUtils.getPOSTGRESQLConnection(ip, 
-				port, dbname, username, password);
+		LOG.info("Conn to DB on: {}:{}/{}", ip, port, dbname);
+		
+		Connection dbConn = DBUtils.getDBConnection(dbType, ip, port, dbname, username, password);
+		
 		List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
 		for(String str : tables) {
-			WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbname, ip, port, dbname, str, username, password);
+			WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbType, ip, port, dbname, str, username, password);
+			c.submitTask(wt);
 		}
+	}
+	
+	private DBType getType(String type) {
+		if(type.equals("mysql")) return DBType.MYSQL;
+		else if(type.equals("postgresql")) return DBType.POSTGRESQL;
+		else if(type.equals("oracle")) return DBType.ORACLE;
+		else return null;
 	}
 	
 	public static Properties validateProperties(Properties p) {

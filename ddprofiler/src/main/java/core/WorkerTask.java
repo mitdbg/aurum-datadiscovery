@@ -1,12 +1,14 @@
 package core;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import inputoutput.conn.DBConnector;
+import inputoutput.conn.DBType;
 import inputoutput.conn.Connector;
 import inputoutput.conn.FileConnector;
 
-public class WorkerTask {
+public class WorkerTask implements Closeable {
 
 	private final int taskId;
 	private Connector connector;
@@ -36,12 +38,12 @@ public class WorkerTask {
 		return new WorkerTask(id, fc);
 	}
 	
-	public static WorkerTask makeWorkerTaskForDB(String db, String connIP, 
+	public static WorkerTask makeWorkerTaskForDB(DBType dbType, String connIP, 
 			String port, String sourceName, String tableName,
 			String username, String password ) {
 		DBConnector dbc = null;
 		try{
-			dbc = new DBConnector(db, connIP, port, sourceName, tableName, username, password);
+			dbc = new DBConnector(dbType, connIP, port, sourceName, tableName, username, password);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -53,6 +55,11 @@ public class WorkerTask {
 	private static int computeTaskId(String path, String name) {
 		String c = path.concat(name);
 		return c.hashCode();
+	}
+
+	@Override
+	public void close() throws IOException {
+		((DBConnector)connector).close();
 	}
 	
 }

@@ -47,7 +47,8 @@ public class ColumnReader implements Iterable<Record> {
 		}else if (config.getConn_type().equals("DB")) {
 			log.info("The connector is DBConnector");
 			try {
-				conn = new DBConnector(config.getDb_system_name(), config.getConn_ip(), config.getPort(),
+				// FIXME: change null by the appropriate DBType enum object
+				conn = new DBConnector(null, config.getConn_ip(), config.getPort(),
 						config.getConn_path(), config.getConn_filename(), config.getUser_name(), config.getPassword());
 			} catch (NumberFormatException | IOException e) {
 				log.log(Level.SEVERE, "Cannot initlaize the DB connector");

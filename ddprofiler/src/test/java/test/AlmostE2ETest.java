@@ -53,24 +53,6 @@ public class AlmostE2ETest {
 		}
 	}
 	
-	@Test
-	public void almostE2ETestCSVFile() {
-		
-		Properties p = new Properties();
-		p.setProperty(ProfilerConfig.NUM_POOL_THREADS, "1");
-		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
-		ProfilerConfig pc = new ProfilerConfig(p);
-		Store es = StoreFactory.makeNullStore(pc);
-		Conductor c = new Conductor(pc, es);
-		
-		c.start();
-		
-		WorkerTask wt = WorkerTask.makeWorkerTaskForDB(db, connIP, port, sourceName, tableName, 
-				username, password);
-		c.submitTask(wt);
-		finishTasks(c);
-	}
-	
 	
 	@Test
 	public void almostE2ETestDB() {

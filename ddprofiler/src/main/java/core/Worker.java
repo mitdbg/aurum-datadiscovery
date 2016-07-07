@@ -70,6 +70,7 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 		// Get results and wrap them in a Result object
 		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
 		
+		task.close();
 		return wtrf.get();
 	}
 	

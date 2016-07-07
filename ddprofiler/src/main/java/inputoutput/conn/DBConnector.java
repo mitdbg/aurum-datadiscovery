@@ -1,5 +1,6 @@
 /**
  * @author Sibo Wang
+ * @author Raul (edits)
  *
  */
 
@@ -25,23 +26,23 @@ public class DBConnector extends Connector {
 	
 	private static final Logger log = Logger.getLogger(DBConnector.class.getName());
 
-	private String db;// db system name e.g., mysq/oracle etc.
+	private DBType db;// db system name e.g., mysq/oracle etc.
 	private String username;// db conn user name;
 	private String password; // db conn password;
 	private String connIP;// for database
 	private String port;// db connection port
-	Connection conn = null;
+	private Connection conn = null;
 	private TableInfo tbInfo;
 	private Statement stat;	
-	private long currOffset = 0;
+	private long currentOffset = 0;
 	
 	public DBConnector() {
 		this.tbInfo = new TableInfo();
 	}
 	
-	public DBConnector(String db, String connIP, String port,
+	public DBConnector(DBType dbType, String connIP, String port,
 			String connectPath, String filename, String username, String password) throws IOException{
-		this.db = db;
+		this.db = dbType;
 		this.connIP = connIP;
 		this.port = port;
 		this.connectPath = connectPath;
@@ -55,9 +56,22 @@ public class DBConnector extends Connector {
 	@Override
 	public void initConnector() throws IOException {
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			conn = DriverManager.getConnection("jdbc:" + db + "://" + connIP + ":" + port + connectPath,
-					username, password);
+			if(db == DBType.MYSQL) {
+				Class.forName("com.mysql.jdbc.Driver");
+				conn = DriverManager.getConnection("jdbc:mysql://" + 
+						connIP + ":" + port + "/" + connectPath, username, password);
+			}
+			else if(db == DBType.POSTGRESQL) {
+				Class.forName("org.postgresql.Driver");
+				conn = DriverManager.getConnection("jdbc:postgresql://" + 
+						connIP + ":" + port + "/" + connectPath, username, password);
+			}
+			else if(db == DBType.ORACLE) {
+				Class.forName ("oracle.jdbc.driver.OracleDriver");
+				conn = DriverManager.getConnection
+				        ("jdbc:oracle:thin:@//"+connIP+":"+port+"/"+connectPath+"", 
+				        		username, password);
+			}
 
 			List<Attribute> attrs = this.getAttributes();
 			this.tbInfo.setTableAttributes(attrs);
@@ -65,7 +79,8 @@ public class DBConnector extends Connector {
 		catch (ClassNotFoundException e) {
 			log.log(Level.SEVERE, "DB connection driver not found");
 			e.printStackTrace();
-		} catch (SQLException e) {
+		} 
+		catch (SQLException e) {
 			log.log(Level.SEVERE, "Cannot connect to the database");
 			e.printStackTrace();
 		}
@@ -74,24 +89,20 @@ public class DBConnector extends Connector {
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		stat = conn.createStatement();
-		String sql = "select * from "+sourceName+ " LIMIT "+ currOffset+","+num;
-		//String sql = "select * from "+filename+ " LIMIT "+ num;
+		String sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
 
-		//System.out.println(sql);
 		ResultSet rs = stat.executeQuery(sql);
 		boolean new_row = false;
-		while(rs.next()){
+		while(rs.next()) {
 			new_row = true;
 			Record rec = new Record();
-			for(int i=0; i<this.tbInfo.getTableAttributes().size(); i++){
+			for(int i = 0; i < this.tbInfo.getTableAttributes().size(); i++) {
 				String v1 = rs.getObject(i+1).toString();
-				//System.out.println(v1);
 				rec.getTuples().add(v1);
 			}
 			rec_list.add(rec);
-			//System.out.println(rec);
 		}
-		currOffset+=rec_list.size();
+		currentOffset += rec_list.size();
 		rs.close();
 		return new_row;
 	}
@@ -145,11 +156,11 @@ public class DBConnector extends Connector {
 		this.sourceName = filename;
 	}
 	
-	public String getDB() {
+	public DBType getDBType() {
 		return db;
 	}
 
-	public void setDB(String db) {
+	public void setDB(DBType db) {
 		this.db = db;
 	}
 
@@ -185,7 +196,6 @@ public class DBConnector extends Connector {
 		this.port = port;
 	}
 
-
 	public Statement getStat() {
 		return stat;
 	}
@@ -194,9 +204,17 @@ public class DBConnector extends Connector {
 		this.stat = stat;
 	}
 
-
 	@Override
 	public String getSourceName() {
-		return this.db;
+		return this.conn.toString();
+	}
+
+	public void close() {
+		try {
+			conn.close();
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }

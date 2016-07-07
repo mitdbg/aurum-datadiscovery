@@ -12,6 +12,7 @@ import org.junit.Test;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.DBConnector;
+import inputoutput.conn.DBType;
 import inputoutput.conn.FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
@@ -109,14 +110,14 @@ public class PreAnalyzerTest {
 			testStrings.set(i, "A");
 		}
 		
-		System.out.println("Test with workloads that half of them are numberical values");
+		System.out.println("Test with workloads that half of them are numerical values");
 		workloadTest(testStrings, pa);
 		System.out.println("----------------------------------------------------------------\n\n");
 
 		for(int i=NUM_TEST_STRINGS/2; i<NUM_TEST_STRINGS; i++){
 			testStrings.set(i, "A");
 		}
-		System.out.println("Test with workloads that all them are numberical values");
+		System.out.println("Test with workloads that all them are numerical values");
 		workloadTest(testStrings, pa);
 		System.out.println("----------------------------------------------------------------\n\n");
 
@@ -138,7 +139,7 @@ public class PreAnalyzerTest {
 	@Test
 	public void testPreAnalyzerForTypesDB() throws IOException {
 				
-		DBConnector dbc = new DBConnector(db, connIP, port, sourceName, tableName, 
+		DBConnector dbc = new DBConnector(DBType.MYSQL, connIP, port, sourceName, tableName, 
 				username, password);
 		
 		PreAnalyzer pa = new PreAnalyzer();

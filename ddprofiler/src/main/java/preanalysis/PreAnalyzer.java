@@ -31,7 +31,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	
 	private static final Pattern DOUBLE_PATTERN = Pattern.compile("^(\\+|-)?\\d+([\\,]\\d+)*([\\.]\\d+)?$");
 	private static final Pattern INT_PATTERN = Pattern.compile("^(\\+|-)?\\d+$");
-	private static final Pattern LONG_PATTERN = Pattern.compile("");
 	
 	private final static String[] BANNED = {"", "nan"};
 
@@ -100,9 +99,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
 			castData.put(e.getKey(), vs);
 		}
 
-		if(castData == null) {
-			System.out.println();
-		}
 		return castData;
 	}
 
