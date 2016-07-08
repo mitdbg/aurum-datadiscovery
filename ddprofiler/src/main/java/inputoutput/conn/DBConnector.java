@@ -68,9 +68,10 @@ public class DBConnector extends Connector {
 			}
 			else if(db == DBType.ORACLE) {
 				Class.forName ("oracle.jdbc.driver.OracleDriver");
-				conn = DriverManager.getConnection
-				        ("jdbc:oracle:thin:@//"+connIP+":"+port+"/"+connectPath+"", 
-				        		username, password);
+				conn = DriverManager.getConnection(
+						"jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
+						+ "(HOST="+connIP+")(PORT="+port+")))"
+						+ "(CONNECT_DATA=(SID="+connectPath+")))", username, password);
 			}
 
 			List<Attribute> attrs = this.getAttributes();
