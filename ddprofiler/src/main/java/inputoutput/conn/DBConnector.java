@@ -90,7 +90,13 @@ public class DBConnector extends Connector {
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		stat = conn.createStatement();
-		String sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
+		String sql = null;
+		if(this.db == DBType.POSTGRESQL) {
+			sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
+		}
+		else if(this.db == DBType.ORACLE) {
+			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+num+" AND "+currentOffset+" ";
+		}
 
 		ResultSet rs = stat.executeQuery(sql);
 		boolean new_row = false;
