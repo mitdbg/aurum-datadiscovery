@@ -102,9 +102,10 @@ public class DBUtils {
 		Connection conn = null;
 		try {
 			Class.forName ("oracle.jdbc.driver.OracleDriver");
-			conn = DriverManager.getConnection
-			        ("jdbc:oracle:thin:@//"+connIP+":"+port+"/"+dbName+"", 
-			        		username, password);
+			conn = DriverManager.getConnection(
+					"jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
+					+ "(HOST="+connIP+")(PORT="+port+")))"
+					+ "(CONNECT_DATA=(SID="+dbName+")))", username, password);
 		} 
 		catch (ClassNotFoundException e) {
 			e.printStackTrace();
