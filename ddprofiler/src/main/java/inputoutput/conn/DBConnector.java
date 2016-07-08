@@ -103,7 +103,6 @@ public class DBConnector extends Connector {
 		}
 		catch(SQLException sqle) {
 			System.out.println("ERROR: " + sqle.getLocalizedMessage());
-			rs.close();
 			return false;
 		}
 		
