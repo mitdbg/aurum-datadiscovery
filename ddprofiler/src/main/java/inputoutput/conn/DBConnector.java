@@ -97,8 +97,16 @@ public class DBConnector extends Connector {
 		else if(this.db == DBType.ORACLE) {
 			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+num+" AND "+currentOffset+" ";
 		}
-
-		ResultSet rs = stat.executeQuery(sql);
+		ResultSet rs = null;
+		try {
+			rs = stat.executeQuery(sql);
+		}
+		catch(SQLException sqle) {
+			System.out.println("ERROR: " + sqle.getLocalizedMessage());
+			rs.close();
+			return false;
+		}
+		
 		boolean new_row = false;
 		while(rs.next()) {
 			new_row = true;
