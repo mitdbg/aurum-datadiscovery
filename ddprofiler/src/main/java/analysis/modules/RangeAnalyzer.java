@@ -20,6 +20,7 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	private float minF = Float.MAX_VALUE;
 	private float totalSumF;
 	
+	private boolean quantileIsUsed = false;
 	
 	/*
 	 * calculate the std_deviation
@@ -39,7 +40,10 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	 */
 	private QDigest quantileEstimator = new QDigest(QUANTILE_COMPRESSION_RATIO);
 
-	public long getQuantile(double p){
+	public long getQuantile(double p) {
+		if(! quantileIsUsed) {
+			return -1;
+		}
 		return quantileEstimator.getQuantile(p);
 	}
 	
@@ -69,6 +73,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	public boolean feedIntegerData(List<Long> records) {
 		
  		for(long value : records) {
+ 			if(! quantileIsUsed) {
+ 				quantileIsUsed = true;
+ 			}
 			totalRecords++;
 			if(value > max) max = value;
 			if(value < min) min = value;
@@ -85,6 +92,9 @@ public class RangeAnalyzer implements IntegerDataConsumer, FloatDataConsumer {
 	public boolean feedFloatData(List<Float> records) {
 		
 		for(float value : records) {
+			if(! quantileIsUsed) {
+ 				quantileIsUsed = true;
+ 			}
 			totalRecords++;
 			if(value > maxF) maxF = value;
 			if(value < minF) minF = value;
