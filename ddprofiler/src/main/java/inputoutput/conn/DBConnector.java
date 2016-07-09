@@ -98,10 +98,10 @@ public class DBConnector extends Connector {
 			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+currentOffset+" AND " + newLimit + " ";
 		}
 		ResultSet rs = null;
+		Statement stat = null;
 		try {
-			System.out.println("X: " + sql);
-			Statement stat = conn.createStatement();
-			stat.closeOnCompletion(); // close it with the resultSet.close()
+			stat = conn.createStatement();
+			// stat.closeOnCompletion(); // CORRECT, but not supported by 10g
 			rs = stat.executeQuery(sql);
 		}
 		catch(SQLException sqle) {
@@ -109,15 +109,8 @@ public class DBConnector extends Connector {
 			return false;
 		}
 		catch(Exception e) {
-			System.out.println(sql);
-			System.out.println(conn.toString());
-			if(conn == null){
-				System.out.println("the fucking conn is NULL!!!");
-			}
-			if(sql == null) {
-				System.out.println("SQL STATEMENT NULL");
-			}
-			System.exit(0);
+			System.out.println("ERROR: executeQuery failed");
+			return false;
 		}
 		boolean new_row = false;
 		while(rs.next()) {
@@ -136,6 +129,7 @@ public class DBConnector extends Connector {
 			rec_list.add(rec);
 		}
 		currentOffset += rec_list.size();
+		stat.close();
 		rs.close();
 		return new_row;
 	}
