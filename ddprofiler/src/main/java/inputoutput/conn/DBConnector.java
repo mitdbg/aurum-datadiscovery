@@ -98,9 +98,10 @@ public class DBConnector extends Connector {
 			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+currentOffset+" AND " + newLimit + " ";
 		}
 		ResultSet rs = null;
+		Statement stat = null;
 		try {
-			Statement stat = conn.createStatement();
-			stat.closeOnCompletion(); // close it with the resultSet.close()
+			stat = conn.createStatement();
+			// stat.closeOnCompletion(); // CORRECT, but not supported by 10g
 			rs = stat.executeQuery(sql);
 		}
 		catch(SQLException sqle) {
@@ -125,6 +126,7 @@ public class DBConnector extends Connector {
 			rec_list.add(rec);
 		}
 		currentOffset += rec_list.size();
+		stat.close();
 		rs.close();
 		return new_row;
 	}
