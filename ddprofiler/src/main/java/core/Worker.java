@@ -51,6 +51,10 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 		pa.composeConnector(c);
 		
 		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
+		if(initData == null) {
+			task.close();
+			return null;
+		}
 		// Read initial records to figure out attribute types etc
 		readFirstRecords(initData, analyzers);
 		

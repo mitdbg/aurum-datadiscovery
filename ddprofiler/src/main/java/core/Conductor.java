@@ -142,7 +142,8 @@ public class Conductor {
 					if(f.isDone()) {
 						try {
 							LOG.info("Remaining futures: {}", futures.size());
-							results.addAll(f.get());
+							if(f.get() != null)
+								results.addAll(f.get());
 							it.remove();
 						} 
 						catch (InterruptedException | ExecutionException e) {
