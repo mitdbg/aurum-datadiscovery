@@ -13,12 +13,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import core.Main;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.Connector;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 
+	final private Logger LOG = LoggerFactory.getLogger(PreAnalyzer.class.getName());
+	
 	private Connector c;
 	private List<Attribute> attributes;
 	private boolean knownDataTypes = false;
@@ -82,7 +88,13 @@ public class PreAnalyzer implements PreAnalysis, IO {
 				for (String s : e.getValue()) {
 					long f = 0;
 					if(INT_PATTERN.matcher(s).matches()) {
-						f = Long.valueOf(s).longValue();
+						try {
+							f = Long.valueOf(s).longValue();
+						}
+						catch(NumberFormatException nfe) {
+							LOG.warn("Error while parsing: {}", nfe.getMessage());
+							continue; // skip problematic value
+						}
 					}
 					else {
 						continue;
