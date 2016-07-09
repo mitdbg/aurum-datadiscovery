@@ -33,7 +33,6 @@ public class DBConnector extends Connector {
 	private String port;// db connection port
 	private Connection conn = null;
 	private TableInfo tbInfo;
-	private Statement stat;	
 	private long currentOffset = 0;
 	
 	public DBConnector() {
@@ -89,7 +88,6 @@ public class DBConnector extends Connector {
 
 	@Override
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
-		stat = conn.createStatement();
 		String sql = null;
 		// TODO: add mysql here
 		if(this.db == DBType.POSTGRESQL) {
@@ -102,6 +100,8 @@ public class DBConnector extends Connector {
 		ResultSet rs = null;
 		try {
 			System.out.println("X: " + sql);
+			Statement stat = conn.createStatement();
+			stat.closeOnCompletion(); // close it with the resultSet.close()
 			rs = stat.executeQuery(sql);
 		}
 		catch(SQLException sqle) {
@@ -110,21 +110,12 @@ public class DBConnector extends Connector {
 		}
 		catch(Exception e) {
 			System.out.println(sql);
-			System.out.println(stat.toString());
 			System.out.println(conn.toString());
 			if(conn == null){
 				System.out.println("the fucking conn is NULL!!!");
 			}
 			if(sql == null) {
 				System.out.println("SQL STATEMENT NULL");
-			}
-			if (stat == null) {
-				if(conn == null){
-					System.out.println("stat is NULL because conn is null");
-				}
-				else {
-					System.out.println("stat is NULL but conn is NOT");
-				}
 			}
 			System.exit(0);
 		}
@@ -153,7 +144,6 @@ public class DBConnector extends Connector {
 	void destroyConnector() {
 		try {
 			conn.close();
-			stat.close();
 		} 
 		catch (SQLException e) {
 			log.log(Level.SEVERE, "Cannot close the connection to the database");
@@ -236,14 +226,6 @@ public class DBConnector extends Connector {
 
 	public void setPort(String port) {
 		this.port = port;
-	}
-
-	public Statement getStat() {
-		return stat;
-	}
-
-	public void setStat(Statement stat) {
-		this.stat = stat;
 	}
 
 	@Override
