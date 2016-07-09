@@ -40,7 +40,6 @@ class Relation(Enum):
     SCHEMA_SIM = 1
     CONTENT_SIM = 2
     ENTITY_SIM = 3
-    OVERLAP = 4
     PKFK = 5
 
 

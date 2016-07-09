@@ -3,8 +3,6 @@ from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
 
-from collections import defaultdict
-
 store_client = None
 
 
@@ -47,10 +45,6 @@ class DDAPI:
         hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
         return hits
 
-    def overlap_fields(self, field):
-        hits = self.__network.neighbors(field, Relation.OVERLAP)
-        return hits
-
     def pkfk_fields(self, field):
         hits = self.__network.neighbors(field, Relation.PKFK)
         return hits
@@ -83,7 +77,7 @@ class DDAPI:
 
     def get_path(self, source, target, relation):
         """
-        Returns the path that connects source and target if any
+        Returns the path that connects source and target, if any
         :param source:
         :param target:
         :param relation:

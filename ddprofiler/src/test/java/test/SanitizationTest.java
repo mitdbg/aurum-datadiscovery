@@ -60,5 +60,11 @@ public class SanitizationTest {
 		System.out.println(Integer.MAX_VALUE);
 		long vint = Long.valueOf(v).longValue();
 		
+		String v2 = "999999999999999999999999999";
+		boolean isNumber = PreAnalyzer.isNumerical(v);
+		System.out.println(isNumber);
+		System.out.println(Long.MAX_VALUE);
+		//long parseLongNines = Long.valueOf(v2).longValue();
+		
 	}
 }
