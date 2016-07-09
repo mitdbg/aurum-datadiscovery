@@ -91,11 +91,13 @@ public class DBConnector extends Connector {
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		stat = conn.createStatement();
 		String sql = null;
+		// TODO: add mysql here
 		if(this.db == DBType.POSTGRESQL) {
 			sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
 		}
 		else if(this.db == DBType.ORACLE) {
-			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+num+" AND "+currentOffset+" ";
+			long newLimit = num + currentOffset;
+			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+currentOffset+" AND " + newLimit + " ";
 		}
 		ResultSet rs = null;
 		try {
@@ -111,8 +113,14 @@ public class DBConnector extends Connector {
 			new_row = true;
 			Record rec = new Record();
 			for(int i = 0; i < this.tbInfo.getTableAttributes().size(); i++) {
-				String v1 = rs.getObject(i+1).toString();
-				rec.getTuples().add(v1);
+				Object obj = rs.getObject(i+1);
+				if(obj != null) {
+					String v1 = obj.toString();
+					rec.getTuples().add(v1);
+				}
+				else {
+					rec.getTuples().add("");
+				}
 			}
 			rec_list.add(rec);
 		}
