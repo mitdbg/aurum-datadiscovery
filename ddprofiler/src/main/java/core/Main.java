@@ -73,6 +73,17 @@ public class Main {
 		else if(executionMode == ExecutionMode.OFFLINE_DB.mode) {
 			this.readTablesFromDBAndCreateTasks(c);
 		}
+		
+		while(c.isTherePendingWork()) {
+			List<WorkerTaskResult> results = null;
+			do {
+				results = c.consumeResults();
+			} while(results.isEmpty());
+			
+			for(WorkerTaskResult wtr : results) {
+				s.storeDocument(wtr);
+			}
+		}
 	}
 	
 	public static void main(String args[]) {
