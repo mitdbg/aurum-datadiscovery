@@ -72,12 +72,16 @@ def build_schema_relation(network, fields):
     :return:
     """
     for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
-        card_outer = float(uvals_outer) / float(tvals_outer)
+        card_outer = 0
+        if float(tvals_outer) > 0:
+            card_outer = float(uvals_outer) / float(tvals_outer)
         n_outer = network.add_field(sn_outer, fn_outer, card_outer)
         for(nid, sn, fn, tvals, uvals) in fields:
             if sn_outer == sn and fn_outer != fn:
                 assert isinstance(network, FieldNetwork)
-                card = float(uvals) / float(tvals)
+                card = 0
+                if float(tvals) > 0:
+                    card = float(uvals) / float(tvals)
                 n_inner = network.add_field(sn, fn, card)
                 network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 

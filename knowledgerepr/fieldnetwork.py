@@ -55,7 +55,9 @@ class FieldNetwork:
 
     def get_cardinality_of(self, node):
         c = self.__G[node]
-        card = c['cardinality']
+        card = 0  # no cardinality key is like cardinality = 0
+        if 'cardinality' in c:  # FIXME: why cardinality may not be present?
+            card = c['cardinality']
         return card
 
     def _get_underlying_repr(self):
