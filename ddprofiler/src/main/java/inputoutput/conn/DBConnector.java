@@ -224,7 +224,7 @@ public class DBConnector extends Connector {
 
 	@Override
 	public String getSourceName() {
-		return this.conn.toString();
+		return this.sourceName;
 	}
 
 	public void close() {
