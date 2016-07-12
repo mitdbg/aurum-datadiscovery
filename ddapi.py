@@ -18,16 +18,16 @@ class DDAPI:
     Primitive API
     """
 
-    def kw_search(self, kw):
-        hits = store_client.search_keywords(kw, KWType.KW_TEXT)
+    def kw_search(self, kw, max_hits=10):
+        hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_hits)
         return hits
 
-    def schema_search(self, kw):
-        hits = store_client.search_keywords(kw, KWType.KW_SCHEMA)
+    def schema_search(self, kw, max_hits=10):
+        hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_hits)
         return hits
 
-    def entity_search(self, kw):
-        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES)
+    def entity_search(self, kw, max_hits=10):
+        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_hits)
         return hits
 
     def schema_neighbors(self, field):
@@ -111,7 +111,9 @@ class DDAPI:
     def join_path(self, source, target):
         first_class_path = self.__network.find_path(source, target, Relation.PKFK)
         second_class_path = self.__network.find_path(source, target, Relation.CONTENT_SIM)
-        path = ([].extend(first_class_path)).extend(second_class_path)
+        path = first_class_path.extend(second_class_path)
+        if path is None:
+            return []
         return path
 
     def schema_complement(self, source_name):
@@ -135,11 +137,11 @@ class DDAPI:
         for r in res:
             id, source_name, field_name = r
             q = (source_name, field_name)
-            ns = self.__network.neighbors(q, Relation.SCHEMA_SIM)
+            ns = self.__network.neighbors(q, Relation.CONTENT_SIM)
             for neighbor in ns:
                 matches.append(neighbor)
 
-        return res
+        return matches
 
     def entity_complement(self):
         """
@@ -191,9 +193,10 @@ class DDAPI:
                 return noscore_res
         """
         def attr_similar_to(keyword, topk, score):
-            results = self.schema_search(keyword)
+            results = self.schema_search(keyword, max_hits=100)
             r = [(x.source_name, x.field_name, x.score) for x in results]
-            return r[:topk]
+            #return r[:topk]
+            return r
 
         '''
         Return list of tables that contain the required schema
@@ -445,13 +448,19 @@ def test_all():
     for el in path:
         print(str(el))
 
+    #########
+    # Discovery functions
+    #########
+
     print("Function API")
+
     print("Add column")
     sn = "Hr_faculty_roster.csv"
     list_of_results = api.schema_complement(sn)
     for l in list_of_results:
         print(str(l))
 
+    print("Fill Schema")
     list_of_results = api.fill_schema("First name, department, schedule")
     for k, v in list_of_results.items():
         print("###")
@@ -705,13 +714,39 @@ def test_g_prim():
     print("")
 
     nodes = api.similar_content_fields(field)
-    #nodes = api.similar_schema_fields(field)
     for node in nodes:
         print(node)
 
+
+def test_functions():
+    ## Prepare
+    # create store handler
+    store_client = StoreHandler()
+    # read graph
+    path = 'test/network.pickle'
+    network = fieldnetwork.deserialize_network(path)
+    api = API(network)
+    api.init_store()
+
+
+    ## join_path
+    print("Join path")
+    field1 = ("Drupal_employee_directory.csv", "Full Name")
+    field2 = ("Employee_directory.csv", "Full Name Uppercase")
+    res = api.join_path(field1, field2)
+    api.output(res)
+
+    ## Add column
+
+    print("Add column")
+    sn = "Fclt_organization.csv"
+    list_of_results = api.schema_complement(sn)
+    for l in list_of_results:
+        print(str(l))
 
 if __name__ == '__main__':
 
     #test_all()
     #test()
-    test_g_prim()
+    #test_g_prim()
+    test_functions()

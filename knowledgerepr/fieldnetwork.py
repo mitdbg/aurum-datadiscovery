@@ -212,6 +212,10 @@ class FieldNetwork:
         return path
 
     def find_path(self, source, target, relation):
+        (sn, fn) = source
+        source = Hit(nid=0, source_name=sn, field_name=fn, score=0)
+        (sn, fn) = target
+        target = Hit(nid=0, source_name=sn, field_name=fn, score=0)
         path = self.bidirectional_shortest_path(source, target, relation)
         return path
 

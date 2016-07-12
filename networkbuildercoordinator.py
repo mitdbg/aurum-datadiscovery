@@ -210,7 +210,7 @@ def test_cardinality_propagation():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
     #test()
     #plot_num()
-    test_cardinality_propagation()
+    #test_cardinality_propagation()

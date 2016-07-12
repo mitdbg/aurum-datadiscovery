@@ -169,7 +169,7 @@ class StoreHandler:
         """
         print("TODO")
 
-    def search_keywords(self, keywords, elasticfieldname):
+    def search_keywords(self, keywords, elasticfieldname, max_hits=15):
         """
         Performs a search query on elastic_field_name to match the provided keywords
         :param keywords: the list of keyword to match
@@ -185,13 +185,13 @@ class StoreHandler:
                        'hits.hits._source.columnName']
         if elasticfieldname == KWType.KW_TEXT:
             index = "text"
-            query_body = {"query": {"match": {"text": keywords}}}
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"text": keywords}}}
         elif elasticfieldname == KWType.KW_SCHEMA:
             index = "profile"
-            query_body = {"query": {"match": {"columnName": keywords}}}
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"columnName": keywords}}}
         elif elasticfieldname == KWType.KW_ENTITIES:
             index = "profile"
-            query_body = {"query": {"match": {"entities": keywords}}}
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"entities": keywords}}}
         res = client.search(index=index, body=query_body, filter_path=filter_path)
         if res['hits']['total'] == 0:
             return []
