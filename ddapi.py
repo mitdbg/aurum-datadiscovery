@@ -18,35 +18,79 @@ class DDAPI:
     Primitive API
     """
 
-    def kw_search(self, kw, max_hits=10):
-        hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_hits)
+    def keyword_search(self, kw, max_results=10):
+        """
+        Performs a keyword search over the content of the data
+        :param kw: the keyword to search
+        :param max_results: the maximum number of results to return
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
+        hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
         return hits
 
-    def schema_search(self, kw, max_hits=10):
-        hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_hits)
+    def schema_search(self, kw, max_results=10):
+        """
+        Performs a keyword search over the attribute/field names of the data
+        :param kw: the keyword to search
+        :param max_results: the maximum number of results to return
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
+        hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
         return hits
 
-    def entity_search(self, kw, max_hits=10):
-        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_hits)
+    def entity_search(self, kw, max_results=10):
+        """
+        Performs a keyword search over the entities represented by the data
+        :param kw: the keyword to search
+        :param max_results: the maximum number of results to return
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
+        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_results)
         return hits
 
     def schema_neighbors(self, field):
+        """
+        Returns all the other attributes/fields that appear in the same relation than the provided field
+        :param field: the provided field
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
         hits = self.__network.neighbors(field, Relation.SCHEMA)
         return hits
 
     def similar_schema_fields(self, field):
+        """
+        Returns all the attributes/fields with schema names similar to the provided field
+        :param field: the provided field
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
         hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
         return hits
 
     def similar_content_fields(self, field):
+        """
+        Returns all the attributes/fields with content similar to the provided field
+        :param field: the provided field
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
         hits = self.__network.neighbors(field, Relation.CONTENT_SIM)
         return hits
 
     def similar_entities_fields(self, field):
+        """
+        Returns all the attributes/fields that represent entities similar to the provided field
+        :param field: the provided field
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
         hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
         return hits
 
     def pkfk_fields(self, field):
+        """
+        Returns all the attributes/fields that are primary-key or foreign-key candidates with respect to the
+        provided field
+        :param field: the providef field
+        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        """
         hits = self.__network.neighbors(field, Relation.PKFK)
         return hits
 
@@ -57,9 +101,9 @@ class DDAPI:
     def and_conjunctive(self, a, b):
         """
         Returns elements that are both in a and b
-        :param a:
-        :param b:
-        :return:
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the intersection of the two provided iterable objects
         """
         sa = set(a)
         sb = set(b)
@@ -69,9 +113,9 @@ class DDAPI:
     def or_conjunctive(self, a, b):
         """
         Returns elements that are in either a or b
-        :param a:
-        :param b:
-        :return:
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the union of the two provided iterable objects
         """
         res = set(a).union(set(b))
         return res
@@ -79,10 +123,10 @@ class DDAPI:
     def get_path(self, source, target, relation):
         """
         Returns the path that connects source and target, if any
-        :param source:
-        :param target:
-        :param relation:
-        :return:
+        :param source: the source field
+        :param target: the target field
+        :param relation: the type of relation that may/may not connect source and target
+        :return: a path if exists
         """
         path = self.__network.find_path(source, target, relation)
         return path
@@ -90,10 +134,10 @@ class DDAPI:
     def in_context_with(self, a, b, relation):
         """
         Returns the nodes from a that are connected to any node in b
-        :param a:
-        :param b:
-        :param relation:
-        :return:
+        :param a: an iterable object
+        :param b: another iterable object
+        :param relation: the type of relation that may/may not connect nodes in a with nodes in b
+        :return: a set of results from a that are connected through relation to nodes in b
         """
         res = set()
         for el1 in a:
@@ -109,6 +153,12 @@ class DDAPI:
     """
 
     def join_path(self, source, target):
+        """
+        Provides the join path between the source and target fields, if any
+        :param source: the source field
+        :param target: the target field
+        :return: the join path between source and target if any
+        """
         first_class_path = self.__network.find_path(source, target, Relation.PKFK)
         second_class_path = self.__network.find_path(source, target, Relation.CONTENT_SIM)
         path = first_class_path.extend(second_class_path)
@@ -118,8 +168,10 @@ class DDAPI:
 
     def schema_complement(self, source_name):
         """
-        Given a table of reference (table_to_enrich) it uses information from
-        other available tables (tables) to enrich the schema -- to add columns
+        Given a source of reference (e.g. a relational table) it uses information from
+        other available tables (tables) to enrich the schema of the provided one -- to add columns
+        :param source_name: the name of the reference source
+        :return:
         """
         # Retrieve all fields of the given source
         results = store_client.get_all_fields_of_source(source_name)
@@ -143,14 +195,14 @@ class DDAPI:
 
         return matches
 
-    def entity_complement(self):
+    def __entity_complement(self):
         """
         Given a table of reference (table_to_enrich) it uses information from
         other available tables (tables) to add entities -- to add rows
         """
         print("TODO")
 
-    def fill_schema(self, virtual_schema):
+    def __fill_schema(self, virtual_schema):
         tokens = virtual_schema.split(",")
         tokens = [t.strip() for t in tokens]
         aprox = dict()
@@ -171,31 +223,16 @@ class DDAPI:
 
     def find_tables_matching_schema(self, list_keywords, topk):
         """
-        def _attr_similar_to(keyword, topk, score):
-            # TODO: handle multiple input keywords
-            similarity_map = dict()
-            kw = keyword.lower()
-            for (fname, cname) in concepts:
-                p = cname.lower()
-                p_tokens = p.split(' ')
-                for tok in p_tokens:
-                    # compute similarity and put in dict if beyond a
-                    distance = editdistance.eval(kw, tok)
-                    # minimum threshold
-                    if distance < C.max_distance_schema_similarity:
-                        similarity_map[(fname, cname)] = distance
-                        break  # to avoid potential repetitions
-            sorted_sim_map = sorted(similarity_map.items(), key=operator.itemgetter(1))
-            if score:
-                return sorted_sim_map[:topk]
-            else:
-                noscore_res = [n for (n, score) in sorted_sim_map[:topk]]
-                return noscore_res
+        Given a string with comma separated values, such as 'x, y, z', it tries to find
+        tables in the data that contains as many of the attributes included in the original string,
+        for the given example, tables with attributes x and y and z
+        :param list_keywords: the string with comma separated keywords
+        :param topk: the maximum number of results to return
+        :return: topk results or as many as available
         """
         def attr_similar_to(keyword, topk, score):
-            results = self.schema_search(keyword, max_hits=100)
+            results = self.schema_search(keyword, max_results=100)
             r = [(x.source_name, x.field_name, x.score) for x in results]
-            #return r[:topk]
             return r
 
         '''
@@ -232,13 +269,55 @@ class DDAPI:
     """
 
     def output_raw(self, result_set):
+        """
+        Given an iterable object it prints the raw elements
+        :param result_set: an iterable object
+        """
         for r in result_set:
             print(str(r))
 
     def output(self, result_set):
+        """
+        Given an iterable object of elements of the form (nid, source_name, field_name, score) it prints
+        the source and field names for every element in the iterable
+        :param result_set: an iterable object
+        """
         for r in result_set:
             (nid, sn, fn, s) = r
             print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+
+    def help(self):
+        """
+        Prints general help information, or specific usage information of a function if provided
+        :param function: an optional function
+        """
+        from IPython.display import Markdown, display
+
+        def print_md(string):
+            display(Markdown(string))
+
+        # Check whether the request is for some specific function
+        #if function is not None:
+        #    print_md(self.function.__doc__)
+        # If not then offer the general help menu
+        #else:
+        print_md("### Help Menu")
+        print_md("You can use the system through an **API** object. API objects are returned"
+                 "by the *init_system* function, so you can get one by doing:")
+        print_md("***your_api_object = init_system('path_to_stored_model')***")
+        print_md("Once you have access to an API object there are a few concepts that are useful "
+                 "to use the API. **content** refers to actual values of a given field. For "
+                 "example, if you have a table with an attribute called __Name__ and values *Olu, Mike, Sam*, content "
+                 "refers to the actual values, e.g. Mike, Sam, Olu.")
+        print_md("**schema** refers to the name of a given field. In the previous example, schema refers to the word"
+                 "__Name__ as that's how the field is called.")
+        print_md("Finally, **entity** refers to the *semantic type* of the content. This is in experimental state. For "
+                 "the previous example it would return *'person'* as that's what those names refer to.")
+        print_md("Certain functions require a *field* as input. In general a field is specified by the source name ("
+                 "e.g. table name) and the field name (e.g. attribute name). For example, if we are interested in "
+                 "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
+                 "the field in the following way:")
+        print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
 
 
 class ResultFormatter:
@@ -353,7 +432,7 @@ def test_all():
     #####
 
     print("Keyword search in text")
-    results = api.kw_search("Michael")
+    results = api.keyword_search("Michael")
     for r in results:
         print(str(r))
 
@@ -422,8 +501,8 @@ def test_all():
     ######
 
     print("Combiner AND")
-    results1 = api.kw_search("Michael")
-    results2 = api.kw_search("Barbara")
+    results1 = api.keyword_search("Michael")
+    results2 = api.keyword_search("Barbara")
     final = api.and_conjunctive(results1, results2)
 
     print(str(len(final)))
@@ -432,8 +511,8 @@ def test_all():
         print(str(el))
 
     print("Combiner OR")
-    results1 = api.kw_search("Michael")
-    results2 = api.kw_search("Barbara")
+    results1 = api.keyword_search("Michael")
+    results2 = api.keyword_search("Barbara")
     final = api.or_conjunctive(results1, results2)
 
     print(str(len(final)))
@@ -442,8 +521,8 @@ def test_all():
         print(str(el))
 
     print("Context combiner")
-    results1 = api.kw_search("Michael")
-    results2 = api.kw_search("Barbara")
+    results1 = api.keyword_search("Michael")
+    results2 = api.keyword_search("Barbara")
     path = api.in_context_with(results1, results2, Relation.SCHEMA)
     for el in path:
         print(str(el))
