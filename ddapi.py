@@ -2,6 +2,7 @@ from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
+from knowledgerepr.fieldnetwork import Hit
 
 store_client = None
 
@@ -33,7 +34,7 @@ class DDAPI:
         hits = self.__network.neighbors(field, Relation.SCHEMA)
         return hits
 
-    def schema_sim_fields(self, field):
+    def similar_schema_fields(self, field):
         hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
         return hits
 
@@ -223,6 +224,19 @@ class DDAPI:
         to_return = sorted(group_by_table_keyword.items(), key=lambda x: len(x[1]), reverse=True)
         return to_return[:topk]
 
+    """
+    Convenience functions
+    """
+
+    def output_raw(self, result_set):
+        for r in result_set:
+            print(str(r))
+
+    def output(self, result_set):
+        for r in result_set:
+            (nid, sn, fn, s) = r
+            print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+
 
 class ResultFormatter:
 
@@ -368,7 +382,7 @@ def test_all():
     print("")
     print("Schema SIM")
     print("")
-    nodes = api.schema_sim_fields(field)
+    nodes = api.similar_schema_fields(field)
     for node in nodes:
         print(node)
 
@@ -689,8 +703,9 @@ def test_g_prim():
     print("")
     print("Content sim")
     print("")
+
     nodes = api.similar_content_fields(field)
-    nodes = api.schema_sim_fields(field)
+    #nodes = api.similar_schema_fields(field)
     for node in nodes:
         print(node)
 

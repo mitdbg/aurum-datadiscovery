@@ -130,7 +130,7 @@ class FieldNetwork:
         nid = compute_field_id(sn, cn)
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
-            if k is 'cardinality':
+            if str(k) == 'cardinality':
                 continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
@@ -256,7 +256,6 @@ def test():
 
 if __name__ == "__main__":
     #test()
-    #exit()
     print("Field Network")
     node1 = build_hit("source1", "field1")
     node2 = build_hit("source1", "field2")
