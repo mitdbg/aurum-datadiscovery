@@ -77,7 +77,7 @@ def main():
 
     """
 
-    path = "test/network.pickle"
+    path = "test/partialchembl.pickle"
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -201,16 +201,16 @@ def test_cardinality_propagation():
     print(str("total candidates: " + str(total_candidates)))
     """
 
-    sn = 'Sis_subject_code.csv'
-    fn = 'Subject Code Desc'
-    from knowledgerepr.fieldnetwork import Relation
-    output = network.neighbors((sn, fn), Relation.PKFK)
-    for o in output:
-        print(str(o))
+    #sn = 'Sis_subject_code.csv'
+    #fn = 'Subject Code Desc'
+    #from knowledgerepr.fieldnetwork import Relation
+    #output = network.neighbors((sn, fn), Relation.PKFK)
+    #for o in output:
+    #    print(str(o))
 
 
 if __name__ == "__main__":
-    main()
+    #main()
     #test()
     #plot_num()
-    #test_cardinality_propagation()
+    test_cardinality_propagation()
