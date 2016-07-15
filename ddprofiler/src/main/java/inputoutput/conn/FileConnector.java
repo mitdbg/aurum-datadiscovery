@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -75,7 +76,7 @@ public class FileConnector extends Connector {
 		
 		Vector<Attribute> attrList = new Vector<Attribute>();
 		for(int i = 0; i < attributes.length; i++) {
-			Attribute attr = new Attribute(attributes[i]);
+			Attribute attr = new Attribute(attributes[i].trim());
 			attrList.addElement(attr);
 		}
 		return attrList;
@@ -97,6 +98,23 @@ public class FileConnector extends Connector {
 			rec_list.add(rec);
 		}
 		return read_lines;
+	}
+	
+	@Override
+	public boolean readRows(int num, Map<Attribute, List<String>> data) throws IOException {
+
+		boolean read_lines = false;
+		String[] res = null;
+		for(int i = 0; i < num && (res = fileReader.readNext()) != null; i++) {
+			lineCounter++;
+			read_lines = true;
+			int id=0;
+			for(List<String> vals: data.values()){
+				vals.add(res[id]);
+				id++;
+			}
+		}
+		return read_lines;	
 	}
 	
 }

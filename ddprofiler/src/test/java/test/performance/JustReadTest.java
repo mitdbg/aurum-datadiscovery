@@ -17,8 +17,11 @@ import preanalysis.Values;
 
 public class JustReadTest {
 
-	private String path = "/Users/ra-mit/Desktop/mitdwh_test/";
-	private String filename = "short_cis_course_catalog.csv";
+	private String path = "C:\\csv\\";
+	private String filename="dataset1.csv";
+			
+	//private String path = "/Users/ra-mit/Desktop/mitdwh_test/";
+	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
 	
 	@Test
@@ -29,7 +32,7 @@ public class JustReadTest {
 		p.setProperty(ProfilerConfig.NUM_RECORD_READ, "500");
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
-		int iterations = 24;
+		int iterations = 100;
 		long start = System.currentTimeMillis();
 		while(iterations > 0) {
 			Files.walk(Paths.get(path)).forEach(filePath -> {
@@ -61,5 +64,5 @@ public class JustReadTest {
 		long end = System.currentTimeMillis();
 		System.out.println("Total time: " + (end-start));
 	}
-
+	
 }
