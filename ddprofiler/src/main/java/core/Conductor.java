@@ -51,6 +51,7 @@ public class Conductor {
 		List<String> uniqueThreadNames = new ArrayList<>();
 		cachedEntityAnalyzers = new HashMap<>();
 		List<TokenNameFinderModel> modelList = new ArrayList<>();
+		List<String> modelNameList = new ArrayList<>();
 		for(int i = 0; i < numWorkers; i++) {
 			String name = "Thread-"+new Integer(i).toString();
 			uniqueThreadNames.add(name);
@@ -58,9 +59,10 @@ public class Conductor {
 				EntityAnalyzer first = new EntityAnalyzer();
 				cachedEntityAnalyzers.put(name, first); // pay cost of loading model
 				modelList = first.getCachedModelList();
+				modelNameList = first.getCachedModelNameList();
 			}
 			else{
-				cachedEntityAnalyzers.put(name, new EntityAnalyzer(modelList));
+				cachedEntityAnalyzers.put(name, new EntityAnalyzer(modelList,modelNameList));
 			}
 		}
 		this.pool = Executors.newFixedThreadPool(numWorkers, new DDThreadFactory(uniqueThreadNames));
