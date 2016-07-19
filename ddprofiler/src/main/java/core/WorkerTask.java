@@ -62,4 +62,10 @@ public class WorkerTask implements Closeable {
 		((DBConnector)connector).close();
 	}
 	
+	@Override
+	public String toString() {
+		String sourceName = connector.getSourceName();
+		return taskId + " - " + sourceName;
+	}
+	
 }

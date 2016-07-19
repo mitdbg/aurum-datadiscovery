@@ -1,5 +1,6 @@
 package core;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +27,7 @@ public class Conductor {
 	final private Logger LOG = LoggerFactory.getLogger(Conductor.class.getName());
 
 	private ProfilerConfig pc;
+	private File errorLogFile;
 	
 	private BlockingQueue<WorkerTask> taskQueue;
 	private ExecutorService pool;
@@ -67,6 +69,8 @@ public class Conductor {
 		LOG.info("Create worker pool, num workers: {}", numWorkers);
 		this.runnable = new Consumer();
 		this.consumer = new Thread(runnable);
+		String errorLogFileName = pc.getString(ProfilerConfig.ERROR_LOG_FILE_NAME);
+		this.errorLogFile = new File(errorLogFileName);
 	}
 	
 	public void start() {
@@ -146,12 +150,21 @@ public class Conductor {
 								results.addAll(f.get());
 							it.remove();
 						} 
-						catch (InterruptedException | ExecutionException e) {
+						catch (InterruptedException e) {
 							e.printStackTrace();
+							it.remove(); // to make sure we make progress
+						}
+						catch (ExecutionException e) {
+							Throwable t = e.getCause();
+							String msg = t.getMessage();
+							Utils.appendLineToFile(errorLogFile, msg);
+							it.remove(); // to make sure we make progress
+							LOG.warn(msg);
 						}
 					}
 					else if(f.isCancelled()) {
-						// TODO: handle error somehow
+						LOG.warn("The task was cancelled: unknown reason");
+						it.remove();
 					}
 				}
 			}

@@ -37,45 +37,51 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 	}
 
 	@Override
-	public List<WorkerTaskResult> call() throws Exception {
-		// Get thread name and configure entityAnalyzer
-		String threadName = Thread.currentThread().getName();
-		this.ea = cachedEntityAnalyzers.get(threadName);
-		
-		// Collection to hold analyzers
-		Map<String, Analysis> analyzers = new HashMap<>();
-		
-		// Access attributes and attribute type through first read
-		Connector c = task.getConnector();
-		PreAnalyzer pa = new PreAnalyzer();
-		pa.composeConnector(c);
-		
-		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
-		if(initData == null) {
-			task.close();
-			return null;
-		}
-		// Read initial records to figure out attribute types etc
-		readFirstRecords(initData, analyzers);
-		
-		// Consume all remaining records from the connector
-		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
-		int records = 0;
-		while(data != null) {
-			indexText(data);
-			records = records + data.size();
-			// Do the processing
-			feedValuesToAnalyzers(data, analyzers);
+	public List<WorkerTaskResult> call() throws ProfileException {
+		try {
+			// Get thread name and configure entityAnalyzer
+			String threadName = Thread.currentThread().getName();
+			this.ea = cachedEntityAnalyzers.get(threadName);
 			
-			// Read next chunk of data
-			data = pa.readRows(numRecordChunk);
+			// Collection to hold analyzers
+			Map<String, Analysis> analyzers = new HashMap<>();
+			
+			// Access attributes and attribute type through first read
+			Connector c = task.getConnector();
+			PreAnalyzer pa = new PreAnalyzer();
+			pa.composeConnector(c);
+			
+			Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
+			if(initData == null) {
+				task.close();
+				return null;
+			}
+			// Read initial records to figure out attribute types etc
+			readFirstRecords(initData, analyzers);
+			
+			// Consume all remaining records from the connector
+			Map<Attribute, Values> data = pa.readRows(numRecordChunk);
+			int records = 0;
+			while(data != null) {
+				indexText(data);
+				records = records + data.size();
+				// Do the processing
+				feedValuesToAnalyzers(data, analyzers);
+				
+				// Read next chunk of data
+				data = pa.readRows(numRecordChunk);
+			}
+			
+			// Get results and wrap them in a Result object
+			WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
+			
+			task.close();
+			return wtrf.get();
 		}
-		
-		// Get results and wrap them in a Result object
-		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
-		
-		task.close();
-		return wtrf.get();
+		catch(Exception e) {
+			String msg = task.toString() +" $FAILED$ cause-> "+ e.getMessage();
+			throw new ProfileException(msg);
+		}
 	}
 	
 	private void indexText(Map<Attribute, Values> data) {

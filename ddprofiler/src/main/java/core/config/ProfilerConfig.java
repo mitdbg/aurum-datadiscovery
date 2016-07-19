@@ -37,6 +37,9 @@ public class ProfilerConfig extends Config {
 	
 	public static final String SOURCES_TO_ANALYZE_DB = "sources.db.path";
 	private static final String SOURCES_TO_ANALYZE_DB_DOC = "Path to db with tables to analyze";
+
+	public static final String ERROR_LOG_FILE_NAME = "error.logfile.name";
+	private static final String ERROR_LOG_FILE_NAME_DOC = "Name of log file that records the errors while profiling data";
 	
 	
 	static{
@@ -48,7 +51,8 @@ public class ProfilerConfig extends Config {
 				.define(STORE_SERVER, Type.STRING, "localhost", Importance.HIGH, STORE_SERVER_DOC)
 				.define(STORE_PORT, Type.INT, 9200, Importance.HIGH, STORE_PORT_DOC)
 				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
-				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC);
+				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC)
+				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

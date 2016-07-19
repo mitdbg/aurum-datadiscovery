@@ -31,7 +31,8 @@ public class StoreLoadingTest {
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
 		// Create store
-		Store elasticStore = StoreFactory.makeElasticStore(pc);
+		//Store elasticStore = StoreFactory.makeElasticStore(pc);
+		Store elasticStore = StoreFactory.makeNullStore(pc);
 		
 		Conductor c = new Conductor(pc, elasticStore);
 		c.start();
