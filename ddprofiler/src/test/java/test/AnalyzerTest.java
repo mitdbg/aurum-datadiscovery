@@ -2,6 +2,7 @@ package test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,8 +24,8 @@ import preanalysis.Values;
 
 public class AnalyzerTest {
 
-	private String path = "C:\\";
-	private String filename = "Leading_Causes_of_Death__1990-2010.csv";
+	private String path = "C:\\csv\\";
+	private String filename = "dataset1.csv";
 	//private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
 	//private String filename = "short_cis_course_catalog.csv";
 	private String separator = ",";
@@ -49,6 +50,7 @@ public class AnalyzerTest {
 		//pa.composeConnector(dbc);
 		
 		Map<Attribute, Values> data = pa.readRows(numRecords);
+		Map<Attribute, TextualAnalysis> taMapping = new HashMap<Attribute, TextualAnalysis>();
 		for(Entry<Attribute, Values> a : data.entrySet()) {
 			System.out.println("CName: "+a.getKey().getColumnName());
 			System.out.println("CType: "+a.getKey().getColumnType());
@@ -71,6 +73,7 @@ public class AnalyzerTest {
 			}
 			if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer();
+				taMapping.put(a.getKey(), ta);
 				List<String> strs = new ArrayList<>();
 				for(String s : a.getValue().getStrings()) {
 					strs.add(s);
@@ -84,8 +87,54 @@ public class AnalyzerTest {
 				System.out.println("Entities:");
 				System.out.println(e);
 			}
+			break;
+		}
+		
+		
+		for(int i=0; i<20; i++){
+			data = pa.readRows(numRecords);
+			if(data == null) break;
+			for(Entry<Attribute, Values> a : data.entrySet()) {
+				System.out.println("CName: "+a.getKey().getColumnName());
+				System.out.println("CType: "+a.getKey().getColumnType());
+				AttributeType at = a.getKey().getColumnType();
+				if(at.equals(AttributeType.FLOAT)) {
+					NumericalAnalysis na = AnalyzerFactory.makeNumericalAnalyzer();
+					List<Float> floats = new ArrayList<>();
+					for(Float s : a.getValue().getFloats()) {
+						floats.add(s);
+					}
+	
+					na.feedFloatData(floats);
+					Cardinality c = na.getCardinality();
+					Range r = na.getNumericalRange(AttributeType.FLOAT);
+					System.out.println("Cardinality:");
+					System.out.println(c);
+					System.out.println("Range:");
+					System.out.println(r);
+					System.out.println("median: "+na.getQuantile(0.5));
+				}
+				if(at.equals(AttributeType.STRING)) {
+					TextualAnalysis ta = taMapping.get(a.getKey());
+					List<String> strs = new ArrayList<>();
+					for(String s : a.getValue().getStrings()) {
+						strs.add(s);
+					}
+	
+					ta.feedTextData(strs);
+					Cardinality c = ta.getCardinality();
+					Entities e = ta.getEntities();
+					System.out.println("Cardinality:");
+					System.out.println(c);
+					System.out.println("Entities:");
+					System.out.println(e);
+				}
+				break;
+			}
 		}
 		
 	}
+	
+	
 
 }
