@@ -26,6 +26,7 @@ public abstract class Connector {
 	abstract void destroyConnector();
 	public abstract List<Attribute> getAttributes() throws IOException, SQLException;
 	public abstract boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException;
+	public abstract void close();
 	
 	/**
 	 * Returns a map with Attribute of table as key and a list of num values as value.

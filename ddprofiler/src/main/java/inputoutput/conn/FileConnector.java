@@ -9,8 +9,8 @@ package inputoutput.conn;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import au.com.bytecode.opencsv.CSVReader;
 import inputoutput.Attribute;
@@ -24,7 +24,7 @@ public class FileConnector extends Connector {
 	private TableInfo tableInfo;
 
 	private char lineSplitter;
-	private Vector<Record> records;
+	private List<Record> records;
 	
 	public FileConnector() {
 		this.lineSplitter = ',';
@@ -73,15 +73,15 @@ public class FileConnector extends Connector {
 		String[] attributes = fileReader.readNext();
 		lineCounter++;
 		
-		Vector<Attribute> attrList = new Vector<Attribute>();
+		List<Attribute> attrList = new ArrayList<Attribute>();
 		for(int i = 0; i < attributes.length; i++) {
 			Attribute attr = new Attribute(attributes[i]);
-			attrList.addElement(attr);
+			attrList.add(attr);
 		}
 		return attrList;
 	}
 	
-	public Vector<Record> getRecords(int num){
+	public List<Record> getRecords(int num){
 		return records;
 	}
 	
@@ -97,6 +97,16 @@ public class FileConnector extends Connector {
 			rec_list.add(rec);
 		}
 		return read_lines;
+	}
+	
+	@Override
+	public void close() {
+		try {
+			fileReader.close();
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 }

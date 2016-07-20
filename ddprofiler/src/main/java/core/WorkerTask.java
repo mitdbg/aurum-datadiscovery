@@ -59,7 +59,7 @@ public class WorkerTask implements Closeable {
 
 	@Override
 	public void close() throws IOException {
-		((DBConnector)connector).close();
+		connector.close();
 	}
 	
 	@Override

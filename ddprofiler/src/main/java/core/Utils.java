@@ -23,7 +23,7 @@ public class Utils {
 	public static void appendLineToFile(File errorLogFile, String msg) {
 		try {
 			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(errorLogFile, true)));
-			out.println(errorLogFile);
+			out.println(msg);
 			out.close();
 		}
 		catch(IOException io) {

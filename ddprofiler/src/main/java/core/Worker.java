@@ -79,8 +79,21 @@ public class Worker implements Callable<List<WorkerTaskResult>> {
 			return wtrf.get();
 		}
 		catch(Exception e) {
+			String init = "#########";
 			String msg = task.toString() +" $FAILED$ cause-> "+ e.getMessage();
-			throw new ProfileException(msg);
+			StackTraceElement[] trace = e.getStackTrace();
+			StringBuffer sb = new StringBuffer();
+			sb.append(init);
+			sb.append(System.lineSeparator());
+			sb.append(msg);
+			sb.append(System.lineSeparator());
+			for(int i = 0; i < trace.length; i++) {
+				sb.append(trace[i].toString());
+				sb.append(System.lineSeparator());
+			}
+			sb.append(System.lineSeparator());
+			String log = sb.toString();
+			throw new ProfileException(log);
 		}
 	}
 	
