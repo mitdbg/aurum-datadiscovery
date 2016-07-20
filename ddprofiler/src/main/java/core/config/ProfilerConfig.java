@@ -40,9 +40,12 @@ public class ProfilerConfig extends Config {
 
 	public static final String ERROR_LOG_FILE_NAME = "error.logfile.name";
 	private static final String ERROR_LOG_FILE_NAME_DOC = "Name of log file that records the errors while profiling data";
+
+	public static final String CSV_SEPARATOR = "csv.separator";
+	private static final String CSV_SEPARATOR_DOC = "The separator used to split CSV/TSV files";
 	
 	
-	static{
+	static {
 		config = new ConfigDef()
 				.define(EXECUTION_MODE, Type.INT, 0, Importance.HIGH, EXECUTION_MODE_DOC)
 				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC)
@@ -52,7 +55,8 @@ public class ProfilerConfig extends Config {
 				.define(STORE_PORT, Type.INT, 9200, Importance.HIGH, STORE_PORT_DOC)
 				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
 				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC)
-				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC);
+				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC)
+				.define(CSV_SEPARATOR, Type.STRING, ",", Importance.MEDIUM, CSV_SEPARATOR_DOC);
 	}
 	
 	public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

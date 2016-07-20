@@ -27,19 +27,19 @@ public class FileConnector extends Connector {
 	private List<Record> records;
 	
 	public FileConnector() {
-		this.lineSplitter = ',';
+		this.lineSplitter = '.';
 	}	
 	
-	public FileConnector(String connectPath, String filename, String spliter) throws IOException {
+	public FileConnector(String connectPath, String filename, String splitter) throws IOException {
 		this.connectPath = connectPath;
 		this.sourceName = filename;
 		
 		/*
-		 * FIXME: OpenCSV only support single spliter.  So we only use the first
-		 * spliter in the splitter string, which may contain more than one char.
+		 * FIXME: OpenCSV only support single splitter.  So we only use the first
+		 * splitter in the splitter string, which may contain more than one char.
 		 */
 			 
-		this.lineSplitter = spliter.charAt(0);
+		this.lineSplitter = splitter.charAt(0);
 		
 		this.tableInfo = new TableInfo();
 		initConnector();
