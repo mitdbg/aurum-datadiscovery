@@ -214,7 +214,6 @@ public class EntityAnalyzer implements TextualDataConsumer {
 		// TODO: preprocessing to records?
 		
 		if(isConverged){
-			System.out.println("Converged");
 			return false;
 		}
 		
