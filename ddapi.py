@@ -2,7 +2,6 @@ from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
-from knowledgerepr.fieldnetwork import Hit
 from api.apiutils import DRS
 
 store_client = None
@@ -16,10 +15,27 @@ class DDAPI:
         self.__network = network
 
     """
+    View API
+    """
+    def fields_of_table(self, table: str) -> DRS:
+        fields = store_client.get_all_fields_of_source(table)
+        drs = DRS([x for x in fields])
+        return drs
+
+    def fields(self, drs: DRS) -> DRS:
+        return
+
+    def table_of_field(self, field: str) -> DRS:
+        return
+
+    def table(self, drs: DRS) -> DRS:
+        return
+
+    """
     Primitive API
     """
 
-    def keyword_search(self, kw, max_results=10):
+    def keyword_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the content of the data
         :param kw: the keyword to search
@@ -27,9 +43,17 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
-        return hits
+        drs = DRS([x for x in hits])  # materialize generator
+        return drs
 
-    def schema_search(self, kw, max_results=10):
+    def keywords_search(self, kws: [str]) -> DRS:
+        res = DRS([])
+        for kw in kws:
+            drs = self.keyword_search(kw)
+            self.union(res, drs)
+        return res
+
+    def schema_name_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the attribute/field names of the data
         :param kw: the keyword to search
@@ -37,9 +61,17 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
-        return hits
+        drs = DRS([x for x in hits])  # materialize generator
+        return drs
 
-    def entity_search(self, kw, max_results=10):
+    def schema_names_search(self, kws: [str]) -> DRS:
+        res = DRS([])
+        for kw in kws:
+            drs = self.schema_name_search(kw)
+            self.union(res, drs)
+        return res
+
+    def entity_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the entities represented by the data
         :param kw: the keyword to search
@@ -47,45 +79,66 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_results)
-        return hits
+        drs = DRS([x for x in hits])  # materialize generator
+        return drs
 
-    def schema_neighbors(self, field):
+    def schema_neighbors(self, field: str) -> DRS:
         """
         Returns all the other attributes/fields that appear in the same relation than the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.SCHEMA)
-        return hits
+        drs = DRS([x for x in hits])
+        return drs
 
-    def similar_schema_fields(self, field):
+    def similar_schema_name_to_field(self, field: str) -> DRS:
         """
         Returns all the attributes/fields with schema names similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
-        return hits
+        drs = DRS([x for x in hits])
+        return drs
 
-    def similar_content_fields(self, field):
+    def similar_schema_name_to_table(self, table: str) -> DRS:
+        res = DRS([])
+        fields = self.fields_of_table(table)
+        for f in fields:
+            drs = self.similar_schema_name_to_field(f.field_name)
+            self.union(res, drs)
+        return res
+
+    def similar_content_to_field(self, field: str) -> DRS:
         """
         Returns all the attributes/fields with content similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.CONTENT_SIM)
-        return hits
+        drs = DRS([x for x in hits])
+        return drs
 
-    def similar_entities_fields(self, field):
+    def similar_content_to_table(self, table: str) -> DRS:
+        res = DRS([])
+        fields = self.fields_of_table(table)
+        for f in fields:
+            drs = self.similar_content_to_field(f.field_name)
+            self.union(res, drs)
+        return res
+
+    def similar_entity_to_field(self, field: str) -> DRS:
         """
         Returns all the attributes/fields that represent entities similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
-        return hits
+        drs = DRS([x for x in hits])
+        return drs
 
-    def pkfk_fields(self, field):
+    def pkfk_field(self, field: str) -> DRS:
         """
         Returns all the attributes/fields that are primary-key or foreign-key candidates with respect to the
         provided field
@@ -93,7 +146,16 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.PKFK)
-        return hits
+        drs = DRS([x for x in hits])
+        return drs
+
+    def pkfk_table(self, table: str) -> DRS:
+        res = DRS([])
+        fields = self.fields_of_table(table)
+        for f in fields:
+            drs = self.pkfk_field(f.field_name)
+            self.union(res, drs)
+        return res
 
     """
     Combiner API
@@ -222,7 +284,7 @@ class DDAPI:
         aprox = dict()
         # Find set of schema_sim for each field provided in the virtual schema
         for t in tokens:
-            hits = self.schema_search(t)
+            hits = self.schema_name_search(t)
             aprox[t] = hits
 
         # Find the most suitable table, by checking which of the previous fields are schema-connected,
@@ -245,7 +307,7 @@ class DDAPI:
         :return: topk results or as many as available
         """
         def attr_similar_to(keyword, topk, score):
-            results = self.schema_search(keyword, max_results=100)
+            results = self.schema_name_search(keyword, max_results=100)
             r = [(x.source_name, x.field_name, x.score) for x in results]
             return r
 
@@ -451,7 +513,7 @@ def test_all():
         print(str(r))
 
     print("Keyword search in schema names")
-    results = api.schema_search("MIT")
+    results = api.schema_name_search("MIT")
     for r in results:
         print(str(r))
 
@@ -478,21 +540,21 @@ def test_all():
     print("")
     print("Schema SIM")
     print("")
-    nodes = api.similar_schema_fields(field)
+    nodes = api.similar_schema_name_to_field(field)
     for node in nodes:
         print(node)
 
     print("")
     print("Content sim")
     print("")
-    nodes = api.similar_content_fields(field)
+    nodes = api.similar_content_to_field(field)
     for node in nodes:
         print(node)
 
     print("")
     print("Entity sim")
     print("")
-    nodes = api.similar_entities_fields(field)
+    nodes = api.similar_entity_to_field(field)
     for node in nodes:
         print(node)
 
@@ -506,7 +568,7 @@ def test_all():
     print("")
     print("PKFK")
     print("")
-    nodes = api.pkfk_fields(field)
+    nodes = api.pkfk_field(field)
     for node in nodes:
         print(node)
 
@@ -578,7 +640,7 @@ def test():
     field6 = ('Fac_building.csv', 'Building Name Long')
     field7 = ('Fac_building.csv', 'Site')
 
-    similar_set = api.similar_content_fields(field7)
+    similar_set = api.similar_content_to_field(field7)
     ss = [x for x in similar_set]
     print(str(len(ss)))
     for el in ss:
@@ -806,7 +868,7 @@ def test_g_prim():
     print("Content sim")
     print("")
 
-    nodes = api.similar_content_fields(field)
+    nodes = api.similar_content_to_field(field)
     for node in nodes:
         print(node)
 

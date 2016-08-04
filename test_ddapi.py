@@ -3,7 +3,15 @@ from api.apiutils import DRS
 from ddapi import API
 
 
-class TestDDApi(unittest.TestCase):
+class TestDDApiPrimitives(unittest.TestCase):
+
+    api = API(None)
+
+    def test_keyword_search(self):
+        return
+
+
+class TestDDApiCombiner(unittest.TestCase):
 
     api = API(None)
 
