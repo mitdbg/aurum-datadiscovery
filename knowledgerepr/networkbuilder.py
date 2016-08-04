@@ -99,11 +99,13 @@ def build_schema_sim_relation(network, fields):
 def build_entity_sim_relation(network, fields, entities):
     docs = []
     for e in entities:
-        docs.append(e)
+        if e != "":  # Append only non-empty documents
+            docs.append(e)
 
-    tfidf = da.get_tfidf_docs(docs)
-    text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
-    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
+    if len(docs) > 0:  # If documents are empty, then skip this step; not entity similarity will be found
+        tfidf = da.get_tfidf_docs(docs)
+        text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
+        create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
 
 
 def build_content_sim_relation_text(network, fields, signatures):
@@ -156,7 +158,7 @@ def build_pkfk_relation(network):
         for ne in neighborhood:
             if ne not in seen and ne is not n:
                 ne_card = network.get_cardinality_of(ne)
-                if n_card > 0.7 or ne_card > 0.7:
+                if n_card > 0.5 or ne_card > 0.5:
                     if n_card > ne_card:
                         highest_card = n_card
                     else:
