@@ -68,7 +68,7 @@ public class Main {
 		else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
 			// Run with the configured input parameters and produce results to file (?)
 			String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-			this.readDirectoryAndCreateTasks(c, pathToSources);
+			this.readDirectoryAndCreateTasks(c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
 		}
 		else if(executionMode == ExecutionMode.OFFLINE_DB.mode) {
 			this.readTablesFromDBAndCreateTasks(c);
@@ -88,61 +88,64 @@ public class Main {
 	
 	public static void main(String args[]) {
 
-		//try {
-		//	Class.forName ("oracle.jdbc.driver.OracleDriver");
-		//	Connection conn = DriverManager.getConnection(
-		//			"jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
-		//			+ "(HOST=18.9.62.94)(PORT=1521)))"
-		//			+ "(CONNECT_DATA=(SID=dwrhst)))", "datadisc", "rrdj1078");
-		//	List<String> tables = DBUtils.getTablesFromDatabase(conn);
-		//	for(String str : tables) {
-		//		System.out.println(str);
-		//	}
-		//	
-		//	Statement stat = conn.createStatement();
-		//	String sql = " SELECT * FROM SUBJECT_SUMMARY LIMIT 10 OFFSET 0 ";
-		//	sql = " SELECT * FROM (SELECT * row_number() over rnk FROM SUBJECT_SUMMARY) WHERE rnk BETWEEN 0 AND 10 ";
-		//	sql = " SELECT * FROM ( SELECT * FROM SUBJECT_SUMMARY) WHERE ROWNUM BETWEEN 0 AND 10 ";
-		//	ResultSet rs = stat.executeQuery(sql);
-		//	ResultSetMetaData rsm = rs.getMetaData();
-		//	System.out.println("COLUMNS: " +rsm.getColumnCount());
-		//	int totalCol = rsm.getColumnCount();
-		//	while(rs.next()){
-		//		for(int i = 0; i<totalCol-1; i++) {
-		//			Object obj = rs.getObject(i+1);
-		//			if(obj != null) {
-		//				String v1 = obj.toString();
-		//				System.out.print(v1);
-		//			}
-		//			System.out.print(",");
-		//		}
-		//		System.out.println();
-		//	}
-		//	stat = conn.createStatement();
-		//	sql = " select tablespace_name, table_name from all_tables ";
-		//	//sql = " select tablespace_name, table_name from dba_tables ";
-		//	rs = stat.executeQuery(sql);
-		//	rsm = rs.getMetaData();
-		//	System.out.println("COLUMNS: " +rsm.getColumnCount());
-		//	totalCol = rsm.getColumnCount();
-		//	while(rs.next()) {
-		//		for(int i = 0; i < totalCol; i++) {
-		//			Object obj = rs.getObject(i+1);
-		//			if(obj != null) {
-		//				String v1 = obj.toString();
-		//				System.out.println(v1);
-		//			}
-		//			System.out.print(",");
-		//		}
-		//		System.out.println();
-		//	}
-		//	
-		//} catch (SQLException e1) {
-		//	e1.printStackTrace();
-		//} catch (ClassNotFoundException e) {
-		//	e.printStackTrace();
-		//}
-		//System.exit(0);
+//		try {
+//			Class.forName ("oracle.jdbc.driver.OracleDriver");
+//			Connection conn = DriverManager.getConnection(
+//					"jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
+//					+ "(HOST=18.9.62.94)(PORT=1521)))"
+//					+ "(CONNECT_DATA=(SID=dwrhst)))", "datadisc", "rrdj1078");
+//			Connection conn = DBUtils.getDBConnection(DBType.POSTGRESQL, "localhost", "5432", "chembl_21", "postgres", "admin");
+//			List<String> tables = DBUtils.getTablesFromDatabase(conn);
+//			for(String str : tables) {
+//				System.out.println(str);
+//			}
+			
+//			Statement stat = conn.createStatement();
+//			String sql = " SELECT * FROM SUBJECT_SUMMARY LIMIT 10 OFFSET 0 ";
+//			sql = " SELECT * FROM (SELECT * row_number() over rnk FROM SUBJECT_SUMMARY) WHERE rnk BETWEEN 0 AND 10 ";
+//			sql = " SELECT * FROM ( SELECT * FROM SUBJECT_SUMMARY) WHERE ROWNUM BETWEEN 0 AND 10 ";
+//			ResultSet rs = stat.executeQuery(sql);
+//			ResultSetMetaData rsm = rs.getMetaData();
+//			System.out.println("COLUMNS: " +rsm.getColumnCount());
+//			int totalCol = rsm.getColumnCount();
+//			while(rs.next()){
+//				for(int i = 0; i<totalCol-1; i++) {
+//					Object obj = rs.getObject(i+1);
+//					if(obj != null) {
+//						String v1 = obj.toString();
+//						System.out.print(v1);
+//					}
+//					System.out.print(",");
+//				}
+//				System.out.println();
+//			}
+//			stat = conn.createStatement();
+//			sql = " select tablespace_name, table_name from all_tables ";
+//			//sql = " select tablespace_name, table_name from dba_tables ";
+//			rs = stat.executeQuery(sql);
+//			rsm = rs.getMetaData();
+//			System.out.println("COLUMNS: " +rsm.getColumnCount());
+//			totalCol = rsm.getColumnCount();
+//			while(rs.next()) {
+//				for(int i = 0; i < totalCol; i++) {
+//					Object obj = rs.getObject(i+1);
+//					if(obj != null) {
+//						String v1 = obj.toString();
+//						System.out.println(v1);
+//					}
+//					System.out.print(",");
+//				}
+//				System.out.println();
+//			}
+			
+//		} 
+//		catch (SQLException e1) {
+//			e1.printStackTrace();
+//		} 
+//		catch (ClassNotFoundException e) {
+//			e.printStackTrace();
+//		}
+//		System.exit(0);
 	//	
 
 		// Get Properties with command line configuration
@@ -182,13 +185,12 @@ public class Main {
 		m.startProfiler(pc);
 	}
 	
-	private void readDirectoryAndCreateTasks(Conductor c, String pathToSources) {
+	private void readDirectoryAndCreateTasks(Conductor c, String pathToSources, String separator) {
 		try {
 			Files.walk(Paths.get(pathToSources)).forEach(filePath -> {
 			    if (Files.isRegularFile(filePath)) {
 			    	String path = filePath.getParent().toString()+File.separator;
 			    	String name = filePath.getFileName().toString();
-			    	String separator = ",";
 			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
 			    	c.submitTask(wt);
 			    }
