@@ -1,8 +1,11 @@
 from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
+from knowledgerepr.fieldnetwork import Hit
+from knowledgerepr.fieldnetwork import compute_field_id as id_from
 from knowledgerepr import fieldnetwork
 from api.apiutils import DRS
+from api.apiutils import DRSMode
 
 store_client = None
 
@@ -15,21 +18,52 @@ class DDAPI:
         self.__network = network
 
     """
-    View API
+    Seed API
     """
-    def fields_of_table(self, table: str) -> DRS:
-        fields = store_client.get_all_fields_of_source(table)
-        drs = DRS([x for x in fields])
+    def drs_from(self, field: str, source: str) -> DRS:
+        """
+        Given a field and source name, it returns a DRS with its representation
+        :param field: a string with the name of the field
+        :param source: a string with the name of the source
+        :return: a DRS with the source-field internal representation
+        """
+        nid = id_from(source, field)
+        h = Hit(nid, source, field, -1)
+        drs = DRS([h])
         return drs
 
-    def fields(self, drs: DRS) -> DRS:
-        return
+    def drs_from_table(self, source: str) -> DRS:
+        """
+        Given a source, it retrieves all fields of the source and returns them
+        in the internal representation
+        :param source: string with the name of the table
+        :return: a DRS with the source-field internal representation
+        """
+        hits = store_client.get_all_fields_of_source(source)
+        drs = DRS([x for x in hits])
+        return drs
 
-    def table_of_field(self, field: str) -> DRS:
-        return
+    """
+    View API
+    """
+
+    def fields(self, drs: DRS) -> DRS:
+        """
+        Given a DRS, it configures it to field view (default)
+        :param drs: the DRS to configure
+        :return: the same DRS in the fields mode
+        """
+        drs.set_fields_mode()
+        return drs
 
     def table(self, drs: DRS) -> DRS:
-        return
+        """
+        Given a DRS, it configures it to the table view
+        :param drs: the DRS to configure
+        :return: the same DRS in the table mode
+        """
+        drs.set_table_mode()
+        return drs
 
     """
     Primitive API
@@ -40,13 +74,18 @@ class DDAPI:
         Performs a keyword search over the content of the data
         :param kw: the keyword to search
         :param max_results: the maximum number of results to return
-        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
         drs = DRS([x for x in hits])  # materialize generator
         return drs
 
     def keywords_search(self, kws: [str]) -> DRS:
+        """
+        Given a collection of keywords, it returns the matches in the internal representation
+        :param kws: collection (iterable) of keywords (strings)
+        :return: the matches in the internal representation
+        """
         res = DRS([])
         for kw in kws:
             drs = self.keyword_search(kw)
@@ -58,13 +97,18 @@ class DDAPI:
         Performs a keyword search over the attribute/field names of the data
         :param kw: the keyword to search
         :param max_results: the maximum number of results to return
-        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
         drs = DRS([x for x in hits])  # materialize generator
         return drs
 
     def schema_names_search(self, kws: [str]) -> DRS:
+        """
+        Given a collection of schema names, it returns the matches in the internal representation
+        :param kws: collection (iterable) of keywords (strings)
+        :return: a DRS
+        """
         res = DRS([])
         for kw in kws:
             drs = self.schema_name_search(kw)
@@ -103,12 +147,38 @@ class DDAPI:
         return drs
 
     def similar_schema_name_to_table(self, table: str) -> DRS:
+        """
+        Returns all the attributes/fields with schema names similar to the fields of the given table
+        :param table: the given table
+        :return: DRS
+        """
         res = DRS([])
         fields = self.fields_of_table(table)
         for f in fields:
             drs = self.similar_schema_name_to_field(f.field_name)
             self.union(res, drs)
         return res
+
+    def similar_schema_name_to(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([])
+        if i_drs.mode == DRSMode.FIELDS:
+            for h in i_drs:
+                hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
+                res_drs = DRS([x for x in hits])
+                o_drs = self.union(o_drs, res_drs)
+        elif i_drs.mode == DRSMode.TABLE:
+            for table in i_drs:
+                fields_drs = self.drs_from_table(table)
+                for h in fields_drs:
+                    hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
+                    res_drs = DRS([x for x in hits])
+                    o_drs = self.union(o_drs, res_drs)
+        return o_drs
 
     def similar_content_to_field(self, field: str) -> DRS:
         """
@@ -127,6 +197,27 @@ class DDAPI:
             drs = self.similar_content_to_field(f.field_name)
             self.union(res, drs)
         return res
+
+    def similar_content_to(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([])
+        if i_drs.mode == DRSMode.FIELDS:
+            for h in i_drs:
+                hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
+                res_drs = DRS([x for x in hits])
+                o_drs = self.union(o_drs, res_drs)
+        elif i_drs.mode == DRSMode.TABLE:
+            for table in i_drs:
+                fields_drs = self.drs_from_table(table)
+                for h in fields_drs:
+                    hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
+                    res_drs = DRS([x for x in hits])
+                    o_drs = self.union(o_drs, res_drs)
+        return o_drs
 
     def similar_entity_to_field(self, field: str) -> DRS:
         """
@@ -156,6 +247,27 @@ class DDAPI:
             drs = self.pkfk_field(f.field_name)
             self.union(res, drs)
         return res
+
+    def pkfk_of(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([])
+        if i_drs.mode == DRSMode.FIELDS:
+            for h in i_drs:
+                hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
+                res_drs = DRS([x for x in hits])
+                o_drs = self.union(o_drs, res_drs)
+        elif i_drs.mode == DRSMode.TABLE:
+            for table in i_drs:
+                fields_drs = self.drs_from_table(table)
+                for h in fields_drs:
+                    hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
+                    res_drs = DRS([x for x in hits])
+                    o_drs = self.union(o_drs, res_drs)
+        return o_drs
 
     """
     Combiner API
@@ -211,7 +323,10 @@ class DDAPI:
         path = self.__network.find_path(source, target, relation)
         return path
 
-    def paths_field(self, a, b, primitives) -> DRS:
+    def paths_field(self, a: str, b: str, primitives) -> DRS:
+        return
+
+    def paths_table(self, a: str, b: str, primitives) -> DRS:
         return
 
     def paths(self, a: DRS, b: DRS, primitives) -> DRS:
@@ -298,8 +413,8 @@ class DDAPI:
         print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
 
     """
-        Function API
-        """
+    Function API
+    """
 
     def join_path(self, source, target):
         """

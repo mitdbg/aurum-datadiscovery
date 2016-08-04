@@ -125,9 +125,7 @@ class FieldNetwork:
             for nid, sn, fn, score in neighbors:
                 print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
 
-    def neighbors(self, field, relation):
-        sn, cn = field
-        nid = compute_field_id(sn, cn)
+    def neighbors_id(self, nid, relation):
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
             if str(k) == 'cardinality':
@@ -136,6 +134,11 @@ class FieldNetwork:
                 score = v[relation]['score']
                 yield Hit(k.nid, k.source_name, k.field_name, score)
         return []
+
+    def neighbors(self, field, relation):
+        sn, cn = field
+        nid = compute_field_id(sn, cn)
+        return self.neighbors(nid, relation)
 
     def _bidirectional_pred_succ(self, source, target, relation):
         """Bidirectional shortest path helper.

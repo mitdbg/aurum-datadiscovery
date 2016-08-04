@@ -42,6 +42,15 @@ class DRS:
     def set_table_mode(self):
         self._mode = DRSMode.TABLE
 
+    def paths(self):
+        return
+
+    def why(self, a: str):
+        return
+
+    def how(self, a: str):
+        return
+
 
 if __name__ == "__main__":
 
