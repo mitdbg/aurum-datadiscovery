@@ -28,6 +28,10 @@ class DRS:
             raise StopIteration
 
     @property
+    def data(self):
+        return self._data
+
+    @property
     def mode(self):
         return self._mode
 

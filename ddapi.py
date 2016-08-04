@@ -3,6 +3,7 @@ from modelstore.elasticstore import KWType
 from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr import fieldnetwork
 from knowledgerepr.fieldnetwork import Hit
+from api.apiutils import DRS
 
 store_client = None
 
@@ -98,27 +99,40 @@ class DDAPI:
     Combiner API
     """
 
-    def and_conjunctive(self, a, b):
+    def intersection(self, a: DRS, b: DRS) -> DRS:
         """
         Returns elements that are both in a and b
         :param a: an iterable object
         :param b: another iterable object
         :return: the intersection of the two provided iterable objects
         """
-        sa = set(a)
-        sb = set(b)
+        assert(a.mode == b.mode)
+        sa = set(a.data)
+        sb = set(b.data)
         res = sa.intersection(sb)
-        return res
+        return DRS(list(res))
 
-    def or_conjunctive(self, a, b):
+    def union(self, a: DRS, b: DRS) -> DRS:
         """
         Returns elements that are in either a or b
         :param a: an iterable object
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
-        res = set(a).union(set(b))
-        return res
+        assert (a.mode == b.mode)
+        res = set(a.data).union(set(b.data))
+        return DRS(list(res))
+
+    def difference(self, a: DRS, b: DRS) -> DRS:
+        """
+        Returns elements that are in either a or b
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the union of the two provided iterable objects
+        """
+        assert (a.mode == b.mode)
+        res = set(a.data) - set(b.data)
+        return DRS(list(res))
 
     def get_path(self, source, target, relation):
         """
@@ -503,7 +517,7 @@ def test_all():
     print("Combiner AND")
     results1 = api.keyword_search("Michael")
     results2 = api.keyword_search("Barbara")
-    final = api.and_conjunctive(results1, results2)
+    final = api.intersection(results1, results2)
 
     print(str(len(final)))
 
@@ -513,7 +527,7 @@ def test_all():
     print("Combiner OR")
     results1 = api.keyword_search("Michael")
     results2 = api.keyword_search("Barbara")
-    final = api.or_conjunctive(results1, results2)
+    final = api.union(results1, results2)
 
     print(str(len(final)))
 
