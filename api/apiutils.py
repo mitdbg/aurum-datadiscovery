@@ -1,4 +1,5 @@
 from enum import Enum
+from knowledgerepr.fieldnetwork import Hit
 
 
 class DRSMode(Enum):
@@ -8,7 +9,7 @@ class DRSMode(Enum):
 
 class DRS:
 
-    def __init__(self, data):
+    def __init__(self, data: [Hit]):
         self._data = data
         self._idx = 0
         self._mode = DRSMode.FIELDS
