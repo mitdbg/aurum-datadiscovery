@@ -330,7 +330,12 @@ class DDAPI:
         return
 
     def paths(self, a: DRS, b: DRS, primitives) -> DRS:
-        return
+        o_drs = DRS([])
+        for h1 in a:
+            for h2 in b:
+                res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                o_drs = self.union(o_drs, res_drs)
+        return o_drs
 
     def paths_fields(self, a, primitives) -> DRS:
         return
@@ -528,6 +533,7 @@ class DDAPI:
         # Create final output
         to_return = sorted(group_by_table_keyword.items(), key=lambda x: len(x[1]), reverse=True)
         return to_return[:topk]
+
 
 class ResultFormatter:
 

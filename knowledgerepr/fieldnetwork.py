@@ -3,6 +3,7 @@ from enum import Enum
 import operator
 import networkx as nx
 import binascii
+from api.apiutils import DRS
 
 BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
 
@@ -141,14 +142,15 @@ class FieldNetwork:
         return self.neighbors(nid, relation)
 
     def _bidirectional_pred_succ(self, source, target, relation):
-        """Bidirectional shortest path helper.
-           :returns (pred,succ,w) where
-           :param pred is a dictionary of predecessors from w to the source, and
-           :param succ is a dictionary of successors from w to the target.
+        """
+        Bidirectional shortest path helper.
+        :returns (pred,succ,w) where
+        :param pred is a dictionary of predecessors from w to the source, and
+        :param succ is a dictionary of successors from w to the target.
         """
         # does BFS from both source and target and meets in the middle
         if target == source:
-            return ({target: None}, {source: None}, source)
+            return {target: None}, {source: None}, source
 
         # we always have an undirected graph
         Gpred = self.neighbors
@@ -172,7 +174,8 @@ class FieldNetwork:
                         if w not in pred:
                             forward_fringe.append(w)
                             pred[w] = v
-                        if w in succ: return pred, succ, w  # found path
+                        if w in succ:
+                            return pred, succ, w  # found path
             else:
                 this_level = reverse_fringe
                 reverse_fringe = []
@@ -182,8 +185,8 @@ class FieldNetwork:
                         if w not in succ:
                             succ[w] = v
                             reverse_fringe.append(w)
-                        if w in pred: return pred, succ, w  # found path
-
+                        if w in pred:
+                            return pred, succ, w  # found path
         return None
 
     def bidirectional_shortest_path(self, source, target, relation):
@@ -219,8 +222,13 @@ class FieldNetwork:
         source = Hit(nid=0, source_name=sn, field_name=fn, score=0)
         (sn, fn) = target
         target = Hit(nid=0, source_name=sn, field_name=fn, score=0)
-        path = self.bidirectional_shortest_path(source, target, relation)
+        path = self.find_path_hit(source, target, relation)
         return path
+
+    def find_path_hit(self, source, target, relation):
+        path = self.bidirectional_shortest_path(source, target, relation)
+        drs = DRS(path)
+        return drs
 
 
 def serialize_network(network, path):
