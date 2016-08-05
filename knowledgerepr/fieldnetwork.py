@@ -4,6 +4,7 @@ import operator
 import networkx as nx
 import binascii
 from api.apiutils import DRS
+from ddapi import DDAPI
 
 BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
 
@@ -189,7 +190,75 @@ class FieldNetwork:
                             return pred, succ, w  # found path
         return None
 
-    def bidirectional_shortest_path(self, source, target, relation):
+    def _bidirectional_pred_succ_with_table_hops(self, source, target, relation):
+        """
+        Bidirectional shortest path with table hops, i.e. two-relation exploration
+        :returns (pred,succ,w) where
+        :param pred is a dictionary of predecessors from w to the source, and
+        :param succ is a dictionary of successors from w to the target.
+        """
+        def table_neighbors(node):
+            drs = DDAPI.drs_from_table(node)
+            return drs
+
+        def neighbors_with_table_hop(nid, rel):
+            table_neighbors_drs = self.neighbors_id(nid.nid, Relation.SCHEMA)
+            neighbors_with_table = set()
+            for n in table_neighbors_drs:
+                neighbors_of_n = self.neighbors_id(n.nid, rel)
+                for match in neighbors_of_n:
+                    neighbors_with_table.add(match)
+            return neighbors_with_table
+
+        # does BFS from both source and target and meets in the middle
+        src_drs = table_neighbors(source)
+        trg_drs = table_neighbors(target)
+        src_drs.set_table_mode()
+        if target in src_drs:  # source and target are in the same table
+            return {x: None for x in trg_drs}, {x: None for x in src_drs}, [x for x in src_drs]
+        src_drs.set_fields_mode()
+        trg_drs.set_fields_mode()
+
+        # we always have an undirected graph
+        Gpred = neighbors_with_table_hop
+        Gsucc = neighbors_with_table_hop
+
+        # predecessor and successors in search
+        # pred = {source: None}
+        # succ = {target: None}
+        pred = {x: None for x in src_drs}
+        succ = {x: None for x in trg_drs}
+
+        # initialize fringes, start with forward
+        forward_fringe = [x for x in src_drs]
+        reverse_fringe = [x for x in trg_drs]
+
+        while forward_fringe and reverse_fringe:
+            if len(forward_fringe) <= len(reverse_fringe):
+                this_level = forward_fringe
+                forward_fringe = []
+                for v in this_level:
+                    n = (v.source_name, v.field_name)
+                    for w in Gsucc(n, relation):
+                        if w not in pred:
+                            forward_fringe.append(w)
+                            pred[w] = v
+                        if w in succ:
+                            return pred, succ, w  # found path
+            else:
+                this_level = reverse_fringe
+                reverse_fringe = []
+                for v in this_level:
+                    n = (v.source_name, v.field_name)
+                    for w in Gpred(n, relation):
+                        if w not in succ:
+                            succ[w] = v
+                            reverse_fringe.append(w)
+                        if w in pred:
+                            return pred, succ, w  # found path
+        return None
+
+    def bidirectional_shortest_path(self, source, target, relation, field_mode = True):
         """
         Return a list of nodes in a shortest path between source and target.
         :param source is one extreme of the potential path
@@ -198,7 +267,13 @@ class FieldNetwork:
         Note: This code is based on the networkx implementation
         """
         # call helper to do the real work
-        results = self._bidirectional_pred_succ(source, target, relation)
+        results = []
+        if field_mode:
+            # source and target are Hit
+            results = self._bidirectional_pred_succ(source, target, relation)
+        else:
+            # source and target are strings with the table name
+            results = self._bidirectional_pred_succ_with_table_hops(source, target, relation)
         if results == None:  # check for None result
             return []
         pred, succ, w = results
@@ -226,7 +301,12 @@ class FieldNetwork:
         return path
 
     def find_path_hit(self, source, target, relation):
-        path = self.bidirectional_shortest_path(source, target, relation)
+        path = self.bidirectional_shortest_path(source, target, relation, True)  # field mode
+        drs = DRS(path)
+        return drs
+
+    def find_path_table(self, source: str, target: str, relation):
+        path = self.bidirectional_shortest_path(source, target, relation, False)  # table mode
         drs = DRS(path)
         return drs
 

@@ -32,7 +32,8 @@ class DDAPI:
         drs = DRS([h])
         return drs
 
-    def drs_from_table(self, source: str) -> DRS:
+    @staticmethod
+    def drs_from_table(source: str) -> DRS:
         """
         Given a source, it retrieves all fields of the source and returns them
         in the internal representation
@@ -323,25 +324,36 @@ class DDAPI:
         path = self.__network.find_path(source, target, relation)
         return path
 
-    def paths_field(self, a: str, b: str, primitives) -> DRS:
-        return
-
-    def paths_table(self, a: str, b: str, primitives) -> DRS:
-        return
-
     def paths(self, a: DRS, b: DRS, primitives) -> DRS:
+        assert(a.mode == b.mode)
         o_drs = DRS([])
-        for h1 in a:
-            for h2 in b:
-                res_drs = self.__network.find_path_hit(h1, h2, primitives)
-                o_drs = self.union(o_drs, res_drs)
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in b:  # h2 is a Hit
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = self.union(o_drs, res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in b:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    o_drs = self.union(o_drs, res_drs)
         return o_drs
 
-    def paths_fields(self, a, primitives) -> DRS:
-        return
-
-    def paths(self, a: DRS) -> DRS:
-        return
+    def paths(self, a: DRS, primitives) -> DRS:
+        o_drs = DRS([])
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in a:  # h2 is a Hit
+                    if h1 == h2:
+                        continue
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = self.union(o_drs, res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in a:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    o_drs = self.union(o_drs, res_drs)
+        return o_drs
 
     def traverse_field(self, a, primitives, max_hops) -> DRS:
         return
