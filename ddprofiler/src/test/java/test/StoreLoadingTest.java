@@ -9,6 +9,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 import core.Conductor;
+import core.TaskPackage;
 import core.WorkerTask;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
@@ -31,8 +32,8 @@ public class StoreLoadingTest {
 		ProfilerConfig pc = new ProfilerConfig(p);
 		
 		// Create store
-		//Store elasticStore = StoreFactory.makeElasticStore(pc);
-		Store elasticStore = StoreFactory.makeNullStore(pc);
+		Store elasticStore = StoreFactory.makeElasticStore(pc);
+		//Store elasticStore = StoreFactory.makeNullStore(pc);
 		
 		Conductor c = new Conductor(pc, elasticStore);
 		c.start();
@@ -41,8 +42,8 @@ public class StoreLoadingTest {
 			    if (Files.isRegularFile(filePath)) {
 			    	String name = filePath.getFileName().toString();
 			    	if(! name.equals(".DS_Store")) { // Make sure only valid files are in the folder
-			    		WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
-				    	c.submitTask(wt);
+			    		TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(path, name, separator);
+				    	c.submitTask(tp);
 			    	}
 			    }
 			});

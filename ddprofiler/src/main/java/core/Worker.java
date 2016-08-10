@@ -4,13 +4,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import analysis.Analysis;
 import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.EntityAnalyzer;
+import core.TaskPackage.TaskPackageType;
 import core.config.ProfilerConfig;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
@@ -19,81 +24,141 @@ import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 import store.Store;
 
-public class Worker implements Callable<List<WorkerTaskResult>> {
+public class Worker implements Runnable {
 
+	final private Logger LOG = LoggerFactory.getLogger(Worker.class.getName());
+	
+	private Conductor conductor;
+	private boolean doWork = true;
+	private String workerName;
 	private WorkerTask task;
 	private int numRecordChunk;
 	private Store store;
-	private Map<String, EntityAnalyzer> cachedEntityAnalyzers;
+	
+	private BlockingQueue<TaskPackage> taskQueue;
+	private BlockingQueue<ErrorPackage> errorQueue;
 	
 	// cached object
 	private EntityAnalyzer ea;
 	
-	public Worker(WorkerTask task, Store store, ProfilerConfig pc, Map<String, EntityAnalyzer> cachedEntityAnalyzers) {
-		this.task = task;
+//	public Worker(WorkerTask task, Store store, ProfilerConfig pc, Map<String, EntityAnalyzer> cachedEntityAnalyzers) {
+//		this.task = task;
+//		this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
+//		this.store = store;
+//		this.cachedEntityAnalyzers = cachedEntityAnalyzers;
+//	}
+
+	public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<TaskPackage> taskQueue, BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
+		this.conductor = conductor;
 		this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
 		this.store = store;
-		this.cachedEntityAnalyzers = cachedEntityAnalyzers;
+		this.ea = cached;
+		this.workerName = workerName;
+		this.taskQueue = taskQueue;
+		this.errorQueue = errorQueue;
+	}
+	
+	public void stop() {
+		this.doWork = false;
+	}
+	
+	private WorkerTask pullTask() {
+		// Attempt to consume new task
+		WorkerTask wt = null;
+		try {
+			TaskPackage tp = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+			// Create real worker task on demand
+			if(tp.getType() == TaskPackageType.CSV) {
+				wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getPath(), tp.getName(), tp.getSeparator());
+			}
+			else if(tp.getType() == TaskPackageType.DB) {
+				wt = WorkerTask.makeWorkerTaskForDB(tp.getDBType(), tp.getIp(), tp.getPort(), tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
+			}
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return wt;
 	}
 
 	@Override
-	public List<WorkerTaskResult> call() throws ProfileException {
-		try {
-			// Get thread name and configure entityAnalyzer
-			String threadName = Thread.currentThread().getName();
-			this.ea = cachedEntityAnalyzers.get(threadName);
-			
-			// Collection to hold analyzers
-			Map<String, Analysis> analyzers = new HashMap<>();
-			
-			// Access attributes and attribute type through first read
-			Connector c = task.getConnector();
-			PreAnalyzer pa = new PreAnalyzer();
-			pa.composeConnector(c);
-			
-			Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
-			if(initData == null) {
-				task.close();
-				return null;
-			}
-			// Read initial records to figure out attribute types etc
-			readFirstRecords(initData, analyzers);
-			
-			// Consume all remaining records from the connector
-			Map<Attribute, Values> data = pa.readRows(numRecordChunk);
-			int records = 0;
-			while(data != null) {
-				indexText(data);
-				records = records + data.size();
-				// Do the processing
-				feedValuesToAnalyzers(data, analyzers);
+	public void run() {
+	//public List<WorkerTaskResult> call() throws ProfileException {
+		while(doWork) {
+			try {
 				
-				// Read next chunk of data
-				data = pa.readRows(numRecordChunk);
+				// Collection to hold analyzers
+				Map<String, Analysis> analyzers = new HashMap<>();
+				
+				task = pullTask();
+				
+				if(task == null) {
+					continue;
+				}
+				
+				// Access attributes and attribute type through first read
+				Connector c = task.getConnector();
+				PreAnalyzer pa = new PreAnalyzer();
+				pa.composeConnector(c);
+				
+				LOG.info("Worker: {} processing: {}", workerName, c.getSourceName());
+				
+				Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
+				if(initData == null) {
+					LOG.warn("No data read from: {}", c.getSourceName());
+					task.close();
+					//return null;
+				}
+				// Read initial records to figure out attribute types etc
+				readFirstRecords(initData, analyzers);
+				
+				// Consume all remaining records from the connector
+				Map<Attribute, Values> data = pa.readRows(numRecordChunk);
+				int records = 0;
+				while(data != null) {
+					indexText(data);
+					records = records + data.size();
+					// Do the processing
+					feedValuesToAnalyzers(data, analyzers);
+					
+					// Read next chunk of data
+					data = pa.readRows(numRecordChunk);
+				}
+				
+				// Get results and wrap them in a Result object
+				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
+				
+				task.close();
+				List<WorkerTaskResult> results = wtrf.get();
+				
+				for(WorkerTaskResult wtr : results) {
+					store.storeDocument(wtr);
+				}
+				
+				conductor.notifyProcessedTask(results.size());
 			}
-			
-			// Get results and wrap them in a Result object
-			WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
-			
-			task.close();
-			return wtrf.get();
-		}
-		catch(Exception e) {
-			String init = "#########";
-			String msg = task.toString() +" $FAILED$ cause-> "+ e.getMessage();
-			StackTraceElement[] trace = e.getStackTrace();
-			StringBuffer sb = new StringBuffer();
-			sb.append(init);
-			sb.append(System.lineSeparator());
-			sb.append(msg);
-			sb.append(System.lineSeparator());
-			for(int i = 0; i < trace.length; i++) {
-				sb.append(trace[i].toString());
+			catch(Exception e) {
+				String init = "#########";
+				String msg = task.toString() +" $FAILED$ cause-> "+ e.getMessage();
+				StackTraceElement[] trace = e.getStackTrace();
+				StringBuffer sb = new StringBuffer();
+				sb.append(init);
 				sb.append(System.lineSeparator());
+				sb.append(msg);
+				sb.append(System.lineSeparator());
+				for(int i = 0; i < trace.length; i++) {
+					sb.append(trace[i].toString());
+					sb.append(System.lineSeparator());
+				}
+				sb.append(System.lineSeparator());
+				String log = sb.toString();
+				try {
+					errorQueue.put(new ErrorPackage(log));
+				} 
+				catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			}
-			sb.append(System.lineSeparator());
-			String log = sb.toString();
-			throw new ProfileException(log);
 		}
 	}
 	

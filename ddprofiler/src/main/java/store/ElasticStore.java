@@ -47,7 +47,8 @@ public class ElasticStore implements Store {
 				+ "\"sourceName\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"columnName\" :   {\"type\" : \"string\","
-				+ 				"\"index\" : \"not_analyzed\"}, "
+				+ 				"\"index\" : \"not_analyzed\", "
+				+				"\"ignore_above\" : 512 },"
 				+ "\"text\" : {\"type\" : \"string\", "
 				+ 				"\"store\" : \"no\"," // space saving?
 				+ 				"\"index\" : \"analyzed\","
