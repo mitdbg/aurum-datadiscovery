@@ -282,9 +282,12 @@ class DDAPI:
         the source and field names for every element in the iterable
         :param result_set: an iterable object
         """
+        seen = dict()
         for r in result_set:
             (nid, sn, fn, s) = r
-            print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+            if nid not in seen:
+                print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+                seen[nid] = 0
 
     def help(self):
         """
