@@ -64,6 +64,35 @@ def index_in_text_engine(fields, tfidf, lsh_projections):
 
 
 def build_schema_relation(network, fields):
+    print("Building schema relation...")
+    print("Putting fields in buckets...")
+    tables = defaultdict(list)
+    # Separate fields per table
+    for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
+        if float(tvals_outer) > 0:
+            card_outer = float(uvals_outer) / float(tvals_outer)
+        tables[sn_outer].append((fn_outer, card_outer))  # append tuple with (field_name, cardinality)
+    print("Putting fields in buckets...OK")
+
+    print("Filling schema relations for all tables...")
+    total_tables = len(tables.keys())
+    curr_table = 0
+    # Connect fields of same table
+    for table, table_fields in tables.items():
+        curr_table += 1
+        if curr_table % 500 == 0:
+            print(str(curr_table) + "/" + str(total_tables))
+        for f_out in table_fields:
+            field_out, card_out = f_out
+            for f_in in table_fields:
+                field_in, card_in = f_in
+                n_outer = network.add_field(table, field_out, card_out)
+                n_inner = network.add_field(table, field_in, card_in)
+                network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
+    print("Filling schema relations for all tables...OK")
+
+
+def _build_schema_relation(network, fields):
     """
     tvals = total values
     uvals = unique values
@@ -71,7 +100,15 @@ def build_schema_relation(network, fields):
     :param fields:
     :return:
     """
+    total_fields = len(fields)
+    curr_field = 0
     for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
+        if curr_field % 500 == 0:
+            msg = str(curr_field) + "/" + str(total_fields)
+            print(msg, end='')
+            print('\r' * len(msg), end='')
+            print(str(curr_field) + "/" + str(total_fields), end="")
+        curr_field += 1
         card_outer = 0
         if float(tvals_outer) > 0:
             card_outer = float(uvals_outer) / float(tvals_outer)
@@ -101,6 +138,7 @@ def build_entity_sim_relation(network, fields, entities):
     for e in entities:
         if e != "":  # Append only non-empty documents
             docs.append(e)
+    print(str(docs))
 
     if len(docs) > 0:  # If documents are empty, then skip this step; not entity similarity will be found
         tfidf = da.get_tfidf_docs(docs)

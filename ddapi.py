@@ -286,7 +286,7 @@ class DDAPI:
         for r in result_set:
             (nid, sn, fn, s) = r
             if nid not in seen:
-                print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+                print("source: " + str(sn) + "\t\t\t\t\t\t field: " + fn)
                 seen[nid] = 0
 
     def help(self):
