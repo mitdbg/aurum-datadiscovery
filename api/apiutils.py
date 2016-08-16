@@ -63,6 +63,13 @@ class DRS:
     def data(self):
         return self._data
 
+    def set_data(self, data):
+        self._data = data
+        self._table_view = []
+        self._idx = 0
+        self._idx_table = 0
+        self._mode = DRSMode.FIELDS
+
     @property
     def mode(self):
         return self._mode

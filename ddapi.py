@@ -328,6 +328,47 @@ class DDAPI:
     TC Primitive API
     """
 
+    def paths(self, a: DRS, b: DRS, primitives) -> DRS:
+        assert(a.mode == b.mode)
+        o_drs = DRS([])
+        o_drs.absorb_provenance(a)
+        o_drs.absorb_provenance(b)
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in b:  # h2 is a Hit
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in b:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def paths(self, a: DRS, primitives) -> DRS:
+        o_drs = DRS([])
+        o_drs = o_drs.absorb_provenance(a)
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in a:  # h2 is a Hit
+                    if h1 == h2:
+                        continue
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in a:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def traverse_field(self, a, primitives, max_hops) -> DRS:
+        return
+
+    """
+    DEPRECATED
+    """
+
     def get_path(self, source, target, relation):
         """
         Returns the path that connects source and target, if any
@@ -338,44 +379,6 @@ class DDAPI:
         """
         path = self.__network.find_path(source, target, relation)
         return path
-
-    def paths(self, a: DRS, b: DRS, primitives) -> DRS:
-        assert(a.mode == b.mode)
-        o_drs = DRS([])
-        if a.mode == DRSMode.FIELDS:
-            for h1 in a:  # h1 is a Hit
-                for h2 in b:  # h2 is a Hit
-                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
-                    o_drs = self.union(o_drs, res_drs)
-        elif a.mode == DRSMode.TABLE:
-            for h1 in a:  # h1 is a table: str
-                for h2 in b:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives)
-                    o_drs = self.union(o_drs, res_drs)
-        return o_drs
-
-    def paths(self, a: DRS, primitives) -> DRS:
-        o_drs = DRS([])
-        if a.mode == DRSMode.FIELDS:
-            for h1 in a:  # h1 is a Hit
-                for h2 in a:  # h2 is a Hit
-                    if h1 == h2:
-                        continue
-                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
-                    o_drs = self.union(o_drs, res_drs)
-        elif a.mode == DRSMode.TABLE:
-            for h1 in a:  # h1 is a table: str
-                for h2 in a:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives)
-                    o_drs = self.union(o_drs, res_drs)
-        return o_drs
-
-    def traverse_field(self, a, primitives, max_hops) -> DRS:
-        return
-
-    """
-    DEPRECATED
-    """
 
     def in_context_with(self, a, b, relation):
         """
