@@ -1,9 +1,25 @@
 from enum import Enum
+import networkx as nx
+
+
+class Edge(Enum):
+    FIELD_OF = 0
+
+
 
 
 class DRSMode(Enum):
     FIELDS = 0
     TABLE = 1
+
+
+class Provenance:
+
+    def __init__(self):
+        self._pgraph = nx.MultiDiGraph()
+
+    def add_node(self, a: str, relation: Edge):
+        return
 
 
 class DRS:
@@ -51,6 +67,33 @@ class DRS:
     def mode(self):
         return self._mode
 
+    def size(self):
+        return len(self.data)
+
+    def absorb_provenance(self, drs):
+        """
+        Merge provenance of the input parameter into self, *not* the data.
+        :param drs:
+        :return:
+        """
+        return
+
+    def extend_provenance(self, drs):
+        """
+        Check which elements of self are present in drs, and add provenance information from drs to self
+        :param drs:
+        :return:
+        """
+        return
+
+    def absorb(self, drs):
+        """
+        Merge the input parameter DRS into self, by extending provenance appropriately and appending data
+        :param drs:
+        :return:
+        """
+        return
+
     def set_fields_mode(self):
         self._mode = DRSMode.FIELDS
 
@@ -58,6 +101,9 @@ class DRS:
         self._mode = DRSMode.TABLE
 
     def paths(self):
+        return
+
+    def path(self, a: str):
         return
 
     def why(self, a: str):

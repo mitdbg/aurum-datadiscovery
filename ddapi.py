@@ -153,11 +153,8 @@ class DDAPI:
         :param table: the given table
         :return: DRS
         """
-        res = DRS([])
-        fields = self.fields_of_table(table)
-        for f in fields:
-            drs = self.similar_schema_name_to_field(f.field_name)
-            self.union(res, drs)
+        fields = self.drs_from_table(table)
+        res = self.similar_schema_name_to(fields)
         return res
 
     def similar_schema_name_to(self, i_drs: DRS) -> DRS:
@@ -167,18 +164,20 @@ class DDAPI:
         :return: DRS
         """
         o_drs = DRS([])
+        o_drs = o_drs.absorb_provenance(i_drs)
         if i_drs.mode == DRSMode.FIELDS:
             for h in i_drs:
                 hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
                 res_drs = DRS([x for x in hits])
-                o_drs = self.union(o_drs, res_drs)
+                o_drs = o_drs.absorb(res_drs)
         elif i_drs.mode == DRSMode.TABLE:
             for table in i_drs:
                 fields_drs = self.drs_from_table(table)
+                o_drs = o_drs.absorb_provenance(fields_drs)
                 for h in fields_drs:
                     hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
                     res_drs = DRS([x for x in hits])
-                    o_drs = self.union(o_drs, res_drs)
+                    o_drs = o_drs.absorb(res_drs)
         return o_drs
 
     def similar_content_to_field(self, field: str) -> DRS:
@@ -192,11 +191,8 @@ class DDAPI:
         return drs
 
     def similar_content_to_table(self, table: str) -> DRS:
-        res = DRS([])
         fields = self.fields_of_table(table)
-        for f in fields:
-            drs = self.similar_content_to_field(f.field_name)
-            self.union(res, drs)
+        res = self.similar_content_to(fields)
         return res
 
     def similar_content_to(self, i_drs: DRS) -> DRS:
@@ -206,18 +202,20 @@ class DDAPI:
         :return: DRS
         """
         o_drs = DRS([])
+        o_drs = o_drs.absorb_provenance(i_drs)
         if i_drs.mode == DRSMode.FIELDS:
             for h in i_drs:
                 hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
                 res_drs = DRS([x for x in hits])
-                o_drs = self.union(o_drs, res_drs)
+                o_drs = o_drs.absorb(res_drs)
         elif i_drs.mode == DRSMode.TABLE:
             for table in i_drs:
                 fields_drs = self.drs_from_table(table)
+                o_drs = o_drs.absorb_provenance(fields_drs)
                 for h in fields_drs:
                     hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
                     res_drs = DRS([x for x in hits])
-                    o_drs = self.union(o_drs, res_drs)
+                    o_drs = o_drs.absorb(res_drs)
         return o_drs
 
     def similar_entity_to_field(self, field: str) -> DRS:
@@ -242,11 +240,8 @@ class DDAPI:
         return drs
 
     def pkfk_table(self, table: str) -> DRS:
-        res = DRS([])
         fields = self.fields_of_table(table)
-        for f in fields:
-            drs = self.pkfk_field(f.field_name)
-            self.union(res, drs)
+        res = self.pkfk_of(fields)
         return res
 
     def pkfk_of(self, i_drs: DRS) -> DRS:
@@ -255,19 +250,24 @@ class DDAPI:
         :param i_drs: the input DRS
         :return: DRS
         """
+        # alternative provenance propagation
         o_drs = DRS([])
+        o_drs = o_drs.absorb_provenance(i_drs)  # this would not be
         if i_drs.mode == DRSMode.FIELDS:
             for h in i_drs:
                 hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
                 res_drs = DRS([x for x in hits])
-                o_drs = self.union(o_drs, res_drs)
+                o_drs = o_drs.absorb(res_drs)
         elif i_drs.mode == DRSMode.TABLE:
             for table in i_drs:
                 fields_drs = self.drs_from_table(table)
+                o_drs = o_drs.absorb_provenance(fields_drs)  # this would not be
                 for h in fields_drs:
                     hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
                     res_drs = DRS([x for x in hits])
-                    o_drs = self.union(o_drs, res_drs)
+                    o_drs = o_drs.absorb(res_drs)
+                # o_drs.extend_provenance(fields_drs)
+        # o_drs.extend_provenance(i_drs)
         return o_drs
 
     """
@@ -285,7 +285,12 @@ class DDAPI:
         sa = set(a.data)
         sb = set(b.data)
         res = sa.intersection(sb)
-        return DRS(list(res))
+
+        o_drs = DRS(list(res))
+        o_drs = o_drs.extend_provenance(a)
+        o_drs = o_drs.extend_provenance(b)
+
+        return o_drs
 
     def union(self, a: DRS, b: DRS) -> DRS:
         """
@@ -296,7 +301,12 @@ class DDAPI:
         """
         assert (a.mode == b.mode)
         res = set(a.data).union(set(b.data))
-        return DRS(list(res))
+
+        o_drs = DRS(list(res))
+        o_drs = o_drs.extend_provenance(a)
+        o_drs = o_drs.extend_provenance(b)
+
+        return o_drs
 
     def difference(self, a: DRS, b: DRS) -> DRS:
         """
@@ -307,7 +317,12 @@ class DDAPI:
         """
         assert (a.mode == b.mode)
         res = set(a.data) - set(b.data)
-        return DRS(list(res))
+
+        o_drs = DRS(list(res))
+        o_drs = o_drs.extend_provenance(a)
+        o_drs = o_drs.extend_provenance(b)
+
+        return o_drs
 
     """
     TC Primitive API
@@ -357,6 +372,10 @@ class DDAPI:
 
     def traverse_field(self, a, primitives, max_hops) -> DRS:
         return
+
+    """
+    DEPRECATED
+    """
 
     def in_context_with(self, a, b, relation):
         """
