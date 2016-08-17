@@ -4,6 +4,8 @@ from knowledgerepr.fieldnetwork import Relation
 from knowledgerepr.fieldnetwork import Hit
 from knowledgerepr.fieldnetwork import compute_field_id as id_from
 from knowledgerepr import fieldnetwork
+from api.apiutils import Operation
+from api.apiutils import OP
 from api.apiutils import DRS
 from api.apiutils import DRSMode
 
@@ -20,7 +22,7 @@ class DDAPI:
     """
     Seed API
     """
-    def drs_from(self, field: str, source: str) -> DRS:
+    def drs_from_raw_field(self, field: str, source: str) -> DRS:
         """
         Given a field and source name, it returns a DRS with its representation
         :param field: a string with the name of the field
@@ -29,7 +31,10 @@ class DDAPI:
         """
         nid = id_from(source, field)
         h = Hit(nid, source, field, -1)
-        drs = DRS([h])
+        return self.drs_from_hit(h)
+
+    def drs_from_hit(self, hit: Hit) -> DRS:
+        drs = DRS([hit], Operation(OP.ORIGIN))
         return drs
 
     @staticmethod
@@ -41,7 +46,13 @@ class DDAPI:
         :return: a DRS with the source-field internal representation
         """
         hits = store_client.get_all_fields_of_source(source)
-        drs = DRS([x for x in hits])
+        drs = DRS([x for x in hits], Operation(OP.ORIGIN))
+        return drs
+
+    def drs_from_table_hit(self, hit: Hit) -> DRS:
+        table = hit.source_name
+        hits = store_client.get_all_fields_of_source(table)
+        drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
         return drs
 
     """
@@ -78,7 +89,7 @@ class DDAPI:
         :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
-        drs = DRS([x for x in hits])  # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
     def keywords_search(self, kws: [str]) -> DRS:
@@ -87,7 +98,7 @@ class DDAPI:
         :param kws: collection (iterable) of keywords (strings)
         :return: the matches in the internal representation
         """
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         for kw in kws:
             res_drs = self.keyword_search(kw)
             o_drs = o_drs.absorb(res_drs)
@@ -101,7 +112,7 @@ class DDAPI:
         :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
-        drs = DRS([x for x in hits])  # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.SCHNAME_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
     def schema_names_search(self, kws: [str]) -> DRS:
@@ -110,7 +121,7 @@ class DDAPI:
         :param kws: collection (iterable) of keywords (strings)
         :return: a DRS
         """
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         for kw in kws:
             res_drs = self.schema_name_search(kw)
             o_drs = o_drs.absorb(res_drs)
@@ -124,38 +135,53 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_results)
-        drs = DRS([x for x in hits])  # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.ENTITY_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
-    def schema_neighbors(self, field: str) -> DRS:
+    def schema_neighbors(self, field: (str, str)) -> DRS:
         """
         Returns all the other attributes/fields that appear in the same relation than the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.SCHEMA)
-        drs = DRS([x for x in hits])
-        return drs
+        source, f = field
+        field_drs = self.drs_from_raw_field(f, source)
+        hits_drs = self.schema_neighbors_of(field_drs)
+        return hits_drs
 
-    def similar_schema_name_to_field(self, field: str) -> DRS:
+    def schema_neighbors_of(self, i_drs: DRS) -> DRS:
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.SCHEMA)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
+
+    def similar_schema_name_to_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields with schema names similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
-        drs = DRS([x for x in hits])
-        return drs
+        source, f = field
+        field_drs = self.drs_from_raw_field(f, source)
+        hits_drs = self.similar_schema_name_to(field_drs)
+        return hits_drs
 
-    def similar_schema_name_to_table(self, table: str) -> DRS:
+    def similar_schema_name_to_table(self, table: (str, str)) -> DRS:
         """
         Returns all the attributes/fields with schema names similar to the fields of the given table
         :param table: the given table
         :return: DRS
         """
         fields = self.drs_from_table(table)
-        res = self.similar_schema_name_to(fields)
-        return res
+        hits_drs = self.similar_schema_name_to(fields)
+        return hits_drs
 
     def similar_schema_name_to(self, i_drs: DRS) -> DRS:
         """
@@ -163,37 +189,33 @@ class DDAPI:
         :param i_drs: the input DRS
         :return: DRS
         """
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(i_drs)
-        if i_drs.mode == DRSMode.FIELDS:
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
             for h in i_drs:
-                hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
-                res_drs = DRS([x for x in hits])
-                o_drs = o_drs.absorb(res_drs)
-        elif i_drs.mode == DRSMode.TABLE:
-            for table in i_drs:
-                fields_drs = self.drs_from_table(table)
-                o_drs = o_drs.absorb_provenance(fields_drs)
-                for h in fields_drs:
-                    hits = self.__network.neighbors_id(h.nid, Relation.SCHEMA_SIM)
-                    res_drs = DRS([x for x in hits])
-                    o_drs = o_drs.absorb(res_drs)
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.SCHEMA_SIM)
+            o_drs = o_drs.absorb(hits_drs)
         return o_drs
 
-    def similar_content_to_field(self, field: str) -> DRS:
+    def similar_content_to_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields with content similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.CONTENT_SIM)
-        drs = DRS([x for x in hits])
-        return drs
+        source, f = field
+        field_drs = self.drs_from_raw_field(f, source)
+        hits_drs = self.similar_content_to(field_drs)
+        return hits_drs
 
     def similar_content_to_table(self, table: str) -> DRS:
-        fields = self.fields_of_table(table)
-        res = self.similar_content_to(fields)
-        return res
+        fields = self.drs_from_table(table)
+        hits_drs = self.similar_content_to(fields)
+        return hits_drs
 
     def similar_content_to(self, i_drs: DRS) -> DRS:
         """
@@ -201,24 +223,19 @@ class DDAPI:
         :param i_drs: the input DRS
         :return: DRS
         """
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(i_drs)
-        if i_drs.mode == DRSMode.FIELDS:
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
             for h in i_drs:
-                hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
-                res_drs = DRS([x for x in hits])
-                o_drs = o_drs.absorb(res_drs)
-        elif i_drs.mode == DRSMode.TABLE:
-            for table in i_drs:
-                fields_drs = self.drs_from_table(table)
-                o_drs = o_drs.absorb_provenance(fields_drs)
-                for h in fields_drs:
-                    hits = self.__network.neighbors_id(h.nid, Relation.CONTENT_SIM)
-                    res_drs = DRS([x for x in hits])
-                    o_drs = o_drs.absorb(res_drs)
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.CONTENT_SIM)
+            o_drs = o_drs.absorb(hits_drs)
         return o_drs
 
-    def similar_entity_to_field(self, field: str) -> DRS:
+    def _similar_entity_to_field(self, field: (str, str)) -> [Hit]:
         """
         Returns all the attributes/fields that represent entities similar to the provided field
         TODO: future work, probably
@@ -226,24 +243,24 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
-        drs = DRS([x for x in hits])
-        return drs
+        return hits
 
-    def pkfk_field(self, field: str) -> DRS:
+    def pkfk_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields that are primary-key or foreign-key candidates with respect to the
         provided field
         :param field: the providef field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.PKFK)
-        drs = DRS([x for x in hits])
-        return drs
+        source, f = field
+        field_drs = self.drs_from_raw_field(f, source)
+        hits_drs = self.pkfk_of(field_drs)
+        return hits_drs
 
     def pkfk_table(self, table: str) -> DRS:
-        fields = self.fields_of_table(table)
-        res = self.pkfk_of(fields)
-        return res
+        fields = self.drs_from_table(table)
+        hits_drs = self.pkfk_of(fields)
+        return hits_drs
 
     def pkfk_of(self, i_drs: DRS) -> DRS:
         """
@@ -252,22 +269,17 @@ class DDAPI:
         :return: DRS
         """
         # alternative provenance propagation
-        o_drs = DRS([])
-        o_drs = o_drs.absorb_provenance(i_drs)  # this would not be
-        if i_drs.mode == DRSMode.FIELDS:
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
             for h in i_drs:
-                hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
-                res_drs = DRS([x for x in hits])
-                o_drs = o_drs.absorb(res_drs)
-        elif i_drs.mode == DRSMode.TABLE:
-            for table in i_drs:
-                fields_drs = self.drs_from_table(table)
-                o_drs = o_drs.absorb_provenance(fields_drs)  # this would not be
-                for h in fields_drs:
-                    hits = self.__network.neighbors_id(h.nid, Relation.PKFK)
-                    res_drs = DRS([x for x in hits])
-                    o_drs = o_drs.absorb(res_drs)
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
                 # o_drs.extend_provenance(fields_drs)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.PKFK)
+            o_drs = o_drs.absorb(hits_drs)
         # o_drs.extend_provenance(i_drs)
         return o_drs
 
@@ -283,14 +295,16 @@ class DDAPI:
         :return: the intersection of the two provided iterable objects
         """
         assert(a.mode == b.mode)
-        sa = set(a.data)
-        sb = set(b.data)
-        res = sa.intersection(sb)
+        #sa = set(a.data)
+        #sb = set(b.data)
+        #res = sa.intersection(sb)
 
-        o_drs = DRS(list(res))
-        o_drs = o_drs.extend_provenance(a)
-        o_drs = o_drs.extend_provenance(b)
+        #o_drs = DRS(list(res))
+        #o_drs = o_drs.extend_provenance(a)
+        #o_drs = o_drs.extend_provenance(b)
 
+        #return o_drs
+        o_drs = a.intersection(b)
         return o_drs
 
     def union(self, a: DRS, b: DRS) -> DRS:
@@ -301,12 +315,14 @@ class DDAPI:
         :return: the union of the two provided iterable objects
         """
         assert (a.mode == b.mode)
-        res = set(a.data).union(set(b.data))
+        #res = set(a.data).union(set(b.data))
 
-        o_drs = DRS(list(res))
-        o_drs = o_drs.extend_provenance(a)
-        o_drs = o_drs.extend_provenance(b)
+        #o_drs = DRS(list(res))
+        #o_drs = o_drs.extend_provenance(a)
+        #o_drs = o_drs.extend_provenance(b)
 
+        #return o_drs
+        o_drs = a.union(b)
         return o_drs
 
     def difference(self, a: DRS, b: DRS) -> DRS:
@@ -317,21 +333,23 @@ class DDAPI:
         :return: the union of the two provided iterable objects
         """
         assert (a.mode == b.mode)
-        res = set(a.data) - set(b.data)
+        #res = set(a.data) - set(b.data)
 
-        o_drs = DRS(list(res))
-        o_drs = o_drs.extend_provenance(a)
-        o_drs = o_drs.extend_provenance(b)
+        #o_drs = DRS(list(res))
+        #o_drs = o_drs.extend_provenance(a)
+        #o_drs = o_drs.extend_provenance(b)
 
+        #return o_drs
+        o_drs = a.set_difference(b)
         return o_drs
 
     """
     TC Primitive API
     """
 
-    def paths(self, a: DRS, b: DRS, primitives) -> DRS:
+    def paths_between(self, a: DRS, b: DRS, primitives) -> DRS:
         assert(a.mode == b.mode)
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         o_drs.absorb_provenance(a)
         o_drs.absorb_provenance(b)
         if a.mode == DRSMode.FIELDS:
@@ -347,7 +365,7 @@ class DDAPI:
         return o_drs
 
     def paths(self, a: DRS, primitives) -> DRS:
-        o_drs = DRS([])
+        o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(a)
         if a.mode == DRSMode.FIELDS:
             for h1 in a:  # h1 is a Hit
@@ -728,16 +746,16 @@ def test_all():
     print("")
     print("Entity sim")
     print("")
-    nodes = api.similar_entity_to_field(field)
+    nodes = api._similar_entity_to_field(field)
     for node in nodes:
         print(node)
 
-    print("")
-    print("Overlap")
-    print("")
-    nodes = api.overlap_fields(field)
-    for node in nodes:
-        print(node)
+    #print("")
+    #print("Overlap")
+    #print("")
+    #nodes = api.overlap_fields(field)
+    #for node in nodes:
+    #    print(node)
 
     print("")
     print("PKFK")
@@ -755,7 +773,7 @@ def test_all():
     results2 = api.keyword_search("Barbara")
     final = api.intersection(results1, results2)
 
-    print(str(len(final)))
+    print(str(final.size()))
 
     for el in final:
         print(str(el))
@@ -765,7 +783,7 @@ def test_all():
     results2 = api.keyword_search("Barbara")
     final = api.union(results1, results2)
 
-    print(str(len(final)))
+    print(str(final.size()))
 
     for el in final:
         print(str(el))
@@ -785,7 +803,7 @@ def test_all():
 
     print("Add column")
     sn = "Hr_faculty_roster.csv"
-    list_of_results = api.schema_complement(sn)
+    list_of_results = api.__schema_complement(sn)
     for l in list_of_results:
         print(str(l))
 

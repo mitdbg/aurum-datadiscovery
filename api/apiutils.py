@@ -2,10 +2,24 @@ from enum import Enum
 import networkx as nx
 
 
-class Edge(Enum):
-    FIELD_OF = 0
+class OP(Enum):
+    NONE = 0  # for initial creation of DRS
+    ORIGIN = 1
+    KW_LOOKUP = 2
+    SCHNAME_LOOKUP = 3
+    SCHEMA_SIM = 4
+    TABLE = 5
+    CONTENT_SIM = 6
+    PKFK = 7
+    ENTITY_SIM = 8
+    ENTITY_LOOKUP = 9
 
 
+class Operation:
+
+    def __init__(self, op: OP, params=None):
+        self._op = op
+        self._params = params
 
 
 class DRSMode(Enum):
@@ -15,17 +29,19 @@ class DRSMode(Enum):
 
 class Provenance:
 
-    def __init__(self):
+    def __init__(self, data, operation):
         self._pgraph = nx.MultiDiGraph()
+        # TODO: add data and operation to the provenance
 
-    def add_node(self, a: str, relation: Edge):
+    def add_node(self, a: str, relation: Operation):
         return
 
 
 class DRS:
 
-    def __init__(self, data):
+    def __init__(self, data, operation):
         self._data = data
+        self._provenance = Provenance(data, operation)
         self._table_view = []
         self._idx = 0
         self._idx_table = 0
@@ -69,6 +85,15 @@ class DRS:
         self._idx = 0
         self._idx_table = 0
         self._mode = DRSMode.FIELDS
+
+    def intersection(self, a):
+        return
+
+    def union(self, a):
+        return
+
+    def set_difference(self, a):
+        return
 
     @property
     def mode(self):

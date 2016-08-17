@@ -4,6 +4,8 @@ import operator
 import networkx as nx
 import binascii
 from api.apiutils import DRS
+from api.apiutils import Operation
+from api.apiutils import OP
 from ddapi import DDAPI
 
 BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
@@ -127,7 +129,20 @@ class FieldNetwork:
             for nid, sn, fn, score in neighbors:
                 print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
 
-    def neighbors_id(self, nid: int, relation: Relation) -> DRS:
+    def get_op_from_relation(self, relation):
+        if relation == Relation.CONTENT_SIM:
+            return OP.CONTENT_SIM
+        if relation == Relation.ENTITY_SIM:
+            return OP.ENTITY_SIM
+        if relation == Relation.PKFK:
+            return OP.PKFK
+        if relation == Relation.SCHEMA:
+            return OP.TABLE
+        if relation == Relation.SCHEMA_SIM:
+            return OP.SCHEMA_SIM
+
+    def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
+        nid = hit.nid
         data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
@@ -136,10 +151,11 @@ class FieldNetwork:
             if relation in v:
                 score = v[relation]['score']
                 data.append(Hit(k.nid, k.source_name, k.field_name, score))
-        o_drs = DRS(data)  # FIXME: add provenance info here
+        op = self.get_op_from_relation(relation)
+        o_drs = DRS(data, Operation(op, params=[hit]))
         return o_drs
 
-    def neighbors(self, field, relation):
+    def neighbors(self, field, relation) -> DRS:
         sn, cn = field
         nid = compute_field_id(sn, cn)
         return self.neighbors_id(nid, relation)
