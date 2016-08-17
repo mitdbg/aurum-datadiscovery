@@ -167,7 +167,7 @@ class FieldNetwork:
         :param pred is a dictionary of predecessors from w to the source, and
         :param succ is a dictionary of successors from w to the target.
         """
-        o_drs = DRS([])  # Works as a carrier of provenance
+        o_drs = DRS([], Operation(OP.NONE))  # Works as a carrier of provenance
         # does BFS from both source and target and meets in the middle
         if target == source:
             return {target: None}, {source: None}, source, o_drs
@@ -225,7 +225,7 @@ class FieldNetwork:
             return drs
 
         def neighbors_with_table_hop(nid, rel) -> DRS:
-            o_drs = DRS([])
+            o_drs = DRS([], Operation(OP.NONE))
             table_neighbors_drs = self.neighbors_id(nid, Relation.SCHEMA)
             o_drs = o_drs.absorb_provenance(table_neighbors_drs)
             neighbors_with_table = set()

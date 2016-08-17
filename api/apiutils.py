@@ -1,5 +1,8 @@
 from enum import Enum
 import networkx as nx
+from knowledgerepr.fieldnetwork import Hit
+
+global_origin_id = 0
 
 
 class OP(Enum):
@@ -21,6 +24,14 @@ class Operation:
         self._op = op
         self._params = params
 
+    @property
+    def op(self):
+        return self._op
+
+    @property
+    def params(self):
+        return self._params
+
 
 class DRSMode(Enum):
     FIELDS = 0
@@ -28,13 +39,40 @@ class DRSMode(Enum):
 
 
 class Provenance:
+    """
+    Nodes are Hit (only). Origin nodes are given a special Hit object too.
+    """
 
     def __init__(self, data, operation):
-        self._pgraph = nx.MultiDiGraph()
-        # TODO: add data and operation to the provenance
+        self._p_graph = nx.MultiDiGraph()
+        op = operation.op
+        params = operation.params
+        self.populate_provenance(data, op, params)
 
-    def add_node(self, a: str, relation: Operation):
-        return
+    def prov_graph(self):
+        return self._p_graph
+
+    def swap_p_graph(self, new):
+        self._p_graph = new
+
+    def populate_provenance(self, data, op, params):
+        if op == OP.NONE:
+            # This is a carrier DRS, skip
+            return
+        elif op == OP.ORIGIN:
+            for element in data:
+                self._p_graph.add_node(element)
+        # We check operations that come with parameters
+        elif op == OP.SCHNAME_LOOKUP or op == OP.ENTITY_LOOKUP or op == OP.KW_LOOKUP:
+            hit = Hit(global_origin_id, params[0], params[0], -1)
+            global global_origin_id
+            global_origin_id += 1
+        else:  # This all come with a Hit parameter
+            hit = params[0]  # get the hit that comes with the op otherwise
+            n_org = self._p_graph.add_node(hit)  # we add the param
+            for element in data:  # now we connect the new node to data with the op
+                tgt = self._p_graph.add_node(element)
+                self._p_graph.add_edge(n_org, tgt)
 
 
 class DRS:
@@ -86,18 +124,12 @@ class DRS:
         self._idx_table = 0
         self._mode = DRSMode.FIELDS
 
-    def intersection(self, a):
-        return
-
-    def union(self, a):
-        return
-
-    def set_difference(self, a):
-        return
-
     @property
     def mode(self):
         return self._mode
+
+    def get_provenance(self):
+        return self._provenance
 
     def size(self):
         return len(self.data)
@@ -108,15 +140,13 @@ class DRS:
         :param drs:
         :return:
         """
-        return
-
-    def extend_provenance(self, drs):
-        """
-        Check which elements of self are present in drs, and add provenance information from drs to self
-        :param drs:
-        :return:
-        """
-        return
+        # Get prov graph of merging
+        prov_graph_of_merging = drs.get_provenance().prov_graph()
+        # Compose into my prov graph
+        merge = nx.compose(self._provenance.prov_graph(), prov_graph_of_merging)
+        # Rewrite my prov graph to the new merged one and return
+        self._provenance.swap_p_graph(merge)
+        return self
 
     def absorb(self, drs):
         """
@@ -124,7 +154,57 @@ class DRS:
         :param drs:
         :return:
         """
-        return
+        # Set union merge data
+        merging_data = set(drs.data)
+        my_data = set(self.data)
+        new_data = merging_data.union(my_data)
+        self.set_data(new_data)
+        # Merge provenance
+        self.absorb_provenance(drs)
+        return self
+
+    def intersection(self, drs):
+        merging_data = set(drs.data)
+        my_data = set(self.data)
+        new_data = merging_data.intersection(my_data)
+
+        self.set_data(new_data)
+        # Merge provenance
+        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        # FIXME: or alternatively perform a more fine-grained merging
+        self.absorb_provenance(drs)
+        return self
+
+    def union(self, drs):
+        merging_data = set(drs.data)
+        my_data = set(self.data)
+        new_data = merging_data.union(my_data)
+
+        self.set_data(new_data)
+        # Merge provenance
+        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        self.absorb_provenance(drs)
+        return self
+
+    def set_difference(self, drs):
+        merging_data = set(drs.data)
+        my_data = set(self.data)
+        new_data = my_data - merging_data
+
+        self.set_data(new_data)
+        # Merge provenance
+        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        self.absorb_provenance(drs)
+
+        return self
+
+    #def extend_provenance(self, drs):
+    #    """
+    #    Check which elements of self are present in drs, and add provenance information from drs to self
+    #    :param drs:
+    #    :return:
+    #    """
+    #    return
 
     def set_fields_mode(self):
         self._mode = DRSMode.FIELDS
