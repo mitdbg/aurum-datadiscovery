@@ -87,11 +87,11 @@ class DDAPI:
         :param kws: collection (iterable) of keywords (strings)
         :return: the matches in the internal representation
         """
-        res = DRS([])
+        o_drs = DRS([])
         for kw in kws:
-            drs = self.keyword_search(kw)
-            self.union(res, drs)
-        return res
+            res_drs = self.keyword_search(kw)
+            o_drs = o_drs.absorb(res_drs)
+        return o_drs
 
     def schema_name_search(self, kw: str, max_results=10) -> DRS:
         """
@@ -110,11 +110,11 @@ class DDAPI:
         :param kws: collection (iterable) of keywords (strings)
         :return: a DRS
         """
-        res = DRS([])
+        o_drs = DRS([])
         for kw in kws:
-            drs = self.schema_name_search(kw)
-            self.union(res, drs)
-        return res
+            res_drs = self.schema_name_search(kw)
+            o_drs = o_drs.absorb(res_drs)
+        return o_drs
 
     def entity_search(self, kw: str, max_results=10) -> DRS:
         """
@@ -221,6 +221,7 @@ class DDAPI:
     def similar_entity_to_field(self, field: str) -> DRS:
         """
         Returns all the attributes/fields that represent entities similar to the provided field
+        TODO: future work, probably
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
@@ -455,7 +456,7 @@ class DDAPI:
     Function API
     """
 
-    def join_path(self, source, target):
+    def __join_path(self, source, target):
         """
         Provides the join path between the source and target fields, if any
         :param source: the source field
@@ -469,7 +470,7 @@ class DDAPI:
             return []
         return path
 
-    def schema_complement(self, source_name):
+    def __schema_complement(self, source_name):
         """
         Given a source of reference (e.g. a relational table) it uses information from
         other available tables (tables) to enrich the schema of the provided one -- to add columns
@@ -524,7 +525,7 @@ class DDAPI:
 
         return aprox
 
-    def find_tables_matching_schema(self, list_keywords, topk):
+    def __find_tables_matching_schema(self, list_keywords, topk):
         """
         Given a string with comma separated values, such as 'x, y, z', it tries to find
         tables in the data that contains as many of the attributes included in the original string,
