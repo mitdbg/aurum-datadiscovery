@@ -1,8 +1,42 @@
+from collections import namedtuple
 from enum import Enum
+import binascii
 import networkx as nx
-from knowledgerepr.fieldnetwork import Hit
 
 global_origin_id = 0
+
+BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
+
+
+class Hit(BaseHit):
+    def __hash__(self):
+        hsh = int(self.nid)
+        return hsh
+
+    def __eq__(self, other):
+        if isinstance(other, int):  # cover the case when id is provided directly
+            if self.nid == other:
+                return True
+        elif isinstance(other, Hit):  # cover the case of comparing a Node with a Hit
+            if self.nid == other.nid:
+                return True
+        elif self.nid == other.nid:  # cover the case of comparing two nodes
+            return True
+        return False
+
+
+def compute_field_id(source_name, field_name):
+    string = source_name + field_name
+    nid = binascii.crc32(bytes(string, encoding="UTF-8"))
+    return nid
+
+
+class Relation(Enum):
+    SCHEMA = 0
+    SCHEMA_SIM = 1
+    CONTENT_SIM = 2
+    ENTITY_SIM = 3
+    PKFK = 5
 
 
 class OP(Enum):
@@ -64,15 +98,16 @@ class Provenance:
                 self._p_graph.add_node(element)
         # We check operations that come with parameters
         elif op == OP.SCHNAME_LOOKUP or op == OP.ENTITY_LOOKUP or op == OP.KW_LOOKUP:
-            hit = Hit(global_origin_id, params[0], params[0], -1)
             global global_origin_id
+            hit = Hit(global_origin_id, params[0], params[0], -1)
             global_origin_id += 1
+            self._p_graph.add_node(hit)
         else:  # This all come with a Hit parameter
             hit = params[0]  # get the hit that comes with the op otherwise
-            n_org = self._p_graph.add_node(hit)  # we add the param
+            self._p_graph.add_node(hit)  # we add the param
             for element in data:  # now we connect the new node to data with the op
-                tgt = self._p_graph.add_node(element)
-                self._p_graph.add_edge(n_org, tgt)
+                self._p_graph.add_node(element)
+                self._p_graph.add_edge(hit, element, op)
 
 
 class DRS:
@@ -134,6 +169,9 @@ class DRS:
     def size(self):
         return len(self.data)
 
+    def invert_provenance(self):
+        return
+
     def absorb_provenance(self, drs):
         """
         Merge provenance of the input parameter into self, *not* the data.
@@ -167,7 +205,6 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.intersection(my_data)
-
         self.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
@@ -179,7 +216,6 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.union(my_data)
-
         self.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
@@ -190,21 +226,11 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = my_data - merging_data
-
         self.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         self.absorb_provenance(drs)
-
         return self
-
-    #def extend_provenance(self, drs):
-    #    """
-    #    Check which elements of self are present in drs, and add provenance information from drs to self
-    #    :param drs:
-    #    :return:
-    #    """
-    #    return
 
     def set_fields_mode(self):
         self._mode = DRSMode.FIELDS

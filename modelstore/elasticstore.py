@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 import config as c
 from enum import Enum
-from knowledgerepr.fieldnetwork import Hit
+from api.apiutils import Hit
 
 
 class KWType(Enum):

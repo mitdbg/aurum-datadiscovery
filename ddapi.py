@@ -1,13 +1,13 @@
 from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
-from knowledgerepr.fieldnetwork import Relation
-from knowledgerepr.fieldnetwork import Hit
-from knowledgerepr.fieldnetwork import compute_field_id as id_from
-from knowledgerepr import fieldnetwork
+from knowledgerepr.fieldnetwork import deserialize_network
 from api.apiutils import Operation
 from api.apiutils import OP
+from api.apiutils import Relation
 from api.apiutils import DRS
 from api.apiutils import DRSMode
+from api.apiutils import Hit
+from api.apiutils import compute_field_id as id_from
 
 store_client = None
 
@@ -377,7 +377,7 @@ class DDAPI:
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in a:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
@@ -691,7 +691,7 @@ def test_all():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
@@ -821,7 +821,7 @@ def test():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
 
     field1 = ('short_subjects_offered.csv', 'Responsible Faculty Name')
@@ -1049,7 +1049,7 @@ def test_g_prim():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
@@ -1071,7 +1071,7 @@ def test_functions():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
