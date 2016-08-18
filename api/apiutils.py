@@ -196,7 +196,7 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.union(my_data)
-        self.set_data(new_data)
+        self.set_data(list(new_data))
         # Merge provenance
         self.absorb_provenance(drs)
         return self
@@ -205,7 +205,7 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.intersection(my_data)
-        self.set_data(new_data)
+        self.set_data(list(new_data))
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
@@ -216,7 +216,7 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.union(my_data)
-        self.set_data(new_data)
+        self.set_data(list(new_data))
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         self.absorb_provenance(drs)
@@ -226,7 +226,7 @@ class DRS:
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = my_data - merging_data
-        self.set_data(new_data)
+        self.set_data(list(new_data))
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         self.absorb_provenance(drs)
