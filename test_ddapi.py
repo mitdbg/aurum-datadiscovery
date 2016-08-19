@@ -1,5 +1,6 @@
 import unittest
 from api.apiutils import DRS
+from api.apiutils import Relation
 from ddapi import API
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr.fieldnetwork import deserialize_network
@@ -278,15 +279,48 @@ class TestDDApiCombiner(unittest.TestCase):
     TC primitive API
     """
 
-    def test_paths_between(self):
+    def test_paths_between_field_mode(self):
         print(self._testMethodName)
 
-        return
+        field1 = ('All_olap2_uentity_desc_uses.csv', 'Entity Owner')
+        field2 = ('All_olap_entity_desc_uses.csv', 'Entity Owner')
+
+        drs1 = self.api.drs_from_raw_field(field1)
+        drs2 = self.api.drs_from_raw_field(field2)
+
+        res = self.api.paths_between(drs1, drs2, Relation.PKFK)
+
+        for el in res:
+            print(str(el))
+
+    def test_paths_between_table_mode(self):
+        print(self._testMethodName)
+
+        field1 = ('All_olap2_uentity_desc_uses.csv', 'Entity Owner')
+        field2 = ('All_olap_entity_desc_uses.csv', 'Entity Owner')
+
+        drs1 = self.api.drs_from_raw_field(field1)
+        drs2 = self.api.drs_from_raw_field(field2)
+
+        drs1.set_table_mode()
+        drs2.set_table_mode()
+
+        res = self.api.paths_between(drs1, drs2, Relation.PKFK)
+
+        for el in res:
+            print(str(el))
 
     def test_paths(self):
         print(self._testMethodName)
 
         return
+
+    """
+    Analytical API
+    """
+
+    def test_enumerate_all_pkfk(self):
+        self.api.enumerate_all_pkfk()
 
 
 if __name__ == "__main__":

@@ -92,7 +92,7 @@ class FieldNetwork:
 
     def enumerate_pkfk(self):
         for n in self.__G.nodes():
-            neighbors = self.neighbors((n.source_name, n.field_name), Relation.PKFK)
+            neighbors = self.neighbors_id(n, Relation.PKFK)
             for nid, sn, fn, score in neighbors:
                 print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
 
@@ -191,7 +191,7 @@ class FieldNetwork:
             o_drs = o_drs.absorb_provenance(table_neighbors_drs)
             neighbors_with_table = set()
             for n in table_neighbors_drs:
-                neighbors_of_n = self.neighbors_id(n.nid, rel)
+                neighbors_of_n = self.neighbors_id(n, rel)
                 o_drs = o_drs.absorb_provenance(neighbors_of_n)
                 for match in neighbors_of_n:
                     neighbors_with_table.add(match)
@@ -307,13 +307,13 @@ class FieldNetwork:
         return path
 
     def find_path_hit(self, source, target, relation):
-        path, o_drs = self.bidirectional_shortest_path(source, target, relation, True)  # field mode
+        o_drs = self.bidirectional_shortest_path(source, target, relation, True)  # field mode
         #drs = DRS(path)
         #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
         return o_drs
 
     def find_path_table(self, source: str, target: str, relation, api):
-        path, o_drs = self.bidirectional_shortest_path(source, target, relation, False, api=api)  # table mode
+        o_drs = self.bidirectional_shortest_path(source, target, relation, False, api=api)  # table mode
         #drs = DRS(path)
         #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
         return o_drs

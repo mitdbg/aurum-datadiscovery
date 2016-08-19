@@ -297,15 +297,6 @@ class DDAPI:
         :return: the intersection of the two provided iterable objects
         """
         assert(a.mode == b.mode)
-        #sa = set(a.data)
-        #sb = set(b.data)
-        #res = sa.intersection(sb)
-
-        #o_drs = DRS(list(res))
-        #o_drs = o_drs.extend_provenance(a)
-        #o_drs = o_drs.extend_provenance(b)
-
-        #return o_drs
         o_drs = a.intersection(b)
         return o_drs
 
@@ -317,13 +308,6 @@ class DDAPI:
         :return: the union of the two provided iterable objects
         """
         assert (a.mode == b.mode)
-        #res = set(a.data).union(set(b.data))
-
-        #o_drs = DRS(list(res))
-        #o_drs = o_drs.extend_provenance(a)
-        #o_drs = o_drs.extend_provenance(b)
-
-        #return o_drs
         o_drs = a.union(b)
         return o_drs
 
@@ -335,13 +319,6 @@ class DDAPI:
         :return: the union of the two provided iterable objects
         """
         assert (a.mode == b.mode)
-        #res = set(a.data) - set(b.data)
-
-        #o_drs = DRS(list(res))
-        #o_drs = o_drs.extend_provenance(a)
-        #o_drs = o_drs.extend_provenance(b)
-
-        #return o_drs
         o_drs = a.set_difference(b)
         return o_drs
 
@@ -350,6 +327,15 @@ class DDAPI:
     """
 
     def paths_between(self, a: DRS, b: DRS, primitives) -> DRS:
+        """
+        Is there a transitive relationship between any element in a with any element in b?
+        This functions finds the answer constrained on the primitive (singular for now) that is passed
+        as a parameter.
+        :param a:
+        :param b:
+        :param primitives:
+        :return:
+        """
         assert(a.mode == b.mode)
         o_drs = DRS([], Operation(OP.NONE))
         o_drs.absorb_provenance(a)
@@ -362,11 +348,18 @@ class DDAPI:
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in b:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives)
+                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
     def paths(self, a: DRS, primitives) -> DRS:
+        """
+        Is there any transitive relationship between any two elements in a?
+        This function finds the answer constrained on the primitive (singular for now) passed as parameter
+        :param a:
+        :param primitives:
+        :return:
+        """
         o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(a)
         if a.mode == DRSMode.FIELDS:
@@ -471,6 +464,14 @@ class DDAPI:
                  "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
                  "the field in the following way:")
         print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
+
+    """
+    Analytical functions
+    """
+
+    def enumerate_all_pkfk(self):
+        self.__network.enumerate_pkfk()
+
 
     """
     Function API
