@@ -167,6 +167,7 @@ def test_cardinality_propagation():
     networkbuilder.build_schema_relation(network, fields)
     end_schema = time.time()
     print("Total schema: {0}".format(str(end_schema - start_schema)))
+
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()

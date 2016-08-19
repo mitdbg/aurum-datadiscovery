@@ -47,6 +47,8 @@ class DDAPI:
         :return: a DRS with the source-field internal representation
         """
         hits = store_client.get_all_fields_of_source(source)
+        # FIXME: requires fixing the mismatch between ID computation in Java and Python
+        hits = [Hit(id_from(h.source_name, h.field_name), h.source_name, h.field_name, h.score) for h in hits]
         drs = DRS([x for x in hits], Operation(OP.ORIGIN))
         return drs
 
@@ -179,6 +181,9 @@ class DDAPI:
         :return: DRS
         """
         fields = self.drs_from_table(table)
+
+        test = id_from('Buildings.csv', 'Building Key')
+
         hits_drs = self.similar_schema_name_to(fields)
         return hits_drs
 
@@ -206,8 +211,7 @@ class DDAPI:
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        source, f = field
-        field_drs = self.drs_from_raw_field(f, source)
+        field_drs = self.drs_from_raw_field(field)
         hits_drs = self.similar_content_to(field_drs)
         return hits_drs
 
@@ -251,8 +255,7 @@ class DDAPI:
         :param field: the providef field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        source, f = field
-        field_drs = self.drs_from_raw_field(f, source)
+        field_drs = self.drs_from_raw_field(field)
         hits_drs = self.pkfk_of(field_drs)
         return hits_drs
 

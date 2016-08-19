@@ -10,7 +10,7 @@ class TestDDApiCombiner(unittest.TestCase):
     # create store handler
     store_client = StoreHandler()
     # read graph
-    path = 'test/network.pickle'
+    path = 'test/mitdwh.pickle'
     network = deserialize_network(path)
     api = API(network)
     api.init_store()
@@ -136,6 +136,20 @@ class TestDDApiCombiner(unittest.TestCase):
         for el in res:
             print(str(el))
 
+    def test_ids_functions(self):
+        print(self._testMethodName)
+
+        field = ('Buildings.csv', 'Building Key')
+        drs1 = self.api.drs_from_raw_field(field)
+
+        field = ('Building Key', 'Buildings.csv')
+        drs2 = self.api.drs_from_raw_field(field)
+
+        for el in drs1:
+            print(str(el))
+        for el in drs2:
+            print(str(el))
+
     def test_similar_schema_name_to_table(self):
         print(self._testMethodName)
 
@@ -149,32 +163,78 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_similar_schema_name_to(self):
         print(self._testMethodName)
 
-        return
+        field = ('Buildings.csv', 'Building Key')
+        res = self.api.similar_schema_name_to_field(field)
+
+        res = self.api.similar_schema_name_to(res)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     def test_similar_content_to_field(self):
         print(self._testMethodName)
 
-        return
+        field = ('Buildings.csv', 'Building Name')
+        res = self.api.similar_content_to_field(field)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
+
+    def test_similar_content_to_table(self):
+        print(self._testMethodName)
+
+        table = 'Buildings.csv'
+        res = self.api.similar_content_to_table(table)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     def test_similar_content_to(self):
         print(self._testMethodName)
 
-        return
+        field = ('Buildings.csv', 'Building Name')
+        res = self.api.similar_content_to_field(field)
+
+        res = self.api.similar_content_to(res)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     def test_pkfk_field(self):
         print(self._testMethodName)
 
-        return
+        field = ('Buildings.csv', 'Building Name')
+        res = self.api.pkfk_field(field)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     def test_pkfk_table(self):
         print(self._testMethodName)
 
-        return
+        table = 'Buildings.csv'
+        res = self.api.pkfk_table(table)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     def test_pkfk_of(self):
         print(self._testMethodName)
 
-        return
+        field = ('Buildings.csv', 'Building Name')
+        res = self.api.pkfk_field(field)
+
+        res = self.api.pkfk_of(res)
+
+        print("RES size: " + str(res.size()))
+        for el in res:
+            print(str(el))
 
     """
     Combiner API
@@ -183,40 +243,35 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_intersection(self):
         print(self._testMethodName)
 
-        return
-        #a = DRS([1, 2, 3])
-        #b = DRS([3, 4, 5])
-        #res = self.api.intersection(a, b)
-        #self.assertTrue(3 in res)
-        #self.assertTrue(2 not in res)
-        #self.assertTrue(1 not in res)
-        #self.assertTrue(5 not in res)
+        res1 = self.api.keyword_search("Madden", max_results=10)
+        res2 = self.api.keyword_search("Stonebraker", max_results=10)
+
+        res = res1.intersection(res2)
+
+        for el in res:
+            print(str(el))
 
     def test_union(self):
         print(self._testMethodName)
 
-        return
-        #a = DRS([1, 2, 3])
-        #b = DRS([3, 4, 5])
-        #res = self.api.union(a, b)
-        #self.assertTrue(3 in res)
-        #self.assertTrue(1 in res)
-        #self.assertTrue(2 in res)
-        #self.assertTrue(4 in res)
-        #self.assertTrue(5 in res)
+        res1 = self.api.keyword_search("Madden", max_results=10)
+        res2 = self.api.schema_name_search("Stonebraker", max_results=10)
+
+        res = res1.union(res2)
+
+        for el in res:
+            print(str(el))
 
     def test_difference(self):
         print(self._testMethodName)
 
-        return
-        #a = DRS([1, 2, 3, 4])
-        #b = DRS([3, 4, 5])
-        #res = self.api.difference(a, b)
-        #self.assertTrue(2 in res)
-        #self.assertTrue(1 in res)
-        #self.assertTrue(3 not in res)
-        #self.assertTrue(4 not in res)
-        #self.assertTrue(5 not in res)
+        res1 = self.api.keyword_search("Madden", max_results=10)
+        res2 = self.api.keyword_search("Stonebraker", max_results=10)
+
+        res = res1.set_difference(res2)
+
+        for el in res:
+            print(str(el))
 
 
     """
