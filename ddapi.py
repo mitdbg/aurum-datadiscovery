@@ -22,15 +22,16 @@ class DDAPI:
     """
     Seed API
     """
-    def drs_from_raw_field(self, field: str, source: str) -> DRS:
+    def drs_from_raw_field(self, field: (str, str)) -> DRS:
         """
         Given a field and source name, it returns a DRS with its representation
         :param field: a string with the name of the field
         :param source: a string with the name of the source
         :return: a DRS with the source-field internal representation
         """
-        nid = id_from(source, field)
-        h = Hit(nid, source, field, -1)
+        source, f = field
+        nid = id_from(source, f)
+        h = Hit(nid, source, f, -1)
         return self.drs_from_hit(h)
 
     def drs_from_hit(self, hit: Hit) -> DRS:
@@ -144,8 +145,7 @@ class DDAPI:
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        source, f = field
-        field_drs = self.drs_from_raw_field(f, source)
+        field_drs = self.drs_from_raw_field(field)
         hits_drs = self.schema_neighbors_of(field_drs)
         return hits_drs
 
@@ -168,12 +168,11 @@ class DDAPI:
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        source, f = field
-        field_drs = self.drs_from_raw_field(f, source)
+        field_drs = self.drs_from_raw_field(field)
         hits_drs = self.similar_schema_name_to(field_drs)
         return hits_drs
 
-    def similar_schema_name_to_table(self, table: (str, str)) -> DRS:
+    def similar_schema_name_to_table(self, table: str) -> DRS:
         """
         Returns all the attributes/fields with schema names similar to the fields of the given table
         :param table: the given table
