@@ -221,7 +221,7 @@ def _compare_text_columns_dist(doc1, doc2):
     # return similarity
 
 
-vect = TfidfVectorizer(min_df=1)
+vect = TfidfVectorizer(min_df=1, sublinear_tf=True, use_idf=True)
 
 def get_tfidf_docs(docs):
     st = time.time()

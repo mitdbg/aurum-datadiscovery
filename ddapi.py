@@ -472,6 +472,11 @@ class DDAPI:
     def enumerate_all_pkfk(self):
         self.__network.enumerate_pkfk()
 
+    def enumerate_all_schema_sim(self):
+        self.__network.enumerate_schema_sim()
+
+    def enumerate_all_content_sim(self):
+        self.__network.enumerate_content_sim()
 
     """
     Function API
@@ -1094,9 +1099,36 @@ def test_functions():
     for l in list_of_results:
         print(str(l))
 
+def report_relationships():
+    ## Prepare
+    # create store handler
+    store_client = StoreHandler()
+    # read graph
+    path = 'test/network.pickle'
+    network = deserialize_network(path)
+    api = API(network)
+    api.init_store()
+
+    print("SCHEMA-SIM")
+    api.enumerate_all_schema_sim()
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("CONTENT-SIM")
+    api.enumerate_all_content_sim()
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("PKFK")
+    api.enumerate_all_pkfk()
+
+
 if __name__ == '__main__':
 
     #test_all()
     #test()
     #test_g_prim()
-    test_functions()
+    #test_functions()
+    report_relationships()

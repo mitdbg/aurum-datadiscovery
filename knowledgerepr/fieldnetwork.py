@@ -6,7 +6,6 @@ from api.apiutils import OP
 from api.apiutils import Hit
 from api.apiutils import Relation
 from api.apiutils import compute_field_id
-#from ddapi import DDAPI
 
 
 def build_hit(sn, fn):
@@ -91,10 +90,31 @@ class FieldNetwork:
         return topk_nodes
 
     def enumerate_pkfk(self):
+        total_relationships = 0
         for n in self.__G.nodes():
             neighbors = self.neighbors_id(n, Relation.PKFK)
             for nid, sn, fn, score in neighbors:
+                total_relationships += 1
                 print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total PKFK relationships: " + str(total_relationships))
+
+    def enumerate_schema_sim(self):
+        total_relationships = 0
+        for n in self.__G.nodes():
+            neighbors = self.neighbors_id(n, Relation.SCHEMA_SIM)
+            for nid, sn, fn, score in neighbors:
+                total_relationships += 1
+                print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total SCHEMA-SIM relationships: " + str(total_relationships))
+
+    def enumerate_content_sim(self):
+        total_relationships = 0
+        for n in self.__G.nodes():
+            neighbors = self.neighbors_id(n, Relation.CONTENT_SIM)
+            for nid, sn, fn, score in neighbors:
+                total_relationships += 1
+                print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total CONTENT-SIM relationships: " + str(total_relationships))
 
     def get_op_from_relation(self, relation):
         if relation == Relation.CONTENT_SIM:
