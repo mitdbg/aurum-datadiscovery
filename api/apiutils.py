@@ -109,6 +109,84 @@ class Provenance:
                 self._p_graph.add_node(element)
                 self._p_graph.add_edge(hit, element, op)
 
+    def get_leafs_and_heads(self):
+        # Compute leafs and heads
+        # FIXME: cache this to avoid graph traversal every time
+        leafs = []
+        heads = []
+        for node in self._p_graph.nodes():
+            pre = self._p_graph.predecessors(node)
+            suc = self._p_graph.successors(node)
+            if len(pre) == 0:
+                leafs.append(node)
+            if len(suc) == 0:
+                heads.append(node)
+        return leafs, heads
+
+    def compute_paths_from_origin_to(self, a: Hit, leafs=None, heads=None):
+        if leafs is None and heads is None:
+            leafs, heads = self.get_leafs_and_heads()
+        all_paths = []
+        for l in leafs:
+            paths = nx.all_simple_paths(self._p_graph, l, a)
+            all_paths.extend(paths)
+        return all_paths
+
+    def compute_all_paths(self, leafs=None, heads=None):
+        if leafs is None and heads is None:
+            leafs, heads = self.get_leafs_and_heads()
+        all_paths = []
+        for h in heads:
+            paths = self.compute_paths_with(h)
+            all_paths.extend(paths)
+        return all_paths
+
+    def compute_paths_with(self, a: Hit, leafs=None, heads=None):
+        """
+        Given a node, a, in the provenance graph, return all paths that contain it.
+        :param a:
+        :return:
+        """
+        # FIXME: refactor with compute_paths_from_origin and all that
+        if leafs is None and heads is None:
+            leafs, heads = self.get_leafs_and_heads()
+        all_paths = []
+        if a in leafs:
+            for h in heads:
+                paths = nx.all_simple_paths(self._p_graph, a, h)
+                all_paths.extend(paths)
+        elif a in heads:
+            for l in leafs:
+                paths = nx.all_simple_paths(self._p_graph, l, a)
+                all_paths.extend(paths)
+        else:
+            upstreams = []
+            for l in leafs:
+                paths = nx.all_simple_paths(self._p_graph, l, a)
+                upstreams.extend(paths)
+            downstreams = []
+            for h in heads:
+                paths = nx.all_simple_paths(self._p_graph, a, h)
+                downstreams.extend(paths)
+
+            if len(downstreams) > len(upstreams):
+                for d in downstreams:
+                    for u in upstreams:
+                        all_paths.append(u + d)
+            else:
+                for u in upstreams:
+                    for d in downstreams:
+                        all_paths.append(u + d)
+        return all_paths
+
+    def explain_path(self, p: [Hit]):
+        """
+        Given a path in the provenance graph, traverse it, checking the edges that connect nodes and forming
+        a story that explains how p is a result.
+        :param p:
+        :return:
+        """
+        return
 
 class DRS:
 
@@ -240,16 +318,57 @@ class DRS:
         self._mode = DRSMode.TABLE
 
     def paths(self):
-        return
+        """
+        Returns all paths contained in the provenance graph
+        :return:
+        """
+        paths = self._provenance.compute_all_paths()
+        return paths
 
-    def path(self, a: str):
-        return
+    def path(self, a: Hit):
+        """
+        Return all paths that contain a
+        :param a:
+        :return:
+        """
+        paths = self._provenance.compute_paths_with(a)
+        return paths
 
-    def why(self, a: str):
-        return
+    def why(self, a: Hit):
+        """
+        Given a result, explain what were the initial results that lead to this result appearing here
+        :param a:
+        :return:
+        """
+        # Make sure a is in data
+        if a not in self.data:
+            print("The result does not exist")
+            return
 
-    def how(self, a: str):
-        return
+        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        paths = self._provenance.compute_paths_from_origin_to(a)
+        origins = []
+        for p in paths:
+            origins.append(p[0])
+
+    def how(self, a: Hit):
+        """
+        Given a result, explain how this result ended up forming part of the output
+        :param a:
+        :return:
+        """
+        # Make sure a is in data
+        if a not in self.data:
+            print("The result does not exist")
+            return
+
+        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        paths = self._provenance.compute_paths_from_origin_to(a)
+        explanations = []
+        for p in paths:
+            explanation = self._provenance.explain_path(p)
+            explanations.append(explanation)
+        return explanations
 
 
 if __name__ == "__main__":

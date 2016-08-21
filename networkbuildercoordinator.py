@@ -155,6 +155,7 @@ def plot_num():
     #plt.axis([0, 500, 0, 500])
     plt.show()
 
+
 def test_cardinality_propagation():
     network = FieldNetwork()
     store = StoreHandler()
