@@ -102,6 +102,9 @@ class Provenance:
             hit = Hit(global_origin_id, params[0], params[0], -1)
             global_origin_id += 1
             self._p_graph.add_node(hit)
+            for element in data:  # now we connect the new node to data with the op
+                self._p_graph.add_node(element)
+                self._p_graph.add_edge(hit, element, op)
         else:  # This all come with a Hit parameter
             hit = params[0]  # get the hit that comes with the op otherwise
             self._p_graph.add_node(hit)  # we add the param
@@ -186,7 +189,29 @@ class Provenance:
         :param p:
         :return:
         """
-        return
+        def get_name_from_hit(h: Hit):
+            name = h.source_name + ":" + h.field_name
+            return name
+
+        def get_string_from_edge_info(edge_info):
+            string = ""
+            for k, v in edge_info.items():
+                string = string + str(k) + " ,"
+            return string
+
+        explanation = ""
+
+        slice_range = lambda a: a + 1  # pairs
+        for idx in range(len(p)):
+            if (idx + 1) < len(p):
+                pair = p[idx::slice_range(idx)]
+                src, trg = pair
+                explanation = explanation + get_name_from_hit(src) + " -> "
+                edge_info = self._p_graph[src][trg]
+                explanation = explanation + get_string_from_edge_info(edge_info) + " -> " \
+                              + get_name_from_hit(trg) + '\n'
+        return explanation
+
 
 class DRS:
 
@@ -334,7 +359,7 @@ class DRS:
         paths = self._provenance.compute_paths_with(a)
         return paths
 
-    def why(self, a: Hit):
+    def why(self, a: Hit) -> [Hit]:
         """
         Given a result, explain what were the initial results that lead to this result appearing here
         :param a:
@@ -350,8 +375,9 @@ class DRS:
         origins = []
         for p in paths:
             origins.append(p[0])
+        return origins
 
-    def how(self, a: Hit):
+    def how(self, a: Hit) -> [str]:
         """
         Given a result, explain how this result ended up forming part of the output
         :param a:

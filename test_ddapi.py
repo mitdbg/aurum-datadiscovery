@@ -1,5 +1,4 @@
 import unittest
-from api.apiutils import DRS
 from api.apiutils import Relation
 from ddapi import API
 from modelstore.elasticstore import StoreHandler
