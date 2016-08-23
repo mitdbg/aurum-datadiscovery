@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 import config as c
 from enum import Enum
-from knowledgerepr.fieldnetwork import Hit
+from api.apiutils import Hit
 
 
 class KWType(Enum):
@@ -75,8 +75,8 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
-                yield id_source_and_file_name
+                hit = Hit(h['_id'], h['_source']['sourceName'], h['_source']['columnName'], -1)
+                yield hit
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',

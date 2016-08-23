@@ -1,8 +1,13 @@
 from modelstore.elasticstore import StoreHandler
 from modelstore.elasticstore import KWType
-from knowledgerepr.fieldnetwork import Relation
-from knowledgerepr import fieldnetwork
-from knowledgerepr.fieldnetwork import Hit
+from knowledgerepr.fieldnetwork import deserialize_network
+from api.apiutils import Operation
+from api.apiutils import OP
+from api.apiutils import Relation
+from api.apiutils import DRS
+from api.apiutils import DRSMode
+from api.apiutils import Hit
+from api.apiutils import compute_field_id as id_from
 
 store_client = None
 
@@ -15,30 +20,117 @@ class DDAPI:
         self.__network = network
 
     """
+    Seed API
+    """
+    def drs_from_raw_field(self, field: (str, str)) -> DRS:
+        """
+        Given a field and source name, it returns a DRS with its representation
+        :param field: a string with the name of the field
+        :param source: a string with the name of the source
+        :return: a DRS with the source-field internal representation
+        """
+        source, f = field
+        nid = id_from(source, f)
+        h = Hit(nid, source, f, -1)
+        return self.drs_from_hit(h)
+
+    def drs_from_hit(self, hit: Hit) -> DRS:
+        drs = DRS([hit], Operation(OP.ORIGIN))
+        return drs
+
+    @staticmethod
+    def drs_from_table(source: str) -> DRS:
+        """
+        Given a source, it retrieves all fields of the source and returns them
+        in the internal representation
+        :param source: string with the name of the table
+        :return: a DRS with the source-field internal representation
+        """
+        hits = store_client.get_all_fields_of_source(source)
+        # FIXME: requires fixing the mismatch between ID computation in Java and Python
+        hits = [Hit(id_from(h.source_name, h.field_name), h.source_name, h.field_name, h.score) for h in hits]
+        drs = DRS([x for x in hits], Operation(OP.ORIGIN))
+        return drs
+
+    def drs_from_table_hit(self, hit: Hit) -> DRS:
+        table = hit.source_name
+        hits = store_client.get_all_fields_of_source(table)
+        drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+        return drs
+
+    """
+    View API
+    """
+
+    def fields(self, drs: DRS) -> DRS:
+        """
+        Given a DRS, it configures it to field view (default)
+        :param drs: the DRS to configure
+        :return: the same DRS in the fields mode
+        """
+        drs.set_fields_mode()
+        return drs
+
+    def table(self, drs: DRS) -> DRS:
+        """
+        Given a DRS, it configures it to the table view
+        :param drs: the DRS to configure
+        :return: the same DRS in the table mode
+        """
+        drs.set_table_mode()
+        return drs
+
+    """
     Primitive API
     """
 
-    def keyword_search(self, kw, max_results=10):
+    def keyword_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the content of the data
         :param kw: the keyword to search
         :param max_results: the maximum number of results to return
-        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
-        return hits
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
+        return drs
 
-    def schema_search(self, kw, max_results=10):
+    def keywords_search(self, kws: [str]) -> DRS:
+        """
+        Given a collection of keywords, it returns the matches in the internal representation
+        :param kws: collection (iterable) of keywords (strings)
+        :return: the matches in the internal representation
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        for kw in kws:
+            res_drs = self.keyword_search(kw)
+            o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def schema_name_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the attribute/field names of the data
         :param kw: the keyword to search
         :param max_results: the maximum number of results to return
-        :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
+        :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
-        return hits
+        drs = DRS([x for x in hits], Operation(OP.SCHNAME_LOOKUP, params=[kw]))  # materialize generator
+        return drs
 
-    def entity_search(self, kw, max_results=10):
+    def schema_names_search(self, kws: [str]) -> DRS:
+        """
+        Given a collection of schema names, it returns the matches in the internal representation
+        :param kws: collection (iterable) of keywords (strings)
+        :return: a DRS
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        for kw in kws:
+            res_drs = self.schema_name_search(kw)
+            o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def entity_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the entities represented by the data
         :param kw: the keyword to search
@@ -46,79 +138,250 @@ class DDAPI:
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_results)
-        return hits
+        drs = DRS([x for x in hits], Operation(OP.ENTITY_LOOKUP, params=[kw]))  # materialize generator
+        return drs
 
-    def schema_neighbors(self, field):
+    def schema_neighbors(self, field: (str, str)) -> DRS:
         """
         Returns all the other attributes/fields that appear in the same relation than the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.SCHEMA)
-        return hits
+        field_drs = self.drs_from_raw_field(field)
+        hits_drs = self.schema_neighbors_of(field_drs)
+        return hits_drs
 
-    def similar_schema_fields(self, field):
+    def schema_neighbors_of(self, i_drs: DRS) -> DRS:
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.SCHEMA)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
+
+    def similar_schema_name_to_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields with schema names similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.SCHEMA_SIM)
-        return hits
+        field_drs = self.drs_from_raw_field(field)
+        hits_drs = self.similar_schema_name_to(field_drs)
+        return hits_drs
 
-    def similar_content_fields(self, field):
+    def similar_schema_name_to_table(self, table: str) -> DRS:
+        """
+        Returns all the attributes/fields with schema names similar to the fields of the given table
+        :param table: the given table
+        :return: DRS
+        """
+        fields = self.drs_from_table(table)
+
+        test = id_from('Buildings.csv', 'Building Key')
+
+        hits_drs = self.similar_schema_name_to(fields)
+        return hits_drs
+
+    def similar_schema_name_to(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.SCHEMA_SIM)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
+
+    def similar_content_to_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields with content similar to the provided field
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.CONTENT_SIM)
-        return hits
+        field_drs = self.drs_from_raw_field(field)
+        hits_drs = self.similar_content_to(field_drs)
+        return hits_drs
 
-    def similar_entities_fields(self, field):
+    def similar_content_to_table(self, table: str) -> DRS:
+        fields = self.drs_from_table(table)
+        hits_drs = self.similar_content_to(fields)
+        return hits_drs
+
+    def similar_content_to(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.CONTENT_SIM)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
+
+    def _similar_entity_to_field(self, field: (str, str)) -> [Hit]:
         """
         Returns all the attributes/fields that represent entities similar to the provided field
+        TODO: future work, probably
         :param field: the provided field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
         hits = self.__network.neighbors(field, Relation.ENTITY_SIM)
         return hits
 
-    def pkfk_fields(self, field):
+    def pkfk_field(self, field: (str, str)) -> DRS:
         """
         Returns all the attributes/fields that are primary-key or foreign-key candidates with respect to the
         provided field
         :param field: the providef field
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = self.__network.neighbors(field, Relation.PKFK)
-        return hits
+        field_drs = self.drs_from_raw_field(field)
+        hits_drs = self.pkfk_of(field_drs)
+        return hits_drs
+
+    def pkfk_table(self, table: str) -> DRS:
+        fields = self.drs_from_table(table)
+        hits_drs = self.pkfk_of(fields)
+        return hits_drs
+
+    def pkfk_of(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        # alternative provenance propagation
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+                # o_drs.extend_provenance(fields_drs)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.PKFK)
+            o_drs = o_drs.absorb(hits_drs)
+        # o_drs.extend_provenance(i_drs)
+        return o_drs
 
     """
     Combiner API
     """
 
-    def and_conjunctive(self, a, b):
+    def intersection(self, a: DRS, b: DRS) -> DRS:
         """
         Returns elements that are both in a and b
         :param a: an iterable object
         :param b: another iterable object
         :return: the intersection of the two provided iterable objects
         """
-        sa = set(a)
-        sb = set(b)
-        res = sa.intersection(sb)
-        return res
+        assert(a.mode == b.mode)
+        o_drs = a.intersection(b)
+        return o_drs
 
-    def or_conjunctive(self, a, b):
+    def union(self, a: DRS, b: DRS) -> DRS:
         """
         Returns elements that are in either a or b
         :param a: an iterable object
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
-        res = set(a).union(set(b))
-        return res
+        assert (a.mode == b.mode)
+        o_drs = a.union(b)
+        return o_drs
+
+    def difference(self, a: DRS, b: DRS) -> DRS:
+        """
+        Returns elements that are in either a or b
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the union of the two provided iterable objects
+        """
+        assert (a.mode == b.mode)
+        o_drs = a.set_difference(b)
+        return o_drs
+
+    """
+    TC Primitive API
+    """
+
+    def paths_between(self, a: DRS, b: DRS, primitives) -> DRS:
+        """
+        Is there a transitive relationship between any element in a with any element in b?
+        This functions finds the answer constrained on the primitive (singular for now) that is passed
+        as a parameter.
+        :param a:
+        :param b:
+        :param primitives:
+        :return:
+        """
+        assert(a.mode == b.mode)
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs.absorb_provenance(a)
+        o_drs.absorb_provenance(b)
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in b:  # h2 is a Hit
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in b:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
+                    o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def paths(self, a: DRS, primitives) -> DRS:
+        """
+        Is there any transitive relationship between any two elements in a?
+        This function finds the answer constrained on the primitive (singular for now) passed as parameter
+        :param a:
+        :param primitives:
+        :return:
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(a)
+        if a.mode == DRSMode.FIELDS:
+            for h1 in a:  # h1 is a Hit
+                for h2 in a:  # h2 is a Hit
+                    if h1 == h2:
+                        continue
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    o_drs = o_drs.absorb(res_drs)
+        elif a.mode == DRSMode.TABLE:
+            for h1 in a:  # h1 is a table: str
+                for h2 in a:  # h2 is a table: str
+                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
+                    o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
+    def traverse_field(self, a, primitives, max_hops) -> DRS:
+        return
+
+    """
+    DEPRECATED
+    """
 
     def get_path(self, source, target, relation):
         """
@@ -147,12 +410,79 @@ class DDAPI:
                     res.add(el1)
         return res
 
+    """
+    Convenience functions
+    """
+
+    def output_raw(self, result_set):
+        """
+        Given an iterable object it prints the raw elements
+        :param result_set: an iterable object
+        """
+        for r in result_set:
+            print(str(r))
+
+    def output(self, result_set):
+        """
+        Given an iterable object of elements of the form (nid, source_name, field_name, score) it prints
+        the source and field names for every element in the iterable
+        :param result_set: an iterable object
+        """
+        for r in result_set:
+            (nid, sn, fn, s) = r
+            print("source: " + str(sn) + "\t\t\t\t\t field: " + fn)
+
+    def help(self):
+        """
+        Prints general help information, or specific usage information of a function if provided
+        :param function: an optional function
+        """
+        from IPython.display import Markdown, display
+
+        def print_md(string):
+            display(Markdown(string))
+
+        # Check whether the request is for some specific function
+        #if function is not None:
+        #    print_md(self.function.__doc__)
+        # If not then offer the general help menu
+        #else:
+        print_md("### Help Menu")
+        print_md("You can use the system through an **API** object. API objects are returned"
+                 "by the *init_system* function, so you can get one by doing:")
+        print_md("***your_api_object = init_system('path_to_stored_model')***")
+        print_md("Once you have access to an API object there are a few concepts that are useful "
+                 "to use the API. **content** refers to actual values of a given field. For "
+                 "example, if you have a table with an attribute called __Name__ and values *Olu, Mike, Sam*, content "
+                 "refers to the actual values, e.g. Mike, Sam, Olu.")
+        print_md("**schema** refers to the name of a given field. In the previous example, schema refers to the word"
+                 "__Name__ as that's how the field is called.")
+        print_md("Finally, **entity** refers to the *semantic type* of the content. This is in experimental state. For "
+                 "the previous example it would return *'person'* as that's what those names refer to.")
+        print_md("Certain functions require a *field* as input. In general a field is specified by the source name ("
+                 "e.g. table name) and the field name (e.g. attribute name). For example, if we are interested in "
+                 "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
+                 "the field in the following way:")
+        print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
+
+    """
+    Analytical functions
+    """
+
+    def enumerate_all_pkfk(self):
+        self.__network.enumerate_pkfk()
+
+    def enumerate_all_schema_sim(self):
+        self.__network.enumerate_schema_sim()
+
+    def enumerate_all_content_sim(self):
+        self.__network.enumerate_content_sim()
 
     """
     Function API
     """
 
-    def join_path(self, source, target):
+    def __join_path(self, source, target):
         """
         Provides the join path between the source and target fields, if any
         :param source: the source field
@@ -166,7 +496,7 @@ class DDAPI:
             return []
         return path
 
-    def schema_complement(self, source_name):
+    def __schema_complement(self, source_name):
         """
         Given a source of reference (e.g. a relational table) it uses information from
         other available tables (tables) to enrich the schema of the provided one -- to add columns
@@ -208,7 +538,7 @@ class DDAPI:
         aprox = dict()
         # Find set of schema_sim for each field provided in the virtual schema
         for t in tokens:
-            hits = self.schema_search(t)
+            hits = self.schema_name_search(t)
             aprox[t] = hits
 
         # Find the most suitable table, by checking which of the previous fields are schema-connected,
@@ -221,7 +551,7 @@ class DDAPI:
 
         return aprox
 
-    def find_tables_matching_schema(self, list_keywords, topk):
+    def __find_tables_matching_schema(self, list_keywords, topk):
         """
         Given a string with comma separated values, such as 'x, y, z', it tries to find
         tables in the data that contains as many of the attributes included in the original string,
@@ -230,8 +560,9 @@ class DDAPI:
         :param topk: the maximum number of results to return
         :return: topk results or as many as available
         """
+
         def attr_similar_to(keyword, topk, score):
-            results = self.schema_search(keyword, max_results=100)
+            results = self.schema_name_search(keyword, max_results=100)
             r = [(x.source_name, x.field_name, x.score) for x in results]
             return r
 
@@ -426,7 +757,7 @@ def test_all():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
@@ -440,7 +771,7 @@ def test_all():
         print(str(r))
 
     print("Keyword search in schema names")
-    results = api.schema_search("MIT")
+    results = api.schema_name_search("MIT")
     for r in results:
         print(str(r))
 
@@ -467,35 +798,35 @@ def test_all():
     print("")
     print("Schema SIM")
     print("")
-    nodes = api.similar_schema_fields(field)
+    nodes = api.similar_schema_name_to_field(field)
     for node in nodes:
         print(node)
 
     print("")
     print("Content sim")
     print("")
-    nodes = api.similar_content_fields(field)
+    nodes = api.similar_content_to_field(field)
     for node in nodes:
         print(node)
 
     print("")
     print("Entity sim")
     print("")
-    nodes = api.similar_entities_fields(field)
+    nodes = api._similar_entity_to_field(field)
     for node in nodes:
         print(node)
 
-    print("")
-    print("Overlap")
-    print("")
-    nodes = api.overlap_fields(field)
-    for node in nodes:
-        print(node)
+    #print("")
+    #print("Overlap")
+    #print("")
+    #nodes = api.overlap_fields(field)
+    #for node in nodes:
+    #    print(node)
 
     print("")
     print("PKFK")
     print("")
-    nodes = api.pkfk_fields(field)
+    nodes = api.pkfk_field(field)
     for node in nodes:
         print(node)
 
@@ -506,9 +837,9 @@ def test_all():
     print("Combiner AND")
     results1 = api.keyword_search("Michael")
     results2 = api.keyword_search("Barbara")
-    final = api.and_conjunctive(results1, results2)
+    final = api.intersection(results1, results2)
 
-    print(str(len(final)))
+    print(str(final.size()))
 
     for el in final:
         print(str(el))
@@ -516,9 +847,9 @@ def test_all():
     print("Combiner OR")
     results1 = api.keyword_search("Michael")
     results2 = api.keyword_search("Barbara")
-    final = api.or_conjunctive(results1, results2)
+    final = api.union(results1, results2)
 
-    print(str(len(final)))
+    print(str(final.size()))
 
     for el in final:
         print(str(el))
@@ -538,7 +869,7 @@ def test_all():
 
     print("Add column")
     sn = "Hr_faculty_roster.csv"
-    list_of_results = api.schema_complement(sn)
+    list_of_results = api.__schema_complement(sn)
     for l in list_of_results:
         print(str(l))
 
@@ -556,7 +887,7 @@ def test():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
 
     field1 = ('short_subjects_offered.csv', 'Responsible Faculty Name')
@@ -567,7 +898,7 @@ def test():
     field6 = ('Fac_building.csv', 'Building Name Long')
     field7 = ('Fac_building.csv', 'Site')
 
-    similar_set = api.similar_content_fields(field7)
+    similar_set = api.similar_content_to_field(field7)
     ss = [x for x in similar_set]
     print(str(len(ss)))
     for el in ss:
@@ -784,7 +1115,7 @@ def test_g_prim():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
@@ -795,7 +1126,7 @@ def test_g_prim():
     print("Content sim")
     print("")
 
-    nodes = api.similar_content_fields(field)
+    nodes = api.similar_content_to_field(field)
     for node in nodes:
         print(node)
 
@@ -806,7 +1137,7 @@ def test_functions():
     store_client = StoreHandler()
     # read graph
     path = 'test/network.pickle'
-    network = fieldnetwork.deserialize_network(path)
+    network = deserialize_network(path)
     api = API(network)
     api.init_store()
 
@@ -826,9 +1157,36 @@ def test_functions():
     for l in list_of_results:
         print(str(l))
 
+def report_relationships():
+    ## Prepare
+    # create store handler
+    store_client = StoreHandler()
+    # read graph
+    path = 'test/network.pickle'
+    network = deserialize_network(path)
+    api = API(network)
+    api.init_store()
+
+    print("SCHEMA-SIM")
+    api.enumerate_all_schema_sim()
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("CONTENT-SIM")
+    api.enumerate_all_content_sim()
+    print(" ")
+    print(" ")
+    print(" ")
+    print(" ")
+    print("PKFK")
+    api.enumerate_all_pkfk()
+
+
 if __name__ == '__main__':
 
     #test_all()
     #test()
     #test_g_prim()
-    test_functions()
+    #test_functions()
+    report_relationships()

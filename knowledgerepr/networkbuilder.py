@@ -8,6 +8,7 @@ from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
 from nearpy.hashes import RandomDiscretizedProjections
 from nearpy.distances import CosineDistance
+from sklearn.decomposition import TruncatedSVD
 
 from sklearn.cluster import DBSCAN
 import numpy as np
@@ -17,15 +18,19 @@ from collections import defaultdict
 rbp = RandomBinaryProjections('default', 30)
 
 
-def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
+def create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_is_dense=False):
     # FIXME: bottleneck. parallelize this
     rowidx = 0
     for (nid, sn, fn) in fields:
         node1 = network.add_field(sn, fn)
-        sparse_row = tfidf.getrow(rowidx)
+        if tfidf_is_dense:
+            dense_row = tfidf[rowidx]
+            array = dense_row
+        else:
+            sparse_row = tfidf.getrow(rowidx)
+            dense_row = sparse_row.todense()
+            array = dense_row.A[0]
         rowidx += 1
-        dense_row = sparse_row.todense()
-        array = dense_row.A[0]
         N = text_engine.neighbours(array)
         print(str(sn) + str(fn) + " simto: ")
         if len(N) > 1:
@@ -42,7 +47,7 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation):
         print("")
 
 
-def index_in_text_engine(fields, tfidf, lsh_projections):
+def index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=False):
     num_features = tfidf.shape[1]
     print("tfidf shape: " + str(tfidf.shape))
     text_engine = Engine(num_features,
@@ -53,14 +58,25 @@ def index_in_text_engine(fields, tfidf, lsh_projections):
     rowidx = 0
     for (nid, sn, fn) in fields:
         key = str(sn) + "%&%&%" + str(fn)
-        sparse_row = tfidf.getrow(rowidx)
+        if tfidf_is_dense:
+            dense_row = tfidf[rowidx]
+            array = dense_row
+        else:
+            sparse_row = tfidf.getrow(rowidx)
+            dense_row = sparse_row.todense()
+            array = dense_row.A[0]
         rowidx += 1
-        dense_row = sparse_row.todense()
-        array = dense_row.A[0]
         text_engine.store_vector(array, key)
     et = time.time()
     print("total store text: " + str((et - st)))
     return text_engine
+
+
+def lsa_dimensionality_reduction(tfidf):
+    svd = TruncatedSVD(n_components=1000, random_state=42)
+    svd.fit(tfidf)
+    new_tfidf_vectors = svd.transform(tfidf)
+    return new_tfidf_vectors
 
 
 def build_schema_relation(network, fields):
@@ -122,7 +138,6 @@ def _build_schema_relation(network, fields):
                 n_inner = network.add_field(sn, fn, card)
                 network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 
-
 def build_schema_sim_relation(network, fields):
     docs = []
     for (nid, sn, fn) in fields:
@@ -144,6 +159,22 @@ def build_entity_sim_relation(network, fields, entities):
         tfidf = da.get_tfidf_docs(docs)
         text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
         create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
+
+
+def build_content_sim_relation_text_lsa(network, fields, signatures):
+    docs = []
+    for e in signatures:
+        docs.append(' '.join(e))
+
+    tfidf = da.get_tfidf_docs(docs)  # this may become redundant if we exploit the store characteristics
+
+    print("tfidf shape before LSA: " + str(tfidf.shape))
+    tfidf = lsa_dimensionality_reduction(tfidf)
+    print("tfidf shape after LSA: " + str(tfidf.shape))
+    # rbp = RandomBinaryProjections('default', 1000)
+    lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
+    text_engine = index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=True)
+    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.CONTENT_SIM, tfidf_is_dense=True)
 
 
 def build_content_sim_relation_text(network, fields, signatures):

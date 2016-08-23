@@ -50,8 +50,10 @@ public class Main {
 
 	public void startProfiler(ProfilerConfig pc) {
 		
+		long start = System.nanoTime();
+		
 		// Default is elastic, if we have more in the future, just pass a property to configure this
-		Store s = StoreFactory.makeElasticStore(pc);
+		Store s = StoreFactory.makeNativeElasticStore(pc);
 		
 		//for test purpose, use this and comment above line when elasticsearch is not configured
 		//Store s = StoreFactory.makeNullStore(pc);
@@ -75,15 +77,18 @@ public class Main {
 		}
 		
 		while(c.isTherePendingWork()) {
-			List<WorkerTaskResult> results = null;
-			do {
-				results = c.consumeResults();
-			} while(results.isEmpty());
-			
-			for(WorkerTaskResult wtr : results) {
-				s.storeDocument(wtr);
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
+		
+		c.stop();
+		
+		long end = System.nanoTime();
+		LOG.info("Finished processing in {}", (end - start));
 	}
 	
 	public static void main(String args[]) {
@@ -186,19 +191,21 @@ public class Main {
 	}
 	
 	private void readDirectoryAndCreateTasks(Conductor c, String pathToSources, String separator) {
-		try {
-			Files.walk(Paths.get(pathToSources)).forEach(filePath -> {
-			    if (Files.isRegularFile(filePath)) {
-			    	String path = filePath.getParent().toString()+File.separator;
-			    	String name = filePath.getFileName().toString();
-			    	WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
-			    	c.submitTask(wt);
-			    }
-			});
+		File folder = new File(pathToSources);
+		File[] filePaths = folder.listFiles();
+		int totalFiles = 0;
+		int tt = 0;
+		for(File f : filePaths) {
+			tt++;
+			if(f.isFile()) {
+				String path = f.getParent() + File.separator;
+				String name = f.getName();
+				TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(path, name, separator);
+				totalFiles++;
+				c.submitTask(tp);
+			}
 		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
 	}
 	
 	private void readTablesFromDBAndCreateTasks(Conductor c) {
@@ -220,7 +227,8 @@ public class Main {
 		for(String str : tables) {
 			LOG.info("Detected relational table: {}", str);
 			WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbType, ip, port, dbname, str, username, password);
-			c.submitTask(wt);
+			TaskPackage tp = TaskPackage.makeDBTaskPackage(dbType, ip, port, dbname, str, username, password);
+			c.submitTask(tp);
 		}
 	}
 	

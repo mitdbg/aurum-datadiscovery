@@ -1,46 +1,16 @@
-from collections import namedtuple
-from enum import Enum
 import operator
 import networkx as nx
-import binascii
-
-BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
-
-
-def compute_field_id(source_name, field_name):
-    string = source_name + field_name
-    nid = binascii.crc32(bytes(string, encoding="UTF-8"))
-    return nid
+from api.apiutils import DRS
+from api.apiutils import Operation
+from api.apiutils import OP
+from api.apiutils import Hit
+from api.apiutils import Relation
+from api.apiutils import compute_field_id
 
 
 def build_hit(sn, fn):
     nid = compute_field_id(sn, fn)
     return Hit(nid, sn, fn, -1)
-
-
-class Hit(BaseHit):
-    def __hash__(self):
-        hsh = int(self.nid)
-        return hsh
-
-    def __eq__(self, other):
-        if isinstance(other, int):  # cover the case when id is provided directly
-            if self.nid == other:
-                return True
-        elif isinstance(other, Hit):  # cover the case of comparing a Node with a Hit
-            if self.nid == other.nid:
-                return True
-        elif self.nid == other.nid:  # cover the case of comparing two nodes
-            return True
-        return False
-
-
-class Relation(Enum):
-    SCHEMA = 0
-    SCHEMA_SIM = 1
-    CONTENT_SIM = 2
-    ENTITY_SIM = 3
-    PKFK = 5
 
 
 class FieldNetwork:
@@ -120,36 +90,78 @@ class FieldNetwork:
         return topk_nodes
 
     def enumerate_pkfk(self):
+        total_relationships = 0
         for n in self.__G.nodes():
-            neighbors = self.neighbors((n.source_name, n.field_name), Relation.PKFK)
+            neighbors = self.neighbors_id(n, Relation.PKFK)
             for nid, sn, fn, score in neighbors:
+                total_relationships += 1
                 print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total PKFK relationships: " + str(total_relationships))
 
-    def neighbors(self, field, relation):
-        sn, cn = field
-        nid = compute_field_id(sn, cn)
+    def enumerate_schema_sim(self):
+        total_relationships = 0
+        for n in self.__G.nodes():
+            neighbors = self.neighbors_id(n, Relation.SCHEMA_SIM)
+            for nid, sn, fn, score in neighbors:
+                total_relationships += 1
+                print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total SCHEMA-SIM relationships: " + str(total_relationships))
+
+    def enumerate_content_sim(self):
+        total_relationships = 0
+        for n in self.__G.nodes():
+            neighbors = self.neighbors_id(n, Relation.CONTENT_SIM)
+            for nid, sn, fn, score in neighbors:
+                total_relationships += 1
+                print(str(n.source_name) + "-" + str(n.field_name) + " <-> " + str(sn) + "-" + str(fn))
+        print("Total CONTENT-SIM relationships: " + str(total_relationships))
+
+    def get_op_from_relation(self, relation):
+        if relation == Relation.CONTENT_SIM:
+            return OP.CONTENT_SIM
+        if relation == Relation.ENTITY_SIM:
+            return OP.ENTITY_SIM
+        if relation == Relation.PKFK:
+            return OP.PKFK
+        if relation == Relation.SCHEMA:
+            return OP.TABLE
+        if relation == Relation.SCHEMA_SIM:
+            return OP.SCHEMA_SIM
+
+    def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
+        nid = hit.nid
+        data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
             if str(k) == 'cardinality':
                 continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
-                yield Hit(k.nid, k.source_name, k.field_name, score)
-        return []
+                data.append(Hit(k.nid, k.source_name, k.field_name, score))
+        op = self.get_op_from_relation(relation)
+        o_drs = DRS(data, Operation(op, params=[hit]))
+        return o_drs
+
+    def neighbors(self, field, relation) -> DRS:
+        sn, cn = field
+        nid = compute_field_id(sn, cn)
+        return self.neighbors_id(nid, relation)
 
     def _bidirectional_pred_succ(self, source, target, relation):
-        """Bidirectional shortest path helper.
-           :returns (pred,succ,w) where
-           :param pred is a dictionary of predecessors from w to the source, and
-           :param succ is a dictionary of successors from w to the target.
         """
+        Bidirectional shortest path helper.
+        :returns (pred,succ,w) where
+        :param pred is a dictionary of predecessors from w to the source, and
+        :param succ is a dictionary of successors from w to the target.
+        """
+        o_drs = DRS([], Operation(OP.NONE))  # Works as a carrier of provenance
         # does BFS from both source and target and meets in the middle
         if target == source:
-            return ({target: None}, {source: None}, source)
+            return {target: None}, {source: None}, source, o_drs
 
         # we always have an undirected graph
-        Gpred = self.neighbors
-        Gsucc = self.neighbors
+        Gpred = self.neighbors_id
+        Gsucc = self.neighbors_id
 
         # predecesssor and successors in search
         pred = {source: None}
@@ -164,39 +176,123 @@ class FieldNetwork:
                 this_level = forward_fringe
                 forward_fringe = []
                 for v in this_level:
-                    n = (v.source_name, v.field_name)
-                    for w in Gsucc(n, relation):
+                    successors = Gsucc(v, relation)
+                    o_drs = o_drs.absorb(successors)  # Keep provenance
+                    for w in successors:
                         if w not in pred:
                             forward_fringe.append(w)
                             pred[w] = v
-                        if w in succ: return pred, succ, w  # found path
+                        if w in succ:
+                            return pred, succ, w, o_drs  # found path
             else:
                 this_level = reverse_fringe
                 reverse_fringe = []
                 for v in this_level:
-                    n = (v.source_name, v.field_name)
-                    for w in Gpred(n, relation):
+                    predecessors = Gpred(v, relation)
+                    o_drs = o_drs.absorb(predecessors)
+                    for w in predecessors:
                         if w not in succ:
                             succ[w] = v
                             reverse_fringe.append(w)
-                        if w in pred: return pred, succ, w  # found path
-
+                        if w in pred:
+                            return pred, succ, w, o_drs  # found path
         return None
 
-    def bidirectional_shortest_path(self, source, target, relation):
+    def _bidirectional_pred_succ_with_table_hops(self, source, target, relation, api):
         """
-        Return a list of nodes in a shortest path between source and target.
+        Bidirectional shortest path with table hops, i.e. two-relation exploration
+        :returns (pred,succ,w) where
+        :param pred is a dictionary of predecessors from w to the source, and
+        :param succ is a dictionary of successors from w to the target.
+        """
+        def neighbors_with_table_hop(hit, rel) -> DRS:
+            o_drs = DRS([], Operation(OP.NONE))
+            table_neighbors_drs = self.neighbors_id(hit, Relation.SCHEMA)
+            o_drs = o_drs.absorb_provenance(table_neighbors_drs)
+            neighbors_with_table = set()
+            for n in table_neighbors_drs:
+                neighbors_of_n = self.neighbors_id(n, rel)
+                o_drs = o_drs.absorb_provenance(neighbors_of_n)
+                for match in neighbors_of_n:
+                    neighbors_with_table.add(match)
+            o_drs = o_drs.set_data(neighbors_with_table)  # just assign data here
+            return o_drs
+
+        o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
+
+        # does BFS from both source and target and meets in the middle
+        src_drs = api.drs_from_table(source)
+        o_drs = o_drs.absorb(src_drs)
+        trg_drs = api.drs_from_table(target)
+        o_drs = o_drs.absorb(trg_drs)
+        src_drs.set_table_mode()
+        if target in src_drs:  # source and target are in the same table
+            return {x: None for x in trg_drs}, {x: None for x in src_drs}, [x for x in src_drs], o_drs
+        src_drs.set_fields_mode()
+        trg_drs.set_fields_mode()
+
+        # we always have an undirected graph
+        Gpred = neighbors_with_table_hop
+        Gsucc = neighbors_with_table_hop
+
+        # predecessor and successors in search
+        # pred = {source: None}
+        # succ = {target: None}
+        pred = {x: None for x in src_drs}
+        succ = {x: None for x in trg_drs}
+
+        # initialize fringes, start with forward
+        forward_fringe = [x for x in src_drs]
+        reverse_fringe = [x for x in trg_drs]
+
+        while forward_fringe and reverse_fringe:
+            if len(forward_fringe) <= len(reverse_fringe):
+                this_level = forward_fringe
+                forward_fringe = []
+                for v in this_level:
+                    successors = Gsucc(v, relation)
+                    o_drs = o_drs.absorb(successors)
+                    for w in successors:
+                        if w not in pred:
+                            forward_fringe.append(w)
+                            pred[w] = v
+                        if w in succ:
+                            return pred, succ, w, o_drs  # found path
+            else:
+                this_level = reverse_fringe
+                reverse_fringe = []
+                for v in this_level:
+                    predecessors = Gpred(v, relation)
+                    o_drs = o_drs.absorb(predecessors)
+                    for w in predecessors:
+                        if w not in succ:
+                            succ[w] = v
+                            reverse_fringe.append(w)
+                        if w in pred:
+                            return pred, succ, w, o_drs  # found path
+        return None
+
+    def bidirectional_shortest_path(self, source, target, relation: Relation, field_mode=True, api=None):
+        # FIXME: refactor, integrate this on caller, rather than having another indirection here
+        """
+        Return a list of nodes in a shortest path between source: Hit and target: Hit.
         :param source is one extreme of the potential path
         :param target is the other extreme of the potential path
         :return path is a list of Node/Hit
         Note: This code is based on the networkx implementation
         """
         # call helper to do the real work
-        results = self._bidirectional_pred_succ(source, target, relation)
+        if field_mode:
+            # source and target are Hit
+            results = self._bidirectional_pred_succ(source, target, relation)
+        else:
+            # source and target are strings with the table name
+            results = self._bidirectional_pred_succ_with_table_hops(source, target, relation, api)
         if results == None:  # check for None result
             return []
-        pred, succ, w = results
+        pred, succ, w, o_drs = results
 
+        """
         # build path from pred+w+succ
         path = []
         # from source to w
@@ -209,15 +305,38 @@ class FieldNetwork:
         while w is not None:
             path.append(w)
             w = succ[w]
-        return path
+        return path, o_drs
+        """
+
+        return o_drs
+
 
     def find_path(self, source, target, relation):
+        """
+        DEPRECATED
+        :param source:
+        :param target:
+        :param relation:
+        :return:
+        """
         (sn, fn) = source
         source = Hit(nid=0, source_name=sn, field_name=fn, score=0)
         (sn, fn) = target
         target = Hit(nid=0, source_name=sn, field_name=fn, score=0)
-        path = self.bidirectional_shortest_path(source, target, relation)
+        path = self.find_path_hit(source, target, relation)
         return path
+
+    def find_path_hit(self, source, target, relation):
+        o_drs = self.bidirectional_shortest_path(source, target, relation, True)  # field mode
+        #drs = DRS(path)
+        #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
+        return o_drs
+
+    def find_path_table(self, source: str, target: str, relation, api):
+        o_drs = self.bidirectional_shortest_path(source, target, relation, False, api=api)  # table mode
+        #drs = DRS(path)
+        #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
+        return o_drs
 
 
 def serialize_network(network, path):

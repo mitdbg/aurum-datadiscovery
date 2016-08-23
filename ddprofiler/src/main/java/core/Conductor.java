@@ -2,17 +2,12 @@ package core;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +24,12 @@ public class Conductor {
 	private ProfilerConfig pc;
 	private File errorLogFile;
 	
-	private BlockingQueue<WorkerTask> taskQueue;
-	private ExecutorService pool;
-	private List<Future<List<WorkerTaskResult>>> futures;
+	private BlockingQueue<TaskPackage> taskQueue;
+	private List<Worker> activeWorkers;
+	private List<Thread> workerPool;
 	private BlockingQueue<WorkerTaskResult> results;
-	
-	private boolean used = false;
-	
+	private BlockingQueue<ErrorPackage> errorQueue;
+		
 	private Store store;
 	
 	private Thread consumer;
@@ -43,32 +37,36 @@ public class Conductor {
 	// Cached entity analyzers (expensive initialization)
 	private Map<String, EntityAnalyzer> cachedEntityAnalyzers;
 	
+	// Metrics
+	private int totalTasksSubmitted = 0;
+	private int totalFailedTasks = 0;
+	private AtomicInteger totalProcessedTasks = new AtomicInteger();
+	private AtomicInteger totalColumns = new AtomicInteger();
+	
 	public Conductor(ProfilerConfig pc, Store s) {
 		this.pc = pc;
 		this.store = s;
 		this.taskQueue = new LinkedBlockingQueue<>();
-		this.futures = new ArrayList<>();
 		this.results = new LinkedBlockingQueue<>();
+		this.errorQueue = new LinkedBlockingQueue<>();
+		
 		int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
-		List<String> uniqueThreadNames = new ArrayList<>();
-		cachedEntityAnalyzers = new HashMap<>();
+		this.workerPool = new ArrayList<>();
+		this.activeWorkers = new ArrayList<>();
 		List<TokenNameFinderModel> modelList = new ArrayList<>();
 		List<String> modelNameList = new ArrayList<>();
+		EntityAnalyzer first = new EntityAnalyzer();
+		modelList = first.getCachedModelList();
+		modelNameList = first.getCachedModelNameList();
 		for(int i = 0; i < numWorkers; i++) {
-			String name = "Thread-"+new Integer(i).toString();
-			uniqueThreadNames.add(name);
-			if(modelList.isEmpty()) {
-				EntityAnalyzer first = new EntityAnalyzer();
-				cachedEntityAnalyzers.put(name, first); // pay cost of loading model
-				modelList = first.getCachedModelList();
-				modelNameList = first.getCachedModelNameList();
-			}
-			else{
-				cachedEntityAnalyzers.put(name, new EntityAnalyzer(modelList,modelNameList));
-			}
+			String name = "Worker-"+new Integer(i).toString();
+			EntityAnalyzer cached = new EntityAnalyzer(modelList, modelNameList);
+			Worker w = new Worker(this, pc, name, taskQueue, errorQueue, store, cached);
+			Thread t = new Thread(w, name);
+			workerPool.add(t);
+			activeWorkers.add(w);
 		}
-		this.pool = Executors.newFixedThreadPool(numWorkers, new DDThreadFactory(uniqueThreadNames));
-		LOG.info("Create worker pool, num workers: {}", numWorkers);
+		
 		this.runnable = new Consumer();
 		this.consumer = new Thread(runnable);
 		String errorLogFileName = pc.getString(ProfilerConfig.ERROR_LOG_FILE_NAME);
@@ -82,15 +80,21 @@ public class Conductor {
 	
 	public void stop() {
 		this.runnable.stop();
+		try {
+			this.consumer.join();
+		} 
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
-	public boolean submitTask(WorkerTask task) {
-		LOG.info("Task {} submitted for processing", task.getTaskId());
+	public boolean submitTask(TaskPackage task) {
+		totalTasksSubmitted++;
 		return taskQueue.add(task);
 	}
 	
 	public boolean isTherePendingWork() {
-		return !used || futures.size() > 0;
+		return this.totalProcessedTasks.get() < this.totalTasksSubmitted;
 	}
 	
 	public List<WorkerTaskResult> consumeResults() {
@@ -110,6 +114,15 @@ public class Conductor {
 		return availableResults;
 	}
 	
+	public void notifyProcessedTask(int numCols) {
+		totalProcessedTasks.incrementAndGet();
+		LOG.info(" {}/{} ", totalProcessedTasks, totalTasksSubmitted);
+		LOG.info(" Failed tasks: {} ", totalFailedTasks);
+		totalColumns.addAndGet(numCols);
+		LOG.info("Added: {} cols, total processed: {} ", numCols, totalColumns);
+		LOG.info("");
+	}
+		
 	class Consumer implements Runnable {
 
 		private boolean doWork = true;
@@ -121,55 +134,36 @@ public class Conductor {
 		@Override
 		public void run() {
 			
+			// Start workers
+			for(Thread worker : workerPool) {
+				worker.start();
+			}
+			
 			while(doWork) {
 				
-				// Attempt to consume new task
-				WorkerTask wt = null;
-				try {
-					wt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+				ErrorPackage ep;
+				try{
+					ep = errorQueue.poll(1000, TimeUnit.MILLISECONDS);
+					if(ep != null) {
+						String msg = ep.getErrorLog();
+						Utils.appendLineToFile(errorLogFile, msg);
+						LOG.warn(msg);
+						totalProcessedTasks.incrementAndGet(); // other processed/failed task
+						totalFailedTasks++;
+					}
 				}
-				catch (InterruptedException e) {
+				catch(InterruptedException e) {
 					e.printStackTrace();
 				}
-				
-				if(wt != null) {
-					// Create worker to handle the task and submit to the pool
-					Worker w = new Worker(wt, store, pc, cachedEntityAnalyzers);
-					Future<List<WorkerTaskResult>> future = pool.submit(w);
-					// Store future
-					futures.add(future);
-					used = true;
-				}
-				
-				// Check if there are futures that have finished at this point
-				Iterator<Future<List<WorkerTaskResult>>> it = futures.iterator();
-				while(it.hasNext()) {
-					Future<List<WorkerTaskResult>> f = it.next();
-					if(f.isDone()) {
-						try {
-							LOG.info("Remaining futures: {}", futures.size());
-							if(f.get() != null)
-								results.addAll(f.get());
-							it.remove();
-						} 
-						catch (InterruptedException e) {
-							e.printStackTrace();
-							it.remove(); // to make sure we make progress
-						}
-						catch (ExecutionException e) {
-							Throwable t = e.getCause();
-							String msg = t.getMessage();
-							Utils.appendLineToFile(errorLogFile, msg);
-							it.remove(); // to make sure we make progress
-							LOG.warn(msg);
-						}
-					}
-					else if(f.isCancelled()) {
-						LOG.warn("The task was cancelled: unknown reason");
-						it.remove();
-					}
-				}
 			}
+			
+			// Stop workers
+			for(Worker w : activeWorkers) {
+				w.stop();
+			}
+			
+			LOG.info("Consumer stopping");
+			
 		}
 	}
 

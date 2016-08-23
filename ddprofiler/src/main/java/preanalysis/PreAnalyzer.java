@@ -59,7 +59,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
 		// Calculate data types if not known yet
 		if (!knownDataTypes) {
 			calculateDataTypes(data);
-			//knownDataTypes = true;
 		}
 
 		Map<Attribute, Values> castData = new HashMap<>();

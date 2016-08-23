@@ -10,7 +10,6 @@ import java.util.List;
 
 import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
-import analysis.modules.DataType;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
 
