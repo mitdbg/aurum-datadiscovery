@@ -273,9 +273,6 @@ class DRS:
     def size(self):
         return len(self.data)
 
-    def invert_provenance(self):
-        return
-
     def absorb_provenance(self, drs):
         """
         Merge provenance of the input parameter into self, *not* the data.
@@ -359,6 +356,18 @@ class DRS:
         paths = self._provenance.compute_paths_with(a)
         return paths
 
+    def why_id(self, a: int) -> [Hit]:
+        """
+        Given the id of a Hit, explain what were the initial results that lead to this result appearing here
+        :param a:
+        :return:
+        """
+        hit = None
+        for x in self._data:
+            if x.nid == a:
+                hit = x
+        return self.why(hit)
+
     def why(self, a: Hit) -> [Hit]:
         """
         Given a result, explain what were the initial results that lead to this result appearing here
@@ -376,6 +385,18 @@ class DRS:
         for p in paths:
             origins.append(p[0])
         return origins
+
+    def how_id(self, a: int) -> [Hit]:
+        """
+        Given the id of a Hit, explain what were the initial results that lead to this result appearing here
+        :param a:
+        :return:
+        """
+        hit = None
+        for x in self._data:
+            if x.nid == a:
+                hit = x
+        return self.how(hit)
 
     def how(self, a: Hit) -> [str]:
         """
@@ -395,6 +416,24 @@ class DRS:
             explanation = self._provenance.explain_path(p)
             explanations.append(explanation)
         return explanations
+
+    """
+    Convenience functions
+    """
+
+    def print_tables(self):
+        mode = self.mode  # save state
+        self.set_table_mode()
+        for x in self:
+            print(x)
+        self._mode = mode  # recover state
+
+    def print_columns(self):
+        mode = self.mode  # save state
+        self.set_fields_mode()
+        for x in self:
+            print(x)
+        self._mode = mode  # recover state
 
 
 if __name__ == "__main__":
