@@ -2,15 +2,9 @@ package core;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import analysis.modules.EntityAnalyzer;
-import core.TaskPackage.TaskPackageType;
 import core.config.ProfilerConfig;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import store.Store;
@@ -32,11 +25,8 @@ public class Conductor {
 	private File errorLogFile;
 	
 	private BlockingQueue<TaskPackage> taskQueue;
-	@Deprecated
-	private ExecutorService pool;
+	private List<Worker> activeWorkers;
 	private List<Thread> workerPool;
-	@Deprecated
-	private List<Future<List<WorkerTaskResult>>> futures;
 	private BlockingQueue<WorkerTaskResult> results;
 	private BlockingQueue<ErrorPackage> errorQueue;
 		
@@ -57,12 +47,12 @@ public class Conductor {
 		this.pc = pc;
 		this.store = s;
 		this.taskQueue = new LinkedBlockingQueue<>();
-		this.futures = new ArrayList<>();
 		this.results = new LinkedBlockingQueue<>();
 		this.errorQueue = new LinkedBlockingQueue<>();
 		
 		int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
 		this.workerPool = new ArrayList<>();
+		this.activeWorkers = new ArrayList<>();
 		List<TokenNameFinderModel> modelList = new ArrayList<>();
 		List<String> modelNameList = new ArrayList<>();
 		EntityAnalyzer first = new EntityAnalyzer();
@@ -74,6 +64,7 @@ public class Conductor {
 			Worker w = new Worker(this, pc, name, taskQueue, errorQueue, store, cached);
 			Thread t = new Thread(w, name);
 			workerPool.add(t);
+			activeWorkers.add(w);
 		}
 		
 		this.runnable = new Consumer();
@@ -89,6 +80,12 @@ public class Conductor {
 	
 	public void stop() {
 		this.runnable.stop();
+		try {
+			this.consumer.join();
+		} 
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean submitTask(TaskPackage task) {
@@ -158,43 +155,15 @@ public class Conductor {
 				catch(InterruptedException e) {
 					e.printStackTrace();
 				}
-				
-//				// Check if there are futures that have finished at this point
-//				Iterator<Future<List<WorkerTaskResult>>> it = futures.iterator();
-//				while(it.hasNext()) {
-//					Future<List<WorkerTaskResult>> f = it.next();
-//					if(f.isDone()) {
-//						try {
-//							totalProcessedTasks++;
-//							LOG.info(" {}/{} ", totalProcessedTasks, totalTasksSubmitted);
-//							//LOG.info("Remaining futures: {}", futures.size());
-//							if(f.get() != null) {
-//								List<WorkerTaskResult> wtResults = f.get();
-//								int numColumnsInResult = wtResults.size();
-//								totalColumns += numColumnsInResult;
-//								LOG.info("Added: {} cols, total processed: {} ", numColumnsInResult, totalColumns);
-//								results.addAll(wtResults);
-//							}
-//							it.remove();
-//						} 
-//						catch (InterruptedException e) {
-//							e.printStackTrace();
-//							it.remove(); // to make sure we make progress
-//						}
-//						catch (ExecutionException e) {
-//							Throwable t = e.getCause();
-//							String msg = t.getMessage();
-//							Utils.appendLineToFile(errorLogFile, msg);
-//							it.remove(); // to make sure we make progress
-//							LOG.warn(msg);
-//						}
-//					}
-//					else if(f.isCancelled()) {
-//						LOG.warn("The task was cancelled: unknown reason");
-//						it.remove();
-//					}
-//				}
 			}
+			
+			// Stop workers
+			for(Worker w : activeWorkers) {
+				w.stop();
+			}
+			
+			LOG.info("Consumer stopping");
+			
 		}
 	}
 

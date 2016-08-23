@@ -40,13 +40,6 @@ public class Worker implements Runnable {
 	
 	// cached object
 	private EntityAnalyzer ea;
-	
-//	public Worker(WorkerTask task, Store store, ProfilerConfig pc, Map<String, EntityAnalyzer> cachedEntityAnalyzers) {
-//		this.task = task;
-//		this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
-//		this.store = store;
-//		this.cachedEntityAnalyzers = cachedEntityAnalyzers;
-//	}
 
 	public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<TaskPackage> taskQueue, BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
 		this.conductor = conductor;
@@ -67,6 +60,9 @@ public class Worker implements Runnable {
 		WorkerTask wt = null;
 		try {
 			TaskPackage tp = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+			if (tp == null) {
+				return null;
+			}
 			// Create real worker task on demand
 			if(tp.getType() == TaskPackageType.CSV) {
 				wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getPath(), tp.getName(), tp.getSeparator());
@@ -83,7 +79,7 @@ public class Worker implements Runnable {
 
 	@Override
 	public void run() {
-	//public List<WorkerTaskResult> call() throws ProfileException {
+		
 		while(doWork) {
 			try {
 				
@@ -107,9 +103,10 @@ public class Worker implements Runnable {
 				if(initData == null) {
 					LOG.warn("No data read from: {}", c.getSourceName());
 					task.close();
-					//return null;
 				}
+				
 				// Read initial records to figure out attribute types etc
+				//FIXME: readFirstRecords(initData, analyzers);
 				readFirstRecords(initData, analyzers);
 				
 				// Consume all remaining records from the connector
@@ -119,6 +116,7 @@ public class Worker implements Runnable {
 					indexText(data);
 					records = records + data.size();
 					// Do the processing
+					// FIXME: feedValuesToAnalyzers(data, analyzers);
 					feedValuesToAnalyzers(data, analyzers);
 					
 					// Read next chunk of data
@@ -126,7 +124,11 @@ public class Worker implements Runnable {
 				}
 				
 				// Get results and wrap them in a Result object
+				// FIXME: WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
 				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
+				
+//				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
+//				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
 				
 				task.close();
 				List<WorkerTaskResult> results = wtrf.get();
@@ -160,6 +162,7 @@ public class Worker implements Runnable {
 				}
 			}
 		}
+		LOG.info("THREAD: {} stopping", workerName);
 	}
 	
 	private void indexText(Map<Attribute, Values> data) {

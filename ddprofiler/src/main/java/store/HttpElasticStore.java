@@ -15,13 +15,14 @@ import io.searchbox.indices.CreateIndex;
 import io.searchbox.indices.mapping.PutMapping;
 
 
-public class ElasticStore implements Store {
+public class HttpElasticStore implements Store {
 
 	private JestClient client;
 	private JestClientFactory factory = new JestClientFactory();
 	private String serverUrl;
 	
-	public ElasticStore(ProfilerConfig pc) { 
+	
+	public HttpElasticStore(ProfilerConfig pc) { 
 		String storeServer = pc.getString(ProfilerConfig.STORE_SERVER);
 		int storePort = pc.getInt(ProfilerConfig.STORE_PORT);
 		this.serverUrl = "http://"+storeServer+":"+storePort;
@@ -133,7 +134,7 @@ public class ElasticStore implements Store {
 		Index index = new Index.Builder(source).index("profile").type("column").id(strId).build();
 		try {
 			client.execute(index);
-		} 
+		}
 		catch (IOException e) {
 			return false;
 		}

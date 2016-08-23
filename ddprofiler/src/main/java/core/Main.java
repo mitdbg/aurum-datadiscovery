@@ -50,8 +50,10 @@ public class Main {
 
 	public void startProfiler(ProfilerConfig pc) {
 		
+		long start = System.nanoTime();
+		
 		// Default is elastic, if we have more in the future, just pass a property to configure this
-		Store s = StoreFactory.makeElasticStore(pc);
+		Store s = StoreFactory.makeNativeElasticStore(pc);
 		
 		//for test purpose, use this and comment above line when elasticsearch is not configured
 		//Store s = StoreFactory.makeNullStore(pc);
@@ -81,16 +83,12 @@ public class Main {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-//			List<WorkerTaskResult> results = null;
-//			do {
-//				results = c.consumeResults();
-//			} while(results.isEmpty());
-//			
-//			for(WorkerTaskResult wtr : results) {
-//				s.storeDocument(wtr);
-//			}
-			
 		}
+		
+		c.stop();
+		
+		long end = System.nanoTime();
+		LOG.info("Finished processing in {}", (end - start));
 	}
 	
 	public static void main(String args[]) {

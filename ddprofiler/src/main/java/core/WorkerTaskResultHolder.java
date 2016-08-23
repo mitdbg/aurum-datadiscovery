@@ -7,12 +7,29 @@ import java.util.Map;
 import analysis.Analysis;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
+import analysis.modules.Entities;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 
 public class WorkerTaskResultHolder {
 
 	private List<WorkerTaskResult> results;
+	
+	/**
+	 * Used mostly for testing/profiling
+	 * @return
+	 */
+	public static List<WorkerTaskResult> makeFakeOne() {
+		List<WorkerTaskResult> rs = new ArrayList<>();
+		WorkerTaskResult wtr = new WorkerTaskResult(
+				-1,	"none",	"none",	"N", 100, 100, 0, 100, 50, 50, 50);
+		rs.add(wtr);
+		return rs;
+	}
+	
+	public WorkerTaskResultHolder(List<WorkerTaskResult> results) {
+		this.results = results;
+	}
 	
 	public WorkerTaskResultHolder(String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
 		List<WorkerTaskResult> rs = new ArrayList<>();
@@ -54,7 +71,8 @@ public class WorkerTaskResultHolder {
 			}
 			else if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = ((TextualAnalysis)an);
-				List<String> ents = ta.getEntities().getEntities();
+				Entities e = ta.getEntities();
+				List<String> ents = e.getEntities();
 				StringBuffer sb = new StringBuffer();
 				for(String str : ents) {
 					sb.append(str);

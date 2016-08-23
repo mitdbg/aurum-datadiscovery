@@ -1,6 +1,3 @@
-/**
- * 
- */
 package analysis;
 
 import analysis.modules.Entities;
@@ -12,4 +9,5 @@ import analysis.modules.Entities;
 public interface TextualAnalysis extends Analysis,  TextualDataConsumer {
 
 	public Entities getEntities();
+	
 }
