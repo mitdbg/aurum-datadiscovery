@@ -58,6 +58,15 @@ class DDAPI:
         drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
         return drs
 
+    def drs_expand_to_table(self, drs: DRS) -> DRS:
+        o_drs = DRS([], Operation(OP.NONE))
+        for h in drs:
+            table = h.source_name
+            hits = store_client.get_all_fields_of_source(table)
+            drs = DRS([x for x in hits], Operation(OP.TABLE, params=[h]))
+            o_drs.absorb(drs)
+        return o_drs
+
     """
     View API
     """
@@ -594,64 +603,6 @@ class DDAPI:
         # Create final output
         to_return = sorted(group_by_table_keyword.items(), key=lambda x: len(x[1]), reverse=True)
         return to_return[:topk]
-
-    """
-    Convenience functions
-    """
-
-    def output_raw(self, result_set):
-        """
-        Given an iterable object it prints the raw elements
-        :param result_set: an iterable object
-        """
-        for r in result_set:
-            print(str(r))
-
-    def output(self, result_set):
-        """
-        Given an iterable object of elements of the form (nid, source_name, field_name, score) it prints
-        the source and field names for every element in the iterable
-        :param result_set: an iterable object
-        """
-        seen = dict()
-        for r in result_set:
-            (nid, sn, fn, s) = r
-            if nid not in seen:
-                print("source: " + str(sn) + "\t\t\t\t\t\t field: " + fn)
-                seen[nid] = 0
-
-    def help(self):
-        """
-        Prints general help information, or specific usage information of a function if provided
-        :param function: an optional function
-        """
-        from IPython.display import Markdown, display
-
-        def print_md(string):
-            display(Markdown(string))
-
-        # Check whether the request is for some specific function
-        #if function is not None:
-        #    print_md(self.function.__doc__)
-        # If not then offer the general help menu
-        #else:
-        print_md("### Help Menu")
-        print_md("You can use the system through an **API** object. API objects are returned"
-                 "by the *init_system* function, so you can get one by doing:")
-        print_md("***your_api_object = init_system('path_to_stored_model')***")
-        print_md("Once you have access to an API object there are a few concepts that are useful "
-                 "to use the API. **content** refers to actual values of a given field. For "
-                 "example, if you have a table with an attribute called __Name__ and values *Olu, Mike, Sam*, content "
-                 "refers to the actual values, e.g. Mike, Sam, Olu.")
-        print_md("**schema** refers to the name of a given field. In the previous example, schema refers to the word"
-                 "__Name__ as that's how the field is called.")
-        print_md("Finally, **entity** refers to the *semantic type* of the content. This is in experimental state. For "
-                 "the previous example it would return *'person'* as that's what those names refer to.")
-        print_md("Certain functions require a *field* as input. In general a field is specified by the source name ("
-                 "e.g. table name) and the field name (e.g. attribute name). For example, if we are interested in "
-                 "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
-                 "the field in the following way:")
-        print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
 
 
 class ResultFormatter:

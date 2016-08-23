@@ -435,6 +435,14 @@ class DRS:
             print(x)
         self._mode = mode  # recover state
 
+    def pretty_print_columns(self):
+        mode = self.mode  # save state
+        self.set_fields_mode()
+        for x in self:
+            string = "SOURCE: " + x.source_name + "\t\t\t FIELD " + x.field_name
+            print(string)
+        self._mode = mode  # recover state
+
 
 if __name__ == "__main__":
 
