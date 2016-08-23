@@ -29,8 +29,8 @@ def main():
 
     # Entity_sim relation
     start_entity_sim = time.time()
-    fields, entities = store.get_all_fields_entities()
-    networkbuilder.build_entity_sim_relation(network, fields, entities)
+    #fields, entities = store.get_all_fields_entities()
+    #networkbuilder.build_entity_sim_relation(network, fields, entities)
     end_entity_sim = time.time()
     print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
@@ -77,7 +77,7 @@ def main():
 
     """
 
-    path = "test/partialchembl.pickle"
+    path = "test/mitdwh.pickle"
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -212,7 +212,7 @@ def test_cardinality_propagation():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
     #test()
     #plot_num()
-    test_cardinality_propagation()
+    #test_cardinality_propagation()
