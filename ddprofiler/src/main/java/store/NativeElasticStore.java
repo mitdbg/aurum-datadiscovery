@@ -228,9 +228,12 @@ public class NativeElasticStore implements Store {
 			e.printStackTrace();
 		}
 		
-		IndexResponse response = nativeClient.prepareIndex("profile", "column", strId)
-		        .setSource(builder)
-		        .get();
+		IndexRequest ir = new IndexRequest("profile", "column", strId).source(builder);
+		bulkProcessor.add(ir);
+		
+//		IndexResponse response = nativeClient.prepareIndex("profile", "column", strId)
+//		        .setSource(builder)
+//		        .get();
 		
 		return true;
 	}
@@ -238,6 +241,7 @@ public class NativeElasticStore implements Store {
 	@Override
 	public void tearDownStore() {
 		client.shutdownClient();
+		bulkProcessor.close();
 		nativeClient.close();
 		factory = null;
 		client = null;

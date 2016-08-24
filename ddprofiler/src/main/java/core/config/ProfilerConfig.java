@@ -58,12 +58,12 @@ public class ProfilerConfig extends Config {
 				.define(NUM_POOL_THREADS, Type.INT, 4, Importance.LOW, NUM_POOL_THREADS_DOC)
 				.define(NUM_RECORD_READ, Type.INT, 100, Importance.MEDIUM, NUM_RECORD_READ_DOC)
 				.define(STORE_TYPE, Type.INT, 2, Importance.MEDIUM, STORE_TYPE_DOC)
-				.define(STORE_SERVER, Type.STRING, "localhost", Importance.HIGH, STORE_SERVER_DOC)
+				.define(STORE_SERVER, Type.STRING, "127.0.0.1", Importance.HIGH, STORE_SERVER_DOC)
 				.define(STORE_HTTP_SERVER, Type.INT, 9200, Importance.HIGH, STORE_HTTP_SERVER_DOC)
 				.define(STORE_PORT, Type.INT, 9300, Importance.HIGH, STORE_PORT_DOC)
 				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
 				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC)
-				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC)
+				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error_profiler.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC)
 				.define(CSV_SEPARATOR, Type.STRING, ",", Importance.MEDIUM, CSV_SEPARATOR_DOC);
 	}
 	
