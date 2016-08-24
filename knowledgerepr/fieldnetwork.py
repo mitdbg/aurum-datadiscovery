@@ -282,8 +282,8 @@ class FieldNetwork:
         else:
             # source and target are strings with the table name
             results = self._bidirectional_pred_succ_with_table_hops(source, target, relation, api)
-        if results == None:  # check for None result
-            return []
+        if results is None:  # check for None result
+            return DRS([], Operation(OP.NONE))
         pred, succ, w, o_drs = results
 
         """
