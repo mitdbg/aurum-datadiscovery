@@ -2,6 +2,7 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.display import Markdown, display
 import sys
 
+from api.reporting import Report
 from knowledgerepr import fieldnetwork
 from ddapi import API
 
@@ -17,9 +18,10 @@ def init_system(path_to_serialized_model):
     print_md('Loading: *' + str(path_to_serialized_model) + "*")
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     api = API(network)
+    reporting = Report(network)
     api.init_store()
     api.help()
-    return api
+    return api, reporting
 
 
 def main(path_to_serialized_model):

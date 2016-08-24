@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from collections import namedtuple
 from enum import Enum
 import binascii
@@ -269,6 +270,12 @@ class DRS:
 
     def get_provenance(self):
         return self._provenance
+
+    def visualize_provenance(self, labels=False):
+        if labels:
+            nx.draw_networkx(self.get_provenance().prov_graph())
+        else:
+            nx.draw(self.get_provenance().prov_graph())
 
     def size(self):
         return len(self.data)
