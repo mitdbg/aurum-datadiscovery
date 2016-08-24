@@ -7,15 +7,26 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.action.bulk.BackoffPolicy;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import core.Conductor;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
 import io.searchbox.client.JestClient;
@@ -28,17 +39,24 @@ import io.searchbox.indices.mapping.PutMapping;
 import static org.elasticsearch.common.xcontent.XContentFactory.*;
 
 public class NativeElasticStore implements Store {
+	
+	final private Logger LOG = LoggerFactory.getLogger(NativeElasticStore.class.getName());
 
 	// Although native client, we still use Jest for put mappings, which happens only once
 	private JestClient client;
 	private JestClientFactory factory = new JestClientFactory();
 	private String serverUrl;
+	private String storeServer;
+	private int storePort;
 	
 	private Client nativeClient;
+	private BulkProcessor bulkProcessor;
 	
 	public NativeElasticStore(ProfilerConfig pc) { 
 		String storeServer = pc.getString(ProfilerConfig.STORE_SERVER);
 		int storePort = pc.getInt(ProfilerConfig.STORE_PORT);
+		this.storeServer = storeServer;
+		this.storePort = storePort;
 		this.serverUrl = "http://"+storeServer+":"+storePort;
 	}
 	
@@ -52,20 +70,45 @@ public class NativeElasticStore implements Store {
 		client = factory.getObject();
 		
 		// Create the native client
-//		Node eNode = NodeBuilder.nodeBuilder()
-//				.local(true)
-//				.settings(Settings.settingsBuilder().put("path.home", "/Users/ra-mit/Downloads/elasticsearch-2.3.3"))
-//				.client(true)
-//				.build();
-//		nativeClient = eNode.client();
-		
 		try {
-			//nativeClient = TransportClient.builder().settings(settings).build().addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300));
-			nativeClient = TransportClient.builder().build().addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300));
+			nativeClient = TransportClient.builder().build()
+					.addTransportAddress(new InetSocketTransportAddress(
+							InetAddress.getByName(storeServer), storePort));
 		} 
 		catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
+		
+		// Create bulk processor
+		bulkProcessor = BulkProcessor.builder(nativeClient, 
+				new BulkProcessor.Listener() {
+			
+			private long startRequest;
+			private long endRequest;
+			
+			@Override
+			public void beforeBulk(long executionId, BulkRequest request) {
+				startRequest = System.currentTimeMillis();
+			}
+			
+			@Override
+			public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
+				endRequest = System.currentTimeMillis();
+				LOG.info("Done bulk index request, took: {}", (endRequest - startRequest));
+			}
+			
+			@Override
+			public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
+							
+			}
+			
+		})	
+		.setBulkActions(-1)
+		.setBulkSize(new ByteSizeValue(50, ByteSizeUnit.MB))
+		.setFlushInterval(TimeValue.timeValueSeconds(5))
+		.setConcurrentRequests(1) // Means requests are queud while a bulkrequest is in progress
+		.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) // just default 
+		.build();
 		
 		// Create the appropriate mappings for the indices
 		PutMapping textMapping = new PutMapping.Builder(
@@ -138,18 +181,22 @@ public class NativeElasticStore implements Store {
 						.field("id", strId)
 						.field("sourceName", sourceName)
 						.field("columnName", columnName)
-						// TODO: is it more efficient if we build an array here instead
+						// TODO: is it more efficient if we build an array here instead?
 						.field("text", v)
 					.endObject();
-		} 
+		}
 		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		IndexResponse response = nativeClient.prepareIndex("text", "column")
-		        .setSource(builder)
-		        .get();
+		// Using bulkProcessor
+		IndexRequest ir = new IndexRequest("text", "column").source(builder);
+		bulkProcessor.add(ir);
+		
+//		IndexResponse response = nativeClient.prepareIndex("text", "column")
+//		        .setSource(builder)
+//		        .get();
 		
 		return true;
 	}

@@ -25,12 +25,18 @@ public class ProfilerConfig extends Config {
 
 	public static final String NUM_RECORD_READ = "num.record.read";
 	private static final String NUM_RECORD_READ_DOC = "Number of records to read per interaction with the data sources";
+	
+	public static final String STORE_TYPE = "store.type";
+	private static final String STORE_TYPE_DOC = "Configures store type: NULL(0), ELASTIC_HTTP(1), ELASTIC_NATIVE(2)";
 
+	public static final String STORE_HTTP_SERVER = "store.http.server";
+	private static final String STORE_HTTP_SERVER_DOC = "Server HTTP port for stores that support it";
+	
 	public static final String STORE_SERVER = "store.server";
 	private static final String STORE_SERVER_DOC = "Server name or IP where the store lives";
 	
 	public static final String STORE_PORT = "store.port";
-	private static final String STORE_PORT_DOC = "Server port where the store listens";
+	private static final String STORE_PORT_DOC = "Port where the store listens";
 	
 	public static final String SOURCES_TO_ANALYZE_FOLDER = "sources.folder.path";
 	private static final String SOURCES_TO_ANALYZE_FOLDER_DOC = "Path to a folder with files to analyze";
@@ -51,8 +57,10 @@ public class ProfilerConfig extends Config {
 				.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC)
 				.define(NUM_POOL_THREADS, Type.INT, 4, Importance.LOW, NUM_POOL_THREADS_DOC)
 				.define(NUM_RECORD_READ, Type.INT, 100, Importance.MEDIUM, NUM_RECORD_READ_DOC)
+				.define(STORE_TYPE, Type.INT, 2, Importance.MEDIUM, STORE_TYPE_DOC)
 				.define(STORE_SERVER, Type.STRING, "localhost", Importance.HIGH, STORE_SERVER_DOC)
-				.define(STORE_PORT, Type.INT, 9200, Importance.HIGH, STORE_PORT_DOC)
+				.define(STORE_HTTP_SERVER, Type.INT, 9200, Importance.HIGH, STORE_HTTP_SERVER_DOC)
+				.define(STORE_PORT, Type.INT, 9300, Importance.HIGH, STORE_PORT_DOC)
 				.define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
 				.define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".", Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC)
 				.define(ERROR_LOG_FILE_NAME, Type.STRING, "error.log", Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC)
