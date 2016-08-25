@@ -32,11 +32,11 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_i
             array = dense_row.A[0]
         rowidx += 1
         N = text_engine.neighbours(array)
-        print(str(sn) + str(fn) + " simto: ")
-        if len(N) > 1:
-            print(" ")
-            for (data, label, value) in N:
-                print(str(label) + " value: " + str(value))
+        #print(str(sn) + str(fn) + " simto: ")
+        #if len(N) > 1:
+        #    print(" ")
+        #    for (data, label, value) in N:
+        #        print(str(label) + " value: " + str(value))
         if len(N) > 1:
             for n in N:
                 (data, label, value) = n
@@ -44,7 +44,7 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_i
                 node2 = network.add_field(tokens[0], tokens[1])
                 if node1.nid != node2.nid:
                     network.add_relation(node1, node2, relation, value)
-        print("")
+        #print("")
 
 
 def index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=False):
@@ -223,7 +223,8 @@ def build_pkfk_relation(network):
     for n in network.enumerate_fields():
         seen.add(n)
         n_card = network.get_cardinality_of(n)
-        neighborhood = network.neighbors((n.source_name, n.field_name), Relation.CONTENT_SIM)
+        # neighborhood = network.neighbors((n.source_name, n.field_name), Relation.CONTENT_SIM) #  old
+        neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
         for ne in neighborhood:
             if ne not in seen and ne is not n:
                 ne_card = network.get_cardinality_of(ne)
