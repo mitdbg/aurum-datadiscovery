@@ -5,7 +5,9 @@ import celeryconfig as CC
 from dataanalysis import dataanalysis as da
 from modelstore import mongomodelstore as MS
 
-app = Celery('ddworker', backend=CC.CELERY_RESULT_BACKEND, broker=CC.BROKER_URL)
+app = Celery('ddworker', backend=CC.CELERY_RESULT_BACKEND,
+             broker=CC.BROKER_URL)
+
 
 class State():
     _concepts = 0
@@ -20,15 +22,18 @@ class State():
 
 state = State()
 
+
 @app.task()
 def distribute_concepts(concepts):
     state.concepts = concepts
     print("Responsible for: " + str(len(concepts)) + " concepts")
 
+
 @app.task()
 def init_db(dbname):
     MS.init(dbname, create_index=False)
     print("Initialized db: " + str(dbname))
+
 
 @app.task()
 def compute_index(tasks):
@@ -49,7 +54,7 @@ def compute_index(tasks):
             # Compute similarity
             sim = None
             if c_type != datatype:
-                continue # incomparable different types
+                continue  # incomparable different types
             if c_type is 'N':
                 sim = da.compare_pair_num_columns(c_values, icol)
             if c_type is 'T':
@@ -66,9 +71,10 @@ def compute_index(tasks):
             if ove:
                 if c not in ove_m:
                     ove_m[c] = []
-                ove_m[c].append(concept) 
+                ove_m[c].append(concept)
                 #ove_m[concept].append(c)
     return (sim_m, ove_m)
+
 
 @app.task
 def test(name):

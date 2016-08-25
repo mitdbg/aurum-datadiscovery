@@ -22,6 +22,7 @@ class DDAPI:
     """
     Seed API
     """
+
     def drs_from_raw_field(self, field: (str, str)) -> DRS:
         """
         Given a field and source name, it returns a DRS with its representation
@@ -47,8 +48,10 @@ class DDAPI:
         :return: a DRS with the source-field internal representation
         """
         hits = store_client.get_all_fields_of_source(source)
-        # FIXME: requires fixing the mismatch between ID computation in Java and Python
-        hits = [Hit(id_from(h.source_name, h.field_name), h.source_name, h.field_name, h.score) for h in hits]
+        # FIXME: requires fixing the mismatch between ID computation in Java
+        # and Python
+        hits = [Hit(id_from(h.source_name, h.field_name),
+                    h.source_name, h.field_name, h.score) for h in hits]
         drs = DRS([x for x in hits], Operation(OP.ORIGIN))
         return drs
 
@@ -101,7 +104,8 @@ class DDAPI:
         :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
-        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
+        drs = DRS([x for x in hits], Operation(
+            OP.KW_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
     def keywords_search(self, kws: [str]) -> DRS:
@@ -124,7 +128,8 @@ class DDAPI:
         :return: returns a DRS
         """
         hits = store_client.search_keywords(kw, KWType.KW_SCHEMA, max_results)
-        drs = DRS([x for x in hits], Operation(OP.SCHNAME_LOOKUP, params=[kw]))  # materialize generator
+        drs = DRS([x for x in hits], Operation(
+            OP.SCHNAME_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
     def schema_names_search(self, kws: [str]) -> DRS:
@@ -146,8 +151,10 @@ class DDAPI:
         :param max_results: the maximum number of results to return
         :return: returns a list of Hit elements of the form (id, source_name, field_name, score)
         """
-        hits = store_client.search_keywords(kw, KWType.KW_ENTITIES, max_results)
-        drs = DRS([x for x in hits], Operation(OP.ENTITY_LOOKUP, params=[kw]))  # materialize generator
+        hits = store_client.search_keywords(
+            kw, KWType.KW_ENTITIES, max_results)
+        drs = DRS([x for x in hits], Operation(
+            OP.ENTITY_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
     def schema_neighbors(self, field: (str, str)) -> DRS:
@@ -357,7 +364,8 @@ class DDAPI:
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in b:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
+                    res_drs = self.__network.find_path_table(
+                        h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
@@ -381,7 +389,8 @@ class DDAPI:
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in a:  # h2 is a table: str
-                    res_drs = self.__network.find_path_table(h1, h2, primitives, self)
+                    res_drs = self.__network.find_path_table(
+                        h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
@@ -472,7 +481,8 @@ class DDAPI:
                  "e.g. table name) and the field name (e.g. attribute name). For example, if we are interested in "
                  "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
                  "the field in the following way:")
-        print("field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
+        print(
+            "field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
 
     """
     Analytical functions
@@ -498,8 +508,10 @@ class DDAPI:
         :param target: the target field
         :return: the join path between source and target if any
         """
-        first_class_path = self.__network.find_path(source, target, Relation.PKFK)
-        second_class_path = self.__network.find_path(source, target, Relation.CONTENT_SIM)
+        first_class_path = self.__network.find_path(
+            source, target, Relation.PKFK)
+        second_class_path = self.__network.find_path(
+            source, target, Relation.CONTENT_SIM)
         path = first_class_path.extend(second_class_path)
         if path is None:
             return []
@@ -601,7 +613,8 @@ class DDAPI:
                     continue
 
         # Create final output
-        to_return = sorted(group_by_table_keyword.items(), key=lambda x: len(x[1]), reverse=True)
+        to_return = sorted(group_by_table_keyword.items(),
+                           key=lambda x: len(x[1]), reverse=True)
         return to_return[:topk]
 
 
@@ -626,7 +639,8 @@ class ResultFormatter:
             for (nid, sn, fn) in all_fields:
                 colrepr = {
                     'colname': fn,
-                    'samples': store_client.peek_values((sn, fn), 15),  # ['fake1', 'fake2'], p.peek((fname, c), 15),
+                    # ['fake1', 'fake2'], p.peek((fname, c), 15),
+                    'samples': store_client.peek_values((sn, fn), 15),
                     'selected': set_selected(fn)
                 }
                 colsrepr.append(colrepr)
@@ -702,6 +716,7 @@ class API(DDAPI):
         # create store handler
         global store_client
         store_client = StoreHandler()
+
 
 def test_all():
     # create store handler
@@ -833,6 +848,7 @@ def test_all():
         for value in v:
             print(str(value))
 
+
 def test():
     # create store handler
     store_client = StoreHandler()
@@ -855,15 +871,20 @@ def test():
     for el in ss:
         print(str(el))
 
-
     ### test vectors from signatures with 25 term
 
-    v1 = ['asada', 'haruhiko', 'mark', 'cynthia', 'dow', 'dutta', 'watenpaugh', 'stewart', 'david', 'caso', 'krzysztof', 'haywood', 'qingyan', 'kausel', 'troxel', 'tarkowski', 'hadjiconstantin', 'rene', 'arindam', 'jame', 'gibbon', 'eduardo', 'joe', 'wodiczko', 'john']
-    v2 = ['carmichael', 'peter', 'jackson', 'rene', 'fitzgerald', 'cynthia', 'mohr', 'thoma', 'stewart', 'michael', 'david', 'caso', 'jame', 'georg', 'sue', 'sonenberg', 'ann', 'harri', 'mark', 'peterson', 'jean', 'murrai', 'daniel', 'john', 'zhiyuan']
-    v3 = ['jane', 'jaim', 'totten', 'paradi', 'yuehua', 'margeri', 'ellen', 'bishwapriya', 'stewart', 'jame', 'peirson', 'charl', 'sabin', 'dan', 'crocker', 'monika', 'perair', 'resnick', 'dunphi', 'levet', 'sanyal', 'samuel', 'jenkin', 'burn', 'fintel']
-    v4 = ['kemp', 'peter', 'sadock', 'ayumi', 'lissett', 'fravel', 'nagatomi', 'ellen', 'kardar', 'tegmark', 'michael', 'david', 'jame', 'ann', 'crocker', 'goethert', 'stephen', 'friedman', 'mehrotra', 'robert', 'lee', 'geraldin', 'daniel', 'john', 'grimm']
-    v5 = ['sewel', 'peter', 'roylanc', 'smith', 'tonegawa', 'donald', 'alan', 'sawin', 'michael', 'david', 'caso', 'hein', 'georg', 'peirson', 'kausel', 'alvin', 'temin', 'arthur', 'hobb', 'harri', 'scott', 'nigel', 'samuel', 'linn', 'susumu']
-    v6 = ['belcher', 'schulz', 'ochsendorf', 'gruber', 'yue', 'schuh', 'chung', 'van', 'singer', 'leiserson', 'white', 'verghes', 'wang', 'dedon', 'sussman', 'grossman', 'miller', 'bowr', 'stephanopoulo', 'lozano', 'paxson', 'sarma', 'sanyal', 'kaiser', 'lee']
+    v1 = ['asada', 'haruhiko', 'mark', 'cynthia', 'dow', 'dutta', 'watenpaugh', 'stewart', 'david', 'caso', 'krzysztof', 'haywood', 'qingyan',
+          'kausel', 'troxel', 'tarkowski', 'hadjiconstantin', 'rene', 'arindam', 'jame', 'gibbon', 'eduardo', 'joe', 'wodiczko', 'john']
+    v2 = ['carmichael', 'peter', 'jackson', 'rene', 'fitzgerald', 'cynthia', 'mohr', 'thoma', 'stewart', 'michael', 'david', 'caso',
+          'jame', 'georg', 'sue', 'sonenberg', 'ann', 'harri', 'mark', 'peterson', 'jean', 'murrai', 'daniel', 'john', 'zhiyuan']
+    v3 = ['jane', 'jaim', 'totten', 'paradi', 'yuehua', 'margeri', 'ellen', 'bishwapriya', 'stewart', 'jame', 'peirson', 'charl',
+          'sabin', 'dan', 'crocker', 'monika', 'perair', 'resnick', 'dunphi', 'levet', 'sanyal', 'samuel', 'jenkin', 'burn', 'fintel']
+    v4 = ['kemp', 'peter', 'sadock', 'ayumi', 'lissett', 'fravel', 'nagatomi', 'ellen', 'kardar', 'tegmark', 'michael', 'david',
+          'jame', 'ann', 'crocker', 'goethert', 'stephen', 'friedman', 'mehrotra', 'robert', 'lee', 'geraldin', 'daniel', 'john', 'grimm']
+    v5 = ['sewel', 'peter', 'roylanc', 'smith', 'tonegawa', 'donald', 'alan', 'sawin', 'michael', 'david', 'caso', 'hein',
+          'georg', 'peirson', 'kausel', 'alvin', 'temin', 'arthur', 'hobb', 'harri', 'scott', 'nigel', 'samuel', 'linn', 'susumu']
+    v6 = ['belcher', 'schulz', 'ochsendorf', 'gruber', 'yue', 'schuh', 'chung', 'van', 'singer', 'leiserson', 'white', 'verghes',
+          'wang', 'dedon', 'sussman', 'grossman', 'miller', 'bowr', 'stephanopoulo', 'lozano', 'paxson', 'sarma', 'sanyal', 'kaiser', 'lee']
 
     d1 = ' '.join(v1)
     d2 = ' '.join(v2)
@@ -926,12 +947,18 @@ def test():
 
     ## Check vectors from signatures with 50 term
 
-    v1 = ['ayumi', 'steven', 'nichola', 'dunphi', 'dagmar', 'sadock', 'daniel', 'geraldin', 'chiang', 'jae', 'goethert', 'lee', 'min', 'ben', 'paulin', 'grimm', 'jaeger', 'ann', 'grave', 'david', 'fravel', 'arian', 'soto', 'ian', 'mehrotra', 'spirn', 'robert', 'peter', 'jame', 'john', 'terri', 'tegmark', 'nagatomi', 'maier', 'harri', 'stephen', 'ellen', 'lissett', 'mehran', 'culot', 'michael', 'joseph', 'patricia', 'crocker', 'levet', 'kardar', 'kemp', 'susskind', 'friedman', 'reinhard']
-    v2 = ['zemba', 'hashemi', 'frederick', 'fernandez', 'jona', 'garri', 'robert', 'mark', 'saka', 'millon', 'heghnar', 'gibbon', 'harold', 'haruhiko', 'leist', 'caso', 'david', 'william', 'john', 'schrenk', 'kausel', 'mc', 'belang', 'arindam', 'jame', 'stewart', 'chen', 'brisson', 'dutta', 'rene', 'cynthia', 'naginski', 'reiner', 'qingyan', 'dubowski', 'eduardo', 'asada', 'haywood', 'troxel', 'joe', 'tarkowski', 'dow', 'watenpaugh', 'jarzombek', 'christin', 'krzysztof', 'nannaji', 'joan', 'wodiczko', 'hadjiconstantin']
-    v3 = ['sanyal', 'amarasingh', 'rene', 'j', 'daniel', 'perair', 'william', 'mark', 'schneider', 'bishwapriya', 'kenneth', 'cui', 'ferreira', 'donald', 'jaim', 'thoma', 'caso', 'david', 'jo', 'sue', 'jackson', 'arthur', 'brown', 'mohr', 'yue', 'robert', 'peter', 'chen', 'stewart', 'john', 'charl', 'ann', 'carmichael', 'peterson', 'sonenberg', 'cynthia', 'henni', 'harri', 'zhiyuan', 'georg', 'jame', 'janet', 'cohen', 'frederick', 'michael', 'paul', 'jean', 'linda', 'fitzgerald', 'murrai']
-    v4 = ['wilson', 'cohen', 'linn', 'rene', 'daniel', 'herbert', 'tonegawa', 'sewel', 'hobb', 'schneider', 'scott', 'kenneth', 'peirson', 'alan', 'donald', 'thoma', 'caso', 'david', 'jeffrei', 'john', 'arthur', 'kausel', 'mc', 'smith', 'peter', 'jame', 'chen', 'alvin', 'w', 'joshua', 'harri', 'gregori', 'eduardo', 'georg', 'nigel', 'g', 'temin', 'sawin', 'roylanc', 'michael', 'samuel', 'susan', 'hein', 'susumu', 'ronald', 's', 'roger', 'richard', 'bruce', 'jack']
-    v5 = ['henri', 'sanyal', 'robert', 'perair', 'dunphi', 'elizabeth', 'jame', 'iren', 'lawrenc', 'margeri', 'totten', 'levet', 'sabin', 'monika', 'stewart', 'liu', 'ellen', 'fintel', 'charl', 'burn', 'bishwapriya', 'jenkin', 'peter', 'jane', 'michael', 'samuel', 'jaim', 'yuehua', 'von', 'crocker', 'paradi', 'kai', 'richard', 'dan', 'resnick', 'peirson']
-    v6 = ['winston', 'verghes', 'yue', 'sanyal', 'miller', 'stephanopoulo', 'doyl', 'singer', 'kaiser', 'chen', 'hu', 'freeman', 'zhang', 'paxson', 'von', 'lee', 'wang', 'schulz', 'ochsendorf', 'gruber', 'perez', 'chung', 'white', 'grossman', 'sussman', 'van', 'smith', 'lozano', 'ting', 'cohen', 'leiserson', 'schuh', 'sarma', 'johnson', 'rose', 'hart', 'bowr', 'ross', 'dedon', 'william', 'thompson', 'belcher', 'zhao']
+    v1 = ['ayumi', 'steven', 'nichola', 'dunphi', 'dagmar', 'sadock', 'daniel', 'geraldin', 'chiang', 'jae', 'goethert', 'lee', 'min', 'ben', 'paulin', 'grimm', 'jaeger', 'ann', 'grave', 'david', 'fravel', 'arian', 'soto', 'ian', 'mehrotra', 'spirn',
+          'robert', 'peter', 'jame', 'john', 'terri', 'tegmark', 'nagatomi', 'maier', 'harri', 'stephen', 'ellen', 'lissett', 'mehran', 'culot', 'michael', 'joseph', 'patricia', 'crocker', 'levet', 'kardar', 'kemp', 'susskind', 'friedman', 'reinhard']
+    v2 = ['zemba', 'hashemi', 'frederick', 'fernandez', 'jona', 'garri', 'robert', 'mark', 'saka', 'millon', 'heghnar', 'gibbon', 'harold', 'haruhiko', 'leist', 'caso', 'david', 'william', 'john', 'schrenk', 'kausel', 'mc', 'belang', 'arindam', 'jame', 'stewart',
+          'chen', 'brisson', 'dutta', 'rene', 'cynthia', 'naginski', 'reiner', 'qingyan', 'dubowski', 'eduardo', 'asada', 'haywood', 'troxel', 'joe', 'tarkowski', 'dow', 'watenpaugh', 'jarzombek', 'christin', 'krzysztof', 'nannaji', 'joan', 'wodiczko', 'hadjiconstantin']
+    v3 = ['sanyal', 'amarasingh', 'rene', 'j', 'daniel', 'perair', 'william', 'mark', 'schneider', 'bishwapriya', 'kenneth', 'cui', 'ferreira', 'donald', 'jaim', 'thoma', 'caso', 'david', 'jo', 'sue', 'jackson', 'arthur', 'brown', 'mohr', 'yue',
+          'robert', 'peter', 'chen', 'stewart', 'john', 'charl', 'ann', 'carmichael', 'peterson', 'sonenberg', 'cynthia', 'henni', 'harri', 'zhiyuan', 'georg', 'jame', 'janet', 'cohen', 'frederick', 'michael', 'paul', 'jean', 'linda', 'fitzgerald', 'murrai']
+    v4 = ['wilson', 'cohen', 'linn', 'rene', 'daniel', 'herbert', 'tonegawa', 'sewel', 'hobb', 'schneider', 'scott', 'kenneth', 'peirson', 'alan', 'donald', 'thoma', 'caso', 'david', 'jeffrei', 'john', 'arthur', 'kausel', 'mc', 'smith',
+          'peter', 'jame', 'chen', 'alvin', 'w', 'joshua', 'harri', 'gregori', 'eduardo', 'georg', 'nigel', 'g', 'temin', 'sawin', 'roylanc', 'michael', 'samuel', 'susan', 'hein', 'susumu', 'ronald', 's', 'roger', 'richard', 'bruce', 'jack']
+    v5 = ['henri', 'sanyal', 'robert', 'perair', 'dunphi', 'elizabeth', 'jame', 'iren', 'lawrenc', 'margeri', 'totten', 'levet', 'sabin', 'monika', 'stewart', 'liu', 'ellen', 'fintel',
+          'charl', 'burn', 'bishwapriya', 'jenkin', 'peter', 'jane', 'michael', 'samuel', 'jaim', 'yuehua', 'von', 'crocker', 'paradi', 'kai', 'richard', 'dan', 'resnick', 'peirson']
+    v6 = ['winston', 'verghes', 'yue', 'sanyal', 'miller', 'stephanopoulo', 'doyl', 'singer', 'kaiser', 'chen', 'hu', 'freeman', 'zhang', 'paxson', 'von', 'lee', 'wang', 'schulz', 'ochsendorf', 'gruber', 'perez',
+          'chung', 'white', 'grossman', 'sussman', 'van', 'smith', 'lozano', 'ting', 'cohen', 'leiserson', 'schuh', 'sarma', 'johnson', 'rose', 'hart', 'bowr', 'ross', 'dedon', 'william', 'thompson', 'belcher', 'zhao']
 
     d1 = ' '.join(v1)
     d2 = ' '.join(v2)
@@ -994,12 +1021,18 @@ def test():
 
     ## Check vectors from signatures with 100 term
 
-    v1 = ['gregori', 'levet', 'brouillett', 'fravel', 'susskind', 'nanci', 'ayumi', 'm', 'correa', 'faeri', 'david', 'fernandez', 'sadock', 'dagmar', 'murga', 'ben', 'mehrotra', 'kardar', 'twardowski', 'lissett', 'alar', 'ian', 'grove', 'judith', 'thoma', 'culot', 'mikel', 'geraldin', 'patricia', 'friedman', 'tegmark', 'sarah', 'grimm', 'orit', 'movassaghi', 'kemp', 'autor', 'chakraborti', 'daniel', 'georg', 'parag', 'paul', 'lee', 'grave', 'mariusz', 'harri', 'patrick', 'soto', 'roi', 'wallon', 'stroock', 'levitov', 'mehran', 'crocker', 'terri', 'johann', 'hadjiconstantin', 'ellen', 'kedar', 'reinhard', 'joseph', 'peter', 'arian', 'edward', 'layzer', 'jaeger', 'thompson', 'jame', 'nagatomi', 'kocur', 'jung', 'nichola', 'szold', 'michael', 'wornel', 'akintund', 'dunphi', 'jae', 'john', 'goethert', 'paulin', 'min', 'chri', 'inam', 'steven', 'sabin', 'chiang', 'spirn', 'max', 'denni', 'aseem', 'hosoi', 'j', 'ann', 'toomr', 'robert', 'nondita', 'gang', 'stephen', 'maier']
-    v2 = ['nannaji', 'eduardo', 'rabbat', 'arindam', 'ceyer', 'janet', 'dow', 'william', 'stewart', 'haruhiko', 'reiner', 'david', 'fernandez', 'tarkowski', 'leist', 'erika', 'klau', 'ghoniem', 'hadjiconstantin', 'gill', 'sodini', 'charl', 'henri', 'mari', 'bath', 'schrenk', 'troxel', 'joan', 'haywood', 'saka', 'ahm', 'caso', 'gibbon', 'mitchel', 'kausel', 'dubowski', 'asada', 'hemond', 'qingyan', 'millon', 'frederick', 'rene', 'pratt', 'naginski', 'hashemi', 'bale', 'cynthia', 'nichola', 'garri', 'john', 'ernst', 'mark', 'watenpaugh', 'carl', 'jame', 'lallit', 'jona', 'brisson', 'jarzombek', 'boyc', 'michael', 'robert', 'nasser', 'belang', 'cravalho', 'ernest', 'mc', 'chen', 'christin', 'yanna', 'h', 'donald', 'steven', 'sylvia', 'zemba', 'krzysztof', 'ioanni', 'harold', 'hardt', 'heghnar', 'j', 'anand', 'wodiczko', 'w', 'joe', 'stephen', 'dutta']
-    v3 = ['henni', 'william', 'carmichael', 'baggero', 'jean', 'koster', 'sanyal', 'bishwapriya', 'david', 'kenneth', 'linda', 'burchfiel', 'sonenberg', 'jackson', 'cohen', 'chorov', 'zhiyuan', 'charl', 'judith', 'thoma', 'jo', 'richard', 'edward', 'wheaton', 'gyftopoulo', 'mujid', 'caso', 'allen', 'vandiv', 'daniel', 'georg', 'leonard', 'merrick', 'perair', 'janet', 'paul', 'alan', 'rubner', 'dick', 'harri', 'bernhardt', 'peterson', 'hoon', 'fitzgerald', 'stewart', 'guttag', 'frederick', 'freidberg', 'rene', 'reinhard', 'wilson', 'sibel', 'peter', 'cynthia', 'bozdogan', 'sue', 'john', 'mohr', 'mark', 'ferreira', 'jame', 'tuller', 'wedgwood', 'kazimi', 'michael', 'hein', 'sucharewicz', 'blankschtein', 'welsh', 'jaim', 'schneider', 'blackmer', 'goethert', 'chen', 'arthur', 'magnanti', 'loui', 'yue', 'donald', 'steven', 'murrai', 'wuensch', 's', 'susan', 'genannt', 'riddiough', 'argon', 'essigmann', 'e', 'j', 'ann', 'donaldson', 'gould', 'hine', 'cui', 'amarasingh', 'abelmann', 'robert', 'orlin', 'brown']
-    v4 = ['gregori', 'tonegawa', 'herbert', 'linn', 'eduardo', 'roylanc', 'rene', 'david', 'wilson', 'c', 'peter', 'jack', 'kenneth', 'nigel', 'john', 'schneider', 'hobb', 'jame', 'sewel', 'alvin', 'cohen', 's', 'joshua', 'michael', 'hein', 'thoma', 'richard', 'mc', 'susumu', 'caso', 'arthur', 'chen', 'temin', 'roger', 'g', 'samuel', 'donald', 'jeffrei', 'daniel', 'georg', 'kausel', 'susan', 'sawin', 'scott', 'alan', 't', 'm', 'harri', 'peirson', 'ronald', 'w', 'bruce', 'smith']
-    v5 = ['levet', 'crocker', 'richard', 'fintel', 'dunphi', 'ellen', 'elizabeth', 'iren', 'totten', 'sanyal', 'samuel', 'bishwapriya', 'peter', 'jaim', 'resnick', 'von', 'paradi', 'perair', 'jane', 'jenkin', 'burn', 'jame', 'sabin', 'lawrenc', 'margeri', 'peirson', 'charl', 'dan', 'monika', 'henri', 'robert', 'liu', 'michael', 'yuehua', 'kai', 'stewart']
-    v6 = ['miller', 'hu', 'chung', 'ochsendorf', 'ross', 'chen', 'rose', 'zhao', 'doyl', 'sussman', 'perez', 'sanyal', 'dedon', 'william', 'johnson', 'grossman', 'zhang', 'hart', 'von', 'paxson', 'van', 'yue', 'singer', 'sarma', 'kaiser', 'gruber', 'lee', 'bowr', 'belcher', 'schulz', 'cohen', 'white', 'freeman', 'leiserson', 'schuh', 'wang', 'thompson', 'winston', 'lozano', 'ting', 'stephanopoulo', 'smith', 'verghes']
+    v1 = ['gregori', 'levet', 'brouillett', 'fravel', 'susskind', 'nanci', 'ayumi', 'm', 'correa', 'faeri', 'david', 'fernandez', 'sadock', 'dagmar', 'murga', 'ben', 'mehrotra', 'kardar', 'twardowski', 'lissett', 'alar', 'ian', 'grove', 'judith', 'thoma', 'culot', 'mikel', 'geraldin', 'patricia', 'friedman', 'tegmark', 'sarah', 'grimm', 'orit', 'movassaghi', 'kemp', 'autor', 'chakraborti', 'daniel', 'georg', 'parag', 'paul', 'lee', 'grave', 'mariusz', 'harri', 'patrick', 'soto', 'roi',
+          'wallon', 'stroock', 'levitov', 'mehran', 'crocker', 'terri', 'johann', 'hadjiconstantin', 'ellen', 'kedar', 'reinhard', 'joseph', 'peter', 'arian', 'edward', 'layzer', 'jaeger', 'thompson', 'jame', 'nagatomi', 'kocur', 'jung', 'nichola', 'szold', 'michael', 'wornel', 'akintund', 'dunphi', 'jae', 'john', 'goethert', 'paulin', 'min', 'chri', 'inam', 'steven', 'sabin', 'chiang', 'spirn', 'max', 'denni', 'aseem', 'hosoi', 'j', 'ann', 'toomr', 'robert', 'nondita', 'gang', 'stephen', 'maier']
+    v2 = ['nannaji', 'eduardo', 'rabbat', 'arindam', 'ceyer', 'janet', 'dow', 'william', 'stewart', 'haruhiko', 'reiner', 'david', 'fernandez', 'tarkowski', 'leist', 'erika', 'klau', 'ghoniem', 'hadjiconstantin', 'gill', 'sodini', 'charl', 'henri', 'mari', 'bath', 'schrenk', 'troxel', 'joan', 'haywood', 'saka', 'ahm', 'caso', 'gibbon', 'mitchel', 'kausel', 'dubowski', 'asada', 'hemond', 'qingyan', 'millon', 'frederick', 'rene',
+          'pratt', 'naginski', 'hashemi', 'bale', 'cynthia', 'nichola', 'garri', 'john', 'ernst', 'mark', 'watenpaugh', 'carl', 'jame', 'lallit', 'jona', 'brisson', 'jarzombek', 'boyc', 'michael', 'robert', 'nasser', 'belang', 'cravalho', 'ernest', 'mc', 'chen', 'christin', 'yanna', 'h', 'donald', 'steven', 'sylvia', 'zemba', 'krzysztof', 'ioanni', 'harold', 'hardt', 'heghnar', 'j', 'anand', 'wodiczko', 'w', 'joe', 'stephen', 'dutta']
+    v3 = ['henni', 'william', 'carmichael', 'baggero', 'jean', 'koster', 'sanyal', 'bishwapriya', 'david', 'kenneth', 'linda', 'burchfiel', 'sonenberg', 'jackson', 'cohen', 'chorov', 'zhiyuan', 'charl', 'judith', 'thoma', 'jo', 'richard', 'edward', 'wheaton', 'gyftopoulo', 'mujid', 'caso', 'allen', 'vandiv', 'daniel', 'georg', 'leonard', 'merrick', 'perair', 'janet', 'paul', 'alan', 'rubner', 'dick', 'harri', 'bernhardt', 'peterson', 'hoon', 'fitzgerald', 'stewart', 'guttag', 'frederick', 'freidberg', 'rene',
+          'reinhard', 'wilson', 'sibel', 'peter', 'cynthia', 'bozdogan', 'sue', 'john', 'mohr', 'mark', 'ferreira', 'jame', 'tuller', 'wedgwood', 'kazimi', 'michael', 'hein', 'sucharewicz', 'blankschtein', 'welsh', 'jaim', 'schneider', 'blackmer', 'goethert', 'chen', 'arthur', 'magnanti', 'loui', 'yue', 'donald', 'steven', 'murrai', 'wuensch', 's', 'susan', 'genannt', 'riddiough', 'argon', 'essigmann', 'e', 'j', 'ann', 'donaldson', 'gould', 'hine', 'cui', 'amarasingh', 'abelmann', 'robert', 'orlin', 'brown']
+    v4 = ['gregori', 'tonegawa', 'herbert', 'linn', 'eduardo', 'roylanc', 'rene', 'david', 'wilson', 'c', 'peter', 'jack', 'kenneth', 'nigel', 'john', 'schneider', 'hobb', 'jame', 'sewel', 'alvin', 'cohen', 's', 'joshua', 'michael', 'hein',
+          'thoma', 'richard', 'mc', 'susumu', 'caso', 'arthur', 'chen', 'temin', 'roger', 'g', 'samuel', 'donald', 'jeffrei', 'daniel', 'georg', 'kausel', 'susan', 'sawin', 'scott', 'alan', 't', 'm', 'harri', 'peirson', 'ronald', 'w', 'bruce', 'smith']
+    v5 = ['levet', 'crocker', 'richard', 'fintel', 'dunphi', 'ellen', 'elizabeth', 'iren', 'totten', 'sanyal', 'samuel', 'bishwapriya', 'peter', 'jaim', 'resnick', 'von', 'paradi',
+          'perair', 'jane', 'jenkin', 'burn', 'jame', 'sabin', 'lawrenc', 'margeri', 'peirson', 'charl', 'dan', 'monika', 'henri', 'robert', 'liu', 'michael', 'yuehua', 'kai', 'stewart']
+    v6 = ['miller', 'hu', 'chung', 'ochsendorf', 'ross', 'chen', 'rose', 'zhao', 'doyl', 'sussman', 'perez', 'sanyal', 'dedon', 'william', 'johnson', 'grossman', 'zhang', 'hart', 'von', 'paxson', 'van', 'yue',
+          'singer', 'sarma', 'kaiser', 'gruber', 'lee', 'bowr', 'belcher', 'schulz', 'cohen', 'white', 'freeman', 'leiserson', 'schuh', 'wang', 'thompson', 'winston', 'lozano', 'ting', 'stephanopoulo', 'smith', 'verghes']
 
     d1 = ' '.join(v1)
     d2 = ' '.join(v2)
@@ -1092,7 +1125,6 @@ def test_functions():
     api = API(network)
     api.init_store()
 
-
     ## join_path
     print("Join path")
     field1 = ("Drupal_employee_directory.csv", "Full Name")
@@ -1107,6 +1139,7 @@ def test_functions():
     list_of_results = api.schema_complement(sn)
     for l in list_of_results:
         print(str(l))
+
 
 def report_relationships():
     ## Prepare

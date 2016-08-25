@@ -5,10 +5,12 @@ import networkx as nx
 
 global_origin_id = 0
 
-BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
+BaseHit = namedtuple(
+    'Hit', 'nid, source_name, field_name, score', verbose=False)
 
 
 class Hit(BaseHit):
+
     def __hash__(self):
         hsh = int(self.nid)
         return hsh
@@ -209,7 +211,7 @@ class Provenance:
                 explanation = explanation + get_name_from_hit(src) + " -> "
                 edge_info = self._p_graph[src][trg]
                 explanation = explanation + get_string_from_edge_info(edge_info) + " -> " \
-                              + get_name_from_hit(trg) + '\n'
+                    + get_name_from_hit(trg) + '\n'
         return explanation
 
 
@@ -282,7 +284,8 @@ class DRS:
         # Get prov graph of merging
         prov_graph_of_merging = drs.get_provenance().prov_graph()
         # Compose into my prov graph
-        merge = nx.compose(self._provenance.prov_graph(), prov_graph_of_merging)
+        merge = nx.compose(self._provenance.prov_graph(),
+                           prov_graph_of_merging)
         # Rewrite my prov graph to the new merged one and return
         self._provenance.swap_p_graph(merge)
         return self
@@ -319,7 +322,8 @@ class DRS:
         new_data = merging_data.union(my_data)
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov
+        # graph at some point
         self.absorb_provenance(drs)
         return self
 
@@ -329,7 +333,8 @@ class DRS:
         new_data = my_data - merging_data
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov
+        # graph at some point
         self.absorb_provenance(drs)
         return self
 
@@ -379,7 +384,8 @@ class DRS:
             print("The result does not exist")
             return
 
-        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        # Calculate paths from a to leafs, in reverse order and return the
+        # leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
         origins = []
         for p in paths:
@@ -409,7 +415,8 @@ class DRS:
             print("The result does not exist")
             return
 
-        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        # Calculate paths from a to leafs, in reverse order and return the
+        # leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
         explanations = []
         for p in paths:

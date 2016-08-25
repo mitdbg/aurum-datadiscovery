@@ -130,5 +130,3 @@ class PCABinaryProjections(LSHash):
         self.dim = config['dim']
         self.projection_count = config['projection_count']
         self.components = config['components']
-
-

@@ -8,6 +8,7 @@ import utils as U
 Functions to obtain joint signatures
 '''
 
+
 def get_jsignature(columnA, columnB, method):
     '''
         Obtain a join signature of two columns
@@ -28,6 +29,7 @@ def get_jsignature(columnA, columnB, method):
     elif method is "kernel-density":
         return KD.kerndens(columnA, columnB)
 
+
 def same_type_num(a, b):
     if U.is_column_num(a) and U.is_column_num(b):
         return True
@@ -37,18 +39,19 @@ def same_type_num(a, b):
  API based on joint signatures
 '''
 
+
 def get_similar_pairs(jsignature, columns, method):
     '''
         Obtain all pairs of columns with similar signature
         to the one provided
     '''
-    banned = [] # FIXME: keep set with custom eq
-    sim_pairs = [] # list of tuples
+    banned = []  # FIXME: keep set with custom eq
+    sim_pairs = []  # list of tuples
     for columnA in columns:
         for columnB in columns:
             colA_data = columns[columnA]
             colB_data = columns[columnB]
-            jsig = get_jsignature(colA_data, colB_data, method)    
+            jsig = get_jsignature(colA_data, colB_data, method)
             if jsig is not False:
                 sim = compare_jsignatures(jsig, jsignature, method)
                 if sim:
@@ -58,14 +61,16 @@ def get_similar_pairs(jsignature, columns, method):
                     banned.append(newpair)
     return sim_pairs
 
+
 def repeated_pair(pair, banned):
     (ca, cb) = pair
     for (_ca, _cb) in banned:
         if (ca is _ca and cb is _cb) or \
-        (ca is _cb and cb is _ca) or \
-        ca is cb:
-            return True 
+            (ca is _cb and cb is _ca) or \
+                ca is cb:
+            return True
     return False
+
 
 def compare_jsignatures(jsignatureA, jsignatureB, method):
     '''
@@ -82,19 +87,20 @@ def compare_jsignatures(jsignatureA, jsignatureB, method):
             return True
     return False
 
+
 def get_columns_similar_to_jsignature(
-            columnA, 
-            jsignature, 
-            columns, 
-            method):
+        columnA,
+        jsignature,
+        columns,
+        method):
     '''
         Given columnA as reference and its jsignature, computed
         with respect to other columns, obtain any columns that
         return a similar jsignature
     '''
-    sim_columns = [] # list of tuples
+    sim_columns = []  # list of tuples
     for key, columnB in columns.items():
-        jsig = get_jsignature(columnA, columnB, method)  
+        jsig = get_jsignature(columnA, columnB, method)
         if jsig is not False:
             sim = compare_jsignatures(jsig, jsignature, method)
             if sim:

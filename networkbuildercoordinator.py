@@ -25,28 +25,34 @@ def main():
     start_schema_sim = time.time()
     networkbuilder.build_schema_sim_relation(network, fields)
     end_schema_sim = time.time()
-    print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
+    print(
+        "Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
     # Entity_sim relation
     start_entity_sim = time.time()
     #fields, entities = store.get_all_fields_entities()
     #networkbuilder.build_entity_sim_relation(network, fields, entities)
     end_entity_sim = time.time()
-    print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
+    print(
+        "Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text(
+        network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print(
+        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+    networkbuilder.build_content_sim_relation_num(
+        network, fields, num_signatures)
     end_num_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print(
+        "Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()
@@ -123,10 +129,11 @@ def test():
     for i in range(len(fields)):
         print(str(fields[i]) + " -> " + str(text_signatures[i]))
 
-    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text(
+        network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
-
+    print(
+        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -143,7 +150,7 @@ def plot_num():
     xaxis = []
     yaxis = []
     numpoints = 0
-    for x,y in num_signatures:
+    for x, y in num_signatures:
         numpoints = numpoints + 1
         xaxis.append(x)
         yaxis.append(y)
@@ -172,16 +179,20 @@ def test_cardinality_propagation():
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text(
+        network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print(
+        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
+    networkbuilder.build_content_sim_relation_num(
+        network, fields, num_signatures)
     end_num_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print(
+        "Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()

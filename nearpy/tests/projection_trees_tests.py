@@ -44,7 +44,8 @@ class TestRandomBinaryProjectionTree(unittest.TestCase):
 
         # Create engine for 100 dimensional feature space, do not forget to set
         # nearest filter to 20, because default is 10
-        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[NearestFilter(20)])
+        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[
+                             NearestFilter(20)])
 
         # First insert 200000 random vectors
         for k in range(200000):
@@ -63,7 +64,8 @@ class TestRandomBinaryProjectionTree(unittest.TestCase):
         rbpt = RandomBinaryProjectionTree('testHash', 10, 20)
 
         # Create engine for 100 dimensional feature space
-        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[NearestFilter(20)])
+        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[
+                             NearestFilter(20)])
 
         # First insert 2000 random vectors
         for k in range(2000):
@@ -98,7 +100,8 @@ class TestRandomBinaryProjectionTree(unittest.TestCase):
         rbpt = RandomBinaryProjectionTree('testHash', 10, 20)
 
         # Create engine for 100 dimensional feature space
-        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[NearestFilter(20)])
+        self.engine = Engine(100, lshashes=[rbpt], vector_filters=[
+                             NearestFilter(20)])
 
         # First insert 2000 random vectors
         for k in range(2000):
@@ -106,11 +109,11 @@ class TestRandomBinaryProjectionTree(unittest.TestCase):
             x_data = 'data'
             self.engine.store_vector(x, x_data)
 
-
         self.redis_storage.store_hash_configuration(rbpt)
 
         rbpt2 = RandomBinaryProjectionTree(None, None, None)
-        rbpt2.apply_config(self.redis_storage.load_hash_configuration('testHash'))
+        rbpt2.apply_config(
+            self.redis_storage.load_hash_configuration('testHash'))
 
         self.assertEqual(rbpt.dim, rbpt2.dim)
         self.assertEqual(rbpt.hash_name, rbpt2.hash_name)

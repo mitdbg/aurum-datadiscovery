@@ -15,11 +15,13 @@ from conceptgraph import cgraph as cg
 from conceptgraph import simrank as sr
 
 # Capturing ctrl+C
+
+
 def signal_handler(signal, frame):
     print('Finishing pending work...')
     goOn = False
     import time
-    time.sleep(3) # wait 3 secs before shutting down
+    time.sleep(3)  # wait 3 secs before shutting down
     sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
 #print('Press Ctrl+C')
@@ -34,12 +36,14 @@ workqueue = queue.Queue()
 # Control variable to keep working
 goOn = True
 
+
 def load_csv_file(filename):
     '''
     Given a CSV file it creates a task for the loader
     '''
     task = ("CSV", filename)
     workqueue.put(task)
+
 
 def create_work_from_path_csv_files(path):
     '''
@@ -49,6 +53,7 @@ def create_work_from_path_csv_files(path):
     all_files = iod.get_files_in_dir(path)
     for f in all_files:
         load_csv_file(f)
+
 
 def process_csv_file(filename):
     '''
@@ -77,16 +82,17 @@ def process_csv_file(filename):
         elif c_type is 'T':
             # text signature
             method = C.preferred_text_method
-            sig = da.get_textual_dist(values, method) 
+            sig = da.get_textual_dist(values, method)
             text_data = values
         # Load info to model store
-        MS.new_column(f_name, 
-                      c_name, 
-                      c_type, 
-                      sig, 
-                      num_data, 
+        MS.new_column(f_name,
+                      c_name,
+                      c_type,
+                      sig,
+                      num_data,
                       text_data)
         # Add new concepts to graph
+
 
 def load():
     '''
@@ -98,15 +104,16 @@ def load():
         task = workqueue.get()
         (t_type, resource) = task
         if t_type is "CSV":
-            process_csv_file(resource)    
+            process_csv_file(resource)
         else:
             print("Unrecognized data type for column")
         # Keep count of processed tasks
         aprox_size = workqueue.qsize()
         total_tasks_processed = total_tasks_processed + 1
-        print("Processed Tasks: " \
-        + str(total_tasks_processed)+"/" + str(aprox_size))
+        print("Processed Tasks: "
+              + str(total_tasks_processed) + "/" + str(aprox_size))
         print("Finished processing: " + str(resource))
+
 
 def build_dict_values(values):
     d = dict()
@@ -115,6 +122,7 @@ def build_dict_values(values):
             d[v] = 0
         d[v] = d[v] + 1
     return d
+
 
 def compute_overlap(values1, values2, th_overlap, th_cutoff):
     overlap = 0
@@ -144,6 +152,7 @@ def compute_overlap(values1, values2, th_overlap, th_cutoff):
             #print("nov: "+str(non_overlap)+" thcutoff: "+str(th_cutoff))
             return False
 
+
 def jgraph_from_modelstore(concepts, jgraph):
     '''
     Creates a join graph reading from the store directly
@@ -166,7 +175,8 @@ def jgraph_from_modelstore(concepts, jgraph):
             if overlap:
                 jgraph[pconcept].append(concept)
     return jgraph
-    
+
+
 def refine_from_modelstore(concepts, cgraph):
     '''
     This method is an adaptation of api.refine_graph_with_csig
@@ -176,12 +186,13 @@ def refine_from_modelstore(concepts, cgraph):
     total_concepts = len(concepts)
     it = 0
     for concept in concepts:
-        print(str(it)+"/"+str(total_concepts))
+        print(str(it) + "/" + str(total_concepts))
         it = it + 1
         cgraph[concept] = []
         sim_cols = API.columns_similar_to_DBCONN(concept)
         cgraph[concept].extend(sim_cols)
     return cgraph
+
 
 def add_table_neighbors(concepts, cgraph):
     '''
@@ -189,13 +200,14 @@ def add_table_neighbors(concepts, cgraph):
     that are in the same table
     '''
     for col in concepts:
-        (fname1, _) = col 
+        (fname1, _) = col
         for col2 in concepts:
             (fname2, _) = col2
             if fname2 is fname1:
                 if col2 not in cgraph[col]:
                     cgraph[col].append(col2)
     return cgraph
+
 
 def build_cgraph_cache():
     # First construct graph
@@ -208,9 +220,10 @@ def build_cgraph_cache():
     cgraph_cache = refine_from_modelstore(concepts, cgraph_cache)
     print("Computing all similarities for graph...DONE")
     et = time.time()
-    time_to_build_graph = et-st
+    time_to_build_graph = et - st
     print("Time to build graph: " + str(time_to_build_graph))
     return concepts, cgraph_cache
+
 
 def build_cgraph(concepts, cgraph_cache):
     print("Deep copying...")
@@ -221,9 +234,10 @@ def build_cgraph(concepts, cgraph_cache):
     cgraph = add_table_neighbors(concepts, cgraph)
     print("Refining graph with neighbors...DONE")
     et = time.time()
-    time_to_neighbors = et-st
-    print("Time to add table neighbors: "+str(time_to_neighbors))
+    time_to_neighbors = et - st
+    print("Time to add table neighbors: " + str(time_to_neighbors))
     return cgraph
+
 
 def build_simrank(cgraph):
     # Then run simrank
@@ -233,9 +247,10 @@ def build_simrank(cgraph):
     #simrank = concepts
     print("Computing SIMRANK...DONE")
     et = time.time()
-    time_to_simrank = et-st
+    time_to_simrank = et - st
     print("Time to simrank: " + str(time_to_simrank))
     return simrank
+
 
 def build_jgraph(concepts):
     st = time.time()
@@ -244,9 +259,10 @@ def build_jgraph(concepts):
     #for k,v in jgraph.items():
     #    print(str(k)+" -> " + str(len(v)))
     et = time.time()
-    time_to_jgraph = et-st
+    time_to_jgraph = et - st
     print("Time to jgraph: " + str(time_to_jgraph))
     return jgraph
+
 
 def build_graph_and_store(dataset):
     # Build cgraph_cache
@@ -280,10 +296,11 @@ def build_graph_and_store(dataset):
 
     # Build simrank
     #simrank = build_simrank(cgraph)
-    # Store simrank 
+    # Store simrank
     #print("Storing simrank matrix...")
     #serde.serialize_simrank_matrix(simrank, dataset)
     #print("Storing simrank matrix...DONE!")
+
 
 def main():
     mode = sys.argv[2]
@@ -320,4 +337,3 @@ if __name__ == "__main__":
         print("USAGE")
         exit()
     main()
-

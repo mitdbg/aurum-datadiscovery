@@ -273,7 +273,6 @@ class TestDDApiCombiner(unittest.TestCase):
         for el in res:
             print(str(el))
 
-
     """
     TC primitive API
     """

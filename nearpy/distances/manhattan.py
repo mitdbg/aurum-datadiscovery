@@ -34,7 +34,6 @@ class ManhattanDistance(Distance):
         Computes the Manhattan distance between vectors x and y. Returns float.
         """
         if scipy.sparse.issparse(x):
-            return numpy.sum(numpy.absolute((x-y).toarray().ravel()))
+            return numpy.sum(numpy.absolute((x - y).toarray().ravel()))
         else:
-            return numpy.sum(numpy.absolute(x-y))
-
+            return numpy.sum(numpy.absolute(x - y))

@@ -30,6 +30,7 @@ from nearpy.distances import CosineDistance
 
 from nearpy.hashes import RandomBinaryProjections, HashPermutations, HashPermutationMapper
 
+
 def example2():
 
     # Dimension of feature space
@@ -48,16 +49,17 @@ def example2():
 
     # Create binary hash as child hash
     rbp_perm = RandomBinaryProjections('rbp_perm', 14)
-    rbp_conf = {'num_permutation':50,'beam_size':10,'num_neighbour':100}
+    rbp_conf = {'num_permutation': 50, 'beam_size': 10, 'num_neighbour': 100}
 
     # Add rbp as child hash of permutations hash
     permutations.add_child_hash(rbp_perm, rbp_conf)
 
     # Create engine
-    engine_perm = Engine(DIM, lshashes=[permutations], distance=CosineDistance())
+    engine_perm = Engine(
+        DIM, lshashes=[permutations], distance=CosineDistance())
 
     # First index some random vectors
-    matrix = numpy.zeros((POINTS,DIM))
+    matrix = numpy.zeros((POINTS, DIM))
     for i in range(POINTS):
         v = numpy.random.randn(DIM)
         matrix[i] = v
@@ -67,7 +69,7 @@ def example2():
     permutations.build_permuted_index()
 
     t1 = time.time()
-    print('Indexing took %f seconds' % (t1-t0))
+    print('Indexing took %f seconds' % (t1 - t0))
 
     # Get random query vector
     query = numpy.random.randn(DIM)
@@ -102,17 +104,18 @@ def example2():
     permutations2.add_child_hash(rbp_perm2)
 
     # Create engine
-    engine_perm2 = Engine(DIM, lshashes=[permutations2], distance=CosineDistance())
+    engine_perm2 = Engine(
+        DIM, lshashes=[permutations2], distance=CosineDistance())
 
     # First index some random vectors
-    matrix = numpy.zeros((POINTS,DIM))
+    matrix = numpy.zeros((POINTS, DIM))
     for i in range(POINTS):
         v = numpy.random.randn(DIM)
         matrix[i] = v
         engine_perm2.store_vector(v)
 
     t1 = time.time()
-    print('Indexing took %f seconds' % (t1-t0))
+    print('Indexing took %f seconds' % (t1 - t0))
 
     # Get random query vector
     query = numpy.random.randn(DIM)
@@ -127,7 +130,7 @@ def example2():
     # Real neighbours
     print('\nReal neighbour distances:')
     query = query.reshape((DIM))
-    dists = CosineDistance().distance(matrix,query)
+    dists = CosineDistance().distance(matrix, query)
     dists = dists.reshape((-1,))
     dists = sorted(dists)
     print(dists[:10])
@@ -145,14 +148,14 @@ def example2():
     engine_rbps = Engine(DIM, lshashes=hashes, distance=CosineDistance())
 
     # First index some random vectors
-    matrix = numpy.zeros((POINTS,DIM))
+    matrix = numpy.zeros((POINTS, DIM))
     for i in range(POINTS):
         v = numpy.random.randn(DIM)
         matrix[i] = v
         engine_rbps.store_vector(v)
 
     t1 = time.time()
-    print('Indexing took %f seconds' % (t1-t0))
+    print('Indexing took %f seconds' % (t1 - t0))
 
     # Get random query vector
     query = numpy.random.randn(DIM)
@@ -167,7 +170,7 @@ def example2():
     # Real neighbours
     print('\nReal neighbour distances:')
     query = query.reshape((DIM))
-    dists = CosineDistance().distance(matrix,query)
+    dists = CosineDistance().distance(matrix, query)
     dists = dists.reshape((-1,))
     dists = sorted(dists)
     print(dists[:10])

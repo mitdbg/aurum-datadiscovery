@@ -66,15 +66,20 @@ class Engine(object):
                  vector_filters=None,
                  storage=None):
         """ Keeps the configuration. """
-        if lshashes is None: lshashes = [RandomBinaryProjections('default', 10)]
+        if lshashes is None:
+            lshashes = [RandomBinaryProjections('default', 10)]
         self.lshashes = lshashes
-        if distance is None: distance = CosineDistance()
+        if distance is None:
+            distance = CosineDistance()
         self.distance = distance
-        if vector_filters is None: vector_filters = [NearestFilter(10)]
+        if vector_filters is None:
+            vector_filters = [NearestFilter(10)]
         self.vector_filters = vector_filters
-        if fetch_vector_filters is None: fetch_vector_filters = [UniqueFilter()]
+        if fetch_vector_filters is None:
+            fetch_vector_filters = [UniqueFilter()]
         self.fetch_vector_filters = fetch_vector_filters
-        if storage is None: storage = MemoryStorage()
+        if storage is None:
+            storage = MemoryStorage()
         self.storage = storage
 
         # Initialize all hashes for the data space dimension.
@@ -95,7 +100,6 @@ class Engine(object):
                 #print 'Storying in bucket %s one vector' % bucket_key
                 self.storage.store_vector(lshash.hash_name, bucket_key,
                                           nv, data)
-
 
     def candidate_count(self, v):
         """
@@ -128,7 +132,8 @@ class Engine(object):
 
         # Apply fetch vector filters if specified and return filtered list
         if self.fetch_vector_filters:
-            candidates = self._apply_filter(self.fetch_vector_filters, candidates)
+            candidates = self._apply_filter(
+                self.fetch_vector_filters, candidates)
 
         # Apply distance implementation if specified
         if self.distance:
@@ -141,7 +146,6 @@ class Engine(object):
         # If there is no vector filter, just return list of candidates
         return candidates
 
-
     def _get_candidates(self, v):
         """ Collect candidates from all buckets from all hashes """
         candidates = []
@@ -152,7 +156,6 @@ class Engine(object):
                 #print 'Bucket %s size %d' % (bucket_key, len(bucket_content))
                 candidates.extend(bucket_content)
         return candidates
-
 
     def _apply_filter(self, filters, candidates):
         """ Apply vector filters if specified and return filtered list """
@@ -171,7 +174,7 @@ class Engine(object):
             # Normalize vector (stored vectors are normalized)
             nv = unitvec(v)
             candidates = [(x[0], x[1], self.distance.distance(x[0], nv)) for x
-                            in candidates]
+                          in candidates]
 
         return candidates
 

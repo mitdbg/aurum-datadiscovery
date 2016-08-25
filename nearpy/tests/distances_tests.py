@@ -38,7 +38,8 @@ def check_distance_symmetry(test_obj, distance):
         d_xy = distance.distance(x, y)
         d_yx = distance.distance(y, x)
 
-        # I had precision issues with a local install. This test is more tolerant to that.
+        # I had precision issues with a local install. This test is more
+        # tolerant to that.
         test_obj.assertAlmostEqual(d_xy, d_yx, delta=0.00000000000001)
 
     for k in range(100):
@@ -47,7 +48,8 @@ def check_distance_symmetry(test_obj, distance):
         d_xy = distance.distance(x, y)
         d_yx = distance.distance(y, x)
 
-        # I had precision issues with a local install. This test is more tolerant to that.
+        # I had precision issues with a local install. This test is more
+        # tolerant to that.
         test_obj.assertAlmostEqual(d_xy, d_yx, delta=0.00000000000001)
 
 
@@ -88,6 +90,7 @@ class TestEuclideanDistance(unittest.TestCase):
     def test_symmetry(self):
         check_distance_symmetry(self, self.euclidean)
 
+
 class TestCosineDistance(unittest.TestCase):
 
     def setUp(self):
@@ -95,6 +98,7 @@ class TestCosineDistance(unittest.TestCase):
 
     def test_symmetry(self):
         check_distance_symmetry(self, self.cosine)
+
 
 class TestManhattanDistance(unittest.TestCase):
 

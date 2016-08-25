@@ -30,6 +30,7 @@ try:
 except ImportError:
     xrange = range
 
+
 class Permute:
 
     """

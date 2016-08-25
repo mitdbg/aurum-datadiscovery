@@ -44,13 +44,15 @@ class TestPermutation(unittest.TestCase):
 
         # Create binary hash as child hash
         rbp = RandomBinaryProjections('rbp1', 4, rand_seed=19)
-        rbp_conf = {'num_permutation':50,'beam_size':10,'num_neighbour':100}
+        rbp_conf = {'num_permutation': 50,
+                    'beam_size': 10, 'num_neighbour': 100}
 
         # Add rbp as child hash of permutations hash
         self.permutations.add_child_hash(rbp, rbp_conf)
 
         # Create engine with meta hash and cosine distance
-        self.engine_perm = Engine(200, lshashes=[self.permutations], distance=CosineDistance())
+        self.engine_perm = Engine(
+            200, lshashes=[self.permutations], distance=CosineDistance())
 
         # Create engine without permutation meta-hash
         self.engine = Engine(200, lshashes=[rbp], distance=CosineDistance())
@@ -58,7 +60,7 @@ class TestPermutation(unittest.TestCase):
     def test_runnable(self):
 
         # First index some random vectors
-        matrix = numpy.zeros((1000,200))
+        matrix = numpy.zeros((1000, 200))
         for i in xrange(1000):
             v = numpy.random.randn(200)
             matrix[i] = v
@@ -73,7 +75,8 @@ class TestPermutation(unittest.TestCase):
         results = self.engine_perm.neighbours(query)
         permuted_dists = [x[2] for x in results]
 
-        # Do random query on engine without permutations meta-hash (distances should be larger):'
+        # Do random query on engine without permutations meta-hash (distances
+        # should be larger):'
         results = self.engine.neighbours(query)
         dists = [x[2] for x in results]
 
