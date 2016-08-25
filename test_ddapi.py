@@ -308,17 +308,20 @@ class TestDDApiCombiner(unittest.TestCase):
         for el in res:
             print(str(el))
 
+    def test_paths_between_from_tables(self):
+        table1_name = "Drupal_employee_directory.csv"
+        table2_name = "Employee_directory.csv"
+        table1 = self.api.drs_from_table(table1_name)
+        table2 = self.api.drs_from_table(table2_name)
+        res = self.api.paths_between(table1, table2, Relation.PKFK)
+
+        for el in res:
+            print(str(el))
+
     def test_paths(self):
         print(self._testMethodName)
 
         return
-
-    """
-    Analytical API
-    """
-
-    def test_enumerate_all_pkfk(self):
-        self.api.enumerate_all_pkfk()
 
 
 if __name__ == "__main__":

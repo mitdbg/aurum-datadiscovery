@@ -89,35 +89,27 @@ class FieldNetwork:
         topk_nodes = sorted_degree[:topk]
         return topk_nodes
 
-    def enumerate_pkfk(self):
-        total_relationships = 0
+    def enumerate_relation(self, relation):
         for n in self.__G.nodes():
-            neighbors = self.neighbors_id(n, Relation.PKFK)
-            for nid, sn, fn, score in neighbors:
-                total_relationships += 1
-                print(str(n.source_name) + "-" + str(n.field_name) +
-                      " <-> " + str(sn) + "-" + str(fn))
-        print("Total PKFK relationships: " + str(total_relationships))
+            neighbors = self.neighbors_id(n, relation)
+            for n2 in neighbors:
+                string = str(n) + " - " + str(n2)
+                yield string
 
-    def enumerate_schema_sim(self):
+    def print_relations(self, relation):
         total_relationships = 0
-        for n in self.__G.nodes():
-            neighbors = self.neighbors_id(n, Relation.SCHEMA_SIM)
-            for nid, sn, fn, score in neighbors:
+        if relation == Relation.CONTENT_SIM:
+            for x in self.enumerate_relation(Relation.CONTENT_SIM):
                 total_relationships += 1
-                print(str(n.source_name) + "-" + str(n.field_name) +
-                      " <-> " + str(sn) + "-" + str(fn))
-        print("Total SCHEMA-SIM relationships: " + str(total_relationships))
-
-    def enumerate_content_sim(self):
-        total_relationships = 0
-        for n in self.__G.nodes():
-            neighbors = self.neighbors_id(n, Relation.CONTENT_SIM)
-            for nid, sn, fn, score in neighbors:
-                total_relationships += 1
-                print(str(n.source_name) + "-" + str(n.field_name) +
-                      " <-> " + str(sn) + "-" + str(fn))
-        print("Total CONTENT-SIM relationships: " + str(total_relationships))
+                print(x)
+        if relation == Relation.SCHEMA_SIM:
+            for x in self.enumerate_relation(Relation.SCHEMA):
+                print(x)
+        if relation == Relation.PKFK:
+            for x in self.enumerate_relation(Relation.PKFK):
+                print(x)
+        print("Total " + str(relation) +
+              " relations: " + str(total_relationships))
 
     def get_op_from_relation(self, relation):
         if relation == Relation.CONTENT_SIM:
@@ -294,8 +286,8 @@ class FieldNetwork:
             # source and target are strings with the table name
             results = self._bidirectional_pred_succ_with_table_hops(
                 source, target, relation, api)
-        if results == None:  # check for None result
-            return []
+        if results is None:  # check for None result
+            return DRS([], Operation(OP.NONE))
         pred, succ, w, o_drs = results
 
         """

@@ -485,19 +485,6 @@ class DDAPI:
             "field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
 
     """
-    Analytical functions
-    """
-
-    def enumerate_all_pkfk(self):
-        self.__network.enumerate_pkfk()
-
-    def enumerate_all_schema_sim(self):
-        self.__network.enumerate_schema_sim()
-
-    def enumerate_all_content_sim(self):
-        self.__network.enumerate_content_sim()
-
-    """
     Function API
     """
 
