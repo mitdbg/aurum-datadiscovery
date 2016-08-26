@@ -34,9 +34,24 @@ def main():
     end_entity_sim = time.time()
     print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
+    #import yappi
+
+    st = time.time()
+    store.get_all_fields_textsignatures()
+    et = time.time()
+    print("Time to extract signatures from store: {0}".format(str(et - st)))
+    exit()
+
     # Content_sim text relation
     start_text_sig_sim = time.time()
+    st = time.time()
+    #yappi.start()
     fields, text_signatures = store.get_all_fields_textsignatures()
+    #yappi.get_func_stats().print_all()
+    #yappi.get_thread_stats().print_all()
+    et = time.time()
+    print("Time to extract signatures from store: {0}".format(str(et - st)))
+    #field_and_text_signature_gen = store.get_all_fields_textsignatures()
     networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
@@ -46,7 +61,7 @@ def main():
     fields, num_signatures = store.get_all_fields_numsignatures()
     networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
     end_num_sig_sim = time.time()
-    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()
@@ -77,7 +92,7 @@ def main():
 
     """
 
-    path = "test/mitdwh.pickle"
+    path = "test/testing.pickle"
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -211,8 +226,44 @@ def test_cardinality_propagation():
     #    print(str(o))
 
 
+def test_read_store():
+    store = StoreHandler()
+
+    # Read all files from profile index
+    st = time.time()
+    fields_gen = store.get_all_fields()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took {0} to read {1} fields from profile".format((et-st), str(len(fields))))
+
+    # Read all termvectors from the combination of docs
+    st = time.time()
+    fields_gen, sign = store.get_all_fields_textsignatures()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took {0} to read {1} fields from text".format((et - st), str(len(fields))))
+
+    """
+    # Read all files from text index
+    st = time.time()
+    fields_gen = store.get_fields_text_index()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took: {0} to read {1} fields from text".format(str(et - st), str(len(fields))))
+
+    # Read fields, signatures (without signatures, but with the plumbing)
+    st = time.time()
+    fields, text_signatures = store.get_all_fields_textsignatures()
+    et = time.time()
+    print("Took: {0} to read {1} fields from text".format(str(et - st), str(len(fields))))
+    """
+
+
 if __name__ == "__main__":
-    main()
+    #main()
+
+    test_read_store()
+
     #test()
     #plot_num()
     #test_cardinality_propagation()
