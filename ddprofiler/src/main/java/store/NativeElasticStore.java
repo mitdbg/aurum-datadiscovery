@@ -3,9 +3,12 @@ package store;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -13,6 +16,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -23,6 +27,9 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptParameterParser;
+import org.elasticsearch.script.ScriptService.ScriptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,9 +62,10 @@ public class NativeElasticStore implements Store {
 	public NativeElasticStore(ProfilerConfig pc) { 
 		String storeServer = pc.getString(ProfilerConfig.STORE_SERVER);
 		int storePort = pc.getInt(ProfilerConfig.STORE_PORT);
+		int storeHttpPort = pc.getInt(ProfilerConfig.STORE_HTTP_SERVER);
 		this.storeServer = storeServer;
 		this.storePort = storePort;
-		this.serverUrl = "http://"+storeServer+":"+storePort;
+		this.serverUrl = "http://"+storeServer+":"+storeHttpPort;
 	}
 	
 	@Override
@@ -99,7 +107,8 @@ public class NativeElasticStore implements Store {
 			
 			@Override
 			public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-							
+				LOG.error("FAILED? " + request.toString());
+				LOG.error(failure.getMessage());
 			}
 			
 		})	
@@ -186,7 +195,6 @@ public class NativeElasticStore implements Store {
 					.endObject();
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -194,9 +202,64 @@ public class NativeElasticStore implements Store {
 		IndexRequest ir = new IndexRequest("text", "column").source(builder);
 		bulkProcessor.add(ir);
 		
-//		IndexResponse response = nativeClient.prepareIndex("text", "column")
-//		        .setSource(builder)
-//		        .get();
+		return true;
+	}
+	
+	
+	public boolean _indexData(int id, String sourceName, String columnName, List<String> values) {
+		String strId = Integer.toString(id);
+		
+		// TODO: monitor this, we are now indexing multi-values, hoping that termvectors
+		// do what we want on the other side...
+		//String v = concatValues(values);
+		
+		XContentBuilder builder = null;
+		try {
+			builder = jsonBuilder()
+					.startObject()
+						.field("id", strId)
+						.field("sourceName", sourceName)
+						.field("columnName", columnName)
+						.startArray("text");
+			
+						for (String v : values) {
+							builder.value(v);
+						}
+						
+						builder.endArray()
+					.endObject();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		// Using bulkProcessor
+		
+		IndexRequest ir = new IndexRequest("text", "column", strId).source(builder);
+		
+		
+		String upScript = "if (ctx._source.containsKey(\"text\")) "
+				+ "ctx._source.text += moreText "
+				+ "else "
+				+ "ctx._source.text = moreText";
+		
+		Map<String, Object> params = new HashMap<>();
+		params.put("moreText", values);
+		UpdateRequest ur = new UpdateRequest("text", "column", strId);
+		Script theScript = new Script(upScript, ScriptType.INLINE, null, params);
+		
+		ur.script(theScript);
+		
+		ur.upsert(ir);
+		
+		try {
+			nativeClient.update(ur).get();
+		} 
+		catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
+		
+//		bulkProcessor.add(ur);
 		
 		return true;
 	}
@@ -216,24 +279,20 @@ public class NativeElasticStore implements Store {
 						.field("totalValues", wtr.getTotalValues())
 						.field("uniqueValues", wtr.getUniqueValues())
 						.field("entities", wtr.getEntities().toString())
-						.field("minValue", wtr.getEntities().toString())
+						.field("minValue", wtr.getMinValue())
 						.field("maxValue", wtr.getMaxValue())
 						.field("avgValue", wtr.getAvgValue())
 						.field("median", wtr.getMedian())
 						.field("iqr", wtr.getIQR())
 					.endObject();
-		} 
+		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		IndexRequest ir = new IndexRequest("profile", "column", strId).source(builder);
-		bulkProcessor.add(ir);
 		
-//		IndexResponse response = nativeClient.prepareIndex("profile", "column", strId)
-//		        .setSource(builder)
-//		        .get();
+		bulkProcessor.add(ir);
 		
 		return true;
 	}
