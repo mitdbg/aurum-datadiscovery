@@ -92,6 +92,8 @@ public class Worker implements Runnable {
 					continue;
 				}
 				
+				DataIndexer indexer = new FilterAndBatchDataIndexer(store);
+				
 				// Access attributes and attribute type through first read
 				Connector c = task.getConnector();
 				PreAnalyzer pa = new PreAnalyzer();
@@ -107,13 +109,13 @@ public class Worker implements Runnable {
 				
 				// Read initial records to figure out attribute types etc
 				//FIXME: readFirstRecords(initData, analyzers);
-				readFirstRecords(initData, analyzers);
+				readFirstRecords(initData, analyzers, indexer);
 				
 				// Consume all remaining records from the connector
 				Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 				int records = 0;
 				while(data != null) {
-					indexText(data);
+					indexer.indexData(data, task.getConnector().getSourceName());
 					records = records + data.size();
 					// Do the processing
 					// FIXME: feedValuesToAnalyzers(data, analyzers);
@@ -165,21 +167,7 @@ public class Worker implements Runnable {
 		LOG.info("THREAD: {} stopping", workerName);
 	}
 	
-	private void indexText(Map<Attribute, Values> data) {
-		for(Entry<Attribute, Values> entry : data.entrySet()) {
-			Attribute a = entry.getKey();
-			AttributeType at = a.getColumnType();
-			
-			if(at.equals(AttributeType.STRING)) {
-				String sourceName = task.getConnector().getSourceName();
-				String columnName = a.getColumnName();
-				int id = Utils.computeAttrId(sourceName, columnName);
-				store.indexData(id, sourceName, columnName, entry.getValue().getStrings());
-			}
-		}
-	}
-	
-	private void readFirstRecords(Map<Attribute, Values> initData, Map<String, Analysis> analyzers) {
+	private void readFirstRecords(Map<Attribute, Values> initData, Map<String, Analysis> analyzers, DataIndexer indexer) {
 		for(Entry<Attribute, Values> entry : initData.entrySet()) {
 			Attribute a = entry.getKey();
 			AttributeType at = a.getColumnType();
@@ -200,7 +188,7 @@ public class Worker implements Runnable {
 		}
 		
 		// Index text read so far
-		indexText(initData);
+		indexer.indexData(initData, task.getConnector().getSourceName());
 	}
 	
 	private void feedValuesToAnalyzers(Map<Attribute, Values> data, Map<String, Analysis> analyzers) {
