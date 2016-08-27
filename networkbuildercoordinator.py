@@ -36,11 +36,11 @@ def main():
 
     #import yappi
 
-    st = time.time()
-    store.get_all_fields_textsignatures()
-    et = time.time()
-    print("Time to extract signatures from store: {0}".format(str(et - st)))
-    exit()
+    #st = time.time()
+    #store.get_all_fields_textsignatures()
+    #et = time.time()
+    #print("Time to extract signatures from store: {0}".format(str(et - st)))
+    #exit()
 
     # Content_sim text relation
     start_text_sig_sim = time.time()
@@ -260,9 +260,9 @@ def test_read_store():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
 
-    test_read_store()
+    #test_read_store()
 
     #test()
     #plot_num()

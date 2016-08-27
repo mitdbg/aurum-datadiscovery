@@ -26,6 +26,38 @@ class StoreHandler:
     def close(self):
         print("TODO")
 
+    def get_all_text_fields(self):
+        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
+        res = client.search(index='profile', body=query_body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName',
+                                         'hits.hits._source.totalValues',
+                                         'hits.hits._source.uniqueValues']
+                            )
+
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'],
+                                           h['_source']['totalValues'], h['_source']['uniqueValues'])
+                yield id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName',
+                                             'hits.hits._source.totalValues',
+                                             'hits.hits._source.uniqueValues']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def get_all_fields(self):
         """
         Reads all fields, described as (id, source_name, field_name) from the store.
@@ -221,7 +253,10 @@ class StoreHandler:
         res = client.search(index='text', body=body, scroll="10m",
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
-                                         'hits.total']
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName'
+                                         ]
                             )
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
@@ -240,34 +275,39 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
 
     def get_all_fields_textsignatures(self):
+        # FIXME: still need to add filter for terms that appear less than once, or add freq to the vector of tersm
+        # using the map value and then post filter in a better way
+
+        def partition_ids(ids, partition_size=50):
+            for i in range(0, len(ids), partition_size):
+                yield ids[i:i + partition_size]
 
         fields = []
         text_signatures = []
 
-        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
+        #term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
         # We get the ids from 'profile'
-        text_fields_gen = self.get_all_fields()
+        text_fields_gen = self.get_all_text_fields()
         for (uid, sn, fn, tv, uv) in text_fields_gen:
             # We retrieve all documents indexed with the same id in 'text'
             docs = self.get_all_docs_from_text_with_idx_id(uid)
-            #print("Original doc id: " + str(uid))
-            #for doc_id in docs:
-            #    print("Comprises: " + str(doc_id))
             ids = [x for x in docs]
-            # We get the term vectors for each group of those documents
-            ans = client.mtermvectors(index='text', ids=ids, doc_type='column', body=term_body)
+            ids_partitions = partition_ids(ids)  # partition ids so that they fit in one http request
             all_terms = dict()
-            # We merge them somehow
-            if ans['found']:
+            for partition in ids_partitions:
+                # We get the term vectors for each group of those documents
+                ans = client.mtermvectors(index='text', ids=partition, doc_type='column')#, body=term_body)
+
+                # We merge them somehow
                 found_docs = ans['docs']
                 for doc in found_docs:
                     term_vectors = doc['term_vectors']
                     if 'text' in term_vectors:
-                        terms = list(ans['term_vectors']['text']['terms'].keys())
+                        terms = list(term_vectors['text']['terms'].keys())
                         for t in terms:
                             all_terms[t] = 0  # we don't care about the value
             fields.append((uid, sn, fn))
-            text_signatures.append(list(all_terms.items()))
+            text_signatures.append(list(all_terms.keys()))
         return fields, text_signatures
 
     def _get_all_fields_textsignatures(self):
