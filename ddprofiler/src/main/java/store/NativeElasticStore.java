@@ -181,7 +181,7 @@ public class NativeElasticStore implements Store {
 	@Override
 	public boolean indexData(int id, String sourceName, String columnName, List<String> values) {
 		String strId = Integer.toString(id);
-		String v = concatValues(values);
+		//String v = concatValues(values);
 		
 		XContentBuilder builder = null;
 		try {
@@ -190,8 +190,13 @@ public class NativeElasticStore implements Store {
 						.field("id", strId)
 						.field("sourceName", sourceName)
 						.field("columnName", columnName)
-						// TODO: is it more efficient if we build an array here instead?
-						.field("text", v)
+						.startArray("text");
+						
+						for (String v : values) {
+							builder.value(v);
+						}
+						
+						builder.endArray()
 					.endObject();
 		}
 		catch (IOException e) {

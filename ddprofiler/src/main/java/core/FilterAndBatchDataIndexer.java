@@ -14,13 +14,15 @@ import store.Store;
 public class FilterAndBatchDataIndexer implements DataIndexer {
 
 	private Store store;
-	private Map<String, Integer> attributeIds;
-	private Map<String, List<String>> attributeValues;
-	private Map<String, Integer> attributeValueSize;
-	private int indexTriggerThreshold = 1 * 1024 * 1024 * 35; // 35 MB 
+	private String sourceName;
+	private Map<Attribute, Integer> attributeIds;
+	private Map<Attribute, List<String>> attributeValues;
+	private Map<Attribute, Integer> attributeValueSize;
+	private int indexTriggerThreshold = 1 * 1024 * 1024 * 15; // 35 MB 
 	
-	public FilterAndBatchDataIndexer(Store s) {
+	public FilterAndBatchDataIndexer(Store s, String sourceName) {
 		this.store = s;
+		this.sourceName = sourceName;
 		this.attributeIds = new HashMap<>();
 		this.attributeValues = new HashMap<>();
 		this.attributeValueSize = new HashMap<>();
@@ -43,55 +45,56 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
 	 *   to do it as few times as possible
 	 */
 	@Override
-	public boolean indexData(Map<Attribute, Values> data, String sourceName) {
+	public boolean indexData(Map<Attribute, Values> data) {
 		for(Entry<Attribute, Values> entry : data.entrySet()) {
 			Attribute a = entry.getKey();
 			AttributeType at = a.getColumnType();
 			
 			if(at.equals(AttributeType.STRING)) {
 				String columnName = a.getColumnName();
-//				// Id for the attribute - computed only once
-//				int id = 0;
-//				if( ! attributeIds.containsKey(columnName)) {
-//					id = Utils.computeAttrId(sourceName, columnName);
-//					attributeIds.put(columnName, id);
-//				}
-//				else {
-//					id = attributeIds.get(columnName);
-//				}
+				// Id for the attribute - computed only once
+				int id = 0;
+				if( ! attributeIds.containsKey(a)) {
+					id = Utils.computeAttrId(sourceName, columnName);
+					attributeIds.put(a, id);
+				}
+				else {
+					id = attributeIds.get(a);
+				}
 				
-				// FIXME: introduce new call
-				int id = Utils.computeAttrId(sourceName, columnName);
+				// FIXME: introduce new call -> GC memory problems
+//				storeNewValuesAndMaybeTriggerIndex(id, sourceName, a, entry.getValue().getStrings());
+				
 				store.indexData(id, sourceName, columnName, entry.getValue().getStrings());
 			}
 		}
 		return true;
 	}
 	
-	private void storeNewValuesAndMaybeTriggerIndex(int id, String sourceName, String columnName, List<String> newValues) {
-		if(! attributeValues.containsKey(columnName)) {
-			attributeValues.put(columnName, new ArrayList<>());
-			attributeValueSize.put(columnName, 0);
+	private void storeNewValuesAndMaybeTriggerIndex(int id, String sourceName, Attribute a, List<String> newValues) {
+		if(! attributeValues.containsKey(a)) {
+			attributeValues.put(a, new ArrayList<>());
+			attributeValueSize.put(a, 0);
 		}
 		int size = computeAproxSizeOf(newValues);
-		int currentSize = attributeValueSize.get(columnName);
+		int currentSize = attributeValueSize.get(a);
 		int newSize = currentSize + size;
-		attributeValueSize.put(columnName, newSize);
-		updateValues(columnName, newValues);
+		attributeValueSize.put(a, newSize);
+		updateValues(a, newValues);
 		if(newSize > indexTriggerThreshold) {
 			// Index the batch of values
-			List<String> values = attributeValues.get(columnName);
-			store.indexData(id, sourceName, columnName, values);
+			List<String> values = attributeValues.get(a);
+			store.indexData(id, sourceName, a.getColumnName(), values);
 			// Clean up
-			attributeValues.put(columnName, new ArrayList<>());
-			attributeValueSize.put(columnName, 0);
+			attributeValues.put(a, new ArrayList<>());
+			attributeValueSize.put(a, 0);
 		}
 	}
 	
-	private void updateValues(String columnName, List<String> values) {
-		List<String> currentValues = attributeValues.get(columnName);
+	private void updateValues(Attribute at, List<String> values) {
+		List<String> currentValues = attributeValues.get(at);
 		currentValues.addAll(values);
-		attributeValues.put(columnName, currentValues);
+		attributeValues.put(at, currentValues);
 	}
 	
 	private int computeAproxSizeOf(List<String> values) {
@@ -103,9 +106,12 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
 	}
 
 	@Override
-	public boolean close() {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean flushAndClose() {
+		for(Entry<Attribute, Integer> entry : attributeIds.entrySet()) {
+			Attribute a = entry.getKey();
+			store.indexData(entry.getValue(), sourceName, a.getColumnName(), attributeValues.get(a));
+		}
+		return true;
 	}
 
 }

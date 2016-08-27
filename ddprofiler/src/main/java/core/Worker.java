@@ -92,7 +92,7 @@ public class Worker implements Runnable {
 					continue;
 				}
 				
-				DataIndexer indexer = new FilterAndBatchDataIndexer(store);
+				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getSourceName());
 				
 				// Access attributes and attribute type through first read
 				Connector c = task.getConnector();
@@ -115,7 +115,7 @@ public class Worker implements Runnable {
 				Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 				int records = 0;
 				while(data != null) {
-					indexer.indexData(data, task.getConnector().getSourceName());
+					indexer.indexData(data);
 					records = records + data.size();
 					// Do the processing
 					// FIXME: feedValuesToAnalyzers(data, analyzers);
@@ -132,6 +132,7 @@ public class Worker implements Runnable {
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
 //				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
 				
+				indexer.flushAndClose();
 				task.close();
 				List<WorkerTaskResult> results = wtrf.get();
 				
@@ -188,7 +189,7 @@ public class Worker implements Runnable {
 		}
 		
 		// Index text read so far
-		indexer.indexData(initData, task.getConnector().getSourceName());
+		indexer.indexData(initData);
 	}
 	
 	private void feedValuesToAnalyzers(Map<Attribute, Values> data, Map<String, Analysis> analyzers) {
