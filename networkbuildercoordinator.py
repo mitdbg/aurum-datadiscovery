@@ -52,7 +52,7 @@ def main():
     et = time.time()
     print("Time to extract signatures from store: {0}".format(str(et - st)))
     #field_and_text_signature_gen = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text_lsa(network, fields, text_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 

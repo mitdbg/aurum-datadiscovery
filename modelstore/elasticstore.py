@@ -1,7 +1,11 @@
 from elasticsearch import Elasticsearch
-import config as c
+
 from enum import Enum
+from collections import defaultdict
+
 from api.apiutils import Hit
+import config as c
+
 
 
 class KWType(Enum):
@@ -282,6 +286,13 @@ class StoreHandler:
             for i in range(0, len(ids), partition_size):
                 yield ids[i:i + partition_size]
 
+        def filter_term_vector_by_frequency(term_dict):
+            filtered = []
+            for k, v in term_dict.items():
+                if v > 2:
+                    filtered.append(k)
+            return filtered
+
         fields = []
         text_signatures = []
 
@@ -293,21 +304,23 @@ class StoreHandler:
             docs = self.get_all_docs_from_text_with_idx_id(uid)
             ids = [x for x in docs]
             ids_partitions = partition_ids(ids)  # partition ids so that they fit in one http request
-            all_terms = dict()
+            all_terms = defaultdict(int)
             for partition in ids_partitions:
                 # We get the term vectors for each group of those documents
                 ans = client.mtermvectors(index='text', ids=partition, doc_type='column')#, body=term_body)
-
                 # We merge them somehow
                 found_docs = ans['docs']
                 for doc in found_docs:
                     term_vectors = doc['term_vectors']
                     if 'text' in term_vectors:
-                        terms = list(term_vectors['text']['terms'].keys())
-                        for t in terms:
-                            all_terms[t] = 0  # we don't care about the value
-            fields.append((uid, sn, fn))
-            text_signatures.append(list(all_terms.keys()))
+                        # terms = list(term_vectors['text']['terms'].keys())
+                        terms_and_freq = term_vectors['text']['terms']
+                        for term, freq_dict in terms_and_freq.items():
+                            all_terms[term] = all_terms[term] + freq_dict['term_freq']  # we don't care about the value
+            filtered_term_vector = filter_term_vector_by_frequency(all_terms)
+            if len(filtered_term_vector) > 0:
+                fields.append((uid, sn, fn))
+                text_signatures.append(list(filtered_term_vector))
         return fields, text_signatures
 
     def _get_all_fields_textsignatures(self):
