@@ -90,6 +90,9 @@ public class DBConnector extends Connector {
 	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
 		String sql = null;
 		// TODO: add mysql here
+		// FIXME: HUGE inefficiency on reads here. We read all data to access only to a subset
+		// implement a better scrolling mechanism. In the meantime consider using a bigger num
+		// of records
 		if(this.db == DBType.POSTGRESQL) {
 			sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
 		}

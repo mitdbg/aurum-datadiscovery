@@ -132,7 +132,7 @@ public class Worker implements Runnable {
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
 //				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
 				
-				indexer.flushAndClose();
+//				// FIXME: indexer.flushAndClose();
 				task.close();
 				List<WorkerTaskResult> results = wtrf.get();
 				

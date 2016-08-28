@@ -158,6 +158,7 @@ public class EntityAnalyzer implements TextualDataConsumer {
 			}
 			return retArr;
 		}
+		
 		//TODO: does other models need preprocessing? 
 		
 		return strArr;
@@ -212,39 +213,41 @@ public class EntityAnalyzer implements TextualDataConsumer {
 	public boolean feedTextData(List<String> records) {
 		// TODO: preprocessing to records?
 		
-		if(isConverged){
-			return false;
-		}
+//		if(isConverged){
+//			return false;
+//		}
+//		
+//		String[] sentences = new String[records.size()];
+//		for (int i = 0; i < sentences.length; i++) {
+//			sentences[i] = records.get(i);
+//		}
+//		for (NameFinderME nameFinder : nameFinderList) {
+//			EntityAnalyzerStatistics eas = eaStatics.get(nameFinder);
+//			for(int i=0; i<sentences.length; i++){
+//				String[] inputStr = preprocessFeedString(tok.tokenize(sentences[i]),
+//						eas.getNameFinderStr()) ;
+//				eas.updateAvgFeedTokenCount(inputStr.length);
+//				Span nameSpans[] = nameFinder.find(inputStr);
+//				
+//				for (Span s : nameSpans) {
+//					entities.add(s.getType());
+//					eas.updateAverageProb(s.getProb());;
+//				}
+//			}
+//			
+//			
+//			// This is supposed to be called temporarily to clean up data
+//			nameFinder.clearAdaptiveData();
+//			
+//		}
+//		
+//		
+//		//printEAStatics();
+//		isConverged = estimateConverged();
+//		
+//		return false;
 		
-		String[] sentences = new String[records.size()];
-		for (int i = 0; i < sentences.length; i++) {
-			sentences[i] = records.get(i);
-		}
-		for (NameFinderME nameFinder : nameFinderList) {
-			EntityAnalyzerStatistics eas = eaStatics.get(nameFinder);
-			for(int i=0; i<sentences.length; i++){
-				String[] inputStr = preprocessFeedString(tok.tokenize(sentences[i]),
-						eas.getNameFinderStr()) ;
-				eas.updateAvgFeedTokenCount(inputStr.length);
-				Span nameSpans[] = nameFinder.find(inputStr);
-				
-				for (Span s : nameSpans) {
-					entities.add(s.getType());
-					eas.updateAverageProb(s.getProb());;
-				}
-			}
-			
-			
-			// This is supposed to be called temporarily to clean up data
-			nameFinder.clearAdaptiveData();
-			
-		}
-		
-		
-		//printEAStatics();
-		isConverged = estimateConverged();
-		
-		return false;
+		return true;
 	}
 
 	public List<TokenNameFinderModel> loadModel(InputStream modelConfigStream) {
