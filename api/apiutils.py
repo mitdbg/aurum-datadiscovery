@@ -310,10 +310,27 @@ class DRS:
         return self
 
     def intersection(self, drs):
-        merging_data = set(drs.data)
-        my_data = set(self.data)
-        new_data = merging_data.intersection(my_data)
-        self.set_data(list(new_data))
+        new_data = []
+        # FIXME: There are more efficient ways of doing this
+        if drs.mode == DRSMode.TABLE:
+            merging_tables = [(hit.source_name, hit) for hit in drs.data]
+            my_tables = [(hit.source_name, hit) for hit in self.data]
+            for table, hit_ext in merging_tables:
+                for t, hit_in in my_tables:
+                    if table == t:
+                        new_data.append(hit_ext)
+                        new_data.append(hit_in)
+                        #if hit_ext not in new_data:
+                        #    new_data.append(hit_ext)
+                        #if hit_in != hit_ext:
+                        #    if hit_ext not in new_data:
+                        #        new_data.append(hit_in)
+        elif drs.mode == DRSMode.FIELDS:
+            merging_data = set(drs.data)
+            my_data = set(self.data)
+            new_data = list(merging_data.intersection(my_data))
+        # We set the new data into our DRS again
+        self.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
@@ -438,8 +455,11 @@ class DRS:
     def print_columns(self):
         mode = self.mode  # save state
         self.set_fields_mode()
+        seen_nid = dict()
         for x in self:
-            print(x)
+            if x not in seen_nid:
+                print(x)
+            seen_nid[x] = 0  # just use as set
         self._mode = mode  # recover state
 
     def pretty_print_columns(self):
