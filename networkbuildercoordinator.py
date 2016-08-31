@@ -3,10 +3,11 @@ from knowledgerepr import fieldnetwork
 from knowledgerepr import networkbuilder
 from knowledgerepr.networkbuilder import FieldNetwork
 
+import sys
 import time
 
 
-def main():
+def main(output_path=None):
     start_all = time.time()
     network = FieldNetwork()
     store = StoreHandler()
@@ -92,7 +93,9 @@ def main():
 
     """
 
-    path = "test/testing.pickle"
+    path = "test/datagov.pickle"
+    if output_path is not None:
+        path = output_path
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -260,7 +263,10 @@ def test_read_store():
 
 
 if __name__ == "__main__":
-    main()
+    path = None
+    if len(sys.argv) >= 2:
+        path = sys.argv[1]
+    main(path)
 
     #test_read_store()
 
