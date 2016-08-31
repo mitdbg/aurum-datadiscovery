@@ -13,17 +13,19 @@ def main():
 
     # Get all fields from store
     fields_gen = store.get_all_fields()
-    fields = [f for f in fields_gen]
+    #  fields = [f for f in fields_gen]
     # Schema relation
     start_schema = time.time()
-    networkbuilder.build_schema_relation(network, fields)
-    fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields]
+    networkbuilder.build_schema_relation(network, fields_gen)
+    #fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields_gen]
     end_schema = time.time()
     print("Total schema: {0}".format(str(end_schema - start_schema)))
 
     # Schema_sim relation
     start_schema_sim = time.time()
-    networkbuilder.build_schema_sim_relation(network, fields)
+    # Create generator again
+    fields_gen = store.get_all_fields()
+    networkbuilder.build_schema_sim_relation_lsa(network, fields_gen)
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
@@ -92,7 +94,7 @@ def main():
 
     """
 
-    path = "test/testing.pickle"
+    path = "test/all_chemical.pickle"
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -260,9 +262,9 @@ def test_read_store():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
 
-    #test_read_store()
+    test_read_store()
 
     #test()
     #plot_num()

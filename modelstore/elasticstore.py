@@ -41,7 +41,6 @@ class StoreHandler:
                                          'hits.hits._source.totalValues',
                                          'hits.hits._source.uniqueValues']
                             )
-
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
         while remaining > 0:
@@ -299,6 +298,7 @@ class StoreHandler:
         #term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
         # We get the ids from 'profile'
         text_fields_gen = self.get_all_text_fields()
+        # TODO: maybe materialize this (above) first?
         for (uid, sn, fn, tv, uv) in text_fields_gen:
             # We retrieve all documents indexed with the same id in 'text'
             docs = self.get_all_docs_from_text_with_idx_id(uid)
