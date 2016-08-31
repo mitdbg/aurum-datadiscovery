@@ -138,6 +138,7 @@ def _build_schema_relation(network, fields):
                 n_inner = network.add_field(sn, fn, card)
                 network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 
+
 def build_schema_sim_relation(network, fields):
     docs = []
     for (nid, sn, fn) in fields:
@@ -146,6 +147,21 @@ def build_schema_sim_relation(network, fields):
     tfidf = da.get_tfidf_docs(docs)
     text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
     create_sim_graph_text(network, text_engine, fields, tfidf, Relation.SCHEMA_SIM)
+
+
+def build_schema_sim_relation_lsa(network, fields):
+    docs = []
+    for (nid, sn, fn, _, _) in fields:
+        docs.append(fn)
+
+    tfidf = da.get_tfidf_docs(docs)
+
+    print("tfidf shape before LSA: " + str(tfidf.shape))
+    tfidf = lsa_dimensionality_reduction(tfidf)
+    print("tfidf shape after LSA: " + str(tfidf.shape))
+
+    text_engine = index_in_text_engine(fields, tfidf, rbp, tfidf_is_dense=True)  # rbp the global variable
+    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.SCHEMA_SIM, tfidf_is_dense=True)
 
 
 def build_entity_sim_relation(network, fields, entities):

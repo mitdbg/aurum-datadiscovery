@@ -41,7 +41,6 @@ class StoreHandler:
                                          'hits.hits._source.totalValues',
                                          'hits.hits._source.uniqueValues']
                             )
-
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
         while remaining > 0:
@@ -300,6 +299,7 @@ class StoreHandler:
         # We get the ids from 'profile'
         text_fields_gen = self.get_all_text_fields()
         total = 0
+        # TODO: maybe materialize this (above) first?
         for (uid, sn, fn, tv, uv) in text_fields_gen:
             total = total + 1
             print("text_sig: " + str(total))
