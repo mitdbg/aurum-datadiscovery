@@ -280,16 +280,41 @@ class DRS:
     def size(self):
         return len(self.data)
 
-    def absorb_provenance(self, drs):
+    def absorb_provenance(self, drs, annotate_and_edges=False, annotate_or_edges=False):
         """
         Merge provenance of the input parameter into self, *not* the data.
         :param drs:
         :return:
         """
+        def annotate_union_edges(label):
+            # Find nodes that intersect (those that will contain add_edges)
+            my_data = set(self.data)
+            merging_data = set(drs.data)
+            disjoint = my_data.intersection(merging_data)  # where a union is created
+            # Now find the incoming edges to these nodes in each of the drs's
+            node_and_edges = []
+            for el in disjoint:
+                input_edges1 = self._provenance.prov_graph().in_edges(el, data=True)
+                input_edges2 = drs._provenance.prov_graph().in_edges(el, data=True)
+                node_and_edges.append((input_edges1, input_edges2))
+            # Now locate the nodes in the merged prov graph and annotate edges with AND
+            for input1, input2 in node_and_edges:
+                for src1, tar1, dic1 in input1:
+                    merge[src1][tar1][label] = 1
+                for src2, tar2, dic2 in input2:
+                    merge[src2][tar2][label] = 1
+
         # Get prov graph of merging
         prov_graph_of_merging = drs.get_provenance().prov_graph()
         # Compose into my prov graph
         merge = nx.compose(self._provenance.prov_graph(), prov_graph_of_merging)
+
+        if annotate_and_edges:
+            annotate_union_edges('AND')
+
+        if annotate_or_edges:
+            annotate_union_edges('OR')
+
         # Rewrite my prov graph to the new merged one and return
         self._provenance.swap_p_graph(merge)
         return self
@@ -334,7 +359,7 @@ class DRS:
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
-        self.absorb_provenance(drs)
+        self.absorb_provenance(drs, annotate_and_edges=True)
         return self
 
     def union(self, drs):
