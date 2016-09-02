@@ -268,17 +268,21 @@ class DRS:
     def mode(self):
         return self._mode
 
+    def size(self):
+        return len(self.data)
+
     def get_provenance(self):
         return self._provenance
+
+    """
+    Provenance functions
+    """
 
     def visualize_provenance(self, labels=False):
         if labels:
             nx.draw_networkx(self.get_provenance().prov_graph())
         else:
             nx.draw(self.get_provenance().prov_graph())
-
-    def size(self):
-        return len(self.data)
 
     def absorb_provenance(self, drs, annotate_and_edges=False, annotate_or_edges=False):
         """
@@ -338,6 +342,10 @@ class DRS:
         self.absorb_provenance(drs)
         return self
 
+    """
+    Set operations
+    """
+
     def intersection(self, drs):
         new_data = []
         # FIXME: There are more efficient ways of doing this
@@ -349,11 +357,6 @@ class DRS:
                     if table == t:
                         new_data.append(hit_ext)
                         new_data.append(hit_in)
-                        #if hit_ext not in new_data:
-                        #    new_data.append(hit_ext)
-                        #if hit_in != hit_ext:
-                        #    if hit_ext not in new_data:
-                        #        new_data.append(hit_in)
         elif drs.mode == DRSMode.FIELDS:
             merging_data = set(drs.data)
             my_data = set(self.data)
@@ -386,11 +389,19 @@ class DRS:
         self.absorb_provenance(drs)
         return self
 
+    """
+    Mode configuration functions
+    """
+
     def set_fields_mode(self):
         self._mode = DRSMode.FIELDS
 
     def set_table_mode(self):
         self._mode = DRSMode.TABLE
+
+    """
+    Path functions
+    """
 
     def paths(self):
         """
@@ -408,6 +419,10 @@ class DRS:
         """
         paths = self._provenance.compute_paths_with(a)
         return paths
+
+    """
+    Query Provenance functions
+    """
 
     def why_id(self, a: int) -> [Hit]:
         """
@@ -469,6 +484,33 @@ class DRS:
             explanation = self._provenance.explain_path(p)
             explanations.append(explanation)
         return explanations
+
+    """
+    Ranking functions
+    """
+
+    def rank_certainty(self):
+        """
+        Ranks the current results in DRS with respect to certainty criteria. It will rank columns or tables
+        :return:
+        """
+
+        return
+
+    def rank_coverage(self):
+        """
+        Ranks the current results in DRS with respect to coverage criteria. It will rank columns or tables
+        :return:
+        """
+
+        return
+
+    def rank_certainty_include_coverage(self):
+        """
+        TODO: future work
+        :return:
+        """
+        return
 
     """
     Convenience functions
