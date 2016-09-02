@@ -300,9 +300,13 @@ class DRS:
             # Now locate the nodes in the merged prov graph and annotate edges with AND
             for input1, input2 in node_and_edges:
                 for src1, tar1, dic1 in input1:
-                    merge[src1][tar1][label] = 1
+                    edge_data = merge[src1][tar1]  # this is the edge information
+                    for e in edge_data:  # we iterate over each edge
+                        edge_data[e][label] = 1  # we assign the new metadata as data assigned to the edge
                 for src2, tar2, dic2 in input2:
-                    merge[src2][tar2][label] = 1
+                    edge_data = merge[src2][tar2]
+                    for e in edge_data:
+                        edge_data[e][label] = 1
 
         # Get prov graph of merging
         prov_graph_of_merging = drs.get_provenance().prov_graph()
