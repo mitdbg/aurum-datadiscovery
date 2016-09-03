@@ -286,6 +286,7 @@ class StoreHandler:
                 yield ids[i:i + partition_size]
 
         def filter_term_vector_by_frequency(term_dict):
+            # FIXME: add filter by term length
             filtered = []
             for k, v in term_dict.items():
                 if v > 2:
