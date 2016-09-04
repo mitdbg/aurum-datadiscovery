@@ -30,5 +30,18 @@ class TestRanking(unittest.TestCase):
         res = res.rank_coverage()
 
         res.pretty_print_columns_with_scores()
+        res.print_tables_with_scores()
+
+        self.assertTrue(True)
+
+    def test_compute_ranking_scores_certainty_table(self):
+        table = 'Buildings.csv'
+        res = self.api.similar_content_to_table(table)
+
+        res = res.rank_certainty()
+
+        res.print_tables_with_scores()
+
+        res.print_columns()
 
         self.assertTrue(True)

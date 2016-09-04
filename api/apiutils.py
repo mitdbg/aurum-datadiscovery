@@ -4,6 +4,7 @@ from collections import defaultdict
 from enum import Enum
 import binascii
 import networkx as nx
+from bitarray import bitarray
 
 global_origin_id = 0
 
@@ -217,6 +218,10 @@ class Provenance:
 
 class DRS:
 
+    class RankingCriteria(Enum):
+        CERTAINTY = 0
+        COVERAGE = 1
+
     def __init__(self, data, operation):
         self._data = data
         self._provenance = Provenance(data, operation)
@@ -227,7 +232,9 @@ class DRS:
         # Ranking related variables
         self._ranked = False
         self._rank_data = defaultdict(dict)
+        self._ranking_criteria = None
         self._chosen_rank = []
+        self._origin_values_coverage = dict()
 
     def __iter__(self):
         return self
@@ -520,7 +527,7 @@ class DRS:
             :return:
             """
             if aggr_strategy is None:
-                max_score = -1
+                max_score = 0
                 for n in ns:
                     score = get_score_continuous_path(pg, n)
                     if score > max_score:
@@ -535,7 +542,7 @@ class DRS:
             :param src:
             :return:
             """
-            current_score = src.score
+            current_score = float(src.score)
             ns = [x for x in pg.neighbors(src)]
             if len(ns) == 1:
                 current_score = current_score + get_score_continuous_path(pg, ns[0])
@@ -555,10 +562,24 @@ class DRS:
         # Get total number of ORIGIN elements FIXME: (not KW, etc)
         (leafs, _) = self._provenance.get_leafs_and_heads()
         total_number = len(leafs)
+
+        i = 0
+        for origin in leafs:
+            # Assign index to original values
+            self._origin_values_coverage[origin] = i
+            i += 1
+
         for el in self.data:
+            # initialize coverage set to False
+            coverage_set = bitarray(len(leafs))
+            coverage_set.setall(False)
+            # Get covered elements
             elements = self.why(el)
+            for element_covered in elements:
+                idx = self._origin_values_coverage[element_covered]
+                coverage_set[idx] = True
             coverage = float(len(elements)) / float(total_number)
-            self._rank_data[el]['coverage_score'] = coverage
+            self._rank_data[el]['coverage_score'] = (coverage, coverage_set)
 
     def compute_ranking_scores(self):
 
@@ -581,6 +602,7 @@ class DRS:
             elements.append(value)
         elements = sorted(elements, key=lambda a: a[1], reverse=True)
         self._data = [el for (el, score) in elements]  # save data in order
+        self._ranking_criteria = self.RankingCriteria.CERTAINTY
         self._chosen_rank = elements  # store ranked data with scores for debugging/inspection
 
         return self
@@ -596,10 +618,13 @@ class DRS:
 
         elements = []
         for el, score_dict in self._rank_data.items():
+            #score, coverage_set = score_dict['coverage_score']
+            #value = (el, score, coverage_set)
             value = (el, score_dict['coverage_score'])
             elements.append(value)
-        elements = sorted(elements, key=lambda a: a[1], reverse=True)
+        elements = sorted(elements, key=lambda a: a[1][0], reverse=True)
         self._data = [el for (el, score) in elements]  # save data in order
+        self._ranking_criteria = self.RankingCriteria.COVERAGE
         self._chosen_rank = elements  # store ranked data with scores for debugging/inspection
 
         return self
@@ -630,6 +655,51 @@ class DRS:
             if x not in seen_nid:
                 print(x)
             seen_nid[x] = 0  # just use as set
+        self._mode = mode  # recover state
+
+    def print_tables_with_scores(self):
+
+        def aggr_certainty_table(group_by_table):
+            ranked_list = []
+            # First aggregate bitsets
+            for x, score in self._chosen_rank:
+                new_score = score
+                if x.source_name in group_by_table:
+                    old_score = group_by_table[x.source_name]
+                    new_score = old_score + new_score
+                group_by_table[x.source_name] = new_score
+            for table, score_value in group_by_table.items():
+                value = (table, score_value)
+                ranked_list.append(value)
+            ranked_list = sorted(ranked_list, key=lambda a: a[1], reverse=True)
+            return ranked_list
+
+        def aggr_coverage_table(group_by_table):
+            ranked_list = []
+            # First aggregate bitsets
+            for x, score in self._chosen_rank:
+                coverage_score, new_coverage_set = score
+                if x.source_name in group_by_table:
+                    old_coverage_set = group_by_table[x.source_name]
+                    new_coverage_set = new_coverage_set | old_coverage_set
+                group_by_table[x.source_name] = new_coverage_set
+            for table, bitset in group_by_table.items():
+                new_score = bitset.count() / bitset.length()
+                value = (table, new_score)
+                ranked_list.append(value)
+            ranked_list = sorted(ranked_list, key=lambda a: a[1], reverse=True)
+            return ranked_list
+
+        mode = self.mode  # save state
+        self.set_fields_mode()
+        group_by_table = dict()
+        if self._ranking_criteria == self.RankingCriteria.CERTAINTY:
+            ranked_list = aggr_certainty_table(group_by_table)
+        elif self._ranking_criteria == self.RankingCriteria.COVERAGE:
+            ranked_list = aggr_coverage_table(group_by_table)
+
+        for x in ranked_list:
+            print(x)
         self._mode = mode  # recover state
 
     def print_columns_with_scores(self):
