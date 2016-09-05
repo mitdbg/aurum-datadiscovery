@@ -1,6 +1,7 @@
 from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.display import Markdown, display
 import sys
+import time
 
 from api.reporting import Report
 from knowledgerepr import fieldnetwork
@@ -14,13 +15,17 @@ def print_md(string):
     display(Markdown(string))
 
 
-def init_system(path_to_serialized_model):
+def init_system(path_to_serialized_model, reporting=True):
     print_md('Loading: *' + str(path_to_serialized_model) + "*")
+    sl = time.time()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     api = API(network)
-    reporting = Report(network)
+    if reporting:
+        reporting = Report(network)
     api.init_store()
     api.help()
+    el = time.time()
+    print("Took " + str(el-sl) + " to load all data")
     return api, reporting
 
 
