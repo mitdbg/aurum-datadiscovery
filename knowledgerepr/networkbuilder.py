@@ -141,7 +141,7 @@ def _build_schema_relation(network, fields):
 
 def build_schema_sim_relation(network, fields):
     docs = []
-    for (nid, sn, fn) in fields:
+    for (nid, sn, fn, tv, uv) in fields:
         docs.append(fn)
 
     tfidf = da.get_tfidf_docs(docs)
