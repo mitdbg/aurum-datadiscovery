@@ -26,7 +26,7 @@ def main(output_path=None):
     start_schema_sim = time.time()
     # Create generator again
     fields_gen = store.get_all_fields()
-    networkbuilder.build_schema_sim_relation_lsa(network, fields_gen)
+    networkbuilder.build_schema_sim_relation(network, fields_gen)
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
