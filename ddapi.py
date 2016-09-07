@@ -312,7 +312,7 @@ class DDAPI:
         :param b: another iterable object
         :return: the intersection of the two provided iterable objects
         """
-        assert(a.mode == b.mode)
+        assert a.mode == b.mode, "Input parameters are not in the same mode (fields, table)"
         o_drs = a.intersection(b)
         return o_drs
 
@@ -323,7 +323,7 @@ class DDAPI:
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
-        assert (a.mode == b.mode)
+        assert a.mode == b.mode, "Input parameters are not in the same mode (fields, table)"
         o_drs = a.union(b)
         return o_drs
 
@@ -334,7 +334,7 @@ class DDAPI:
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
-        assert (a.mode == b.mode)
+        assert a.mode == b.mode, "Input parameters are not in the same mode (fields, table)"
         o_drs = a.set_difference(b)
         return o_drs
 

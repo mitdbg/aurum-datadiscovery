@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
 from collections import namedtuple
+from collections import defaultdict
 from enum import Enum
 import binascii
 import networkx as nx
+from bitarray import bitarray
 
 global_origin_id = 0
 
-BaseHit = namedtuple(
-    'Hit', 'nid, source_name, field_name, score', verbose=False)
+BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
 
 
 class Hit(BaseHit):
-
     def __hash__(self):
         hsh = int(self.nid)
         return hsh
@@ -212,11 +212,15 @@ class Provenance:
                 explanation = explanation + get_name_from_hit(src) + " -> "
                 edge_info = self._p_graph[src][trg]
                 explanation = explanation + get_string_from_edge_info(edge_info) + " -> " \
-                    + get_name_from_hit(trg) + '\n'
+                              + get_name_from_hit(trg) + '\n'
         return explanation
 
 
 class DRS:
+
+    class RankingCriteria(Enum):
+        CERTAINTY = 0
+        COVERAGE = 1
 
     def __init__(self, data, operation):
         self._data = data
@@ -225,6 +229,12 @@ class DRS:
         self._idx = 0
         self._idx_table = 0
         self._mode = DRSMode.FIELDS
+        # Ranking related variables
+        self._ranked = False
+        self._rank_data = defaultdict(dict)
+        self._ranking_criteria = None
+        self._chosen_rank = []
+        self._origin_values_coverage = dict()
 
     def __iter__(self):
         return self
@@ -264,14 +274,22 @@ class DRS:
         self._idx = 0
         self._idx_table = 0
         self._mode = DRSMode.FIELDS
+        self._ranked = False
         return self
 
     @property
     def mode(self):
         return self._mode
 
+    def size(self):
+        return len(self.data)
+
     def get_provenance(self):
         return self._provenance
+
+    """
+    Provenance functions
+    """
 
     def visualize_provenance(self, labels=False):
         if labels:
@@ -279,20 +297,47 @@ class DRS:
         else:
             nx.draw(self.get_provenance().prov_graph())
 
-    def size(self):
-        return len(self.data)
-
-    def absorb_provenance(self, drs):
+    def absorb_provenance(self, drs, annotate_and_edges=False, annotate_or_edges=False):
         """
         Merge provenance of the input parameter into self, *not* the data.
         :param drs:
         :return:
         """
+        def annotate_union_edges(label):
+            # Find nodes that intersect (those that will contain add_edges)
+            my_data = set(self.data)
+            merging_data = set(drs.data)
+            disjoint = my_data.intersection(merging_data)  # where a union is created
+            # Now find the incoming edges to these nodes in each of the drs's
+            node_and_edges = []
+            for el in disjoint:
+                input_edges1 = self._provenance.prov_graph().in_edges(el, data=True)
+                input_edges2 = drs._provenance.prov_graph().in_edges(el, data=True)
+                node_and_edges.append((input_edges1, input_edges2))
+            # Now locate the nodes in the merged prov graph and annotate edges with AND
+            for input1, input2 in node_and_edges:
+                for src1, tar1, dic1 in input1:
+                    edge_data = merge[src1][tar1]  # this is the edge information
+                    for e in edge_data:  # we iterate over each edge
+                        edge_data[e][label] = 1  # we assign the new metadata as data assigned to the edge
+                for src2, tar2, dic2 in input2:
+                    edge_data = merge[src2][tar2]
+                    for e in edge_data:
+                        edge_data[e][label] = 1
+
+        # Reset ranking
+        self._ranked = False
         # Get prov graph of merging
         prov_graph_of_merging = drs.get_provenance().prov_graph()
         # Compose into my prov graph
-        merge = nx.compose(self._provenance.prov_graph(),
-                           prov_graph_of_merging)
+        merge = nx.compose(self._provenance.prov_graph(), prov_graph_of_merging)
+
+        if annotate_and_edges:
+            annotate_union_edges('AND')
+
+        if annotate_or_edges:
+            annotate_union_edges('OR')
+
         # Rewrite my prov graph to the new merged one and return
         self._provenance.swap_p_graph(merge)
         return self
@@ -303,6 +348,8 @@ class DRS:
         :param drs:
         :return:
         """
+        # Reset ranking
+        self._ranked = False
         # Set union merge data
         merging_data = set(drs.data)
         my_data = set(self.data)
@@ -312,44 +359,72 @@ class DRS:
         self.absorb_provenance(drs)
         return self
 
+    """
+    Set operations
+    """
+
     def intersection(self, drs):
-        merging_data = set(drs.data)
-        my_data = set(self.data)
-        new_data = merging_data.intersection(my_data)
-        self.set_data(list(new_data))
+        # Reset ranking
+        self._ranked = False
+        new_data = []
+        # FIXME: There are more efficient ways of doing this
+        if drs.mode == DRSMode.TABLE:
+            merging_tables = [(hit.source_name, hit) for hit in drs.data]
+            my_tables = [(hit.source_name, hit) for hit in self.data]
+            for table, hit_ext in merging_tables:
+                for t, hit_in in my_tables:
+                    if table == t:
+                        new_data.append(hit_ext)
+                        new_data.append(hit_in)
+        elif drs.mode == DRSMode.FIELDS:
+            merging_data = set(drs.data)
+            my_data = set(self.data)
+            new_data = list(merging_data.intersection(my_data))
+        # We set the new data into our DRS again
+        self.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
-        self.absorb_provenance(drs)
+        self.absorb_provenance(drs, annotate_and_edges=True)
         return self
 
     def union(self, drs):
+        # Reset ranking
+        self._ranked = False
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.union(my_data)
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov
-        # graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         self.absorb_provenance(drs)
         return self
 
     def set_difference(self, drs):
+        # Reset ranking
+        self._ranked = False
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = my_data - merging_data
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov
-        # graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         self.absorb_provenance(drs)
         return self
+
+    """
+    Mode configuration functions
+    """
 
     def set_fields_mode(self):
         self._mode = DRSMode.FIELDS
 
     def set_table_mode(self):
         self._mode = DRSMode.TABLE
+
+    """
+    Path functions
+    """
 
     def paths(self):
         """
@@ -367,6 +442,10 @@ class DRS:
         """
         paths = self._provenance.compute_paths_with(a)
         return paths
+
+    """
+    Query Provenance functions
+    """
 
     def why_id(self, a: int) -> [Hit]:
         """
@@ -391,8 +470,7 @@ class DRS:
             print("The result does not exist")
             return
 
-        # Calculate paths from a to leafs, in reverse order and return the
-        # leafs.
+        # Calculate paths from a to leafs, in reverse order and return the leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
         origins = []
         for p in paths:
@@ -432,6 +510,134 @@ class DRS:
         return explanations
 
     """
+    Ranking functions
+    """
+
+    def _compute_certainty_scores(self, aggr_strategy=None):
+        """
+        FIXME: scores being part of nodes instead of edges mean we cannot implement the
+        best aggregation method. Only one temporal one that works ok in practice.
+        :param aggregation:
+        :return:
+        """
+
+        def decide_path(pg, ns):
+            """
+            Given n score_paths, it chooses one according to an aggregation strategy
+            :param pg:
+            :return:
+            """
+            if aggr_strategy is None:
+                max_score = 0
+                for n in ns:
+                    score = get_score_continuous_path(pg, n)
+                    if score > max_score:
+                        max_score = score
+            # FIXME: plug in here the logic for the other aggr strategies
+            return score
+
+        def get_score_continuous_path(pg, src):
+            """
+            Traverse graph from src forming a score path
+            :param pg:
+            :param src:
+            :return:
+            """
+            current_score = float(src.score)
+            ns = [x for x in pg.neighbors(src)]
+            if len(ns) == 1:
+                current_score = current_score + get_score_continuous_path(pg, ns[0])
+            elif len(ns) > 1:
+                current_score = current_score + decide_path(pg, ns)
+            # Last option: when there are no neighbors, we simply return current_store
+            return current_score
+
+        # We reverse the provenance graph
+        pg = self._provenance.prov_graph().reverse()
+        # Compute recursively the certainty score for every result
+        for el in self.data:
+            score = get_score_continuous_path(pg, el)
+            self._rank_data[el]['certainty_score'] = score
+
+    def _compute_coverage_scores(self):
+        # Get total number of ORIGIN elements FIXME: (not KW, etc)
+        (leafs, _) = self._provenance.get_leafs_and_heads()
+        total_number = len(leafs)
+
+        i = 0
+        for origin in leafs:
+            # Assign index to original values
+            self._origin_values_coverage[origin] = i
+            i += 1
+
+        for el in self.data:
+            # initialize coverage set to False
+            coverage_set = bitarray(len(leafs))
+            coverage_set.setall(False)
+            # Get covered elements
+            elements = self.why(el)
+            for element_covered in elements:
+                idx = self._origin_values_coverage[element_covered]
+                coverage_set[idx] = True
+            coverage = float(len(elements)) / float(total_number)
+            self._rank_data[el]['coverage_score'] = (coverage, coverage_set)
+
+    def compute_ranking_scores(self):
+
+        self._compute_certainty_scores()
+        self._compute_coverage_scores()
+
+        self._ranked = True
+
+    def rank_certainty(self):
+        """
+        Ranks the current results in DRS with respect to certainty criteria. It will rank columns or tables
+        :return:
+        """
+        if self._ranked is False:
+            self.compute_ranking_scores()
+
+        elements = []
+        for el, score_dict in self._rank_data.items():
+            value = (el, score_dict['certainty_score'])
+            elements.append(value)
+        elements = sorted(elements, key=lambda a: a[1], reverse=True)
+        self._data = [el for (el, score) in elements]  # save data in order
+        self._ranking_criteria = self.RankingCriteria.CERTAINTY
+        self._chosen_rank = elements  # store ranked data with scores for debugging/inspection
+
+        return self
+
+    def rank_coverage(self):
+        """
+        Ranks the current results in DRS with respect to coverage criteria. It will rank columns or tables
+        TODO: basic implementation
+        :return:
+        """
+        if self._ranked is False:
+            self.compute_ranking_scores()
+
+        elements = []
+        for el, score_dict in self._rank_data.items():
+            #score, coverage_set = score_dict['coverage_score']
+            #value = (el, score, coverage_set)
+            value = (el, score_dict['coverage_score'])
+            elements.append(value)
+        elements = sorted(elements, key=lambda a: a[1][0], reverse=True)
+        self._data = [el for (el, score) in elements]  # save data in order
+        self._ranking_criteria = self.RankingCriteria.COVERAGE
+        self._chosen_rank = elements  # store ranked data with scores for debugging/inspection
+
+        return self
+
+    def rank_certainty_include_coverage(self):
+        """
+        TODO: future work
+        :return:
+        """
+        return
+
+    """
     Convenience functions
     """
 
@@ -445,15 +651,81 @@ class DRS:
     def print_columns(self):
         mode = self.mode  # save state
         self.set_fields_mode()
+        seen_nid = dict()
         for x in self:
+            if x not in seen_nid:
+                print(x)
+            seen_nid[x] = 0  # just use as set
+        self._mode = mode  # recover state
+
+    def print_tables_with_scores(self):
+
+        def aggr_certainty_table(group_by_table):
+            ranked_list = []
+            # First aggregate bitsets
+            for x, score in self._chosen_rank:
+                new_score = score
+                if x.source_name in group_by_table:
+                    old_score = group_by_table[x.source_name]
+                    new_score = old_score + new_score
+                group_by_table[x.source_name] = new_score
+            for table, score_value in group_by_table.items():
+                value = (table, score_value)
+                ranked_list.append(value)
+            ranked_list = sorted(ranked_list, key=lambda a: a[1], reverse=True)
+            return ranked_list
+
+        def aggr_coverage_table(group_by_table):
+            ranked_list = []
+            # First aggregate bitsets
+            for x, score in self._chosen_rank:
+                coverage_score, new_coverage_set = score
+                if x.source_name in group_by_table:
+                    old_coverage_set = group_by_table[x.source_name]
+                    new_coverage_set = new_coverage_set | old_coverage_set
+                group_by_table[x.source_name] = new_coverage_set
+            for table, bitset in group_by_table.items():
+                new_score = bitset.count() / bitset.length()
+                value = (table, new_score)
+                ranked_list.append(value)
+            ranked_list = sorted(ranked_list, key=lambda a: a[1], reverse=True)
+            return ranked_list
+
+        mode = self.mode  # save state
+        self.set_fields_mode()
+        group_by_table = dict()
+        if self._ranking_criteria == self.RankingCriteria.CERTAINTY:
+            ranked_list = aggr_certainty_table(group_by_table)
+        elif self._ranking_criteria == self.RankingCriteria.COVERAGE:
+            ranked_list = aggr_coverage_table(group_by_table)
+
+        for x in ranked_list:
             print(x)
         self._mode = mode  # recover state
+
+    def print_columns_with_scores(self):
+        mode = self.mode
+        self.set_fields_mode()
+        seen_nid = dict()
+        for el, score in self._chosen_rank:
+            if el not in seen_nid:
+                print(str(el) + " -> " + str(score))
+            seen_nid[el] = 0
+        self._mode = mode
 
     def pretty_print_columns(self):
         mode = self.mode  # save state
         self.set_fields_mode()
         for x in self:
-            string = "SOURCE: " + x.source_name + "\t\t\t FIELD " + x.field_name
+            string = "SOURCE: " + x.source_name + "\t\t\t FIELD: " + x.field_name
+            print(string)
+        self._mode = mode  # recover state
+
+    def pretty_print_columns_with_scores(self):
+        mode = self.mode  # save state
+        self.set_fields_mode()
+        for x, score in self._chosen_rank:
+            string = "SOURCE: " + x.source_name + "\t FIELD: " + x.field_name + "\t SCORE: " + str(score)
             print(string)
         self._mode = mode  # recover state
 

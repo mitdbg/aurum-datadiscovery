@@ -1,7 +1,11 @@
 from elasticsearch import Elasticsearch
-import config as c
+
 from enum import Enum
+from collections import defaultdict
+
 from api.apiutils import Hit
+import config as c
+
 
 
 class KWType(Enum):
@@ -25,6 +29,37 @@ class StoreHandler:
 
     def close(self):
         print("TODO")
+
+    def get_all_text_fields(self):
+        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
+        res = client.search(index='profile', body=query_body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName',
+                                         'hits.hits._source.totalValues',
+                                         'hits.hits._source.uniqueValues']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'],
+                                           h['_source']['totalValues'], h['_source']['uniqueValues'])
+                yield id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName',
+                                             'hits.hits._source.totalValues',
+                                             'hits.hits._source.uniqueValues']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
 
     def get_all_fields(self):
         """
@@ -61,6 +96,39 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
+    def get_fields_text_index(self):
+        """
+        Reads all fields, described as (id, source_name, field_name) from the store (text index).
+        :return: a list of all fields with the form (id, source_name, field_name)
+        """
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='text', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.id',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                rawid_id_source_and_file_name = (h['_id'], h['_source']['id'],
+                                                 h['_source']['sourceName'], h['_source']['columnName'])
+                yield rawid_id_source_and_file_name
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.id',
+                                             'hits.hits._source.sourceName',
+                                             'hits.hits._source.columnName']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def get_all_fields_of_source(self, source_name):
         body = {"query": {"match": {"sourceName": source_name}}}
         res = client.search(index='profile', body=body, scroll="10m",
@@ -75,8 +143,7 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                hit = Hit(h['_id'], h['_source']['sourceName'],
-                          h['_source']['columnName'], -1)
+                hit = Hit(h['_id'], h['_source']['sourceName'], h['_source']['columnName'], -1)
                 yield hit
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
@@ -127,40 +194,6 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
-    def get_fields_text_index(self):
-        """
-        Reads all fields, described as (id, source_name, field_name) from the store (text index).
-        :return: a list of all fields with the form (id, source_name, field_name)
-        """
-
-        body = {"query": {"match_all": {}}}
-        res = client.search(index='text', body=body, scroll="10m",
-                            filter_path=['_scroll_id',
-                                         'hits.hits._id',
-                                         'hits.total',
-                                         'hits.hits._source.id',
-                                         'hits.hits._source.sourceName',
-                                         'hits.hits._source.columnName']
-                            )
-        scroll_id = res['_scroll_id']
-        remaining = res['hits']['total']
-        while remaining > 0:
-            hits = res['hits']['hits']
-            for h in hits:
-                rawid_id_source_and_file_name = (h['_id'], h['_source']['id'],
-                                                 h['_source']['sourceName'], h['_source']['columnName'])
-                yield rawid_id_source_and_file_name
-                remaining -= 1
-            res = client.scroll(scroll="3m", scroll_id=scroll_id,
-                                filter_path=['_scroll_id',
-                                             'hits.hits._id',
-                                             'hits.hits._source.id',
-                                             'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName']
-                                )
-            scroll_id = res['_scroll_id']  # update the scroll_id
-        client.clear_scroll(scroll_id=scroll_id)
-
     def peek_values(self, field, num_values):
         """
         Reads sample values for the given field
@@ -186,23 +219,18 @@ class StoreHandler:
                        'hits.hits._source.columnName']
         if elasticfieldname == KWType.KW_TEXT:
             index = "text"
-            query_body = {"from": 0, "size": max_hits,
-                          "query": {"match": {"text": keywords}}}
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"text": keywords}}}
         elif elasticfieldname == KWType.KW_SCHEMA:
             index = "profile"
-            query_body = {"from": 0, "size": max_hits,
-                          "query": {"match": {"columnName": keywords}}}
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"columnName": keywords}}}
         elif elasticfieldname == KWType.KW_ENTITIES:
             index = "profile"
-            query_body = {"from": 0, "size": max_hits,
-                          "query": {"match": {"entities": keywords}}}
-        res = client.search(index=index, body=query_body,
-                            filter_path=filter_path)
+            query_body = {"from": 0, "size": max_hits, "query": {"match": {"entities": keywords}}}
+        res = client.search(index=index, body=query_body, filter_path=filter_path)
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['sourceName'], el[
-                       '_source']['columnName'], el['_score'])
+            data = Hit(el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'], el['_score'])
             yield data
 
     def get_all_fields_entities(self):
@@ -219,33 +247,113 @@ class StoreHandler:
             ents.append(entities)
         return fields, ents
 
+    def get_all_docs_from_text_with_idx_id(self, doc_id):
+        """
+        Reads all fields, described as (id, source_name, field_name) from the store.
+        :return: a list of all fields with the form (id, source_name, field_name)
+        """
+        body = {"query": {"bool": {"must": [{"match": {"id": doc_id}}]}}}
+        res = client.search(index='text', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.sourceName',
+                                         'hits.hits._source.columnName'
+                                         ]
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                raw_id_doc = h['_id']
+                yield raw_id_doc
+                remaining -= 1
+            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.id']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+
     def get_all_fields_textsignatures(self):
+        # FIXME: still need to add filter for terms that appear less than once, or add freq to the vector of tersm
+        # using the map value and then post filter in a better way
+
+        def partition_ids(ids, partition_size=50):
+            for i in range(0, len(ids), partition_size):
+                yield ids[i:i + partition_size]
+
+        def filter_term_vector_by_frequency(term_dict):
+            # FIXME: add filter by term length
+            filtered = []
+            for k, v in term_dict.items():
+                if v > 2:
+                    filtered.append(k)
+            return filtered
+
+        fields = []
+        text_signatures = []
+
+        #term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
+        # We get the ids from 'profile'
+        text_fields_gen = self.get_all_text_fields()
+        total = 0
+        # TODO: maybe materialize this (above) first?
+        for (uid, sn, fn, tv, uv) in text_fields_gen:
+            total = total + 1
+            print("text_sig: " + str(total))
+            # We retrieve all documents indexed with the same id in 'text'
+            docs = self.get_all_docs_from_text_with_idx_id(uid)
+            ids = [x for x in docs]
+            ids_partitions = partition_ids(ids)  # partition ids so that they fit in one http request
+            all_terms = defaultdict(int)
+            for partition in ids_partitions:
+                # We get the term vectors for each group of those documents
+                ans = client.mtermvectors(index='text', ids=partition, doc_type='column')#, body=term_body)
+                # We merge them somehow
+                found_docs = ans['docs']
+                for doc in found_docs:
+                    term_vectors = doc['term_vectors']
+                    if 'text' in term_vectors:
+                        # terms = list(term_vectors['text']['terms'].keys())
+                        terms_and_freq = term_vectors['text']['terms']
+                        for term, freq_dict in terms_and_freq.items():
+                            all_terms[term] = all_terms[term] + freq_dict['term_freq']  # we don't care about the value
+            filtered_term_vector = filter_term_vector_by_frequency(all_terms)
+            if len(filtered_term_vector) > 0:
+                fields.append((uid, sn, fn))
+                text_signatures.append(list(filtered_term_vector))
+        return fields, text_signatures
+
+    def _get_all_fields_textsignatures(self):
         """
         Retrieves textual fields and signatures from the store
         :return: (fields, textsignatures)
         """
-        term_body = {"filter": {"min_term_freq": 2,
-                                "max_num_terms": c.sig_v_size}}
+        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
         fields = []
         seen_nid = []
         text_signatures = []
         text_fields_gen = self.get_fields_text_index()
         for (rawid, nid, sn, fn) in text_fields_gen:
             if nid not in seen_nid:
-                ans = client.termvectors(
-                    index='text', id=rawid, doc_type='column', body=term_body)
+
+                ans = client.termvectors(index='text', id=rawid, doc_type='column', body=term_body)
                 terms = []
                 if ans['found']:
                     term_vectors = ans['term_vectors']
                     if 'text' in term_vectors:
-                        terms = list(ans['term_vectors'][
-                                     'text']['terms'].keys())
+                        terms = list(ans['term_vectors']['text']['terms'].keys())
                 # Note that we filter out fields for which we don't get terms
-                # This can be due to empty source data, or noisy data with
-                # all-stopwords, etc.
+                # This can be due to empty source data, or noisy data with all-stopwords, etc.
+
                 if len(terms) > 0:
                     fields.append((nid, sn, fn))
                     text_signatures.append(terms)
+                    #field = (nid, sn, fn)
+                    #yield (field, terms)
             seen_nid.append(nid)
         return fields, text_signatures
 
@@ -254,8 +362,7 @@ class StoreHandler:
         Retrieves numerical fields and signatures from the store
         :return: (fields, numsignatures)
         """
-        query_body = {
-            "query": {"bool": {"filter": [{"term": {"dataType": "N"}}]}}}
+        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "N"}}]}}}
         res = client.search(index='profile', body=query_body, scroll="10m",
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
@@ -272,8 +379,7 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h[
-                                           '_source']['columnName'])
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
                 fields.append(id_source_and_file_name)
                 num_sig.append((h['_source']['median'], h['_source']['iqr']))
                 remaining -= 1

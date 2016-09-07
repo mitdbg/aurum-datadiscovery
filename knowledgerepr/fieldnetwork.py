@@ -137,10 +137,10 @@ class FieldNetwork:
         o_drs = DRS(data, Operation(op, params=[hit]))
         return o_drs
 
-    def neighbors(self, field, relation) -> DRS:
-        sn, cn = field
-        nid = compute_field_id(sn, cn)
-        return self.neighbors_id(nid, relation)
+    #def neighbors(self, field, relation) -> DRS:
+    #    sn, cn = field
+    #    nid = compute_field_id(sn, cn)
+    #    return self.neighbors_id(nid, relation)
 
     def _bidirectional_pred_succ(self, source, target, relation):
         """

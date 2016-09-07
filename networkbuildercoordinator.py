@@ -3,56 +3,68 @@ from knowledgerepr import fieldnetwork
 from knowledgerepr import networkbuilder
 from knowledgerepr.networkbuilder import FieldNetwork
 
+import sys
 import time
 
 
-def main():
+def main(output_path=None):
     start_all = time.time()
     network = FieldNetwork()
     store = StoreHandler()
 
     # Get all fields from store
     fields_gen = store.get_all_fields()
-    fields = [f for f in fields_gen]
+    #  fields = [f for f in fields_gen]
     # Schema relation
     start_schema = time.time()
-    networkbuilder.build_schema_relation(network, fields)
-    fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields]
+    networkbuilder.build_schema_relation(network, fields_gen)
+    #fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields_gen]
     end_schema = time.time()
     print("Total schema: {0}".format(str(end_schema - start_schema)))
 
     # Schema_sim relation
     start_schema_sim = time.time()
-    networkbuilder.build_schema_sim_relation(network, fields)
+    # Create generator again
+    fields_gen = store.get_all_fields()
+    networkbuilder.build_schema_sim_relation(network, fields_gen)
     end_schema_sim = time.time()
-    print(
-        "Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
+    print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
     # Entity_sim relation
     start_entity_sim = time.time()
     #fields, entities = store.get_all_fields_entities()
     #networkbuilder.build_entity_sim_relation(network, fields, entities)
     end_entity_sim = time.time()
-    print(
-        "Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
+    print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
+
+    #import yappi
+
+    #st = time.time()
+    #store.get_all_fields_textsignatures()
+    #et = time.time()
+    #print("Time to extract signatures from store: {0}".format(str(et - st)))
+    #exit()
 
     # Content_sim text relation
     start_text_sig_sim = time.time()
+    st = time.time()
+    #yappi.start()
     fields, text_signatures = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(
-        network, fields, text_signatures)
+    #yappi.get_func_stats().print_all()
+    #yappi.get_thread_stats().print_all()
+    et = time.time()
+    print("Time to extract signatures from store: {0}".format(str(et - st)))
+    #field_and_text_signature_gen = store.get_all_fields_textsignatures()
+    networkbuilder.build_content_sim_relation_text_lsa(network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(
-        network, fields, num_signatures)
+    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
     end_num_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()
@@ -83,7 +95,9 @@ def main():
 
     """
 
-    path = "test/mitdwh.pickle"
+    path = "test/datagov.pickle"
+    if output_path is not None:
+        path = output_path
     fieldnetwork.serialize_network(network, path)
 
     print("DONE!")
@@ -129,11 +143,10 @@ def test():
     for i in range(len(fields)):
         print(str(fields[i]) + " -> " + str(text_signatures[i]))
 
-    networkbuilder.build_content_sim_relation_text(
-        network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+
 
     import networkx as nx
     from matplotlib.pyplot import show
@@ -150,7 +163,7 @@ def plot_num():
     xaxis = []
     yaxis = []
     numpoints = 0
-    for x, y in num_signatures:
+    for x,y in num_signatures:
         numpoints = numpoints + 1
         xaxis.append(x)
         yaxis.append(y)
@@ -179,20 +192,16 @@ def test_cardinality_propagation():
     # Content_sim text relation
     start_text_sig_sim = time.time()
     fields, text_signatures = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text(
-        network, fields, text_signatures)
+    networkbuilder.build_content_sim_relation_text(network, fields, text_signatures)
     end_text_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
     fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(
-        network, fields, num_signatures)
+    networkbuilder.build_content_sim_relation_num(network, fields, num_signatures)
     end_num_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print("Total text-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()
@@ -222,8 +231,47 @@ def test_cardinality_propagation():
     #    print(str(o))
 
 
+def test_read_store():
+    store = StoreHandler()
+
+    # Read all files from profile index
+    st = time.time()
+    fields_gen = store.get_all_fields()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took {0} to read {1} fields from profile".format((et-st), str(len(fields))))
+
+    # Read all termvectors from the combination of docs
+    st = time.time()
+    fields_gen, sign = store.get_all_fields_textsignatures()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took {0} to read {1} fields from text".format((et - st), str(len(fields))))
+
+    """
+    # Read all files from text index
+    st = time.time()
+    fields_gen = store.get_fields_text_index()
+    fields = [f for f in fields_gen]
+    et = time.time()
+    print("Took: {0} to read {1} fields from text".format(str(et - st), str(len(fields))))
+
+    # Read fields, signatures (without signatures, but with the plumbing)
+    st = time.time()
+    fields, text_signatures = store.get_all_fields_textsignatures()
+    et = time.time()
+    print("Took: {0} to read {1} fields from text".format(str(et - st), str(len(fields))))
+    """
+
+
 if __name__ == "__main__":
-    main()
+    path = None
+    if len(sys.argv) >= 2:
+        path = sys.argv[1]
+    main(path)
+
+    #test_read_store()
+
     #test()
     #plot_num()
     #test_cardinality_propagation()

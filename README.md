@@ -49,6 +49,17 @@ appending <help> or <?> as a parameter.
 
 ###Running L2
 
+####Requirements
+
+Requires Python 3. Use requirements.txt to install all the dependencies:
+
+$> pip install -r requirements.txt 
+
+In a vanilla linux (debian-based) system, the following packages will need to be installed system-wide:
+- sudo apt-get install pkg-config libpng-dev libfreetype6-dev (requirement of matplotlib)
+- sudo apt-get install libblas-dev liblapack-dev (speeding up linear algebra operations)
+- sudo apt-get install lib32ncurses5-dev
+
 soon...
 
 ###Running L3
