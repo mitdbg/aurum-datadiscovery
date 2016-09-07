@@ -13,51 +13,49 @@ import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
 
-
 public class TextualAnalyzer implements TextualAnalysis {
 
-	private List<DataConsumer> analyzers;
-	private CardinalityAnalyzer ca;
-	private EntityAnalyzer ea;
-	
-	private TextualAnalyzer(EntityAnalyzer ea) {
-		analyzers = new ArrayList<>();
-		ca = new CardinalityAnalyzer();
-		this.ea = ea;
-		analyzers.add(ca);
-		analyzers.add(ea);
-	}
-	
-	public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
-		ea2.clear();
-		return new TextualAnalyzer(ea2);
-	}
-	
-	@Override
-	public boolean feedTextData(List<String> records) {
-		Iterator<DataConsumer> dcs = analyzers.iterator();
-		while(dcs.hasNext()) {
-			TextualDataConsumer dc = (TextualDataConsumer) dcs.next();
-			dc.feedTextData(records);
-		}
-		
-		return false;
-	}
-	
-	@Override
-	public DataProfile getProfile() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+  private List<DataConsumer> analyzers;
+  private CardinalityAnalyzer ca;
+  private EntityAnalyzer ea;
 
-	@Override
-	public Cardinality getCardinality() {
-		return ca.getCardinality();
-	}
+  private TextualAnalyzer(EntityAnalyzer ea) {
+    analyzers = new ArrayList<>();
+    ca = new CardinalityAnalyzer();
+    this.ea = ea;
+    analyzers.add(ca);
+    analyzers.add(ea);
+  }
 
-	@Override
-	public Entities getEntities() {
-		return ea.getEntities();
-	}
+  public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
+    ea2.clear();
+    return new TextualAnalyzer(ea2);
+  }
 
+  @Override
+  public boolean feedTextData(List<String> records) {
+    Iterator<DataConsumer> dcs = analyzers.iterator();
+    while (dcs.hasNext()) {
+      TextualDataConsumer dc = (TextualDataConsumer)dcs.next();
+      dc.feedTextData(records);
+    }
+
+    return false;
+  }
+
+  @Override
+  public DataProfile getProfile() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public Cardinality getCardinality() {
+    return ca.getCardinality();
+  }
+
+  @Override
+  public Entities getEntities() {
+    return ea.getEntities();
+  }
 }

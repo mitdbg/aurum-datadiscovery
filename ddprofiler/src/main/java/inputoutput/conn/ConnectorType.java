@@ -1,5 +1,6 @@
 package inputoutput.conn;
 
 public enum ConnectorType {
-	DB, CSV_FILE;
+  DB,
+  CSV_FILE;
 }

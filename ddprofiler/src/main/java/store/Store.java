@@ -6,9 +6,9 @@ import core.WorkerTaskResult;
 
 public interface Store {
 
-	public void initStore();
-	public boolean indexData(int id, String sourceName, String columnName, List<String> values);
-	public boolean storeDocument(WorkerTaskResult wtr);
-	public void tearDownStore();
-	
+  public void initStore();
+  public boolean indexData(int id, String sourceName, String columnName,
+                           List<String> values);
+  public boolean storeDocument(WorkerTaskResult wtr);
+  public void tearDownStore();
 }

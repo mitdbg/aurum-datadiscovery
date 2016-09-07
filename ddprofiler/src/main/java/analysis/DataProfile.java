@@ -4,6 +4,4 @@
  */
 package analysis;
 
-public class DataProfile {
-
-}
+public class DataProfile {}
