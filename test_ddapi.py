@@ -325,11 +325,16 @@ class TestDDApiCombiner(unittest.TestCase):
 
     def test_iter_edges_with_data_bug(self):
         table = "Fac_building.csv"  # The table of interest
-        table_drs = self.api.drs_from_table(table)  # We get the representation of that table in DRS
-        content_similar = self.api.similar_content_to(table_drs)  # similar tables are those with similar content
-        schema_similar = self.api.similar_schema_name_to(table_drs)  # similar attribute names
-        pkfk_similar = self.api.pkfk_of(table_drs)  # some pkfk relationship involved too
-        inters1 = self.api.intersection(content_similar, schema_similar)  # similar tables are similar in content and schema
+        # We get the representation of that table in DRS
+        table_drs = self.api.drs_from_table(table)
+        # similar tables are those with similar content
+        content_similar = self.api.similar_content_to(table_drs)
+        schema_similar = self.api.similar_schema_name_to(
+            table_drs)  # similar attribute names
+        # some pkfk relationship involved too
+        pkfk_similar = self.api.pkfk_of(table_drs)
+        # similar tables are similar in content and schema
+        inters1 = self.api.intersection(content_similar, schema_similar)
         similar_tables = self.api.intersection(inters1, pkfk_similar)
         similar_tables.print_tables()
 

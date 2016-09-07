@@ -25,7 +25,7 @@ def init_system(path_to_serialized_model, reporting=True):
     api.init_store()
     api.help()
     el = time.time()
-    print("Took " + str(el-sl) + " to load all data")
+    print("Took " + str(el - sl) + " to load all data")
     return api, reporting
 
 

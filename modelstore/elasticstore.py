@@ -7,7 +7,6 @@ from api.apiutils import Hit
 import config as c
 
 
-
 class KWType(Enum):
     KW_TEXT = 0
     KW_SCHEMA = 1
@@ -31,7 +30,8 @@ class StoreHandler:
         print("TODO")
 
     def get_all_text_fields(self):
-        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
+        query_body = {
+            "query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
         res = client.search(index='profile', body=query_body, scroll="10m",
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
@@ -143,7 +143,8 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                hit = Hit(h['_id'], h['_source']['sourceName'], h['_source']['columnName'], -1)
+                hit = Hit(h['_id'], h['_source']['sourceName'],
+                          h['_source']['columnName'], -1)
                 yield hit
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
@@ -219,18 +220,23 @@ class StoreHandler:
                        'hits.hits._source.columnName']
         if elasticfieldname == KWType.KW_TEXT:
             index = "text"
-            query_body = {"from": 0, "size": max_hits, "query": {"match": {"text": keywords}}}
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"match": {"text": keywords}}}
         elif elasticfieldname == KWType.KW_SCHEMA:
             index = "profile"
-            query_body = {"from": 0, "size": max_hits, "query": {"match": {"columnName": keywords}}}
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"match": {"columnName": keywords}}}
         elif elasticfieldname == KWType.KW_ENTITIES:
             index = "profile"
-            query_body = {"from": 0, "size": max_hits, "query": {"match": {"entities": keywords}}}
-        res = client.search(index=index, body=query_body, filter_path=filter_path)
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"match": {"entities": keywords}}}
+        res = client.search(index=index, body=query_body,
+                            filter_path=filter_path)
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['sourceName'], el['_source']['columnName'], el['_score'])
+            data = Hit(el['_source']['id'], el['_source']['sourceName'], el[
+                       '_source']['columnName'], el['_score'])
             yield data
 
     def get_all_fields_entities(self):
@@ -307,11 +313,14 @@ class StoreHandler:
             # We retrieve all documents indexed with the same id in 'text'
             docs = self.get_all_docs_from_text_with_idx_id(uid)
             ids = [x for x in docs]
-            ids_partitions = partition_ids(ids)  # partition ids so that they fit in one http request
+            # partition ids so that they fit in one http request
+            ids_partitions = partition_ids(ids)
             all_terms = defaultdict(int)
             for partition in ids_partitions:
                 # We get the term vectors for each group of those documents
-                ans = client.mtermvectors(index='text', ids=partition, doc_type='column')#, body=term_body)
+                # , body=term_body)
+                ans = client.mtermvectors(
+                    index='text', ids=partition, doc_type='column')
                 # We merge them somehow
                 found_docs = ans['docs']
                 for doc in found_docs:
@@ -320,7 +329,9 @@ class StoreHandler:
                         # terms = list(term_vectors['text']['terms'].keys())
                         terms_and_freq = term_vectors['text']['terms']
                         for term, freq_dict in terms_and_freq.items():
-                            all_terms[term] = all_terms[term] + freq_dict['term_freq']  # we don't care about the value
+                            # we don't care about the value
+                            all_terms[term] = all_terms[
+                                term] + freq_dict['term_freq']
             filtered_term_vector = filter_term_vector_by_frequency(all_terms)
             if len(filtered_term_vector) > 0:
                 fields.append((uid, sn, fn))
@@ -332,7 +343,8 @@ class StoreHandler:
         Retrieves textual fields and signatures from the store
         :return: (fields, textsignatures)
         """
-        term_body = {"filter": {"min_term_freq": 2, "max_num_terms": c.sig_v_size}}
+        term_body = {"filter": {"min_term_freq": 2,
+                                "max_num_terms": c.sig_v_size}}
         fields = []
         seen_nid = []
         text_signatures = []
@@ -340,14 +352,17 @@ class StoreHandler:
         for (rawid, nid, sn, fn) in text_fields_gen:
             if nid not in seen_nid:
 
-                ans = client.termvectors(index='text', id=rawid, doc_type='column', body=term_body)
+                ans = client.termvectors(
+                    index='text', id=rawid, doc_type='column', body=term_body)
                 terms = []
                 if ans['found']:
                     term_vectors = ans['term_vectors']
                     if 'text' in term_vectors:
-                        terms = list(ans['term_vectors']['text']['terms'].keys())
+                        terms = list(ans['term_vectors'][
+                                     'text']['terms'].keys())
                 # Note that we filter out fields for which we don't get terms
-                # This can be due to empty source data, or noisy data with all-stopwords, etc.
+                # This can be due to empty source data, or noisy data with
+                # all-stopwords, etc.
 
                 if len(terms) > 0:
                     fields.append((nid, sn, fn))
@@ -362,7 +377,8 @@ class StoreHandler:
         Retrieves numerical fields and signatures from the store
         :return: (fields, numsignatures)
         """
-        query_body = {"query": {"bool": {"filter": [{"term": {"dataType": "N"}}]}}}
+        query_body = {
+            "query": {"bool": {"filter": [{"term": {"dataType": "N"}}]}}}
         res = client.search(index='profile', body=query_body, scroll="10m",
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
@@ -379,7 +395,8 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'])
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h[
+                                           '_source']['columnName'])
                 fields.append(id_source_and_file_name)
                 num_sig.append((h['_source']['median'], h['_source']['iqr']))
                 remaining -= 1
