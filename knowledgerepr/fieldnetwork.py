@@ -36,6 +36,22 @@ class FieldNetwork:
         for _, v in self.__id_names:
             yield v
 
+    def get_fields_of_source(self, source) -> [int]:
+        return self.__source_ids[source]
+
+    def get_info_for(self, nids):
+        info = []
+        for nid in nids:
+            db_name, source_name, field_name = self.__id_names[nid]
+            info.append((nid, db_name, source_name, field_name))
+        return info
+
+    def get_hits_from_table(self, table) -> [Hit]:
+        nids = self.get_fields_of_source(table)
+        info = self.get_info_for(nids)
+        hits = [Hit(nid, db_name, s_name, f_name, 0) for nid, db_name, s_name, f_name in info]
+        return hits
+
     def get_cardinality_of(self, node):
         c = self.__G[node]
         card = 0  # no cardinality key is like cardinality = 0
@@ -117,10 +133,12 @@ class FieldNetwork:
         return topk_nodes
 
     def enumerate_relation(self, relation):
-        for n in self.__G.nodes():
-            neighbors = self.neighbors_id(n, relation)
+        for nid in self.iterate_ids():
+            db_name, source_name, field_name = self.__id_names[nid]
+            hit = Hit(nid, db_name, source_name, field_name, 0)
+            neighbors = self.neighbors_id(hit, relation)
             for n2 in neighbors:
-                string = str(n) + " - " + str(n2)
+                string = str(hit) + " - " + str(n2)
                 yield string
 
     def print_relations(self, relation):
@@ -155,19 +173,15 @@ class FieldNetwork:
         data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
-            if str(k) == 'cardinality':
+            if str(k) == 'cardinality':  # FIXME: with the new way of setting attributes this should not be necessary
                 continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
-                data.append(Hit(k.nid, k.source_name, k.field_name, score))
+                (db_name, source_name, field_name) = self.__id_names[k]
+                data.append(Hit(k, db_name, source_name, field_name, score))
         op = self.get_op_from_relation(relation)
         o_drs = DRS(data, Operation(op, params=[hit]))
         return o_drs
-
-    #def neighbors(self, field, relation) -> DRS:
-    #    sn, cn = field
-    #    nid = compute_field_id(sn, cn)
-    #    return self.neighbors_id(nid, relation)
 
     def _bidirectional_pred_succ(self, source, target, relation):
         """
@@ -229,7 +243,10 @@ class FieldNetwork:
         """
         def neighbors_with_table_hop(hit, rel) -> DRS:
             o_drs = DRS([], Operation(OP.NONE))
-            table_neighbors_drs = self.neighbors_id(hit, Relation.SCHEMA)
+
+            hits = self.get_hits_from_table(hit.source_name)
+            table_neighbors_drs = DRS([x for x in hits], Operation(OP.TABLE))
+
             o_drs = o_drs.absorb_provenance(table_neighbors_drs)
             neighbors_with_table = set()
             for n in table_neighbors_drs:
@@ -295,75 +312,23 @@ class FieldNetwork:
                             return pred, succ, w, o_drs  # found path
         return None
 
-    def bidirectional_shortest_path(self, source, target, relation: Relation, field_mode=True, api=None):
-        # FIXME: refactor, integrate this on caller, rather than having another
-        # indirection here
-        """
-        Return a list of nodes in a shortest path between source: Hit and target: Hit.
-        :param source is one extreme of the potential path
-        :param target is the other extreme of the potential path
-        :return path is a list of Node/Hit
-        Note: This code is based on the networkx implementation
-        """
-        # call helper to do the real work
-        if field_mode:
-            # source and target are Hit
-            results = self._bidirectional_pred_succ(source, target, relation)
-        else:
-            # source and target are strings with the table name
-            results = self._bidirectional_pred_succ_with_table_hops(
-                source, target, relation, api)
+    def find_path_hit(self, source, target, relation):
+        # source and target are Hit
+        results = self._bidirectional_pred_succ(source, target, relation)
         if results is None:  # check for None result
             return DRS([], Operation(OP.NONE))
         pred, succ, w, o_drs = results
 
-        """
-        # build path from pred+w+succ
-        path = []
-        # from source to w
-        while w is not None:
-            path.append(w)
-            w = pred[w]
-        path.reverse()
-        # from w to target
-        w = succ[path[-1]]
-        while w is not None:
-            path.append(w)
-            w = succ[w]
-        return path, o_drs
-        """
-
-        return o_drs
-
-    def find_path(self, source, target, relation):
-        """
-        DEPRECATED
-        :param source:
-        :param target:
-        :param relation:
-        :return:
-        """
-        (sn, fn) = source
-        source = Hit(nid=0, source_name=sn, field_name=fn, score=0)
-        (sn, fn) = target
-        target = Hit(nid=0, source_name=sn, field_name=fn, score=0)
-        path = self.find_path_hit(source, target, relation)
-        return path
-
-    def find_path_hit(self, source, target, relation):
-        o_drs = self.bidirectional_shortest_path(
-            source, target, relation, True)  # field mode
-        #drs = DRS(path)
-        # drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the
-        # carrier to the actual result
         return o_drs
 
     def find_path_table(self, source: str, target: str, relation, api):
-        o_drs = self.bidirectional_shortest_path(
-            source, target, relation, False, api=api)  # table mode
-        #drs = DRS(path)
-        # drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the
-        # carrier to the actual result
+
+        # source and target are strings with the table name
+        results = self._bidirectional_pred_succ_with_table_hops(source, target, relation, api)
+        if results is None:  # check for None result
+            return DRS([], Operation(OP.NONE))
+        pred, succ, w, o_drs = results
+
         return o_drs
 
 

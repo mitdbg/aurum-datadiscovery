@@ -127,6 +127,7 @@ class StoreHandler:
         filter_path = ['hits.hits._source.id',
                        'hits.hits._score',
                        'hits.total',
+                       'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
         if elasticfieldname == KWType.KW_TEXT:
@@ -146,8 +147,8 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['sourceName'], el[
-                       '_source']['columnName'], el['_score'])
+            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+                       el['_source']['columnName'], el['_score'])
             yield data
 
     def get_all_fields_entities(self):

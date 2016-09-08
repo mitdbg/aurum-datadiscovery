@@ -142,7 +142,6 @@ public class NativeElasticStore implements Store {
 				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-				//+ "\"columnName\" : {\"type\" : \"string\", \"index\" : \"analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
 				+ 		"\"index\" : \"analyzed\", "
 				+ 		"\"analyzer\" : \"english\"},"

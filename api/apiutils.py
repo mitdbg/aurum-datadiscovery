@@ -9,7 +9,7 @@ from bitarray import bitarray
 global_origin_id = 0
 
 BaseHit = namedtuple(
-    'Hit', 'nid, source_name, field_name, score', verbose=False)
+    'Hit', 'nid, db_name, source_name, field_name, score', verbose=False)
 
 
 class Hit(BaseHit):
@@ -30,8 +30,8 @@ class Hit(BaseHit):
         return False
 
 
-def compute_field_id(source_name, field_name):
-    string = source_name + field_name
+def compute_field_id(db_name, source_name, field_name):
+    string = db_name + source_name + field_name
     nid = binascii.crc32(bytes(string, encoding="UTF-8"))
     return nid
 
