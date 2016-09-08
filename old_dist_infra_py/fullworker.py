@@ -8,12 +8,15 @@ from dataanalysis import dataanalysis as da
 from modelstore import mongomodelstore as MS
 from inputoutput import inputoutput as iod
 
-app = Celery('fullworker',backend=CC.CELERY_RESULT_BACKEND,broker=CC.BROKER_URL)
+app = Celery('fullworker', backend=CC.CELERY_RESULT_BACKEND,
+             broker=CC.BROKER_URL)
+
 
 @app.task()
 def init_worker(dbname):
     MS.init(dbname, create_index=True)
     print("Initialized db: " + str(dbname))
+
 
 @app.task()
 def load_tables(batch_of_tasks):
@@ -32,7 +35,7 @@ def load_tables(batch_of_tasks):
             columns = iod.get_columns_from_csv_file(t)
         # Limit values per column to max
         max_value = C.max_values_per_column
-        for (k,v) in columns.items():
+        for (k, v) in columns.items():
             v = v[:max_value]
             columns[k] = v
 
@@ -55,19 +58,18 @@ def load_tables(batch_of_tasks):
             elif c_type is 'T':
                 # text signature
                 method = C.preferred_text_method
-                #sig = da.get_textual_dist(values, method) 
+                #sig = da.get_textual_dist(values, method)
                 sig = da.get_textual_signature(values, C.sig_v_size)
                 text_data = values
             # Load info to model store
-            MS.new_column(f_name, 
-                      c_name, 
-                      c_type, 
-                      sig, 
-                      num_data, 
-                      text_data)
+            MS.new_column(f_name,
+                          c_name,
+                          c_type,
+                          sig,
+                          num_data,
+                          text_data)
             key = (f_name, c_name)
             colsig = (key, c_type, sig)
             colsigs.append(colsig)
         #print("Processed signatures for: " + str(f_name))
     return colsigs
-

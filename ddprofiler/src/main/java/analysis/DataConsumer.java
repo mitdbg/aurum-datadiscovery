@@ -4,5 +4,4 @@
  */
 package analysis;
 
-
-public interface DataConsumer { }
+public interface DataConsumer {}

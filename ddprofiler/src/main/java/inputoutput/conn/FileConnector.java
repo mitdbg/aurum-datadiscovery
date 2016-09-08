@@ -18,6 +18,7 @@ import inputoutput.Record;
 import inputoutput.TableInfo;
 
 public class FileConnector extends Connector {
+
 	
 	private String connectPath;
 	private String sourceName;

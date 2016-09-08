@@ -29,6 +29,7 @@ from nearpy.distances import CosineDistance
 
 from nearpy.hashes import RandomBinaryProjections, RandomBinaryProjectionTree, HashPermutations, HashPermutationMapper
 
+
 def example1():
 
     # Dimension of feature space
@@ -56,13 +57,14 @@ def example1():
 
     # Create binary hash as child hash
     rbp_perm = RandomBinaryProjections('rbp_perm', 20)
-    rbp_conf = {'num_permutation':50,'beam_size':10,'num_neighbour':100}
+    rbp_conf = {'num_permutation': 50, 'beam_size': 10, 'num_neighbour': 100}
 
     # Add rbp as child hash of permutations hash
     permutations.add_child_hash(rbp_perm, rbp_conf)
 
     # Create engine 3
-    engine_perm = Engine(DIM, lshashes=[permutations], distance=CosineDistance())
+    engine_perm = Engine(
+        DIM, lshashes=[permutations], distance=CosineDistance())
 
     # Create permutations meta-hash
     permutations2 = HashPermutationMapper('permut2')
@@ -74,12 +76,13 @@ def example1():
     permutations2.add_child_hash(rbp_perm2)
 
     # Create engine 3
-    engine_perm2 = Engine(DIM, lshashes=[permutations2], distance=CosineDistance())
+    engine_perm2 = Engine(
+        DIM, lshashes=[permutations2], distance=CosineDistance())
 
     print('Indexing %d random vectors of dimension %d' % (POINTS, DIM))
 
     # First index some random vectors
-    matrix = numpy.zeros((POINTS,DIM))
+    matrix = numpy.zeros((POINTS, DIM))
     for i in xrange(POINTS):
         v = numpy.random.randn(DIM)
         matrix[i] = v
@@ -131,10 +134,8 @@ def example1():
 
     # Real neighbours
     print('\nReal neighbour distances:')
-    query = query.reshape((1,DIM))
-    dists = CosineDistance().distance(matrix,query)
+    query = query.reshape((1, DIM))
+    dists = CosineDistance().distance(matrix, query)
     dists = dists.reshape((-1,))
     dists = sorted(dists)
     print(dists[:10])
-
-

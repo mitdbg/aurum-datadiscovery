@@ -1,5 +1,6 @@
 package core;
 
 public enum DataSourceType {
-	CSV, ORACLE_DB;
+  CSV,
+  ORACLE_DB;
 }

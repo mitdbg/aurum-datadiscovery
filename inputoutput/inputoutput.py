@@ -8,6 +8,7 @@ import config as C
 
 from collections import defaultdict
 
+
 def get_files_in_dir(path):
     '''
     Return all non-hidden files in a directory
@@ -17,7 +18,8 @@ def get_files_in_dir(path):
         if not f.startswith('.'):
             path_to_file = path + "/" + f
             onlynonhiddenfiles.append(path_to_file)
-    return onlynonhiddenfiles 
+    return onlynonhiddenfiles
+
 
 def get_columns_from_csv_file(filename):
     '''
@@ -33,18 +35,20 @@ def get_columns_from_csv_file(filename):
         try:
             for row in reader:
                 #current_values = current_values + 1
-                for (k,v) in row.items():
+                for (k, v) in row.items():
                     # TODO: ugly the need to call this each time
                     f_name = os.path.basename(f.name)
                     column_name = (f_name, k)
                     columns[column_name].append(v)
                 #if max_values != -1:
                 #    if current_values > max_values:
-                        # early-termination for reaching max values
+                    # early-termination for reaching max values
                 #        return columns
         except _csv.Error:
-            print("skipping file, as critical problems found while reading file: " + str(filename))
+            print(
+                "skipping file, as critical problems found while reading file: " + str(filename))
     return columns
+
 
 def get_column_iterator_csv(files):
     '''
@@ -57,6 +61,7 @@ def get_column_iterator_csv(files):
         file_columns = get_columns_from_csv_file(filename)
         columns.update(file_columns)
     return columns
+
 
 def get_header_csv(filename):
     '''
@@ -71,13 +76,15 @@ def get_header_csv(filename):
 '''
 TODO: is this used?
 '''
+
+
 def get_row_iterator_csv(filename):
     rows = []
     with open(filename, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             rows.append(row)
-    return rows 
+    return rows
 
 if __name__ == "__main__":
     filename = sys.argv[1]
@@ -104,6 +111,7 @@ def get_tables_from_db(dbpath):
 
     con.close()
     return tables
+
 
 def get_columns_from_db(table, dbpath):
     con = dataset.connect(dbpath)

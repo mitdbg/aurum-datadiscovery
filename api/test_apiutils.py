@@ -146,9 +146,9 @@ class TestApiutils(unittest.TestCase):
         lm = len(merged_data)
         lu = len(drs1_data.union(drs2_data))
 
-        print("Len must be 0: " + str(lu-lm))
+        print("Len must be 0: " + str(lu - lm))
 
-        self.assertTrue((lu-lm) == 0)
+        self.assertTrue((lu - lm) == 0)
 
     def test_intersection(self):
         print(self._testMethodName)

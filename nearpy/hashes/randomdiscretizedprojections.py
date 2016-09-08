@@ -69,7 +69,8 @@ class RandomDiscretizedProjections(LSHash):
             if not scipy.sparse.isspmatrix_csr(v):
                 v = scipy.sparse.csr_matrix(v)
             # Project vector onto all hyperplane normals
-            projection = (self.normals_csr.dot(v) / self.bin_width).floor().toarray()
+            projection = (self.normals_csr.dot(
+                v) / self.bin_width).floor().toarray()
         else:
             # Project vector onto all hyperplane normals
             projection = numpy.dot(self.normals, v)
@@ -99,7 +100,3 @@ class RandomDiscretizedProjections(LSHash):
         self.bin_width = config['bin_width']
         self.projection_count = config['projection_count']
         self.normals = config['normals']
-
-
-
-

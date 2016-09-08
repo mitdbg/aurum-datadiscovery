@@ -34,7 +34,6 @@ class EuclideanDistance(Distance):
         Computes distance measure between vectors x and y. Returns float.
         """
         if scipy.sparse.issparse(x):
-            return numpy.linalg.norm((x-y).toarray().ravel())
+            return numpy.linalg.norm((x - y).toarray().ravel())
         else:
-            return numpy.linalg.norm(x-y)
-
+            return numpy.linalg.norm(x - y)

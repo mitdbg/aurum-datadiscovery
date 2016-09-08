@@ -22,16 +22,18 @@ import fullworker as ASYNC
 dimension = 30
 rbp = RandomBinaryProjections('rbp', 30)
 
-num_engine = Engine(dimension, 
-            lshashes=[rbp], 
-            distance=EuclideanDistance())
+num_engine = Engine(dimension,
+                    lshashes=[rbp],
+                    distance=EuclideanDistance())
 
 # Capturing ctrl+C
+
+
 def signal_handler(signal, frame):
     print('Finishing pending work...')
     goOn = False
     import time
-    time.sleep(3) # wait 3 secs before shutting down
+    time.sleep(3)  # wait 3 secs before shutting down
     sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -39,6 +41,7 @@ signal.signal(signal.SIGINT, signal_handler)
 # LOAD (load data only)
 # BGRAPH (read signatures from store and build indexes)
 mode = None
+
 
 def partition_concepts(concepts, workers):
     '''
@@ -55,6 +58,7 @@ def partition_concepts(concepts, workers):
         partitions[key].append(c)
     return partitions
 
+
 def create_task(tables, source_input_type, arg):
     batch = []
     batchsize = C.parallel_index_batch_size
@@ -70,7 +74,8 @@ def create_task(tables, source_input_type, arg):
             print("No tables left")
             break
     return batch
-        
+
+
 def process_result(v):
     '''
     Process a result returned by a worker.
@@ -81,7 +86,8 @@ def process_result(v):
         return True
     if mode == "ALL":
         # in this case we need to load into next stage already
-        return False # TODO: fix this
+        return False  # TODO: fix this
+
 
 def assign_task(q, task):
     '''
@@ -90,9 +96,10 @@ def assign_task(q, task):
     print("Assigning task to Q: " + str(q))
     return ASYNC.load_tables.apply_async(args=[task], queue=q)
 
+
 def process_futures(futures, task):
     not_assigned = True
-    for k,v in futures.items():
+    for k, v in futures.items():
         if v == None:
             new_future = assign_task(k, task)
             futures[k] = new_future
@@ -105,6 +112,7 @@ def process_futures(futures, task):
             not_assigned = False
             break
     return not_assigned
+
 
 def load_data_parallel(source_input_type, arg, dbname, workers):
     '''
@@ -138,20 +146,21 @@ def load_data_parallel(source_input_type, arg, dbname, workers):
             time.sleep(1)
     # Block until all futures are processed
     remaining_futures = len(futures.items())
-    for k,v in futures.items():
+    for k, v in futures.items():
         if v == None:
             print(str(k) + " is None")
             remaining_futures = remaining_futures - 1
-            futures[k] = 1 # cannot delete while iterating
+            futures[k] = 1  # cannot delete while iterating
         elif v == 1:
-            futures[k] = 1 # just continue loop
+            futures[k] = 1  # just continue loop
         elif v.ready():
             process_result(v)
         if remaining_futures == 0:
             break
         time.sleep(1)
     print("DONE")
-    
+
+
 def create_sim_graph_num(cgraph, num_eng, num_sig):
     '''
     Given the LSH indexed signatures and the signatures,
@@ -169,13 +178,14 @@ def create_sim_graph_num(cgraph, num_eng, num_sig):
             tokens = label.split('%&%&%')
             label_key = (tokens[0], tokens[1])
             #print(str(label_key) + " -- " + str(value))
-            print(str(key)+" -> "+str(label_key) +":"+str(value))
+            print(str(key) + " -> " + str(label_key) + ":" + str(value))
             cgraph[key].append(label_key)
         print(" ")
         print(" ")
         print(" ")
         #time.sleep(3)
     return cgraph
+
 
 def create_sim_graph_text(cgraph, text_engine, text_sig, tfidf):
     # FIXME: bottleneck. parallelize this
@@ -195,10 +205,12 @@ def create_sim_graph_text(cgraph, text_engine, text_sig, tfidf):
             cgraph[key].append(label_key)
     return cgraph
 
+
 def serialize_model(cgraph, dbname):
     print("Storing graph (cache)...")
     serde.serialize_cached_graph(cgraph, dbname)
     print("Storing graph (cache)...DONE!")
+
 
 def build_indexes():
     '''
@@ -210,10 +222,10 @@ def build_indexes():
     for s in num_sig:
         (name, signature) = s
         (fname, cname) = name
-        key = str(fname)+"%&%&%"+str(cname)
+        key = str(fname) + "%&%&%" + str(cname)
         num_engine.store_vector(np.array(signature), key)
     et = time.time()
-    print("Total time to index all num sigs: " + str((et-st)))
+    print("Total time to index all num sigs: " + str((et - st)))
 
     cgraph = OrderedDict()
     cgraph = create_sim_graph_num(cgraph, num_engine, num_sig)
@@ -222,33 +234,34 @@ def build_indexes():
     docs = []
     for ts in text_sig:
         (name, signature) = ts
-        doc = ' '.join(signature) 
+        doc = ' '.join(signature)
         docs.append(doc)
     tfidf = da.get_tfidf_docs(docs)
     num_features = tfidf.shape[1]
     print("tfidf shape: " + str(tfidf.shape))
 
     text_engine = Engine(num_features,
-            lshashes=[rbp],
-            distance=CosineDistance())
- 
+                         lshashes=[rbp],
+                         distance=CosineDistance())
+
     st = time.time()
     rowidx = 0
     for ts in text_sig:
         (name, signature) = ts
         (fname, cname) = name
-        key = str(fname)+"%&%&%"+str(cname)
+        key = str(fname) + "%&%&%" + str(cname)
         sparse_row = tfidf.getrow(rowidx)
-        dense = sparse_row.todense() 
+        dense = sparse_row.todense()
         array = dense.A[0]
         #print(str(array))
         text_engine.store_vector(array, key)
         rowidx = rowidx + 1
     et = time.time()
-    print("total store text: " + str((et-st)))
+    print("total store text: " + str((et - st)))
 
-    cgraph=create_sim_graph_text(cgraph, text_engine, text_sig, tfidf)
+    cgraph = create_sim_graph_text(cgraph, text_engine, text_sig, tfidf)
     return cgraph
+
 
 def main():
     mode = sys.argv[2]
@@ -273,11 +286,11 @@ def main():
         cgraph = build_indexes()
         serialize_model(cgraph, dbname)
         print("DONE building indexes")
-    
+
 if __name__ == "__main__":
     print("INPUT PARAMETERS: " + str(len(sys.argv)))
     print(str(sys.argv))
-    # python build_idx_coordinator.py --mode BGRAPH 
+    # python build_idx_coordinator.py --mode BGRAPH
     # --input csvfiles
     # /Users/ra-mit/Desktop/mitdwhdataslice --dataset slice
     # --workers w1,w2
@@ -289,6 +302,7 @@ if __name__ == "__main__":
         print("--workers <queues> : comma separated, no space worker queues")
         print("EXAMPLE")
         print("python indexer.py --mode ALL --input csvfiles whatever/fake --dataset fakeagain --workers w1,w2,w3")
-        # python indexer.py --mode LOAD --input csvfiles /data/raulcf/datagovdata/ --dataset datagov --workers w1,w2,w3,w4
+        # python indexer.py --mode LOAD --input csvfiles
+        # /data/raulcf/datagovdata/ --dataset datagov --workers w1,w2,w3,w4
         exit()
     main()

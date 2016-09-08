@@ -87,7 +87,8 @@ def build_schema_relation(network, fields):
     for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
         if float(tvals_outer) > 0:
             card_outer = float(uvals_outer) / float(tvals_outer)
-        tables[sn_outer].append((fn_outer, card_outer))  # append tuple with (field_name, cardinality)
+        # append tuple with (field_name, cardinality)
+        tables[sn_outer].append((fn_outer, card_outer))
     print("Putting fields in buckets...OK")
 
     print("Filling schema relations for all tables...")
@@ -145,8 +146,10 @@ def build_schema_sim_relation(network, fields):
         docs.append(fn)
 
     tfidf = da.get_tfidf_docs(docs)
-    text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
-    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.SCHEMA_SIM)
+    text_engine = index_in_text_engine(
+        fields, tfidf, rbp)  # rbp the global variable
+    create_sim_graph_text(network, text_engine, fields,
+                          tfidf, Relation.SCHEMA_SIM)
 
 
 def build_schema_sim_relation_lsa(network, fields):
@@ -160,8 +163,10 @@ def build_schema_sim_relation_lsa(network, fields):
     tfidf = lsa_dimensionality_reduction(tfidf)
     print("tfidf shape after LSA: " + str(tfidf.shape))
 
-    text_engine = index_in_text_engine(fields, tfidf, rbp, tfidf_is_dense=True)  # rbp the global variable
-    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.SCHEMA_SIM, tfidf_is_dense=True)
+    text_engine = index_in_text_engine(
+        fields, tfidf, rbp, tfidf_is_dense=True)  # rbp the global variable
+    create_sim_graph_text(network, text_engine, fields,
+                          tfidf, Relation.SCHEMA_SIM, tfidf_is_dense=True)
 
 
 def build_entity_sim_relation(network, fields, entities):
@@ -173,8 +178,10 @@ def build_entity_sim_relation(network, fields, entities):
 
     if len(docs) > 0:  # If documents are empty, then skip this step; not entity similarity will be found
         tfidf = da.get_tfidf_docs(docs)
-        text_engine = index_in_text_engine(fields, tfidf, rbp)  # rbp the global variable
-        create_sim_graph_text(network, text_engine, fields, tfidf, Relation.ENTITY_SIM)
+        text_engine = index_in_text_engine(
+            fields, tfidf, rbp)  # rbp the global variable
+        create_sim_graph_text(network, text_engine, fields,
+                              tfidf, Relation.ENTITY_SIM)
 
 
 def build_content_sim_relation_text_lsa(network, fields, signatures):
@@ -182,15 +189,18 @@ def build_content_sim_relation_text_lsa(network, fields, signatures):
     for e in signatures:
         docs.append(' '.join(e))
 
-    tfidf = da.get_tfidf_docs(docs)  # this may become redundant if we exploit the store characteristics
+    # this may become redundant if we exploit the store characteristics
+    tfidf = da.get_tfidf_docs(docs)
 
     print("tfidf shape before LSA: " + str(tfidf.shape))
     tfidf = lsa_dimensionality_reduction(tfidf)
     print("tfidf shape after LSA: " + str(tfidf.shape))
     # rbp = RandomBinaryProjections('default', 1000)
     lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
-    text_engine = index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=True)
-    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.CONTENT_SIM, tfidf_is_dense=True)
+    text_engine = index_in_text_engine(
+        fields, tfidf, lsh_projections, tfidf_is_dense=True)
+    create_sim_graph_text(network, text_engine, fields,
+                          tfidf, Relation.CONTENT_SIM, tfidf_is_dense=True)
 
 
 def build_content_sim_relation_text(network, fields, signatures):
@@ -198,11 +208,13 @@ def build_content_sim_relation_text(network, fields, signatures):
     for e in signatures:
         docs.append(' '.join(e))
 
-    tfidf = da.get_tfidf_docs(docs)  # this may become redundant if we exploit the store characteristics
+    # this may become redundant if we exploit the store characteristics
+    tfidf = da.get_tfidf_docs(docs)
     # rbp = RandomBinaryProjections('default', 1000)
     lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
     text_engine = index_in_text_engine(fields, tfidf, lsh_projections)
-    create_sim_graph_text(network, text_engine, fields, tfidf, Relation.CONTENT_SIM)
+    create_sim_graph_text(network, text_engine, fields,
+                          tfidf, Relation.CONTENT_SIM)
 
 
 def build_content_sim_relation_num(network, fields, features):
@@ -239,7 +251,8 @@ def build_pkfk_relation(network):
     for n in network.enumerate_fields():
         seen.add(n)
         n_card = network.get_cardinality_of(n)
-        # neighborhood = network.neighbors((n.source_name, n.field_name), Relation.CONTENT_SIM) #  old
+        # neighborhood = network.neighbors((n.source_name, n.field_name),
+        # Relation.CONTENT_SIM) #  old
         neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
         for ne in neighborhood:
             if ne not in seen and ne is not n:

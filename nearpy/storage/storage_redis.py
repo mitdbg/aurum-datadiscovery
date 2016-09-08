@@ -100,15 +100,15 @@ class RedisStorage(Storage):
             if 'sparse' in val_dict:
 
                 # Fill these for COO creation
-                row  = []
-                col  = []
+                row = []
+                col = []
                 data = []
 
                 # For each non-zero element, append values
                 for e in val_dict['nonzeros']:
-                    row.append(e[0]) # Row index
-                    data.append(e[1]) # Value
-                    col.append(0) # Column index (always 0)
+                    row.append(e[0])  # Row index
+                    data.append(e[1])  # Value
+                    col.append(0)  # Column index (always 0)
 
                 # Create numpy arrays for COO creation
                 coo_row = numpy.array(row, dtype=numpy.int32)
@@ -116,7 +116,8 @@ class RedisStorage(Storage):
                 coo_data = numpy.array(data)
 
                 # Create COO sparse vector
-                vector = scipy.sparse.coo_matrix( (coo_data,(coo_row,coo_col)), shape=(val_dict['dim'],1) )
+                vector = scipy.sparse.coo_matrix(
+                    (coo_data, (coo_row, coo_col)), shape=(val_dict['dim'], 1))
 
             else:
                 vector = numpy.fromstring(val_dict['vector'],
@@ -150,12 +151,13 @@ class RedisStorage(Storage):
         """
         Stores hash configuration
         """
-        self.redis_object.set(lshash.hash_name+'_conf', pickle.dumps(lshash.get_config()))
+        self.redis_object.set(lshash.hash_name + '_conf',
+                              pickle.dumps(lshash.get_config()))
 
     def load_hash_configuration(self, hash_name):
         """
         Loads and returns hash configuration
         """
-        conf = self.redis_object.get(hash_name+'_conf')
+        conf = self.redis_object.get(hash_name + '_conf')
 
         return pickle.loads(conf) if conf is not None else None

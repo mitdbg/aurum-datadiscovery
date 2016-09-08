@@ -1,7 +1,7 @@
 package core;
 
-
 public class WorkerTaskResult {
+
 
 	final private int id;
 	final private String dbName;

@@ -34,6 +34,7 @@ from nearpy import Engine
 
 
 class TestRecallExperiment(unittest.TestCase):
+
     def setUp(self):
         numpy.random.seed(4)
 
@@ -159,8 +160,8 @@ class TestRecallExperiment(unittest.TestCase):
         precision1 = result[0][1]
         searchtime1 = result[0][2]
 
-        print('\nRecall RDP: %f, Precision RDP: %f, SearchTime RDP: %f\n' % \
-            (recall1, precision1, searchtime1))
+        print('\nRecall RDP: %f, Precision RDP: %f, SearchTime RDP: %f\n' %
+              (recall1, precision1, searchtime1))
 
         # Then get recall and precision for one 4-dim random hash
         rdp = RandomDiscretizedProjections('rdp', 2, 0.2)
@@ -172,8 +173,8 @@ class TestRecallExperiment(unittest.TestCase):
         precision2 = result[0][1]
         searchtime2 = result[0][2]
 
-        print('\nRecall RDP: %f, Precision RDP: %f, SearchTime RDP: %f\n' % \
-            (recall2, precision2, searchtime2))
+        print('\nRecall RDP: %f, Precision RDP: %f, SearchTime RDP: %f\n' %
+              (recall2, precision2, searchtime2))
 
         # Many things are random here, but the precision should increase
         # with dimension
@@ -196,8 +197,8 @@ class TestRecallExperiment(unittest.TestCase):
         precision1 = result[0][1]
         searchtime1 = result[0][2]
 
-        print('\nRecall RBP: %f, Precision RBP: %f, SearchTime RBP: %f\n' % \
-            (recall1, precision1, searchtime1))
+        print('\nRecall RBP: %f, Precision RBP: %f, SearchTime RBP: %f\n' %
+              (recall1, precision1, searchtime1))
 
 if __name__ == '__main__':
     unittest.main()

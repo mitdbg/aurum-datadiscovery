@@ -43,7 +43,7 @@ class TestEngine(unittest.TestCase):
             engine1.store_vector(x, x_data)
 
         # Each engine should have its own default storage
-        self.assertTrue(len(engine2.storage.buckets)==0)
+        self.assertTrue(len(engine2.storage.buckets) == 0)
 
     def test_retrieval(self):
         for k in range(100):
@@ -52,10 +52,11 @@ class TestEngine(unittest.TestCase):
             x_data = 'data'
             self.engine.store_vector(x, x_data)
             n = self.engine.neighbours(x)
-            y, y_data, y_distance  = n[0]
+            y, y_data, y_distance = n[0]
             normalized_x = unitvec(x)
             delta = 0.000000001
-            self.assertAlmostEqual(numpy.abs((normalized_x - y)).max(), 0, delta=delta)
+            self.assertAlmostEqual(
+                numpy.abs((normalized_x - y)).max(), 0, delta=delta)
             self.assertEqual(y_data, x_data)
             self.assertAlmostEqual(y_distance, 0.0, delta=delta)
 
@@ -69,7 +70,8 @@ class TestEngine(unittest.TestCase):
             y, y_data, y_distance = n[0]
             normalized_x = unitvec(x)
             delta = 0.000000001
-            self.assertAlmostEqual(numpy.abs((normalized_x - y)).max(), 0, delta=delta)
+            self.assertAlmostEqual(
+                numpy.abs((normalized_x - y)).max(), 0, delta=delta)
             self.assertEqual(y_data, x_data)
             self.assertAlmostEqual(y_distance, 0.0, delta=delta)
 
