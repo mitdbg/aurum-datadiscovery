@@ -72,7 +72,7 @@ def main(output_path=None):
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
 
-    path = "test/datagov.pickle"
+    path = "test/datagov/"
     if output_path is not None:
         path = output_path
     fieldnetwork.serialize_network(network, path)

@@ -20,11 +20,13 @@ class FieldNetwork:
     __id_names = dict()
     __source_ids = defaultdict(list)
 
-    def __init__(self, graph=None):
+    def __init__(self, graph=None, id_names=None, source_ids=None):
         if graph is None:
             self.__G = nx.MultiGraph()
         else:
             self.__G = graph
+            self.__id_names = id_names
+            self.__source_ids = source_ids
 
     def iterate_ids(self) -> int:
         for k, _ in self.__id_names:
@@ -41,8 +43,14 @@ class FieldNetwork:
             card = c['cardinality']
         return card
 
-    def _get_underlying_repr(self):
+    def _get_underlying_repr_graph(self):
         return self.__G
+
+    def _get_underlying_repr_id_to_field_info(self):
+        return self.__id_names
+
+    def _get_underlying_repr_table_to_ids(self):
+        return self.__source_ids
 
     def init_meta_schema(self, fields: (int, str, str, str, int, int)):
         """
@@ -360,13 +368,25 @@ class FieldNetwork:
 
 
 def serialize_network(network, path):
-    G = network._get_underlying_repr()
-    nx.write_gpickle(G, path)
+    """
+    Serialize the meta schema index
+    :param network:
+    :param path:
+    :return:
+    """
+    G = network._get_underlying_repr_graph()
+    id_to_field_info = network._get_underlying_repr_id_to_field_info()
+    table_to_ids = network._get_underlying_repr_table_to_ids()
+    nx.write_gpickle(G, path + "graph.pickle")
+    nx.write_gpickle(id_to_field_info, path + "id_info.pickle")
+    nx.write_gpickle(table_to_ids, path + "table_ids.pickle")
 
 
 def deserialize_network(path):
-    G = nx.read_gpickle(path)
-    network = FieldNetwork(G)
+    G = nx.read_gpickle(path + "graph.pickle")
+    id_to_info = nx.read_gpickle(path + "id_info.pickle")
+    table_to_ids = nx.read_gpickle(path + "table_ids.pickle")
+    network = FieldNetwork(G, id_to_info, table_to_ids)
     return network
 
 
