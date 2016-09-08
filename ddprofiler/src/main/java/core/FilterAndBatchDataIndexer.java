@@ -14,14 +14,16 @@ import store.Store;
 public class FilterAndBatchDataIndexer implements DataIndexer {
 
   private Store store;
+  private String dbName;
   private String sourceName;
   private Map<Attribute, Integer> attributeIds;
   private Map<Attribute, List<String>> attributeValues;
   private Map<Attribute, Integer> attributeValueSize;
   private int indexTriggerThreshold = 1 * 1024 * 1024 * 15; // 35 MB
 
-  public FilterAndBatchDataIndexer(Store s, String sourceName) {
+  public FilterAndBatchDataIndexer(Store s, String dbName, String sourceName) {
     this.store = s;
+    this.dbName = dbName;
     this.sourceName = sourceName;
     this.attributeIds = new HashMap<>();
     this.attributeValues = new HashMap<>();
@@ -61,7 +63,7 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
         // Id for the attribute - computed only once
         int id = 0;
         if (!attributeIds.containsKey(a)) {
-          id = Utils.computeAttrId(sourceName, columnName);
+          id = Utils.computeAttrId(dbName, sourceName, columnName);
           attributeIds.put(a, id);
         } else {
           id = attributeIds.get(a);

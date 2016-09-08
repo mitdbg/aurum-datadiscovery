@@ -92,7 +92,7 @@ public class Worker implements Runnable {
 					continue;
 				}
 				
-				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getSourceName());
+				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getDBName(), task.getConnector().getSourceName());
 				
 				// Access attributes and attribute type through first read
 				Connector c = task.getConnector();
