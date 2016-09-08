@@ -61,7 +61,7 @@ class HashPermutationMapper(LSHash):
         result = []
         for j in range(len(key)):
             bits = list(key)
-            bits[j] = '1' if key[j]=='0' else '0'
+            bits[j] = '1' if key[j] == '0' else '0'
             result.append(''.join(bits))
         return result
 
@@ -77,12 +77,15 @@ class HashPermutationMapper(LSHash):
             for lshash in self.child_hashes:
                 # Get regular bucket keys from hash
                 for bucket_key in lshash.hash_vector(v, querying):
-                    prefixed_key = lshash.hash_name+'_'+bucket_key
-                    # Get entries from map (bucket keys with hamming distance of 1)
+                    prefixed_key = lshash.hash_name + '_' + bucket_key
+                    # Get entries from map (bucket keys with hamming distance
+                    # of 1)
                     if prefixed_key in self.bucket_key_map:
-                        bucket_keys.extend(self.bucket_key_map[prefixed_key].keys())
+                        bucket_keys.extend(self.bucket_key_map[
+                                           prefixed_key].keys())
         else:
-            # If we are indexing (storing) just use child hashes without permuted index
+            # If we are indexing (storing) just use child hashes without
+            # permuted index
             for lshash in self.child_hashes:
                 # Get regular bucket keys from hash
                 for bucket_key in lshash.hash_vector(v, querying):
@@ -92,19 +95,20 @@ class HashPermutationMapper(LSHash):
                     perm_keys.append(bucket_key)
 
                     # Append key for storage (not the permutations)
-                    bucket_keys.append(lshash.hash_name+'_'+bucket_key)
+                    bucket_keys.append(lshash.hash_name + '_' + bucket_key)
 
                     # For every permutation register all the variants
                     for perm_key in perm_keys:
-                        prefixed_key = lshash.hash_name+'_'+perm_key
+                        prefixed_key = lshash.hash_name + '_' + perm_key
 
                         # Make sure dictionary exists
                         if not prefixed_key in self.bucket_key_map:
                             self.bucket_key_map[prefixed_key] = {}
 
                         for variant in perm_keys:
-                            prefixed_variant = lshash.hash_name+'_'+variant
-                            self.bucket_key_map[prefixed_key][prefixed_variant] = 1
+                            prefixed_variant = lshash.hash_name + '_' + variant
+                            self.bucket_key_map[prefixed_key][
+                                prefixed_variant] = 1
 
         # Return all the bucket keys
         return bucket_keys
@@ -135,12 +139,10 @@ class HashPermutationMapper(LSHash):
         """
 
         # Hash must generate binary keys
-        if not (isinstance(child_hash,PCABinaryProjections) or isinstance(child_hash,RandomBinaryProjections) or isinstance(child_hash,RandomBinaryProjectionTree)):
+        if not (isinstance(child_hash, PCABinaryProjections) or isinstance(child_hash, RandomBinaryProjections) or isinstance(child_hash, RandomBinaryProjectionTree)):
             raise ValueError('Child hashes must generate binary keys')
 
         # Add both hash and config to array of child hashes. Also we are going to
-        # accumulate used bucket keys for every hash in order to build the permuted index
+        # accumulate used bucket keys for every hash in order to build the
+        # permuted index
         self.child_hashes.append(child_hash)
-
-
-

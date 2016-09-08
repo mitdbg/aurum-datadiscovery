@@ -48,20 +48,24 @@ class RandomBinaryProjectionTreeNode(object):
         if tree_depth < len(bucket_key):
             hash_char = bucket_key[tree_depth]
 
-            # This is not the leaf so continue down into the tree towards the leafes
+            # This is not the leaf so continue down into the tree towards the
+            # leafes
 
             #print 'hash_char=%c' % hash_char
 
-            # If child node for this character ('0' or '1') is not existing yet, create it
+            # If child node for this character ('0' or '1') is not existing
+            # yet, create it
             if not hash_char in self.childs:
                 #print 'Creating child for %c' % hash_char
                 self.childs[hash_char] = RandomBinaryProjectionTreeNode()
 
             # Continue on the child
-            self.childs[hash_char].insert_entry_for_bucket(bucket_key, tree_depth+1)
+            self.childs[hash_char].insert_entry_for_bucket(
+                bucket_key, tree_depth + 1)
         else:
             # This is a leaf, so keep the bucket key
-            #print 'Inserting leaf %s(%s, %d), count is %d' % (bucket_key, self.bucket_key, tree_depth, self.vector_count)
+            # print 'Inserting leaf %s(%s, %d), count is %d' % (bucket_key,
+            # self.bucket_key, tree_depth, self.vector_count)
             if not self.bucket_key is None:
                 if self.bucket_key != bucket_key:
                     raise AttributeError
@@ -73,7 +77,8 @@ class RandomBinaryProjectionTreeNode(object):
         """
         if len(self.childs) == 0:
             # This is a leaf so just return the bucket key (we reached the bucket leaf)
-            #print 'Returning (collect) leaf bucket key %s with %d vectors' % (self.bucket_key, self.vector_count)
+            # print 'Returning (collect) leaf bucket key %s with %d vectors' %
+            # (self.bucket_key, self.vector_count)
             return [self.bucket_key]
 
         # Not leaf, return results of childs
@@ -91,7 +96,8 @@ class RandomBinaryProjectionTreeNode(object):
 
         if tree_depth == len(bucket_key):
             #print 'Returning leaf bucket key %s with %d vectors' % (self.bucket_key, self.vector_count)
-            # This is a leaf so just return the bucket key (we reached the bucket leaf)
+            # This is a leaf so just return the bucket key (we reached the
+            # bucket leaf)
             return [self.bucket_key]
 
         # If not leaf, this is a subtree node.
@@ -111,10 +117,10 @@ class RandomBinaryProjectionTreeNode(object):
                 return listA + listB
             else:
                 # Child subtree has enough results, so call method on child
-                return self.childs[hash_char].bucket_keys_to_guarantee_result_set_size(bucket_key, N, tree_depth+1)
+                return self.childs[hash_char].bucket_keys_to_guarantee_result_set_size(bucket_key, N, tree_depth + 1)
         else:
             # That subtree is not existing, so just follow the other side
-            return self.childs[other_hash_char].bucket_keys_to_guarantee_result_set_size(bucket_key, N, tree_depth+1)
+            return self.childs[other_hash_char].bucket_keys_to_guarantee_result_set_size(bucket_key, N, tree_depth + 1)
 
 
 class RandomBinaryProjectionTree(LSHash):
@@ -212,7 +218,3 @@ class RandomBinaryProjectionTree(LSHash):
         self.normals = config['normals']
         self.tree_root = config['tree_root']
         self.minimum_result_size = config['minimum_result_size']
-
-
-
-

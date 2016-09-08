@@ -45,7 +45,7 @@ class UniBucket(LSHash):
         Hashes the vector and returns the bucket key as string.
         """
         # Return bucket key identical to vector string representation
-        return [self.hash_name+'']
+        return [self.hash_name + '']
 
     def get_config(self):
         """

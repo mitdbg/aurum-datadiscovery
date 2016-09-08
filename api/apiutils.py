@@ -8,10 +8,12 @@ from bitarray import bitarray
 
 global_origin_id = 0
 
-BaseHit = namedtuple('Hit', 'nid, source_name, field_name, score', verbose=False)
+BaseHit = namedtuple(
+    'Hit', 'nid, source_name, field_name, score', verbose=False)
 
 
 class Hit(BaseHit):
+
     def __hash__(self):
         hsh = int(self.nid)
         return hsh
@@ -212,7 +214,7 @@ class Provenance:
                 explanation = explanation + get_name_from_hit(src) + " -> "
                 edge_info = self._p_graph[src][trg]
                 explanation = explanation + get_string_from_edge_info(edge_info) + " -> " \
-                              + get_name_from_hit(trg) + '\n'
+                    + get_name_from_hit(trg) + '\n'
         return explanation
 
 
@@ -307,19 +309,24 @@ class DRS:
             # Find nodes that intersect (those that will contain add_edges)
             my_data = set(self.data)
             merging_data = set(drs.data)
-            disjoint = my_data.intersection(merging_data)  # where a union is created
+            disjoint = my_data.intersection(
+                merging_data)  # where a union is created
             # Now find the incoming edges to these nodes in each of the drs's
             node_and_edges = []
             for el in disjoint:
                 input_edges1 = self._provenance.prov_graph().in_edges(el, data=True)
                 input_edges2 = drs._provenance.prov_graph().in_edges(el, data=True)
                 node_and_edges.append((input_edges1, input_edges2))
-            # Now locate the nodes in the merged prov graph and annotate edges with AND
+            # Now locate the nodes in the merged prov graph and annotate edges
+            # with AND
             for input1, input2 in node_and_edges:
                 for src1, tar1, dic1 in input1:
-                    edge_data = merge[src1][tar1]  # this is the edge information
+                    # this is the edge information
+                    edge_data = merge[src1][tar1]
                     for e in edge_data:  # we iterate over each edge
-                        edge_data[e][label] = 1  # we assign the new metadata as data assigned to the edge
+                        # we assign the new metadata as data assigned to the
+                        # edge
+                        edge_data[e][label] = 1
                 for src2, tar2, dic2 in input2:
                     edge_data = merge[src2][tar2]
                     for e in edge_data:
@@ -330,7 +337,8 @@ class DRS:
         # Get prov graph of merging
         prov_graph_of_merging = drs.get_provenance().prov_graph()
         # Compose into my prov graph
-        merge = nx.compose(self._provenance.prov_graph(), prov_graph_of_merging)
+        merge = nx.compose(self._provenance.prov_graph(),
+                           prov_graph_of_merging)
 
         if annotate_and_edges:
             annotate_union_edges('AND')
@@ -396,7 +404,8 @@ class DRS:
         new_data = merging_data.union(my_data)
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov
+        # graph at some point
         self.absorb_provenance(drs)
         return self
 
@@ -408,7 +417,8 @@ class DRS:
         new_data = my_data - merging_data
         self.set_data(list(new_data))
         # Merge provenance
-        # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
+        # FIXME: perhaps we need to do some garbage collection of the prov
+        # graph at some point
         self.absorb_provenance(drs)
         return self
 
@@ -470,7 +480,8 @@ class DRS:
             print("The result does not exist")
             return
 
-        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        # Calculate paths from a to leafs, in reverse order and return the
+        # leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
         origins = []
         for p in paths:
@@ -500,7 +511,8 @@ class DRS:
             print("The result does not exist")
             return
 
-        # Calculate paths from a to leafs, in reverse order and return the leafs.
+        # Calculate paths from a to leafs, in reverse order and return the
+        # leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
         explanations = []
         for p in paths:
@@ -545,10 +557,12 @@ class DRS:
             current_score = float(src.score)
             ns = [x for x in pg.neighbors(src)]
             if len(ns) == 1:
-                current_score = current_score + get_score_continuous_path(pg, ns[0])
+                current_score = current_score + \
+                    get_score_continuous_path(pg, ns[0])
             elif len(ns) > 1:
                 current_score = current_score + decide_path(pg, ns)
-            # Last option: when there are no neighbors, we simply return current_store
+            # Last option: when there are no neighbors, we simply return
+            # current_store
             return current_score
 
         # We reverse the provenance graph
@@ -724,7 +738,8 @@ class DRS:
         mode = self.mode  # save state
         self.set_fields_mode()
         for x, score in self._chosen_rank:
-            string = "SOURCE: " + x.source_name + "\t FIELD: " + x.field_name + "\t SCORE: " + str(score)
+            string = "SOURCE: " + x.source_name + "\t FIELD: " + \
+                x.field_name + "\t SCORE: " + str(score)
             print(string)
         self._mode = mode  # recover state
 

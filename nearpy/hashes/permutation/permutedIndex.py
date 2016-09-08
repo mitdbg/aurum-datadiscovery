@@ -36,6 +36,7 @@ class bitarray(_bitarray):
     """ This is required to make bitarray hashable with Py3
         (see http://bit.ly/1NIuA9F for explanation)
     """
+
     def __hash__(self):
         return id(self)
 
@@ -141,7 +142,8 @@ class PermutedIndex:
             topk = topk.union(set(candidates))
         topk = list(topk)
 
-        # sort the topk neighbour keys according to the Hamming distance to qurey key
+        # sort the topk neighbour keys according to the Hamming distance to
+        # qurey key
         topk = sorted(topk, key=lambda x: self.hamming_distance(x, query_key))
         # return the top k items
         topk_bin = [x.to01() for x in topk[:k]]

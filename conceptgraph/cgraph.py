@@ -5,7 +5,8 @@ import config as C
 import time
 
 
-now = lambda: int(round(time.time())*1000)
+now = lambda: int(round(time.time()) * 1000)
+
 
 def build_graph_skeleton(columns, graph):
     '''
@@ -23,6 +24,7 @@ def build_graph_skeleton(columns, graph):
                     graph[p_colname].append(colname)
     return graph
 
+
 def refine_graph_with_columnsignatures(ncol, tcol, graph):
     '''
         Given the signatures for all the numerical columns
@@ -39,7 +41,7 @@ def refine_graph_with_columnsignatures(ncol, tcol, graph):
             graph[col].append(c)
     et = now()
     n = str(len(ncol))
-    print("Took: "+str(et-st)+"ms to refine "+n+" num values")
+    print("Took: " + str(et - st) + "ms to refine " + n + " num values")
     st = now()
     for col, sig in tcol.items():
         # Get list of columns similar to this one
@@ -50,8 +52,9 @@ def refine_graph_with_columnsignatures(ncol, tcol, graph):
             graph[col].append(c)
     et = now()
     n = str(len(tcol))
-    print("Took: "+str(et-st)+"ms to refine "+n+" text values")
+    print("Took: " + str(et - st) + "ms to refine " + n + " text values")
     return graph
+
 
 def give_neighbors_of(concept, graph):
     '''
@@ -60,11 +63,12 @@ def give_neighbors_of(concept, graph):
     '''
     (f, c) = concept
     allneighbors = graph[concept]
-    neighbors = [] 
+    neighbors = []
     for filename, col in allneighbors:
         if filename is not f:
-            neighbors.append((filename, col)) 
+            neighbors.append((filename, col))
     return neighbors
+
 
 def give_structural_sim_of(concept, cgraph, simrank):
     # get index of concept in cgraph
@@ -83,7 +87,8 @@ def give_structural_sim_of(concept, cgraph, simrank):
         sim_vec.append(nodes[idx])
     # Return list of results
     return sim_vec
-                 
+
+
 def give_n_concepts_close_to(num, key, graph):
     return graph[key][:num]
 

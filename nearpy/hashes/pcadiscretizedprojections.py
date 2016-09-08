@@ -98,7 +98,8 @@ class PCADiscretizedProjections(LSHash):
             if not scipy.sparse.isspmatrix_csr(v):
                 v = scipy.sparse.csr_matrix(v)
             # Project vector onto all hyperplane normals
-            projection = (self.components_csr.dot(v) / self.bin_width).floor().toarray()
+            projection = (self.components_csr.dot(
+                v) / self.bin_width).floor().toarray()
         else:
             # Project vector onto components
             projection = numpy.dot(self.components, v)
@@ -128,5 +129,3 @@ class PCADiscretizedProjections(LSHash):
         self.bin_width = config['bin_width']
         self.projection_count = config['projection_count']
         self.components = config['components']
-
-

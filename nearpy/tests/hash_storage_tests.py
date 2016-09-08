@@ -86,7 +86,8 @@ class TestHashStorage(unittest.TestCase):
         self.memory.store_hash_configuration(hash1)
 
         hash2 = PCABinaryProjections(None, None, None)
-        hash2.apply_config(self.memory.load_hash_configuration('testPCABPHash'))
+        hash2.apply_config(
+            self.memory.load_hash_configuration('testPCABPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -94,17 +95,19 @@ class TestHashStorage(unittest.TestCase):
 
         for i in range(hash1.components.shape[0]):
             for j in range(hash1.components.shape[1]):
-                self.assertEqual(hash1.components[i, j], hash2.components[i, j])
-
+                self.assertEqual(hash1.components[
+                                 i, j], hash2.components[i, j])
 
     def test_hash_memory_storage_pcadp(self):
         train_vectors = numpy.random.randn(10, 100)
-        hash1 = PCADiscretizedProjections('testPCADPHash', 4, train_vectors, 0.1)
+        hash1 = PCADiscretizedProjections(
+            'testPCADPHash', 4, train_vectors, 0.1)
 
         self.memory.store_hash_configuration(hash1)
 
         hash2 = PCADiscretizedProjections(None, None, None, None)
-        hash2.apply_config(self.memory.load_hash_configuration('testPCADPHash'))
+        hash2.apply_config(
+            self.memory.load_hash_configuration('testPCADPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -113,8 +116,8 @@ class TestHashStorage(unittest.TestCase):
 
         for i in range(hash1.components.shape[0]):
             for j in range(hash1.components.shape[1]):
-                self.assertEqual(hash1.components[i, j], hash2.components[i, j])
-
+                self.assertEqual(hash1.components[
+                                 i, j], hash2.components[i, j])
 
     def test_hash_redis_storage_none_config(self):
         conf = self.redis_storage.load_hash_configuration('nonexistentHash')
@@ -128,7 +131,8 @@ class TestHashStorage(unittest.TestCase):
         self.redis_storage.store_hash_configuration(hash1)
 
         hash2 = RandomBinaryProjections(None, None)
-        hash2.apply_config(self.redis_storage.load_hash_configuration('testRBPHash'))
+        hash2.apply_config(
+            self.redis_storage.load_hash_configuration('testRBPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -145,7 +149,8 @@ class TestHashStorage(unittest.TestCase):
         self.redis_storage.store_hash_configuration(hash1)
 
         hash2 = RandomDiscretizedProjections(None, None, None)
-        hash2.apply_config(self.redis_storage.load_hash_configuration('testRDPHash'))
+        hash2.apply_config(
+            self.redis_storage.load_hash_configuration('testRDPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -163,7 +168,8 @@ class TestHashStorage(unittest.TestCase):
         self.redis_storage.store_hash_configuration(hash1)
 
         hash2 = PCABinaryProjections(None, None, None)
-        hash2.apply_config(self.redis_storage.load_hash_configuration('testPCABPHash'))
+        hash2.apply_config(
+            self.redis_storage.load_hash_configuration('testPCABPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -171,17 +177,19 @@ class TestHashStorage(unittest.TestCase):
 
         for i in range(hash1.components.shape[0]):
             for j in range(hash1.components.shape[1]):
-                self.assertEqual(hash1.components[i, j], hash2.components[i, j])
-
+                self.assertEqual(hash1.components[
+                                 i, j], hash2.components[i, j])
 
     def test_hash_redis_storage_pcadp(self):
         train_vectors = numpy.random.randn(10, 100)
-        hash1 = PCADiscretizedProjections('testPCADPHash', 4, train_vectors, 0.1)
+        hash1 = PCADiscretizedProjections(
+            'testPCADPHash', 4, train_vectors, 0.1)
 
         self.redis_storage.store_hash_configuration(hash1)
 
         hash2 = PCADiscretizedProjections(None, None, None, None)
-        hash2.apply_config(self.redis_storage.load_hash_configuration('testPCADPHash'))
+        hash2.apply_config(
+            self.redis_storage.load_hash_configuration('testPCADPHash'))
 
         self.assertEqual(hash1.dim, hash2.dim)
         self.assertEqual(hash1.hash_name, hash2.hash_name)
@@ -190,7 +198,8 @@ class TestHashStorage(unittest.TestCase):
 
         for i in range(hash1.components.shape[0]):
             for j in range(hash1.components.shape[1]):
-                self.assertEqual(hash1.components[i, j], hash2.components[i, j])
+                self.assertEqual(hash1.components[
+                                 i, j], hash2.components[i, j])
 
 
 if __name__ == '__main__':

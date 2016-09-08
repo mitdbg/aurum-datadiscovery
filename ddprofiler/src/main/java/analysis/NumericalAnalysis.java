@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package analysis;
 
@@ -10,10 +10,10 @@ import inputoutput.Attribute.AttributeType;
  * @author Raul - raulcf@csail.mit.edu
  * Sibo (edit)
  */
-public interface NumericalAnalysis extends Analysis, IntegerDataConsumer, FloatDataConsumer {
+public interface NumericalAnalysis
+    extends Analysis, IntegerDataConsumer, FloatDataConsumer {
 
-	public Range getNumericalRange(AttributeType type);
-	// add an interface to return the quantile
-	public long getQuantile(double p);
-	
+  public Range getNumericalRange(AttributeType type);
+  // add an interface to return the quantile
+  public long getQuantile(double p);
 }

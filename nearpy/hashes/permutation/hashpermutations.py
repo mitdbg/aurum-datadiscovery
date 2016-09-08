@@ -79,19 +79,22 @@ class HashPermutations(LSHash):
                 lshash = child_hash['hash']
                 # Make sure the permuted index for this hash is existing
                 if not lshash.hash_name in self.permutation.permutedIndexs:
-                    raise AttributeError('Permuted index is not existing for hash with name %s' % lshash.hash_name)
+                    raise AttributeError(
+                        'Permuted index is not existing for hash with name %s' % lshash.hash_name)
 
                 # Get regular bucket keys from hash
                 for bucket_key in lshash.hash_vector(v, querying):
                     #print 'Regular bucket key %s' % bucket_key
                     # Get neighbour keys from permuted index
-                    neighbour_keys = self.permutation.get_neighbour_keys(lshash.hash_name,bucket_key)
+                    neighbour_keys = self.permutation.get_neighbour_keys(
+                        lshash.hash_name, bucket_key)
                     # Add them to result, but prefix with hash name
                     for n in neighbour_keys:
-                        bucket_keys.append(lshash.hash_name+'_'+n)
+                        bucket_keys.append(lshash.hash_name + '_' + n)
 
         else:
-            # If we are indexing (storing) just use child hashes without permuted index
+            # If we are indexing (storing) just use child hashes without
+            # permuted index
             for child_hash in self.child_hashes:
                 lshash = child_hash['hash']
 
@@ -100,7 +103,7 @@ class HashPermutations(LSHash):
                     # Register bucket key in child hash dict
                     child_hash['bucket_keys'][bucket_key] = bucket_key
                     # Append bucket key to result prefixed with child hash name
-                    bucket_keys.append(lshash.hash_name+'_'+bucket_key)
+                    bucket_keys.append(lshash.hash_name + '_' + bucket_key)
 
         # Return all the bucket keys
         return bucket_keys
@@ -134,12 +137,14 @@ class HashPermutations(LSHash):
         """
 
         # Hash must generate binary keys
-        if not (isinstance(child_hash,PCABinaryProjections) or isinstance(child_hash,RandomBinaryProjections) or isinstance(child_hash,RandomBinaryProjectionTree)):
+        if not (isinstance(child_hash, PCABinaryProjections) or isinstance(child_hash, RandomBinaryProjections) or isinstance(child_hash, RandomBinaryProjectionTree)):
             raise ValueError('Child hashes must generate binary keys')
 
         # Add both hash and config to array of child hashes. Also we are going to
-        # accumulate used bucket keys for every hash in order to build the permuted index
-        self.child_hashes.append({'hash': child_hash, 'config': permute_config, 'bucket_keys': {}})
+        # accumulate used bucket keys for every hash in order to build the
+        # permuted index
+        self.child_hashes.append(
+            {'hash': child_hash, 'config': permute_config, 'bucket_keys': {}})
 
     def build_permuted_index(self):
         """
@@ -168,6 +173,5 @@ class HashPermutations(LSHash):
             lshash = child_hash['hash']
 
             # Compute permuted index for this hash
-            self.permutation.build_permuted_index(lshash,bucket_keys,num_permutation,beam_size,num_neighbour)
-
-
+            self.permutation.build_permuted_index(
+                lshash, bucket_keys, num_permutation, beam_size, num_neighbour)

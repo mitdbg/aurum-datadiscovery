@@ -2,6 +2,7 @@ import numpy
 import itertools
 import pickle
 
+
 def simrank(graph, max_iter, eps, c):
     '''
     Assumes a graph where keys are nodes and values are list of
@@ -9,13 +10,14 @@ def simrank(graph, max_iter, eps, c):
     '''
 
     nodes = list(graph.keys())
-    nodes_index = {k: v for(k,v) in [(nodes[i], i) for i in range(len(nodes))]}
+    nodes_index = {k: v for(k, v) in [(nodes[i], i)
+                                      for i in range(len(nodes))]}
 
     sim_prev = numpy.zeros(len(nodes))
     sim = numpy.identity(len(nodes))
 
     for i in range(max_iter):
-        print("It: " + str(i) +"/"+str(max_iter))
+        print("It: " + str(i) + "/" + str(max_iter))
         filename = "srpickle" + str(i)
         with open(filename, "wb+") as f:
             pickle.dump(sim, f)
@@ -25,16 +27,18 @@ def simrank(graph, max_iter, eps, c):
         for u, v in itertools.product(nodes, nodes):
             if u is v:
                 continue
-            u_ns, v_ns = predecessor_of(u, graph),predecessor_of(v, graph)
-            if len(u_ns) == 0 or len(v_ns) == 0: 
+            u_ns, v_ns = predecessor_of(u, graph), predecessor_of(v, graph)
+            if len(u_ns) == 0 or len(v_ns) == 0:
                 # if a node has no predecessors then setting similarity to zero
                 sim[nodes_index[u]][nodes_index[v]] = 0
-            else:                    
-                s_uv = sum([sim_prev[nodes_index[u_n]][nodes_index[v_n]] \
-                    for u_n, v_n in itertools.product(u_ns, v_ns)])
-                sim[nodes_index[u]][nodes_index[v]] = (c * s_uv) / (len(u_ns) * len(v_ns))
+            else:
+                s_uv = sum([sim_prev[nodes_index[u_n]][nodes_index[v_n]]
+                            for u_n, v_n in itertools.product(u_ns, v_ns)])
+                sim[nodes_index[u]][nodes_index[v]] = (
+                    c * s_uv) / (len(u_ns) * len(v_ns))
 
     return sim
+
 
 def predecessor_of(node, graph):
     '''
@@ -46,6 +50,7 @@ def predecessor_of(node, graph):
             if node in v:
                 l_ns.append(k)
     return l_ns
+
 
 def main():
     from collections import OrderedDict
@@ -61,7 +66,7 @@ def main():
     test_graph['4'].append('5')
     test_graph['5'] = []
     test_graph['5'].append('4')
-    
+
     c = 0.8
     eps = 1e-4
     max_iter = 100
@@ -73,4 +78,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -108,7 +108,8 @@ class FieldNetwork:
         if relation == Relation.PKFK:
             for x in self.enumerate_relation(Relation.PKFK):
                 print(x)
-        print("Total " + str(relation) + " relations: " + str(total_relationships))
+        print("Total " + str(relation) +
+              " relations: " + str(total_relationships))
 
     def get_op_from_relation(self, relation):
         if relation == Relation.CONTENT_SIM:
@@ -209,7 +210,8 @@ class FieldNetwork:
                 o_drs = o_drs.absorb_provenance(neighbors_of_n)
                 for match in neighbors_of_n:
                     neighbors_with_table.add(match)
-            o_drs = o_drs.set_data(neighbors_with_table)  # just assign data here
+            # just assign data here
+            o_drs = o_drs.set_data(neighbors_with_table)
             return o_drs
 
         o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
@@ -267,7 +269,8 @@ class FieldNetwork:
         return None
 
     def bidirectional_shortest_path(self, source, target, relation: Relation, field_mode=True, api=None):
-        # FIXME: refactor, integrate this on caller, rather than having another indirection here
+        # FIXME: refactor, integrate this on caller, rather than having another
+        # indirection here
         """
         Return a list of nodes in a shortest path between source: Hit and target: Hit.
         :param source is one extreme of the potential path
@@ -281,7 +284,8 @@ class FieldNetwork:
             results = self._bidirectional_pred_succ(source, target, relation)
         else:
             # source and target are strings with the table name
-            results = self._bidirectional_pred_succ_with_table_hops(source, target, relation, api)
+            results = self._bidirectional_pred_succ_with_table_hops(
+                source, target, relation, api)
         if results is None:  # check for None result
             return DRS([], Operation(OP.NONE))
         pred, succ, w, o_drs = results
@@ -304,7 +308,6 @@ class FieldNetwork:
 
         return o_drs
 
-
     def find_path(self, source, target, relation):
         """
         DEPRECATED
@@ -321,15 +324,19 @@ class FieldNetwork:
         return path
 
     def find_path_hit(self, source, target, relation):
-        o_drs = self.bidirectional_shortest_path(source, target, relation, True)  # field mode
+        o_drs = self.bidirectional_shortest_path(
+            source, target, relation, True)  # field mode
         #drs = DRS(path)
-        #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
+        # drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the
+        # carrier to the actual result
         return o_drs
 
     def find_path_table(self, source: str, target: str, relation, api):
-        o_drs = self.bidirectional_shortest_path(source, target, relation, False, api=api)  # table mode
+        o_drs = self.bidirectional_shortest_path(
+            source, target, relation, False, api=api)  # table mode
         #drs = DRS(path)
-        #drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the carrier to the actual result
+        # drs = drs.absorb_provenance(o_drs)  # Transfer provenance from the
+        # carrier to the actual result
         return o_drs
 
 
@@ -361,7 +368,7 @@ def test():
         id = compute_field_id(sn, fn)
     e = time.time()
     print(str(id))
-    print("custom hash: " + str(e-s))
+    print("custom hash: " + str(e - s))
     import binascii
     s = time.time()
 

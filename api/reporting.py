@@ -52,13 +52,18 @@ class Report:
         self.__num_tables = self.get_number_tables(nodes)
         # FIXME: Failing due to cardinality being attached as float to graph nodes ??
         # relations = graph.edges(keys=True)
-        content_sim_relations_gen = self.__network.enumerate_relation(Relation.CONTENT_SIM)
-        # FIXME: counting twice (both directions), so /2. Once edges works, we can modify it
-        total_content_sim_relations = len([x for x in content_sim_relations_gen]) / 2
+        content_sim_relations_gen = self.__network.enumerate_relation(
+            Relation.CONTENT_SIM)
+        # FIXME: counting twice (both directions), so /2. Once edges works, we
+        # can modify it
+        total_content_sim_relations = len(
+            [x for x in content_sim_relations_gen]) / 2
         self.__num_content_sim_relations = total_content_sim_relations
 
-        schema_sim_relations_gen = self.__network.enumerate_relation(Relation.SCHEMA_SIM)
-        total_schema_sim_relations = len([x for x in schema_sim_relations_gen]) / 2
+        schema_sim_relations_gen = self.__network.enumerate_relation(
+            Relation.SCHEMA_SIM)
+        total_schema_sim_relations = len(
+            [x for x in schema_sim_relations_gen]) / 2
         self.__num_schema_sim_relations = total_schema_sim_relations
 
         pkfk_relations_gen = self.__network.enumerate_relation(Relation.PKFK)

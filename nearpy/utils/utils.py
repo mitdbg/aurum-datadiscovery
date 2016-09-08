@@ -48,7 +48,7 @@ def unitvec(vec):
     Scale a vector to unit length. The only exception is the zero vector, which
     is returned back unchanged.
     """
-    if scipy.sparse.issparse(vec): # convert scipy.sparse to standard numpy array
+    if scipy.sparse.issparse(vec):  # convert scipy.sparse to standard numpy array
         vec = vec.tocsr()
         veclen = numpy.sqrt(numpy.sum(vec.data ** 2))
         if veclen > 0.0:
@@ -71,7 +71,7 @@ def perform_pca(A):
     The rows of a correspond to observations, the columns to variables.
     """
     # First subtract the mean
-    M = (A-numpy.mean(A.T, axis=1)).T
+    M = (A - numpy.mean(A.T, axis=1)).T
     # Get eigenvectors and values of covariance matrix
     return numpy.linalg.eig(numpy.cov(M))
 

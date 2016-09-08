@@ -98,7 +98,3 @@ class RandomBinaryProjections(LSHash):
         self.dim = config['dim']
         self.projection_count = config['projection_count']
         self.normals = config['normals']
-
-
-
-

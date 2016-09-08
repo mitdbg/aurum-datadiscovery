@@ -96,8 +96,8 @@ class DistanceRatioExperiment(object):
                                   self.vectors.shape[1])
         self.query_indices = []
         for k in range(int(query_count)):
-            index = numpy.floor(k*(self.vectors.shape[1]/query_count))
-            index = min(index, self.vectors.shape[1]-1)
+            index = numpy.floor(k * (self.vectors.shape[1] / query_count))
+            index = min(index, self.vectors.shape[1] - 1)
             self.query_indices.append(int(index))
 
         print('\nStarting exact search (query set size=%d)...\n' % query_count)
@@ -209,7 +209,8 @@ class DistanceRatioExperiment(object):
                                                                     avg_result_size,
                                                                     avg_search_time))
 
-            result.append((avg_distance_ratio, avg_result_size, avg_search_time))
+            result.append(
+                (avg_distance_ratio, avg_result_size, avg_search_time))
 
         return result
 

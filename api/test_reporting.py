@@ -31,4 +31,3 @@ class TestReporting(unittest.TestCase):
         #print("TOP FIELDS: ")
         #for t in topfields:
         #    print(t)
-

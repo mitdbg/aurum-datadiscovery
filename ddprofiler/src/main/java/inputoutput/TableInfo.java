@@ -7,18 +7,15 @@ package inputoutput;
 
 import java.util.List;
 
-
 public class TableInfo {
-	
-	private List<Attribute> tableAttributes;
-	
-	public TableInfo(){	}
-	
-	public List<Attribute> getTableAttributes() {
-		return tableAttributes;
-	}
-	
-	public void setTableAttributes(List<Attribute> tableAttributes) {
-		this.tableAttributes = tableAttributes;
-	}
+
+  private List<Attribute> tableAttributes;
+
+  public TableInfo() {}
+
+  public List<Attribute> getTableAttributes() { return tableAttributes; }
+
+  public void setTableAttributes(List<Attribute> tableAttributes) {
+    this.tableAttributes = tableAttributes;
+  }
 }

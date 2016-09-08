@@ -63,6 +63,7 @@ class TestRandomBinaryProjections(unittest.TestCase):
         for k in range(100):
             self.assertEqual(first_hash, self.rbp.hash_vector(x)[0])
 
+
 class TestRandomDiscretizedProjections(unittest.TestCase):
 
     def setUp(self):
@@ -90,6 +91,7 @@ class TestRandomDiscretizedProjections(unittest.TestCase):
         first_hash = self.rbp.hash_vector(x)[0]
         for k in range(100):
             self.assertEqual(first_hash, self.rbp.hash_vector(x)[0])
+
 
 class TestPCABinaryProjections(unittest.TestCase):
 

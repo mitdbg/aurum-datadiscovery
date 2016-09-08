@@ -81,4 +81,3 @@ class MemoryStorage(Storage):
         Loads and returns hash configuration
         """
         return self.hash_configs.get(hash_name)
-
