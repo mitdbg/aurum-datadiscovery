@@ -14,63 +14,43 @@ def main(output_path=None):
 
     # Get all fields from store
     fields_gen = store.get_all_fields()
-    #  fields = [f for f in fields_gen]
-    # Schema relation
+
+    # Network skeleton and hierarchical relations (table - field), etc
     start_schema = time.time()
-    networkbuilder.build_schema_relation(network, fields_gen)
-    #fields = [(nid, fn, sn) for (nid, fn, sn, tv, uv) in fields_gen]
+    network.init_meta_schema(fields_gen)
     end_schema = time.time()
-    print("Total schema: {0}".format(str(end_schema - start_schema)))
+    print("Total skeleton: {0}".format(str(end_schema - start_schema)))
 
     # Schema_sim relation
     start_schema_sim = time.time()
-    # Create generator again
-    fields_gen = store.get_all_fields()
-    networkbuilder.build_schema_sim_relation(network, fields_gen)
+    networkbuilder.build_schema_sim_relation(network)
     end_schema_sim = time.time()
-    print(
-        "Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
+    print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
 
     # Entity_sim relation
     start_entity_sim = time.time()
     #fields, entities = store.get_all_fields_entities()
     #networkbuilder.build_entity_sim_relation(network, fields, entities)
     end_entity_sim = time.time()
-    print(
-        "Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
-
-    #import yappi
-
-    #st = time.time()
-    #store.get_all_fields_textsignatures()
-    #et = time.time()
-    #print("Time to extract signatures from store: {0}".format(str(et - st)))
-    #exit()
+    print("Total entity-sim: {0}".format(str(end_entity_sim - start_entity_sim)))
 
     # Content_sim text relation
     start_text_sig_sim = time.time()
     st = time.time()
-    #yappi.start()
-    fields, text_signatures = store.get_all_fields_textsignatures()
-    #yappi.get_func_stats().print_all()
-    #yappi.get_thread_stats().print_all()
+    text_signatures = store.get_all_fields_text_signatures()
     et = time.time()
     print("Time to extract signatures from store: {0}".format(str(et - st)))
-    #field_and_text_signature_gen = store.get_all_fields_textsignatures()
-    networkbuilder.build_content_sim_relation_text_lsa(
-        network, fields, text_signatures)
+
+    networkbuilder.build_content_sim_relation_text_lsa(network, text_signatures)
     end_text_sig_sim = time.time()
-    print(
-        "Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
-    fields, num_signatures = store.get_all_fields_numsignatures()
-    networkbuilder.build_content_sim_relation_num(
-        network, fields, num_signatures)
+    id_sig = store.get_all_fields_num_signatures()
+    networkbuilder.build_content_sim_relation_num(network, id_sig)
     end_num_sig_sim = time.time()
-    print(
-        "Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()

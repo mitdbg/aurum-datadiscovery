@@ -71,6 +71,7 @@ class StoreHandler:
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
                                          'hits.total',
+                                         'hits.hits._source.dbName',
                                          'hits.hits._source.sourceName',
                                          'hits.hits._source.columnName',
                                          'hits.hits._source.totalValues',
@@ -81,13 +82,15 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'],
-                                           h['_source']['totalValues'], h['_source']['uniqueValues'])
+                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['sourceName'],
+                                           h['_source']['columnName'], h['_source']['totalValues'],
+                                           h['_source']['uniqueValues'])
                 yield id_source_and_file_name
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
+                                             'hits.hits._source.dbName',
                                              'hits.hits._source.sourceName',
                                              'hits.hits._source.columnName',
                                              'hits.hits._source.totalValues',
@@ -283,7 +286,52 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
-    def get_all_fields_textsignatures(self):
+    def get_all_fields_text_signatures(self, network):
+        def partition_ids(ids, partition_size=50):
+            for i in range(0, len(ids), partition_size):
+                yield ids[i:i + partition_size]
+
+        def filter_term_vector_by_frequency(term_dict):
+            # FIXME: add filter by term length
+            filtered = []
+            for k, v in term_dict.items():
+                if v > 2:
+                    filtered.append(k)
+            return filtered
+
+        text_signatures = []
+        total = 0
+        for nid in network.iterate_ids():
+            total += 1
+            print("text_sig: " + str(total))
+            # We retrieve all documents indexed with the same id in 'text'
+            docs = self.get_all_docs_from_text_with_idx_id(nid)
+            ids = [x for x in docs]
+            # partition ids so that they fit in one http request
+            ids_partitions = partition_ids(ids)
+            all_terms = defaultdict(int)
+            for partition in ids_partitions:
+                # We get the term vectors for each group of those documents
+                # , body=term_body)
+                ans = client.mtermvectors(
+                    index='text', ids=partition, doc_type='column')
+                # We merge them somehow
+                found_docs = ans['docs']
+                for doc in found_docs:
+                    term_vectors = doc['term_vectors']
+                    if 'text' in term_vectors:
+                        # terms = list(term_vectors['text']['terms'].keys())
+                        terms_and_freq = term_vectors['text']['terms']
+                        for term, freq_dict in terms_and_freq.items():
+                            # we don't care about the value
+                            all_terms[term] = all_terms[
+                                                  term] + freq_dict['term_freq']
+            filtered_term_vector = filter_term_vector_by_frequency(all_terms)
+            if len(filtered_term_vector) > 0:
+                text_signatures.append(nid, filtered_term_vector)
+        return text_signatures
+
+    def __get_all_fields_textsignatures(self):
         # FIXME: still need to add filter for terms that appear less than once, or add freq to the vector of tersm
         # using the map value and then post filter in a better way
 
@@ -306,7 +354,6 @@ class StoreHandler:
         # We get the ids from 'profile'
         text_fields_gen = self.get_all_text_fields()
         total = 0
-        # TODO: maybe materialize this (above) first?
         for (uid, sn, fn, tv, uv) in text_fields_gen:
             total = total + 1
             print("text_sig: " + str(total))
@@ -372,7 +419,7 @@ class StoreHandler:
             seen_nid.append(nid)
         return fields, text_signatures
 
-    def get_all_fields_numsignatures(self):
+    def get_all_fields_num_signatures(self):
         """
         Retrieves numerical fields and signatures from the store
         :return: (fields, numsignatures)
@@ -383,34 +430,28 @@ class StoreHandler:
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
                                          'hits.total',
-                                         'hits.hits._source.sourceName',
-                                         'hits.hits._source.columnName',
                                          'hits.hits._source.median',
                                          'hits.hits._source.iqr']
                             )
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
-        fields = []
-        num_sig = []
+
+        id_sig = []
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h[
-                                           '_source']['columnName'])
-                fields.append(id_source_and_file_name)
-                num_sig.append((h['_source']['median'], h['_source']['iqr']))
+                data = (h['_id'], (h['_source']['median'], h['_source']['iqr']))
+                id_sig.append(data)
                 remaining -= 1
             res = client.scroll(scroll="3m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
-                                             'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName',
                                              'hits.hits._source.median',
                                              'hits.hits._source.iqr']
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
-        return fields, num_sig
+        return id_sig
 
 
 if __name__ == "__main__":

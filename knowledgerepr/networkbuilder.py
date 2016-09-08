@@ -18,7 +18,26 @@ from collections import defaultdict
 rbp = RandomBinaryProjections('default', 30)
 
 
-def create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_is_dense=False):
+def create_sim_graph_text(nid_gen, network, text_engine, tfidf, relation, tfidf_is_dense=False):
+    row_idx = 0
+    for nid in nid_gen:
+        if tfidf_is_dense:
+            dense_row = tfidf[row_idx]
+            array = dense_row
+        else:
+            sparse_row = tfidf.getrow(row_idx)
+            dense_row = sparse_row.todense()
+            array = dense_row.A[0]
+        row_idx += 1
+        N = text_engine.neighbours(array)
+        if len(N) > 1:
+            for n in N:
+                (data, key, value) = n
+                if nid != key:
+                    network.add_relation(nid, key, relation, value)
+
+
+def __create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_is_dense=False):
     # FIXME: bottleneck. parallelize this
     rowidx = 0
     for (nid, sn, fn) in fields:
@@ -47,7 +66,31 @@ def create_sim_graph_text(network, text_engine, fields, tfidf, relation, tfidf_i
         #print("")
 
 
-def index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=False):
+def index_in_text_engine(nid_gen, tfidf, lsh_projections, tfidf_is_dense=False):
+    num_features = tfidf.shape[1]
+    print("TF-IDF shape: " + str(tfidf.shape))
+    text_engine = Engine(num_features,
+                         lshashes=[lsh_projections],
+                         distance=CosineDistance())
+
+    st = time.time()
+    row_idx = 0
+    for key in nid_gen:
+        if tfidf_is_dense:
+            dense_row = tfidf[row_idx]
+            array = dense_row
+        else:
+            sparse_row = tfidf.getrow(row_idx)
+            dense_row = sparse_row.todense()
+            array = dense_row.A[0]
+        row_idx += 1
+        text_engine.store_vector(array, key)
+    et = time.time()
+    print("Total store text: " + str((et - st)))
+    return text_engine
+
+
+def __index_in_text_engine(fields, tfidf, lsh_projections, tfidf_is_dense=False):
     num_features = tfidf.shape[1]
     print("tfidf shape: " + str(tfidf.shape))
     text_engine = Engine(num_features,
@@ -140,7 +183,19 @@ def _build_schema_relation(network, fields):
                 network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
 
 
-def build_schema_sim_relation(network, fields):
+def build_schema_sim_relation(network):
+    docs = []
+    for (_, _, field_name) in network.iterate_values():
+        docs.append(field_name)
+
+    tfidf = da.get_tfidf_docs(docs)
+    nid_gen = network.iterate_ids()
+    text_engine = index_in_text_engine(nid_gen, tfidf, rbp)  # rbp the global variable
+    nid_gen = network.iterate_ids()
+    create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.SCHEMA_SIM)
+
+
+def __build_schema_sim_relation(network, fields):
     docs = []
     for (nid, sn, fn, tv, uv) in fields:
         docs.append(fn)
@@ -184,7 +239,31 @@ def build_entity_sim_relation(network, fields, entities):
                               tfidf, Relation.ENTITY_SIM)
 
 
-def build_content_sim_relation_text_lsa(network, fields, signatures):
+def build_content_sim_relation_text_lsa(network, signatures):
+
+    def get_nid_gen(signatures):
+        for nid, sig in signatures:
+            yield nid
+
+    docs = []
+    for nid, e in signatures:
+        docs.append(' '.join(e))
+
+    # this may become redundant if we exploit the store characteristics
+    tfidf = da.get_tfidf_docs(docs)
+
+    print("TF-IDF shape before LSA: " + str(tfidf.shape))
+    tfidf = lsa_dimensionality_reduction(tfidf)
+    print("TF-IDF shape after LSA: " + str(tfidf.shape))
+    # rbp = RandomBinaryProjections('default', 1000)
+    lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
+    nid_gen = get_nid_gen(signatures)  # to preserve the order nid -> signature
+    text_engine = index_in_text_engine(nid_gen, tfidf, lsh_projections, tfidf_is_dense=True)
+    nid_gen = get_nid_gen(signatures)  # to preserve the order nid -> signature
+    create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.CONTENT_SIM, tfidf_is_dense=True)
+
+
+def __build_content_sim_relation_text_lsa(network, fields, signatures):
     docs = []
     for e in signatures:
         docs.append(' '.join(e))
@@ -217,7 +296,38 @@ def build_content_sim_relation_text(network, fields, signatures):
                           tfidf, Relation.CONTENT_SIM)
 
 
-def build_content_sim_relation_num(network, fields, features):
+def build_content_sim_relation_num(network, id_sig):
+
+    def get_sig_gen(id_sig):
+        for nid, sig in id_sig:
+            yield sig
+
+    features_gen = get_sig_gen(id_sig)
+    fields = [x[0] for x in id_sig]
+
+    X = np.asarray(features_gen)
+    db = DBSCAN(eps=0.3, min_samples=2).fit(X)
+    labels = db.labels_
+    #print(str(labels))
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    print("Total num clusters found: " + str(n_clusters))
+    # group indices by label
+    clusters = defaultdict(list)
+    for i in range(len(labels)):
+        clusters[labels[i]].append(i)
+    # create relations
+    for k, v in clusters.items():
+        if k == -1:
+            continue
+        for el1 in v:
+            for el2 in v:
+                if el1 != el2:
+                    nid1 = fields[el1]
+                    nid2 = fields[el2]
+                    network.add_relation(nid1, nid2, Relation.CONTENT_SIM, 1)
+
+
+def __build_content_sim_relation_num(network, fields, features):
     #X = StandardScaler().fit_transform(features)
     X = np.asarray(features)
     db = DBSCAN(eps=0.3, min_samples=2).fit(X)
@@ -245,8 +355,27 @@ def build_content_sim_relation_num(network, fields, features):
                     #print(str(n1) +" issimto "+ str(n2))
                     network.add_relation(n1, n2, Relation.CONTENT_SIM, 1)
 
-
 def build_pkfk_relation(network):
+    seen = set()
+    for n in network.iterate_ids():
+        seen.add(n)
+        n_card = network.get_cardinality_of(n)
+        # neighborhood = network.neighbors((n.source_name, n.field_name),
+        # Relation.CONTENT_SIM) #  old
+        neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
+        for ne in neighborhood:
+            if ne not in seen and ne is not n:
+                ne_card = network.get_cardinality_of(ne)
+                if n_card > 0.5 or ne_card > 0.5:
+                    if n_card > ne_card:
+                        highest_card = n_card
+                    else:
+                        highest_card = ne_card
+                    network.add_relation(n, ne, Relation.PKFK, highest_card)
+                    print(str(n) + " -> " + str(ne))
+
+
+def __build_pkfk_relation(network):
     seen = set()
     for n in network.enumerate_fields():
         seen.add(n)

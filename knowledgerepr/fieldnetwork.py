@@ -1,5 +1,6 @@
 import operator
 import networkx as nx
+from collections import defaultdict
 from api.apiutils import DRS
 from api.apiutils import Operation
 from api.apiutils import OP
@@ -16,12 +17,22 @@ def build_hit(sn, fn):
 class FieldNetwork:
     # The core graph
     __G = nx.MultiGraph()
+    __id_names = dict()
+    __source_ids = defaultdict(list)
 
     def __init__(self, graph=None):
         if graph is None:
             self.__G = nx.MultiGraph()
         else:
             self.__G = graph
+
+    def iterate_ids(self) -> int:
+        for k, _ in self.__id_names:
+            yield k
+
+    def iterate_values(self) -> (str, str, str):
+        for _, v in self.__id_names:
+            yield v
 
     def get_cardinality_of(self, node):
         c = self.__G[node]
@@ -43,7 +54,39 @@ class FieldNetwork:
     def relation_between(self, node1, node2, relation):
         return self.__G[node1][node2][relation]
 
-    def add_field(self, source_name, field_name, cardinality=None):
+    def init_meta_schema(self, fields: (int, str, str, str, int, int)):
+        """
+        Creates a dictionary of id -> (dbname, sourcename, fieldname)
+        and one of:
+        sourcename -> id
+        Then it also initializes the graph with all the nodes, e.g., ids and the cardinality
+        for these, if any.
+        :param fields:
+        :return:
+        """
+        print("Building schema relation...")
+        for (nid, db_name, sn_name, fn_name, total_values, unique_values) in fields:
+            self.__id_names[nid] = (db_name, sn_name, fn_name)
+            self.__source_ids[sn_name].append(nid)
+            cardinality_ratio = None
+            if float(total_values) > 0:
+                cardinality_ratio = float(unique_values) / float(total_values)
+            self.add_field(nid, cardinality_ratio)
+        print("Building schema relation...OK")
+
+    def add_field(self, nid, cardinality=None):
+        """
+        Creates a graph node for this field and adds it to the graph
+        :param nid: the id of the node (a hash of dbname, sourcename and fieldname
+        :param cardinality: the cardinality of the values of the node, if any
+        :return: the newly added field node
+        """
+        self.__G.add_node(nid)
+        if cardinality is not None:
+            nx.set_node_attributes(self.__G, 'cardinality', cardinality)
+        return nid
+
+    def __add_field(self, source_name, field_name, cardinality=None):
         """
         Creates a graph node for this field and adds it to the graph
         :param source_name: of the field
@@ -71,6 +114,19 @@ class FieldNetwork:
         return nodes
 
     def add_relation(self, node_src, node_target, relation, score):
+        """
+        Adds or updates the score of relation for the edge between node_src and node_target
+        :param node_src: the source node
+        :param node_target: the target node
+        :param relation: the type of relation (edge)
+        :param score: the numerical value of the score
+        :return:
+        """
+        score = {'score': score}
+        self.__G.add_edge(node_src, node_target, relation, score)
+
+
+    def __add_relation(self, node_src, node_target, relation, score):
         """
         Adds or updates the score of relation for the edge between node_src and node_target
         :param node_src: the source node
