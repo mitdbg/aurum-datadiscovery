@@ -53,7 +53,7 @@ public class NativeElasticStore implements Store {
 	public NativeElasticStore(ProfilerConfig pc) { 
 		String storeServer = pc.getString(ProfilerConfig.STORE_SERVER);
 		int storePort = pc.getInt(ProfilerConfig.STORE_PORT);
-		int storeHttpPort = pc.getInt(ProfilerConfig.STORE_HTTP_SERVER);
+		int storeHttpPort = pc.getInt(ProfilerConfig.STORE_HTTP_PORT);
 		this.storeServer = storeServer;
 		this.storePort = storePort;
 		this.serverUrl = "http://"+storeServer+":"+storeHttpPort;

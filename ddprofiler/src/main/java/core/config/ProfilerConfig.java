@@ -34,8 +34,8 @@ public class ProfilerConfig extends Config {
   private static final String STORE_TYPE_DOC =
       "Configures store type: NULL(0), ELASTIC_HTTP(1), ELASTIC_NATIVE(2)";
 
-  public static final String STORE_HTTP_SERVER = "store.http.server";
-  private static final String STORE_HTTP_SERVER_DOC =
+  public static final String STORE_HTTP_PORT = "store.http.port";
+  private static final String STORE_HTTP_PORT_DOC =
       "Server HTTP port for stores that support it";
 
   public static final String STORE_SERVER = "store.server";
@@ -75,8 +75,8 @@ public class ProfilerConfig extends Config {
             .define(STORE_TYPE, Type.INT, 2, Importance.MEDIUM, STORE_TYPE_DOC)
             .define(STORE_SERVER, Type.STRING, "127.0.0.1", Importance.HIGH,
                     STORE_SERVER_DOC)
-            .define(STORE_HTTP_SERVER, Type.INT, 9200, Importance.HIGH,
-                    STORE_HTTP_SERVER_DOC)
+            .define(STORE_HTTP_PORT, Type.INT, 9200, Importance.HIGH,
+                    STORE_HTTP_PORT_DOC)
             .define(STORE_PORT, Type.INT, 9300, Importance.HIGH, STORE_PORT_DOC)
             .define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".", Importance.LOW,
                     SOURCES_TO_ANALYZE_FOLDER_DOC)

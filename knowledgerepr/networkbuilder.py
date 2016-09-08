@@ -189,7 +189,7 @@ def build_content_sim_relation_num(network, id_sig):
     features_gen = get_sig_gen(id_sig)
     fields = [x[0] for x in id_sig]
 
-    X = np.asarray(features_gen)
+    X = np.asarray([x for x in features_gen])
     db = DBSCAN(eps=0.3, min_samples=2).fit(X)
     labels = db.labels_
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
@@ -220,7 +220,7 @@ def build_pkfk_relation(network):
         neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
         for ne in neighborhood:
             if ne not in seen and ne is not n:
-                ne_card = network.get_cardinality_of(ne)
+                ne_card = network.get_cardinality_of(ne.nid)
                 if n_card > 0.5 or ne_card > 0.5:
                     if n_card > ne_card:
                         highest_card = n_card

@@ -32,8 +32,13 @@ class Hit(BaseHit):
 
 def compute_field_id(db_name, source_name, field_name):
     string = db_name + source_name + field_name
-    nid = binascii.crc32(bytes(string, encoding="UTF-8"))
-    return nid
+    hash = 0
+    for i in range(len(string)):
+        hash = 31 * hash + string[i]
+
+    #nid = binascii.crc32(bytes(string, encoding="UTF-8"))
+    #return nid
+    return hash
 
 
 class Relation(Enum):

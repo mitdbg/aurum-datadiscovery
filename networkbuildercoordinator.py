@@ -37,7 +37,7 @@ def main(output_path=None):
     # Content_sim text relation
     start_text_sig_sim = time.time()
     st = time.time()
-    text_signatures = store.get_all_fields_text_signatures()
+    text_signatures = store.get_all_fields_text_signatures(network)
     et = time.time()
     print("Time to extract signatures from store: {0}".format(str(et - st)))
 
@@ -173,7 +173,7 @@ def test_read_store():
 
     # Read all termvectors from the combination of docs
     st = time.time()
-    fields_gen, sign = store.get_all_fields_textsignatures()
+    fields_gen, sign = store.get_all_fields_text_signatures()
     fields = [f for f in fields_gen]
     et = time.time()
     print("Took {0} to read {1} fields from text".format(

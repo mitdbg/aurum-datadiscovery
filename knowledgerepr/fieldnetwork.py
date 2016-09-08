@@ -28,12 +28,12 @@ class FieldNetwork:
             self.__id_names = id_names
             self.__source_ids = source_ids
 
-    def iterate_ids(self) -> int:
-        for k, _ in self.__id_names:
+    def iterate_ids(self):
+        for k, _ in self.__id_names.items():
             yield k
 
     def iterate_values(self) -> (str, str, str):
-        for _, v in self.__id_names:
+        for _, v in self.__id_names.items():
             yield v
 
     def get_fields_of_source(self, source) -> [int]:
@@ -169,7 +169,10 @@ class FieldNetwork:
             return OP.SCHEMA_SIM
 
     def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
-        nid = hit.nid
+        if isinstance(hit, Hit):
+            nid = hit.nid
+        if isinstance(hit, str):
+            nid = hit
         data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
