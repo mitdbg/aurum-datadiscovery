@@ -19,6 +19,9 @@ import inputoutput.TableInfo;
 
 public class FileConnector extends Connector {
 	
+	private String connectPath;
+	private String sourceName;
+	
 	private CSVReader fileReader;
 	private long lineCounter = 0;
 	private TableInfo tableInfo;
@@ -45,6 +48,11 @@ public class FileConnector extends Connector {
 		initConnector();
 		List<Attribute> attrs = this.getAttributes();
 		tableInfo.setTableAttributes(attrs);
+	}
+	
+	@Override
+	public String getDBName() {
+		return this.connectPath;
 	}
 	
 	@Override

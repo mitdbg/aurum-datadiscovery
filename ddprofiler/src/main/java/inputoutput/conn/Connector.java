@@ -18,9 +18,10 @@ import inputoutput.Record;
 
 public abstract class Connector {
 
-	protected String connectPath;//the path directory in the database or file system
-	protected String sourceName;// the table in the database or the cvs file name
+//	protected String connectPath;//the path directory in the database or file system
+//	protected String sourceName;// the table in the database or the cvs file name
 	
+	public abstract String getDBName();
 	public abstract String getSourceName();
 	abstract void initConnector() throws IOException, ClassNotFoundException, SQLException;
 	abstract void destroyConnector();

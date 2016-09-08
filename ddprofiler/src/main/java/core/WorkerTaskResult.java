@@ -4,6 +4,7 @@ package core;
 public class WorkerTaskResult {
 
 	final private int id;
+	final private String dbName;
 	final private String sourceName;
 	final private String columnName;
 	final private String dataType;
@@ -18,6 +19,7 @@ public class WorkerTaskResult {
 	
 	public WorkerTaskResult(
 			int id,
+			String dbName,
 			String sourceName,
 			String columnName,
 			String dataType,
@@ -25,6 +27,7 @@ public class WorkerTaskResult {
 			int uniqueValues,
 			String entities) {
 		this.id = id;
+		this.dbName = dbName;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
 		this.dataType = dataType;
@@ -40,6 +43,7 @@ public class WorkerTaskResult {
 	
 	public WorkerTaskResult(
 			int id,
+			String dbName,
 			String sourceName,
 			String columnName,
 			String dataType,
@@ -51,6 +55,7 @@ public class WorkerTaskResult {
 			long median,
 			long iqr) {
 		this.id = id;
+		this.dbName = dbName;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
 		this.dataType = dataType;
@@ -66,6 +71,10 @@ public class WorkerTaskResult {
 	
 	public int getId() {
 		return id;
+	}
+	
+	public String getDBName() {
+		return dbName;
 	}
 
 	public String getSourceName() {

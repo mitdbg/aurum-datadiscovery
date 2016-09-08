@@ -67,8 +67,8 @@ public class HttpElasticStore implements Store {
 				"{ \"properties\" : "
 				+ "{ "
 				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-				//+ "\"columnName\" : {\"type\" : \"string\", \"index\" : \"analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
 				+ 		"\"index\" : \"analyzed\", "
 				+ 		"\"analyzer\" : \"english\"},"
@@ -120,6 +120,7 @@ public class HttpElasticStore implements Store {
 		String strId = Integer.toString(wtr.getId());
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		source.put("id", Integer.toString(wtr.getId()));
+		source.put("dbName", wtr.getDBName());
 		source.put("sourceName", wtr.getSourceName());
 		source.put("columnName", wtr.getColumnName());
 		source.put("dataType", wtr.getDataType());

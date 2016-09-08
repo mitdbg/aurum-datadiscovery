@@ -26,6 +26,9 @@ public class DBConnector extends Connector {
 	
 	private static final Logger log = Logger.getLogger(DBConnector.class.getName());
 
+	private String connectPath;
+	private String sourceName;
+	
 	private DBType db;// db system name e.g., mysq/oracle etc.
 	private String username;// db conn user name;
 	private String password; // db conn password;
@@ -54,24 +57,27 @@ public class DBConnector extends Connector {
 
 	@Override
 	public void initConnector() throws IOException {
+		String cPath = null;
 		try {
 			if(db == DBType.MYSQL) {
 				Class.forName("com.mysql.jdbc.Driver");
-				conn = DriverManager.getConnection("jdbc:mysql://" + 
-						connIP + ":" + port + "/" + connectPath, username, password);
+				cPath = "jdbc:mysql://" + connIP + ":" + port + "/" + connectPath;
+				conn = DriverManager.getConnection(cPath, username, password);
 			}
 			else if(db == DBType.POSTGRESQL) {
 				Class.forName("org.postgresql.Driver");
-				conn = DriverManager.getConnection("jdbc:postgresql://" + 
-						connIP + ":" + port + "/" + connectPath, username, password);
+				cPath = "jdbc:postgresql://" + connIP + ":" + port + "/" + connectPath;
+				conn = DriverManager.getConnection(cPath, username, password);
 			}
 			else if(db == DBType.ORACLE) {
 				Class.forName ("oracle.jdbc.driver.OracleDriver");
-				conn = DriverManager.getConnection(
-						"jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
+				cPath = "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
 						+ "(HOST="+connIP+")(PORT="+port+")))"
-						+ "(CONNECT_DATA=(SID="+connectPath+")))", username, password);
+						+ "(CONNECT_DATA=(SID="+connectPath+")))";
+				conn = DriverManager.getConnection(
+						cPath, username, password);
 			}
+			this.connectPath = cPath;
 
 			List<Attribute> attrs = this.getAttributes();
 			this.tbInfo.setTableAttributes(attrs);
@@ -166,14 +172,16 @@ public class DBConnector extends Connector {
 		return attrs;
 	}
 	
-/*
- * setters and getters. This is a boring part, and could be ignored.	
- */
+	/*
+	 * setters and getters. This is a boring part, and could be ignored.	
+	 */
 	
-	public String getConnectPath(){
+	@Override
+	public String getDBName() {
 		return this.connectPath;
 	}
-	public void setConnectPath(String connectPath){
+	
+	public void __setConnectPath(String connectPath){
 		this.connectPath = connectPath;
 	}
 	

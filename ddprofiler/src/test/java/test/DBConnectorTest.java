@@ -23,7 +23,7 @@ public class DBConnectorTest {
 		conn.setPort("3306");
 		conn.setUsername("root");
 		conn.setPassword("Qatar");
-		conn.setConnectPath("/test");
+		conn.__setConnectPath("/test");
 		conn.setFilename("deathcause");
 		try {
 			conn.initConnector();

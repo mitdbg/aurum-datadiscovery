@@ -127,7 +127,7 @@ public class Worker implements Runnable {
 				
 				// Get results and wrap them in a Result object
 				// FIXME: WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
-				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
+				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getDBName(), c.getSourceName(), c.getAttributes(), analyzers);
 				
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
 //				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
