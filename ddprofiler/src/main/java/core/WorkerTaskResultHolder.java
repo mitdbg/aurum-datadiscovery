@@ -36,7 +36,7 @@ public class WorkerTaskResultHolder {
 		for(Attribute a : attributes) {
 			AttributeType at = a.getColumnType();
 			Analysis an = analyzers.get(a.getColumnName());
-			int id = Utils.computeAttrId(sourceName, a.getColumnName());
+			int id = Utils.computeAttrId(dbName, sourceName, a.getColumnName());
 			if(at.equals(AttributeType.FLOAT)) {
 				NumericalAnalysis na = ((NumericalAnalysis)an);
 				WorkerTaskResult wtr = new WorkerTaskResult(
