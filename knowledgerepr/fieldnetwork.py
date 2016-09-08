@@ -44,16 +44,6 @@ class FieldNetwork:
     def _get_underlying_repr(self):
         return self.__G
 
-    def enumerate_fields(self):
-        for n in self.__G.nodes():
-            yield n
-
-    def relations_between(self, node1, node2):
-        return self.__G[node1][node2]
-
-    def relation_between(self, node1, node2, relation):
-        return self.__G[node1][node2][relation]
-
     def init_meta_schema(self, fields: (int, str, str, str, int, int)):
         """
         Creates a dictionary of id -> (dbname, sourcename, fieldname)
@@ -86,20 +76,6 @@ class FieldNetwork:
             nx.set_node_attributes(self.__G, 'cardinality', cardinality)
         return nid
 
-    def __add_field(self, source_name, field_name, cardinality=None):
-        """
-        Creates a graph node for this field and adds it to the graph
-        :param source_name: of the field
-        :param field_name: of the field
-        :return: the newly added field node
-        """
-        nid = compute_field_id(source_name, field_name)
-        n = Hit(nid, source_name, field_name, -1)
-        self.__G.add_node(n)
-        if cardinality is not None:
-            self.__G[n]['cardinality'] = cardinality
-        return n
-
     def add_fields(self, list_of_fields):
         """
         Creates a list of graph nodes from the list of fields and adds them to the graph
@@ -114,19 +90,6 @@ class FieldNetwork:
         return nodes
 
     def add_relation(self, node_src, node_target, relation, score):
-        """
-        Adds or updates the score of relation for the edge between node_src and node_target
-        :param node_src: the source node
-        :param node_target: the target node
-        :param relation: the type of relation (edge)
-        :param score: the numerical value of the score
-        :return:
-        """
-        score = {'score': score}
-        self.__G.add_edge(node_src, node_target, relation, score)
-
-
-    def __add_relation(self, node_src, node_target, relation, score):
         """
         Adds or updates the score of relation for the edge between node_src and node_target
         :param node_src: the source node
@@ -407,60 +370,5 @@ def deserialize_network(path):
     return network
 
 
-def test():
-    sn = "sourcename"
-    fn = "fieldname"
-    import time
-    id = ""
-    strng = sn + fn
-    s = time.time()
-    for i in range(1000000):
-        id = hash(strng)
-    e = time.time()
-    print("builtin hash: " + str(e - s))
-    print(str(id))
-    s = time.time()
-    for i in range(1000000):
-        id = compute_field_id(sn, fn)
-    e = time.time()
-    print(str(id))
-    print("custom hash: " + str(e - s))
-    import binascii
-    s = time.time()
-
-    for i in range(1000000):
-        id = binascii.crc32(bytes(strng, encoding="UTF-8"))
-    e = time.time()
-    print(str(id))
-    print("binascii hash: " + str(e - s))
-
 if __name__ == "__main__":
-    #test()
     print("Field Network")
-    node1 = build_hit("source1", "field1")
-    node2 = build_hit("source1", "field2")
-    node3 = build_hit("source1", "field1")
-
-    assert node1 != node2
-    assert node2 != node3
-    n1 = hash(node1)
-    n2 = hash(node2)
-    n3 = hash(node3)
-    assert node1 == node3
-    print("node equality: OK")
-
-    FN = FieldNetwork()
-
-    n1 = FN.add_field("source1", "field1")
-    n2 = FN.add_field("source1", "field2")
-    n3 = FN.add_field("source2", "field1")
-    FN.add_relation(n1, n2, Relation.SCHEMA, 1)
-    FN.add_relation(n1, n2, Relation.CONTENT_SIM, 0.33)
-    FN.add_relation(n1, n3, Relation.OVERLAP, 0.97)
-
-    print(str(FN.relations_between(n1, n2)))
-    print("SCHEMA: " + str(FN.relation_between(n1, n2, Relation.SCHEMA)))
-    print("CONTENT_SIM: " + str(FN.relation_between(n1, n2, Relation.CONTENT_SIM)))
-    print("graph access through node: OK")
-
-    print("ALL GOOD")
