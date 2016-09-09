@@ -50,7 +50,7 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['sourceName'],
+                id_source_and_file_name = (h['_id'], h['_source']['dbName'], h['_source']['sourceName'],
                                            h['_source']['columnName'], h['_source']['totalValues'],
                                            h['_source']['uniqueValues'])
                 yield id_source_and_file_name
@@ -68,6 +68,7 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
 
     def get_all_fields_with(self, attrs):
+        # FIXME: this function was not updated after 2 refactoring processes.
         """
         Reads all fields, described as (id, source_name, field_name) from the store.
         :return: a list of all fields with the form (id, source_name, field_name)
@@ -76,6 +77,7 @@ class StoreHandler:
         filter_path = ['_scroll_id',
                        'hits.hits._id',
                        'hits.total',
+                       'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
         for attr in attrs:
@@ -174,9 +176,7 @@ class StoreHandler:
         res = client.search(index='text', body=body, scroll="10m",
                             filter_path=['_scroll_id',
                                          'hits.hits._id',
-                                         'hits.total',
-                                         'hits.hits._source.sourceName',
-                                         'hits.hits._source.columnName'
+                                         'hits.total'
                                          ]
                             )
         scroll_id = res['_scroll_id']

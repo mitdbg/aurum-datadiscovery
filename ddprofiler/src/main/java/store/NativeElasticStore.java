@@ -142,6 +142,7 @@ public class NativeElasticStore implements Store {
 				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
 				+ 		"\"index\" : \"analyzed\", "
 				+ 		"\"analyzer\" : \"english\"},"
@@ -271,6 +272,7 @@ public class NativeElasticStore implements Store {
 						.field("id", wtr.getId())
 						.field("dbName", wtr.getDBName())
 						.field("sourceName", wtr.getSourceName())
+						.field("columnNameNA", wtr.getColumnName())
 						.field("columnName", wtr.getColumnName())
 						.field("dataType", wtr.getDataType())
 						.field("totalValues", wtr.getTotalValues())
