@@ -109,13 +109,13 @@ public class Worker implements Runnable {
 				
 				// Read initial records to figure out attribute types etc
 				//FIXME: readFirstRecords(initData, analyzers);
-				readFirstRecords(initData, analyzers, indexer);
+				readFirstRecords(task.getConnector().getDBName(), initData, analyzers, indexer);
 				
 				// Consume all remaining records from the connector
 				Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 				int records = 0;
 				while(data != null) {
-					indexer.indexData(data);
+					indexer.indexData(task.getConnector().getDBName(), data);
 					records = records + data.size();
 					// Do the processing
 					// FIXME: feedValuesToAnalyzers(data, analyzers);
@@ -168,7 +168,7 @@ public class Worker implements Runnable {
 		LOG.info("THREAD: {} stopping", workerName);
 	}
 	
-	private void readFirstRecords(Map<Attribute, Values> initData, Map<String, Analysis> analyzers, DataIndexer indexer) {
+	private void readFirstRecords(String dbName, Map<Attribute, Values> initData, Map<String, Analysis> analyzers, DataIndexer indexer) {
 		for(Entry<Attribute, Values> entry : initData.entrySet()) {
 			Attribute a = entry.getKey();
 			AttributeType at = a.getColumnType();
@@ -189,7 +189,7 @@ public class Worker implements Runnable {
 		}
 		
 		// Index text read so far
-		indexer.indexData(initData);
+		indexer.indexData(dbName, initData);
 	}
 	
 	private void feedValuesToAnalyzers(Map<Attribute, Values> data, Map<String, Analysis> analyzers) {

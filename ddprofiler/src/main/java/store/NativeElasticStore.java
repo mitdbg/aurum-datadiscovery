@@ -118,6 +118,8 @@ public class NativeElasticStore implements Store {
 				+ "{ \"id\" :   {\"type\" : \"integer\","
 				+ 				"\"store\" : \"yes\","
 				+ 				"\"index\" : \"not_analyzed\"},"
+				+ "\"dbName\" :   {\"type\" : \"string\","
+				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"sourceName\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"columnName\" :   {\"type\" : \"string\","
@@ -171,7 +173,7 @@ public class NativeElasticStore implements Store {
 	}
 
 	@Override
-	public boolean indexData(int id, String sourceName, String columnName, List<String> values) {
+	public boolean indexData(int id, String dbName, String sourceName, String columnName, List<String> values) {
 		String strId = Integer.toString(id);
 		//String v = concatValues(values);
 		
@@ -180,6 +182,7 @@ public class NativeElasticStore implements Store {
 			builder = jsonBuilder()
 					.startObject()
 						.field("id", strId)
+						.field("dbName", dbName)
 						.field("sourceName", sourceName)
 						.field("columnName", columnName)
 						.startArray("text");

@@ -53,7 +53,7 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
    *   to do it as few times as possible
    */
   @Override
-  public boolean indexData(Map<Attribute, Values> data) {
+  public boolean indexData(String dbName, Map<Attribute, Values> data) {
     for (Entry<Attribute, Values> entry : data.entrySet()) {
       Attribute a = entry.getKey();
       AttributeType at = a.getColumnType();
@@ -73,14 +73,14 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
         //				storeNewValuesAndMaybeTriggerIndex(id,
         //sourceName, a, entry.getValue().getStrings());
 
-        store.indexData(id, sourceName, columnName,
+        store.indexData(id, dbName, sourceName, columnName,
                         entry.getValue().getStrings());
       }
     }
     return true;
   }
 
-  private void storeNewValuesAndMaybeTriggerIndex(int id, String sourceName,
+  private void storeNewValuesAndMaybeTriggerIndex(int id, String dbName, String sourceName,
                                                   Attribute a,
                                                   List<String> newValues) {
     if (!attributeValues.containsKey(a)) {
@@ -95,7 +95,7 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
     if (newSize > indexTriggerThreshold) {
       // Index the batch of values
       List<String> values = attributeValues.get(a);
-      store.indexData(id, sourceName, a.getColumnName(), values);
+      store.indexData(id, dbName, sourceName, a.getColumnName(), values);
       // Clean up
       attributeValues.put(a, new ArrayList<>());
       attributeValueSize.put(a, 0);
@@ -120,7 +120,7 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
   public boolean flushAndClose() {
     for (Entry<Attribute, Integer> entry : attributeIds.entrySet()) {
       Attribute a = entry.getKey();
-      store.indexData(entry.getValue(), sourceName, a.getColumnName(),
+      store.indexData(entry.getValue(), dbName, sourceName, a.getColumnName(),
                       attributeValues.get(a));
     }
     return true;
