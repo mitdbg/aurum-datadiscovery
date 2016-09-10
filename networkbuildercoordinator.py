@@ -197,8 +197,13 @@ def test_read_store():
 
 if __name__ == "__main__":
     path = None
-    if len(sys.argv) >= 2:
-        path = sys.argv[1]
+    if len(sys.argv) == 3:
+        path = sys.argv[2]
+    else:
+        print("USAGE: ")
+        print("python networkbuildercoordinator.py --opath <path>")
+        print("where opath must be writable by the process")
+        exit()
     main(path)
 
     #test_read_store()

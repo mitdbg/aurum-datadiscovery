@@ -204,8 +204,9 @@ class StoreHandler:
             # FIXME: add filter by term length
             filtered = []
             for k, v in term_dict.items():
-                if v > 2:
-                    filtered.append(k)
+                if len(k) > 2:
+                    if v > 4:
+                        filtered.append(k)
             return filtered
 
         text_signatures = []
