@@ -58,11 +58,9 @@ class FieldNetwork:
         hits = [Hit(nid, db_name, s_name, f_name, 0) for nid, db_name, s_name, f_name in info]
         return hits
 
-    def get_cardinality_of(self, node):
-        c = self.__G[node]
-        card = 0  # no cardinality key is like cardinality = 0
-        if 'cardinality' in c:  # FIXME: why cardinality may not be present?
-            card = c['cardinality']
+    def get_cardinality_of(self, node_id):
+        c = self.__G.node[node_id]
+        card = c['cardinality']  # no cardinality is like card 0
         return card
 
     def _get_underlying_repr_graph(self):
@@ -101,9 +99,7 @@ class FieldNetwork:
         :param cardinality: the cardinality of the values of the node, if any
         :return: the newly added field node
         """
-        self.__G.add_node(nid)
-        if cardinality is not None:
-            nx.set_node_attributes(self.__G, 'cardinality', cardinality)
+        self.__G.add_node(nid, cardinality=cardinality)
         return nid
 
     def add_fields(self, list_of_fields):
