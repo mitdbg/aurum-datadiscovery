@@ -24,7 +24,7 @@ public class RangeAnalyzerTest {
 
   @Test
   public void RangeTest() throws IOException {
-    FileConnector fc = new FileConnector(path, filename, separator);
+    FileConnector fc = new FileConnector("", path, filename, separator);
     PreAnalyzer pa = new PreAnalyzer();
     pa.composeConnector(fc);
 

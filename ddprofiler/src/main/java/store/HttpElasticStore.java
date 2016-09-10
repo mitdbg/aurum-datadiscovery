@@ -42,10 +42,12 @@ public class HttpElasticStore implements Store {
 				"text",
 				"column",
 				"{ \"properties\" : "
-				+ "{ \"id\" :   {\"type\" : \"integer\","
+				+ "{ \"id\" :   {\"type\" : \"long\","
 				+ 				"\"store\" : \"yes\","
 				+ 				"\"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" :   {\"type\" : \"string\","
+				+ 				"\"index\" : \"not_analyzed\"}, "
+				+ "\"path\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"sourceName\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
@@ -68,8 +70,9 @@ public class HttpElasticStore implements Store {
 				"column",
 				"{ \"properties\" : "
 				+ "{ "
-				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
@@ -100,12 +103,13 @@ public class HttpElasticStore implements Store {
 	}
 
 	@Override
-	public boolean indexData(int id, String dbName, String sourceName, String columnName, List<String> values) {
-		String strId = Integer.toString(id);
+	public boolean indexData(long id, String dbName, String path, String sourceName, String columnName, List<String> values) {
+		String strId = Long.toString(id);
 		Map<String, String> source = new LinkedHashMap<String,String>();
 		String v = concatValues(values);
 		source.put("id", strId);
 		source.put("dbName", dbName);
+		source.put("path", path);
 		source.put("sourceName", sourceName);
 		source.put("columnName", columnName);
 		source.put("text", v);
@@ -121,10 +125,11 @@ public class HttpElasticStore implements Store {
 
 	@Override
 	public boolean storeDocument(WorkerTaskResult wtr) {
-		String strId = Integer.toString(wtr.getId());
+		String strId = Long.toString(wtr.getId());
 		Map<String, String> source = new LinkedHashMap<String,String>();
-		source.put("id", Integer.toString(wtr.getId()));
+		source.put("id", Long.toString(wtr.getId()));
 		source.put("dbName", wtr.getDBName());
+		source.put("path", wtr.getPath());
 		source.put("sourceName", wtr.getSourceName());
 		source.put("columnNameNA", wtr.getColumnName());
 		source.put("columnName", wtr.getColumnName());

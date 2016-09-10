@@ -3,8 +3,9 @@ package core;
 public class WorkerTaskResult {
 
 
-	final private int id;
+	final private long id;
 	final private String dbName;
+	final private String path;
 	final private String sourceName;
 	final private String columnName;
 	final private String dataType;
@@ -18,8 +19,9 @@ public class WorkerTaskResult {
 	final private long iqr;
 	
 	public WorkerTaskResult(
-			int id,
+			long id,
 			String dbName,
+			String path,
 			String sourceName,
 			String columnName,
 			String dataType,
@@ -28,6 +30,7 @@ public class WorkerTaskResult {
 			String entities) {
 		this.id = id;
 		this.dbName = dbName;
+		this.path = path;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
 		this.dataType = dataType;
@@ -42,8 +45,9 @@ public class WorkerTaskResult {
 	}
 	
 	public WorkerTaskResult(
-			int id,
+			long id,
 			String dbName,
+			String path,
 			String sourceName,
 			String columnName,
 			String dataType,
@@ -56,6 +60,7 @@ public class WorkerTaskResult {
 			long iqr) {
 		this.id = id;
 		this.dbName = dbName;
+		this.path = path;
 		this.sourceName = sourceName;
 		this.columnName = columnName;
 		this.dataType = dataType;
@@ -69,12 +74,16 @@ public class WorkerTaskResult {
 		this.iqr = iqr;
 	}
 	
-	public int getId() {
+	public long getId() {
 		return id;
 	}
 	
 	public String getDBName() {
 		return dbName;
+	}
+	
+	public String getPath() {
+		return path;
 	}
 
 	public String getSourceName() {

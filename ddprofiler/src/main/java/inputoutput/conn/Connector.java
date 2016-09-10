@@ -18,8 +18,8 @@ import inputoutput.Record;
 
 public abstract class Connector {
 
-
 	public abstract String getDBName();
+	public abstract String getPath();
 	public abstract String getSourceName();
 	abstract void initConnector() throws IOException, ClassNotFoundException, SQLException;
 	abstract void destroyConnector();

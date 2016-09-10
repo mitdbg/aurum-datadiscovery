@@ -44,7 +44,7 @@ public class StoreLoadingTest {
           if (!name.equals(".DS_Store")) { // Make sure only valid files are in
                                            // the folder
             TaskPackage tp =
-                TaskPackage.makeCSVFileTaskPackage(path, name, separator);
+                TaskPackage.makeCSVFileTaskPackage("", path, name, separator);
             c.submitTask(tp);
           }
         }

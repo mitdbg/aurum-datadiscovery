@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.CRC32;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public class Main {
     Conductor c = new Conductor(pc, s);
     c.start();
 
+    String dbName = pc.getString(ProfilerConfig.DB_NAME);
     int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
     if (executionMode == ExecutionMode.ONLINE.mode) {
       // Start infrastructure for REST server
@@ -72,9 +74,9 @@ public class Main {
       String pathToSources =
           pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.readDirectoryAndCreateTasks(
-          c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+          dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
     } else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
-      this.readTablesFromDBAndCreateTasks(c);
+      this.readTablesFromDBAndCreateTasks(dbName, c);
     }
 
     while (c.isTherePendingWork()) {
@@ -93,6 +95,19 @@ public class Main {
   }
 
   public static void main(String args[]) {
+	  
+//	  CRC32 crc = new CRC32();
+//	  String s = "dwhsmallBuildings.csvBuilding Name";
+//	  crc.update(s.getBytes());
+//	  long id1 = crc.getValue();
+//	  System.out.println(id1);
+//	  System.out.println(Integer.MAX_VALUE);
+//	  System.out.println((int)id1);
+//	  
+//	  
+//	  int id = Utils.computeAttrId("dwhsmall", "Buildings.csv", "Building Name");
+//	  System.out.println(id);
+//	  System.exit(0);
 
     //		try {
     //			Class.forName ("oracle.jdbc.driver.OracleDriver");
@@ -199,7 +214,7 @@ public class Main {
     m.startProfiler(pc);
   }
 
-  private void readDirectoryAndCreateTasks(Conductor c, String pathToSources,
+  private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources,
                                            String separator) {
     File folder = new File(pathToSources);
     File[] filePaths = folder.listFiles();
@@ -211,7 +226,7 @@ public class Main {
         String path = f.getParent() + File.separator;
         String name = f.getName();
         TaskPackage tp =
-            TaskPackage.makeCSVFileTaskPackage(path, name, separator);
+            TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
         totalFiles++;
         c.submitTask(tp);
       }
@@ -219,7 +234,7 @@ public class Main {
     LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
   }
 
-  private void readTablesFromDBAndCreateTasks(Conductor c) {
+  private void readTablesFromDBAndCreateTasks(String dbName, Conductor c) {
     Properties dbp = DBUtils.loadDBPropertiesFromFile();
     String dbTypeStr = dbp.getProperty("db_system_name");
     DBType dbType = getType(dbTypeStr);
@@ -238,9 +253,10 @@ public class Main {
     List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
     for (String str : tables) {
       LOG.info("Detected relational table: {}", str);
-      WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbType, ip, port, dbname,
-                                                     str, username, password);
-      TaskPackage tp = TaskPackage.makeDBTaskPackage(dbType, ip, port, dbname,
+      // TODO: to test
+//      WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbName, dbType, ip, port, dbname,
+//                                                     str, username, password);
+      TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, dbType, ip, port, dbname,
                                                      str, username, password);
       c.submitTask(tp);
     }

@@ -4,6 +4,8 @@ import inputoutput.conn.DBType;
 
 public class TaskPackage {
 
+  private String dbName;
+	
   // CSV properties
   private String path;
   private String name;
@@ -13,7 +15,6 @@ public class TaskPackage {
   private DBType dbType;
   private String ip;
   private String port;
-  private String dbname;
   private String str;
   private String username;
   private String password;
@@ -22,37 +23,38 @@ public class TaskPackage {
 
   public enum TaskPackageType { CSV, DB }
 
-  private TaskPackage(String path, String name, String separator,
+  private TaskPackage(String dbName, String path, String name, String separator,
                       TaskPackageType type) {
+	this.dbName = dbName;
     this.path = path;
     this.name = name;
     this.separator = separator;
     this.type = type;
   }
 
-  private TaskPackage(DBType dbType, String ip, String port, String dbname,
+  private TaskPackage(String dbName, DBType dbType, String ip, String port, String dbname,
                       String str, String username, String password,
                       TaskPackageType type) {
     this.dbType = dbType;
     this.ip = ip;
     this.port = port;
-    this.dbname = dbname;
+    this.dbName = dbName;
     this.str = str;
     this.username = username;
     this.password = password;
     this.type = type;
   }
 
-  public static TaskPackage makeCSVFileTaskPackage(String path, String name,
+  public static TaskPackage makeCSVFileTaskPackage(String dbName, String path, String name,
                                                    String separator) {
-    return new TaskPackage(path, name, separator, TaskPackageType.CSV);
+    return new TaskPackage(dbName, path, name, separator, TaskPackageType.CSV);
   }
 
-  public static TaskPackage makeDBTaskPackage(DBType dbType, String ip,
+  public static TaskPackage makeDBTaskPackage(String dbName, DBType dbType, String ip,
                                               String port, String dbname,
                                               String str, String username,
                                               String password) {
-    return new TaskPackage(dbType, ip, port, dbname, str, username, password,
+    return new TaskPackage(dbName, dbType, ip, port, dbname, str, username, password,
                            TaskPackageType.DB);
   }
 
@@ -70,7 +72,7 @@ public class TaskPackage {
 
   public String getPort() { return port; }
 
-  public String getDBName() { return dbname; }
+  public String getDBName() { return dbName; }
 
   public String getStr() { return str; }
 

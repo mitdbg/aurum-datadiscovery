@@ -41,7 +41,7 @@ public class AnalyzerTest {
   @Test
   public void test() throws IOException {
 
-    FileConnector fc = new FileConnector(path, filename, separator);
+    FileConnector fc = new FileConnector("", path, filename, separator);
 
     // DBConnector dbc = new DBConnector(db, connIP, port, sourceName,
     // tableName, username, password);

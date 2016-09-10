@@ -26,6 +26,7 @@ public class DBConnector extends Connector {
 	
 	private static final Logger log = Logger.getLogger(DBConnector.class.getName());
 
+	private String dbName;
 	private String connectPath;
 	private String sourceName;
 	
@@ -42,8 +43,9 @@ public class DBConnector extends Connector {
 		this.tbInfo = new TableInfo();
 	}
 	
-	public DBConnector(DBType dbType, String connIP, String port,
+	public DBConnector(String dbName, DBType dbType, String connIP, String port,
 			String connectPath, String filename, String username, String password) throws IOException{
+		this.dbName = dbName;
 		this.db = dbType;
 		this.connIP = connIP;
 		this.port = port;
@@ -178,6 +180,11 @@ public class DBConnector extends Connector {
 	
 	@Override
 	public String getDBName() {
+		return this.dbName;
+	}
+	
+	@Override
+	public String getPath() {
 		return this.connectPath;
 	}
 	

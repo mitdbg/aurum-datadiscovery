@@ -132,7 +132,7 @@ public class PreAnalyzerTest {
   @Test
   public void testPreAnalyzerForTypesCSVFile() throws IOException {
 
-    FileConnector fc = new FileConnector(path, filename, separator);
+    FileConnector fc = new FileConnector("", path, filename, separator);
 
     PreAnalyzer pa = new PreAnalyzer();
     pa.composeConnector(fc);
@@ -144,7 +144,7 @@ public class PreAnalyzerTest {
   @Test
   public void testPreAnalyzerForTypesDB() throws IOException {
 
-    DBConnector dbc = new DBConnector(DBType.MYSQL, connIP, port, sourceName,
+    DBConnector dbc = new DBConnector("", DBType.MYSQL, connIP, port, sourceName,
                                       tableName, username, password);
 
     PreAnalyzer pa = new PreAnalyzer();

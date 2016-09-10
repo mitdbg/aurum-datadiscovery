@@ -14,6 +14,9 @@ public class ProfilerConfig extends Config {
 
   private static final ConfigDef config;
 
+  public static final String DB_NAME = "db.name";
+  public static final String DB_NAME_DOC = "Name used for the data repository";
+  
   public static final String EXECUTION_MODE = "execution.mode";
   private static final String EXECUTION_MODE_DOC =
       "(online - 0) for server mode and (offline files - 1) for one-shot read files from directory and (offline db - 2) for one-shot read tables from db";
@@ -64,6 +67,7 @@ public class ProfilerConfig extends Config {
   static {
     config =
         new ConfigDef()
+        	.define(DB_NAME, Type.STRING, "", Importance.HIGH, DB_NAME_DOC)
             .define(EXECUTION_MODE, Type.INT, 0, Importance.HIGH,
                     EXECUTION_MODE_DOC)
             .define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM,

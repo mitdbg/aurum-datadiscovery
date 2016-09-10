@@ -53,10 +53,11 @@ public class WebHandler extends HttpServlet {
       initStore(dbname[0]);
       return "OK";
     case "processCSVDataSource":
+      String[] dbName = parameters.get("dbName");
       String[] conn = parameters.get("path");
       String[] name = parameters.get("source");
       String[] separator = parameters.get("separator");
-      response = processCSVDataSource(conn[0], name[0], separator[0]);
+      response = processCSVDataSource(dbName[0], conn[0], name[0], separator[0]);
       return response;
 
     // test functions
@@ -80,9 +81,9 @@ public class WebHandler extends HttpServlet {
     return "FAIL";
   }
 
-  private String processCSVDataSource(String path, String name,
+  private String processCSVDataSource(String dbName, String path, String name,
                                       String separator) {
-    WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(path, name, separator);
+    WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(dbName, path, name, separator);
     boolean success = true; // c.submitTask(wt);
     if (success)
       return "OK";

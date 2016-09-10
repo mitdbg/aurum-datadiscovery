@@ -64,7 +64,7 @@ public class AlmostE2ETest {
     c.start();
 
     TaskPackage tp =
-        TaskPackage.makeCSVFileTaskPackage(path, filename, separator);
+        TaskPackage.makeCSVFileTaskPackage("", path, filename, separator);
     c.submitTask(tp);
     finishTasks(c);
   }

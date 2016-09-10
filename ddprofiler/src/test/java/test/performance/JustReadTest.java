@@ -37,7 +37,7 @@ public class JustReadTest {
           String name = filePath.getFileName().toString();
           FileConnector fc = null;
           try {
-            fc = new FileConnector(path, name, separator);
+            fc = new FileConnector("", path, name, separator);
           } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

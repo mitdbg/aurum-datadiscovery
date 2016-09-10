@@ -22,7 +22,7 @@ public class WorkerTaskResultHolder {
 	public static List<WorkerTaskResult> makeFakeOne() {
 		List<WorkerTaskResult> rs = new ArrayList<>();
 		WorkerTaskResult wtr = new WorkerTaskResult(
-				-1,	"none", "none",	"none",	"N", 100, 100, 0, 100, 50, 50, 50);
+				-1,	"none", "none", "none",	"none",	"N", 100, 100, 0, 100, 50, 50, 50);
 		rs.add(wtr);
 		return rs;
 	}
@@ -31,17 +31,18 @@ public class WorkerTaskResultHolder {
 		this.results = results;
 	}
 	
-	public WorkerTaskResultHolder(String dbName, String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
+	public WorkerTaskResultHolder(String dbName, String path, String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
 		List<WorkerTaskResult> rs = new ArrayList<>();
 		for(Attribute a : attributes) {
 			AttributeType at = a.getColumnType();
 			Analysis an = analyzers.get(a.getColumnName());
-			int id = Utils.computeAttrId(dbName, sourceName, a.getColumnName());
+			long id = Utils.computeAttrId(dbName, sourceName, a.getColumnName());
 			if(at.equals(AttributeType.FLOAT)) {
 				NumericalAnalysis na = ((NumericalAnalysis)an);
 				WorkerTaskResult wtr = new WorkerTaskResult(
 						id,
 						dbName,
+						path,
 						sourceName,
 						a.getColumnName(),
 						"N",
@@ -59,6 +60,7 @@ public class WorkerTaskResultHolder {
 				WorkerTaskResult wtr = new WorkerTaskResult(
 						id,
 						dbName,
+						path,
 						sourceName,
 						a.getColumnName(),
 						"N",
@@ -85,6 +87,7 @@ public class WorkerTaskResultHolder {
 				WorkerTaskResult wtr = new WorkerTaskResult(
 						id,
 						dbName,
+						path,
 						sourceName,
 						a.getColumnName(),
 						"T",

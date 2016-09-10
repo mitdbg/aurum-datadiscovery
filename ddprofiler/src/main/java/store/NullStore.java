@@ -12,7 +12,7 @@ public class NullStore implements Store {
   }
 
   @Override
-  public boolean indexData(int id, String dbName, String sourceName, String columnName,
+  public boolean indexData(long id, String dbName, String path, String sourceName, String columnName,
                            List<String> values) {
     // TODO Auto-generated method stub
     return false;

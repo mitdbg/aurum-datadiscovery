@@ -19,7 +19,7 @@ import inputoutput.TableInfo;
 
 public class FileConnector extends Connector {
 
-	
+	private String dbName;
 	private String connectPath;
 	private String sourceName;
 	
@@ -34,7 +34,8 @@ public class FileConnector extends Connector {
 		this.lineSplitter = '.';
 	}	
 	
-	public FileConnector(String connectPath, String filename, String splitter) throws IOException {
+	public FileConnector(String dbName, String connectPath, String filename, String splitter) throws IOException {
+		this.dbName = dbName;
 		this.connectPath = connectPath;
 		this.sourceName = filename;
 		
@@ -53,6 +54,11 @@ public class FileConnector extends Connector {
 	
 	@Override
 	public String getDBName() {
+		return this.dbName;
+	}
+	
+	@Override
+	public String getPath() {
 		return this.connectPath;
 	}
 	
@@ -117,5 +123,5 @@ public class FileConnector extends Connector {
 			e.printStackTrace();
 		}
 	}
-	
+
 }

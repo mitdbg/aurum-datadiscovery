@@ -65,10 +65,10 @@ public class Worker implements Runnable {
 			}
 			// Create real worker task on demand
 			if(tp.getType() == TaskPackageType.CSV) {
-				wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getPath(), tp.getName(), tp.getSeparator());
+				wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getDBName(), tp.getPath(), tp.getName(), tp.getSeparator());
 			}
 			else if(tp.getType() == TaskPackageType.DB) {
-				wt = WorkerTask.makeWorkerTaskForDB(tp.getDBType(), tp.getIp(), tp.getPort(), tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
+				wt = WorkerTask.makeWorkerTaskForDB(tp.getDBName(), tp.getDBType(), tp.getIp(), tp.getPort(), tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
 			}
 		}
 		catch (InterruptedException e) {
@@ -92,7 +92,7 @@ public class Worker implements Runnable {
 					continue;
 				}
 				
-				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getDBName(), task.getConnector().getSourceName());
+				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getDBName(), task.getConnector().getPath(), task.getConnector().getSourceName());
 				
 				// Access attributes and attribute type through first read
 				Connector c = task.getConnector();
@@ -109,13 +109,13 @@ public class Worker implements Runnable {
 				
 				// Read initial records to figure out attribute types etc
 				//FIXME: readFirstRecords(initData, analyzers);
-				readFirstRecords(task.getConnector().getDBName(), initData, analyzers, indexer);
+				readFirstRecords(task.getConnector().getDBName(), task.getConnector().getPath(), initData, analyzers, indexer);
 				
 				// Consume all remaining records from the connector
 				Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 				int records = 0;
 				while(data != null) {
-					indexer.indexData(task.getConnector().getDBName(), data);
+					indexer.indexData(task.getConnector().getDBName(), task.getConnector().getPath(), data);
 					records = records + data.size();
 					// Do the processing
 					// FIXME: feedValuesToAnalyzers(data, analyzers);
@@ -127,7 +127,7 @@ public class Worker implements Runnable {
 				
 				// Get results and wrap them in a Result object
 				// FIXME: WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
-				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getDBName(), c.getSourceName(), c.getAttributes(), analyzers);
+				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getDBName(), c.getPath(), c.getSourceName(), c.getAttributes(), analyzers);
 				
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
 //				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
@@ -168,7 +168,7 @@ public class Worker implements Runnable {
 		LOG.info("THREAD: {} stopping", workerName);
 	}
 	
-	private void readFirstRecords(String dbName, Map<Attribute, Values> initData, Map<String, Analysis> analyzers, DataIndexer indexer) {
+	private void readFirstRecords(String dbName, String path, Map<Attribute, Values> initData, Map<String, Analysis> analyzers, DataIndexer indexer) {
 		for(Entry<Attribute, Values> entry : initData.entrySet()) {
 			Attribute a = entry.getKey();
 			AttributeType at = a.getColumnType();
@@ -189,7 +189,7 @@ public class Worker implements Runnable {
 		}
 		
 		// Index text read so far
-		indexer.indexData(dbName, initData);
+		indexer.indexData(dbName, path, initData);
 	}
 	
 	private void feedValuesToAnalyzers(Map<Attribute, Values> data, Map<String, Analysis> analyzers) {

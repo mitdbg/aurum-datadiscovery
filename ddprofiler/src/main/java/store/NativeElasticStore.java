@@ -115,10 +115,12 @@ public class NativeElasticStore implements Store {
 				"text",
 				"column",
 				"{ \"properties\" : "
-				+ "{ \"id\" :   {\"type\" : \"integer\","
+				+ "{ \"id\" :   {\"type\" : \"long\","
 				+ 				"\"store\" : \"yes\","
 				+ 				"\"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" :   {\"type\" : \"string\","
+				+ 				"\"index\" : \"not_analyzed\"}, "
+				+ "\"path\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
 				+ "\"sourceName\" :   {\"type\" : \"string\","
 				+ 				"\"index\" : \"not_analyzed\"}, "
@@ -141,8 +143,9 @@ public class NativeElasticStore implements Store {
 				"column",
 				"{ \"properties\" : "
 				+ "{ "
-				+ "\"id\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+				+ "\"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
@@ -173,16 +176,15 @@ public class NativeElasticStore implements Store {
 	}
 
 	@Override
-	public boolean indexData(int id, String dbName, String sourceName, String columnName, List<String> values) {
-		String strId = Integer.toString(id);
-		//String v = concatValues(values);
+	public boolean indexData(long id, String dbName, String path, String sourceName, String columnName, List<String> values) {
 		
 		XContentBuilder builder = null;
 		try {
 			builder = jsonBuilder()
 					.startObject()
-						.field("id", strId)
+						.field("id", id)
 						.field("dbName", dbName)
+						.field("path", path)
 						.field("sourceName", sourceName)
 						.field("columnName", columnName)
 						.startArray("text");
@@ -204,10 +206,69 @@ public class NativeElasticStore implements Store {
 		
 		return true;
 	}
+
+	@Override
+	public boolean storeDocument(WorkerTaskResult wtr) {
+		String strId = Long.toString(wtr.getId());
+		
+		XContentBuilder builder = null;
+		try {
+			builder = jsonBuilder()
+					.startObject()
+						.field("id", wtr.getId())
+						.field("dbName", wtr.getDBName())
+						.field("path", wtr.getPath())
+						.field("sourceName", wtr.getSourceName())
+						.field("columnNameNA", wtr.getColumnName())
+						.field("columnName", wtr.getColumnName())
+						.field("dataType", wtr.getDataType())
+						.field("totalValues", wtr.getTotalValues())
+						.field("uniqueValues", wtr.getUniqueValues())
+						.field("entities", wtr.getEntities().toString())
+						.field("minValue", wtr.getMinValue())
+						.field("maxValue", wtr.getMaxValue())
+						.field("avgValue", wtr.getAvgValue())
+						.field("median", wtr.getMedian())
+						.field("iqr", wtr.getIQR())
+					.endObject();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		IndexRequest ir = new IndexRequest("profile", "column", strId).source(builder);
+		
+		bulkProcessor.add(ir);
+		
+		return true;
+	}
+
+	@Override
+	public void tearDownStore() {
+		client.shutdownClient();
+		bulkProcessor.close();
+		nativeClient.close();
+		factory = null;
+		client = null;
+	}
 	
+	private void silenceJestLogger() {
+		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("io.searchbox.client");
+		final org.slf4j.Logger logger2 = org.slf4j.LoggerFactory.getLogger("io.searchbox.action");
+		if (!(logger instanceof ch.qos.logback.classic.Logger)) {
+		    return;
+		}
+		if (!(logger2 instanceof ch.qos.logback.classic.Logger)) {
+		    return;
+		}
+		ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
+		ch.qos.logback.classic.Logger logbackLogger2 = (ch.qos.logback.classic.Logger) logger2;
+		logbackLogger.setLevel(ch.qos.logback.classic.Level.INFO);
+		logbackLogger2.setLevel(ch.qos.logback.classic.Level.INFO);
+	}
 	
-	public boolean _indexData(int id, String sourceName, String columnName, List<String> values) {
-		String strId = Integer.toString(id);
+	public boolean _indexData(long id, String sourceName, String columnName, List<String> values) {
+		String strId = Long.toString(id);
 		
 		// TODO: monitor this, we are now indexing multi-values, hoping that termvectors
 		// do what we want on the other side...
@@ -217,7 +278,7 @@ public class NativeElasticStore implements Store {
 		try {
 			builder = jsonBuilder()
 					.startObject()
-						.field("id", strId)
+						.field("id", id)
 						.field("sourceName", sourceName)
 						.field("columnName", columnName)
 						.startArray("text");
@@ -262,76 +323,6 @@ public class NativeElasticStore implements Store {
 //		bulkProcessor.add(ur);
 		
 		return true;
-	}
-
-	@Override
-	public boolean storeDocument(WorkerTaskResult wtr) {
-		String strId = Integer.toString(wtr.getId());
-		
-		XContentBuilder builder = null;
-		try {
-			builder = jsonBuilder()
-					.startObject()
-						.field("id", wtr.getId())
-						.field("dbName", wtr.getDBName())
-						.field("sourceName", wtr.getSourceName())
-						.field("columnNameNA", wtr.getColumnName())
-						.field("columnName", wtr.getColumnName())
-						.field("dataType", wtr.getDataType())
-						.field("totalValues", wtr.getTotalValues())
-						.field("uniqueValues", wtr.getUniqueValues())
-						.field("entities", wtr.getEntities().toString())
-						.field("minValue", wtr.getMinValue())
-						.field("maxValue", wtr.getMaxValue())
-						.field("avgValue", wtr.getAvgValue())
-						.field("median", wtr.getMedian())
-						.field("iqr", wtr.getIQR())
-					.endObject();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		IndexRequest ir = new IndexRequest("profile", "column", strId).source(builder);
-		
-		bulkProcessor.add(ir);
-		
-		return true;
-	}
-
-	@Override
-	public void tearDownStore() {
-		client.shutdownClient();
-		bulkProcessor.close();
-		nativeClient.close();
-		factory = null;
-		client = null;
-	}
-	
-	//TODO: do we need this?
-	private String concatValues(List<String> values) {
-		StringBuilder sb = new StringBuilder();
-		String separator = " ";
-		for(String s : values) {
-			sb.append(s);
-			sb.append(separator);
-		}
-		return sb.toString();
-	}
-	
-	private void silenceJestLogger() {
-		final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("io.searchbox.client");
-		final org.slf4j.Logger logger2 = org.slf4j.LoggerFactory.getLogger("io.searchbox.action");
-		if (!(logger instanceof ch.qos.logback.classic.Logger)) {
-		    return;
-		}
-		if (!(logger2 instanceof ch.qos.logback.classic.Logger)) {
-		    return;
-		}
-		ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
-		ch.qos.logback.classic.Logger logbackLogger2 = (ch.qos.logback.classic.Logger) logger2;
-		logbackLogger.setLevel(ch.qos.logback.classic.Level.INFO);
-		logbackLogger2.setLevel(ch.qos.logback.classic.Level.INFO);
 	}
 
 }

@@ -22,11 +22,11 @@ public class WorkerTask implements Closeable {
 
   public Connector getConnector() { return this.connector; }
 
-  public static WorkerTask makeWorkerTaskForCSVFile(String path, String name,
+  public static WorkerTask makeWorkerTaskForCSVFile(String dbName, String path, String name,
                                                     String separator) {
     FileConnector fc = null;
     try {
-      fc = new FileConnector(path, name, separator);
+      fc = new FileConnector(dbName, path, name, separator);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -34,14 +34,14 @@ public class WorkerTask implements Closeable {
     return new WorkerTask(id, fc);
   }
 
-  public static WorkerTask makeWorkerTaskForDB(DBType dbType, String connIP,
+  public static WorkerTask makeWorkerTaskForDB(String dbName, DBType dbType, String connIP,
                                                String port, String sourceName,
                                                String tableName,
                                                String username,
                                                String password) {
     DBConnector dbc = null;
     try {
-      dbc = new DBConnector(dbType, connIP, port, sourceName, tableName,
+      dbc = new DBConnector(dbName, dbType, connIP, port, sourceName, tableName,
                             username, password);
     } catch (IOException e) {
       e.printStackTrace();
