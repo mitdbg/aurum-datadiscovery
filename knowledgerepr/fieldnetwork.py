@@ -1,5 +1,7 @@
+import matplotlib.pyplot as plt
 import operator
 import networkx as nx
+import os
 from collections import defaultdict
 from api.apiutils import DRS
 from api.apiutils import Operation
@@ -71,6 +73,10 @@ class FieldNetwork:
 
     def _get_underlying_repr_table_to_ids(self):
         return self.__source_ids
+
+    def _visualize_graph(self):
+        nx.draw(self.__G)
+        plt.show()
 
     def init_meta_schema(self, fields: (int, str, str, str, int, int)):
         """
@@ -347,6 +353,11 @@ def serialize_network(network, path):
     G = network._get_underlying_repr_graph()
     id_to_field_info = network._get_underlying_repr_id_to_field_info()
     table_to_ids = network._get_underlying_repr_table_to_ids()
+
+    # Make sure we create directory if this does not exist
+    path = path + '/'  # force separator
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
     nx.write_gpickle(G, path + "graph.pickle")
     nx.write_gpickle(id_to_field_info, path + "id_info.pickle")
     nx.write_gpickle(table_to_ids, path + "table_ids.pickle")
