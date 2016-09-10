@@ -13,10 +13,10 @@ class TestApiutils(unittest.TestCase):
     def test_drs_field_iteration(self):
         print(self._testMethodName)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs = DRS([h1, h2, h3, h4], Operation(OP.ORIGIN))
         drs.set_fields_mode()
 
@@ -28,10 +28,10 @@ class TestApiutils(unittest.TestCase):
     def test_drs_table_iteration(self):
         print(self._testMethodName)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs = DRS([h1, h2, h3, h4], Operation(OP.ORIGIN))
         drs.set_table_mode()
 
@@ -43,12 +43,12 @@ class TestApiutils(unittest.TestCase):
     def test_creation_initial_provenance(self):
         print(self._testMethodName)
 
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs = DRS([h1, h2, h3, h4], Operation(OP.CONTENT_SIM, params=[h0]))
 
         prov_graph = drs.get_provenance().prov_graph()
@@ -69,19 +69,19 @@ class TestApiutils(unittest.TestCase):
         print(self._testMethodName)
 
         # DRS 1
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs1 = DRS([h1, h2, h3, h4], Operation(OP.CONTENT_SIM, params=[h0]))
 
         # DRS 2
-        h5 = Hit(1, "table_a", "b", -1)
+        h5 = Hit(1, "dba", "table_a", "b", -1)
 
-        h6 = Hit(16, "table_d", "a", -1)
-        h7 = Hit(17, "table_d", "b", -1)
+        h6 = Hit(16, "dba", "table_d", "a", -1)
+        h7 = Hit(17, "dba", "table_d", "b", -1)
         drs2 = DRS([h6, h7], Operation(OP.SCHEMA_SIM, params=[h5]))
 
         drs = drs1.absorb_provenance(drs2)
@@ -110,19 +110,19 @@ class TestApiutils(unittest.TestCase):
         print(self._testMethodName)
 
         # DRS 1
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs1 = DRS([h1, h2, h3, h4], Operation(OP.CONTENT_SIM, params=[h0]))
 
         # DRS 2
-        h5 = Hit(1, "table_a", "b", -1)
+        h5 = Hit(1, "dba", "table_a", "b", -1)
 
-        h6 = Hit(16, "table_d", "a", -1)
-        h7 = Hit(17, "table_d", "b", -1)
+        h6 = Hit(16, "dba", "table_d", "a", -1)
+        h7 = Hit(17, "dba", "table_d", "b", -1)
         drs2 = DRS([h6, h7], Operation(OP.SCHEMA_SIM, params=[h5]))
 
         drs = drs1.absorb(drs2)
@@ -154,19 +154,19 @@ class TestApiutils(unittest.TestCase):
         print(self._testMethodName)
 
         # DRS 1
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs1 = DRS([h0, h1, h2, h3, h4], Operation(OP.ORIGIN))
 
         # DRS 2
-        h5 = Hit(1, "table_a", "b", -1)
+        h5 = Hit(1, "dba", "table_a", "b", -1)
 
-        h6 = Hit(16, "table_d", "a", -1)
-        h7 = Hit(17, "table_d", "b", -1)
+        h6 = Hit(16, "dba", "table_d", "a", -1)
+        h7 = Hit(17, "dba", "table_d", "b", -1)
         drs2 = DRS([h5, h6, h7], Operation(OP.ORIGIN))
 
         drs = drs1.intersection(drs2)
@@ -194,19 +194,19 @@ class TestApiutils(unittest.TestCase):
         print(self._testMethodName)
 
         # DRS 1
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs1 = DRS([h0, h1, h2, h3, h4], Operation(OP.ORIGIN))
 
         # DRS 2
-        h5 = Hit(1, "table_a", "b", -1)
+        h5 = Hit(1, "dba", "table_a", "b", -1)
 
-        h6 = Hit(16, "table_d", "a", -1)
-        h7 = Hit(17, "table_d", "b", -1)
+        h6 = Hit(16, "dba", "table_d", "a", -1)
+        h7 = Hit(17, "dba", "table_d", "b", -1)
         drs2 = DRS([h5, h6, h7], Operation(OP.ORIGIN))
 
         drs = drs1.union(drs2)
@@ -234,19 +234,19 @@ class TestApiutils(unittest.TestCase):
         print(self._testMethodName)
 
         # DRS 1
-        h0 = Hit(10, "table_c", "v", -1)
+        h0 = Hit(10, "dba", "table_c", "v", -1)
 
-        h1 = Hit(0, "table_a", "a", -1)
-        h2 = Hit(1, "table_a", "b", -1)
-        h3 = Hit(2, "table_b", "c", -1)
-        h4 = Hit(3, "table_b", "d", -1)
+        h1 = Hit(0, "dba", "table_a", "a", -1)
+        h2 = Hit(1, "dba", "table_a", "b", -1)
+        h3 = Hit(2, "dba", "table_b", "c", -1)
+        h4 = Hit(3, "dba", "table_b", "d", -1)
         drs1 = DRS([h0, h1, h2, h3, h4], Operation(OP.ORIGIN))
 
         # DRS 2
-        h5 = Hit(1, "table_a", "b", -1)
+        h5 = Hit(1, "dba", "table_a", "b", -1)
 
-        h6 = Hit(16, "table_d", "a", -1)
-        h7 = Hit(17, "table_d", "b", -1)
+        h6 = Hit(16, "dba", "table_d", "a", -1)
+        h7 = Hit(17, "dba", "table_d", "b", -1)
         drs2 = DRS([h5, h6, h7], Operation(OP.ORIGIN))
 
         drs = drs1.set_difference(drs2)

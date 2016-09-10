@@ -28,6 +28,12 @@ class FieldNetwork:
             self.__id_names = id_names
             self.__source_ids = source_ids
 
+    def graph_order(self):
+        return len(self.__id_names.keys())
+
+    def get_number_tables(self):
+        return len(self.__source_ids.keys())
+
     def iterate_ids(self):
         for k, _ in self.__id_names.items():
             yield k

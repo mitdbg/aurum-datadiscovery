@@ -35,21 +35,16 @@ class Report:
     def num_pkfk_relations(self):
         return self.__num_pkfk_relations
 
-    def get_number_tables(self, nodes):
-        tables = defaultdict(list)
-        # Separate fields per table
-        for (nid, source_name, field_name, score) in nodes:
-            tables[source_name].append(field_name)
-        return len(tables.items())
+    @property
+    def order(self):
+        return self.__network.order()
 
     def top_connected_fields(self, topk):
         return self.__network.fields_degree(topk)
 
     def compute_all_statistics(self):
-        graph = self.__network._get_underlying_repr()
-        self.__num_columns = graph.order()
-        nodes = graph.nodes()
-        self.__num_tables = self.get_number_tables(nodes)
+        self.__num_columns = self.__network.graph_order()
+        self.__num_tables = self.__network.get_number_tables()
         # FIXME: Failing due to cardinality being attached as float to graph nodes ??
         # relations = graph.edges(keys=True)
         content_sim_relations_gen = self.__network.enumerate_relation(

@@ -205,7 +205,7 @@ class StoreHandler:
             filtered = []
             for k, v in term_dict.items():
                 if len(k) > 2:
-                    if v > 4:
+                    if v > 5:
                         filtered.append(k)
             return filtered
 
