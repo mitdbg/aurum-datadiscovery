@@ -157,10 +157,10 @@ class DDAPI:
         """
         db_name, source_name, field_name = field
         hits = self.__network.get_hits_from_table(source_name)
-        o_drs = DRS([x for x in hits], Operation(OP.TABLE))
+        origin_hit = Hit(id_from(db_name, source_name, field_name), db_name, source_name, field_name, 0)
+        o_drs = DRS([x for x in hits], Operation(OP.TABLE, params=[origin_hit]))
         return o_drs
 
-    """
     def schema_neighbors_of(self, i_drs: DRS) -> DRS:
         o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(i_drs)
@@ -171,12 +171,9 @@ class DDAPI:
                 i_drs = i_drs.absorb(fields_table)
         for h in i_drs:
             hits = self.__network.get_hits_from_table(h.source_name)
-
-            hits_drs = self.__network.neighbors_id(h, Relation.SCHEMA)
-
+            hits_drs = DRS([x for x in hits], Operation(OP.TABLE, params=[h]))
             o_drs = o_drs.absorb(hits_drs)
         return o_drs
-    """
 
     def similar_schema_name_to_field(self, field: (str, str, str)) -> DRS:
         """

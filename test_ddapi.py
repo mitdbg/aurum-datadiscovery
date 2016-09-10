@@ -10,7 +10,7 @@ class TestDDApiCombiner(unittest.TestCase):
     # create store handler
     store_client = StoreHandler()
     # read graph
-    path = 'test/mitdwh.pickle'
+    path = 'test/test4/'
     network = deserialize_network(path)
     api = API(network)
     api.init_store()
@@ -22,7 +22,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_drs_from_raw_field(self):
         print(self._testMethodName)
 
-        field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+        field = ('dwhsmall', 'Iap_subject_person.csv', 'Person Mit Affiliation')
         res = self.api.drs_from_raw_field(field)
 
         for el in res:
@@ -31,7 +31,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_drs_from_hit(self):
         print(self._testMethodName)
 
-        field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+        field = ('dwhsmall', 'Iap_subject_person.csv', 'Person Mit Affiliation')
         res = self.api.drs_from_raw_field(field)
 
         els = [x for x in res]
@@ -54,7 +54,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_drs_from_table_hit(self):
         print(self._testMethodName)
 
-        field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+        field = ('dwhsmall', 'Iap_subject_person.csv', 'Person Mit Affiliation')
         res = self.api.drs_from_raw_field(field)
 
         els = [x for x in res]
@@ -109,7 +109,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_schema_neighbors(self):
         print(self._testMethodName)
 
-        field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+        field = ('dwhsmall', 'Iap_subject_person.csv', 'Person Mit Affiliation')
         res = self.api.schema_neighbors(field)
 
         for el in res:
@@ -118,7 +118,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_schema_neighbors_of(self):
         print(self._testMethodName)
 
-        field = ('Iap_subject_person.csv', 'Person Mit Affiliation')
+        field = ('dwhsmall', 'Iap_subject_person.csv', 'Person Mit Affiliation')
         res = self.api.schema_neighbors(field)
 
         res = self.api.schema_neighbors_of(res)
@@ -129,7 +129,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_similar_schema_name_to_field(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Name')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Name')
         res = self.api.similar_schema_name_to_field(field)
 
         print("RES size: " + str(res.size()))
@@ -139,10 +139,10 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_ids_functions(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Key')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Key')
         drs1 = self.api.drs_from_raw_field(field)
 
-        field = ('Building Key', 'Buildings.csv')
+        field = ('dwhsmall', 'Building Key', 'Buildings.csv')
         drs2 = self.api.drs_from_raw_field(field)
 
         for el in drs1:
@@ -163,7 +163,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_similar_schema_name_to(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Key')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Key')
         res = self.api.similar_schema_name_to_field(field)
 
         res = self.api.similar_schema_name_to(res)
@@ -175,7 +175,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_similar_content_to_field(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Name')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Name')
         res = self.api.similar_content_to_field(field)
 
         print("RES size: " + str(res.size()))
@@ -195,7 +195,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_similar_content_to(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Name')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Name')
         res = self.api.similar_content_to_field(field)
 
         res = self.api.similar_content_to(res)
@@ -207,7 +207,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_pkfk_field(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Name')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Name')
         res = self.api.pkfk_field(field)
 
         print("RES size: " + str(res.size()))
@@ -227,7 +227,7 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_pkfk_of(self):
         print(self._testMethodName)
 
-        field = ('Buildings.csv', 'Building Name')
+        field = ('dwhsmall', 'Buildings.csv', 'Building Name')
         res = self.api.pkfk_field(field)
 
         res = self.api.pkfk_of(res)
@@ -280,8 +280,8 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_paths_between_field_mode(self):
         print(self._testMethodName)
 
-        field1 = ('All_olap2_uentity_desc_uses.csv', 'Entity Owner')
-        field2 = ('All_olap_entity_desc_uses.csv', 'Entity Owner')
+        field1 = ('dwhsmall', 'All_olap2_uentity_desc_uses.csv', 'Entity Owner')
+        field2 = ('dwhsmall', 'All_olap_entity_desc_uses.csv', 'Entity Owner')
 
         drs1 = self.api.drs_from_raw_field(field1)
         drs2 = self.api.drs_from_raw_field(field2)
@@ -294,8 +294,8 @@ class TestDDApiCombiner(unittest.TestCase):
     def test_paths_between_table_mode(self):
         print(self._testMethodName)
 
-        field1 = ('All_olap2_uentity_desc_uses.csv', 'Entity Owner')
-        field2 = ('All_olap_entity_desc_uses.csv', 'Entity Owner')
+        field1 = ('dwhsmall', 'All_olap2_uentity_desc_uses.csv', 'Entity Owner')
+        field2 = ('dwhsmall', 'All_olap_entity_desc_uses.csv', 'Entity Owner')
 
         drs1 = self.api.drs_from_raw_field(field1)
         drs2 = self.api.drs_from_raw_field(field2)

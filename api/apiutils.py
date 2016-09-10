@@ -4,6 +4,7 @@ from collections import defaultdict
 from enum import Enum
 import binascii
 import networkx as nx
+import numpy as np
 from bitarray import bitarray
 
 global_origin_id = 0
@@ -32,13 +33,8 @@ class Hit(BaseHit):
 
 def compute_field_id(db_name, source_name, field_name):
     string = db_name + source_name + field_name
-    hash = 0
-    for i in range(len(string)):
-        hash = 31 * hash + string[i]
-
-    #nid = binascii.crc32(bytes(string, encoding="UTF-8"))
-    #return nid
-    return hash
+    nid = binascii.crc32(bytes(string, encoding="UTF-8"))
+    return str(nid)
 
 
 class Relation(Enum):
@@ -109,7 +105,7 @@ class Provenance:
         # We check operations that come with parameters
         elif op == OP.SCHNAME_LOOKUP or op == OP.ENTITY_LOOKUP or op == OP.KW_LOOKUP:
             global global_origin_id
-            hit = Hit(global_origin_id, params[0], params[0], -1)
+            hit = Hit(global_origin_id, params[0], params[0], params[0], -1)
             global_origin_id += 1
             self._p_graph.add_node(hit)
             for element in data:  # now we connect the new node to data with the op

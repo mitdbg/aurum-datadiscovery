@@ -248,7 +248,7 @@ class FieldNetwork:
             o_drs = DRS([], Operation(OP.NONE))
 
             hits = self.get_hits_from_table(hit.source_name)
-            table_neighbors_drs = DRS([x for x in hits], Operation(OP.TABLE))
+            table_neighbors_drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
 
             o_drs = o_drs.absorb_provenance(table_neighbors_drs)
             neighbors_with_table = set()
