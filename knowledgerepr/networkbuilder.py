@@ -226,7 +226,7 @@ def build_pkfk_relation(network):
                         highest_card = n_card
                     else:
                         highest_card = ne_card
-                    network.add_relation(n, ne, Relation.PKFK, highest_card)
+                    network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
                     print(str(n) + " -> " + str(ne))
 
 if __name__ == "__main__":
