@@ -197,6 +197,7 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
 
     def get_all_fields_text_signatures(self, network):
+
         def partition_ids(ids, partition_size=50):
             for i in range(0, len(ids), partition_size):
                 yield ids[i:i + partition_size]
