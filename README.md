@@ -56,8 +56,10 @@ $> java -jar <path_to_ddprofiler.jar> --db.name <name> --execution.mode 1
 --sources.folder.path <path>
 
 *--db.name* is used internally to identify the folder of data
+
 *--execution.mode* is used to indicate whether L1 will work online (0), offline,
 reading from files (1) or offline, reading from a DB (2).
+
 *--sources.folder.path* when execution mode is 1, this option indicates the folder
 with the files to process (CSV files only for now).
 
