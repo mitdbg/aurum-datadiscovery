@@ -100,7 +100,7 @@ def build_schema_relation(network, fields):
 
 def build_schema_sim_relation(network):
     docs = []
-    for (_, _, field_name) in network.iterate_values():
+    for (_, _, field_name, _) in network.iterate_values():
         docs.append(field_name)
 
     tfidf = da.get_tfidf_docs(docs)

@@ -44,7 +44,8 @@ class StoreHandler:
                                          'hits.hits._source.sourceName',
                                          'hits.hits._source.columnName',
                                          'hits.hits._source.totalValues',
-                                         'hits.hits._source.uniqueValues']
+                                         'hits.hits._source.uniqueValues',
+                                         'hits.hits._source.dataType']
                             )
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
@@ -53,17 +54,18 @@ class StoreHandler:
             for h in hits:
                 id_source_and_file_name = (h['_id'], h['_source']['dbName'], h['_source']['sourceName'],
                                            h['_source']['columnName'], h['_source']['totalValues'],
-                                           h['_source']['uniqueValues'])
+                                           h['_source']['uniqueValues'], h['_source']['dataType'])
                 yield id_source_and_file_name
                 remaining -= 1
-            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
                                              'hits.hits._source.dbName',
                                              'hits.hits._source.sourceName',
                                              'hits.hits._source.columnName',
                                              'hits.hits._source.totalValues',
-                                             'hits.hits._source.uniqueValues']
+                                             'hits.hits._source.uniqueValues',
+                                             'hits.hits._source.dataType']
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
@@ -103,7 +105,7 @@ class StoreHandler:
                 tuple_result = tuple(toret)
                 yield tuple_result
                 remaining -= 1
-            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=filter_path
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
@@ -188,7 +190,7 @@ class StoreHandler:
                 raw_id_doc = h['_id']
                 yield raw_id_doc
                 remaining -= 1
-            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
                                              'hits.hits._source.id']
@@ -219,7 +221,7 @@ class StoreHandler:
 
         text_signatures = []
         total = 0
-        for nid in network.iterate_ids():
+        for nid in network.iterate_ids_text():
             total += 1
             print("text_sig: " + str(total))
             # We retrieve all documents indexed with the same id in 'text'
@@ -274,7 +276,7 @@ class StoreHandler:
                 data = (h['_id'], (h['_source']['median'], h['_source']['iqr']))
                 id_sig.append(data)
                 remaining -= 1
-            res = client.scroll(scroll="3m", scroll_id=scroll_id,
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
                                              'hits.hits._source.median',

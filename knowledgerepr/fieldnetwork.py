@@ -40,7 +40,13 @@ class FieldNetwork:
         for k, _ in self.__id_names.items():
             yield k
 
-    def iterate_values(self) -> (str, str, str):
+    def iterate_ids_text(self):
+        for k, v in self.__id_names.items():
+            (db_name, source_name, field_name, data_type) = v
+            if data_type == 'T':
+                yield k
+
+    def iterate_values(self) -> (str, str, str, str):
         for _, v in self.__id_names.items():
             yield v
 
@@ -50,7 +56,7 @@ class FieldNetwork:
     def get_info_for(self, nids):
         info = []
         for nid in nids:
-            db_name, source_name, field_name = self.__id_names[nid]
+            db_name, source_name, field_name, data_type = self.__id_names[nid]
             info.append((nid, db_name, source_name, field_name))
         return info
 
@@ -78,7 +84,7 @@ class FieldNetwork:
         nx.draw(self.__G)
         plt.show()
 
-    def init_meta_schema(self, fields: (int, str, str, str, int, int)):
+    def init_meta_schema(self, fields: (int, str, str, str, int, int, str)):
         """
         Creates a dictionary of id -> (dbname, sourcename, fieldname)
         and one of:
@@ -89,8 +95,8 @@ class FieldNetwork:
         :return:
         """
         print("Building schema relation...")
-        for (nid, db_name, sn_name, fn_name, total_values, unique_values) in fields:
-            self.__id_names[nid] = (db_name, sn_name, fn_name)
+        for (nid, db_name, sn_name, fn_name, total_values, unique_values, data_type) in fields:
+            self.__id_names[nid] = (db_name, sn_name, fn_name, data_type)
             self.__source_ids[sn_name].append(nid)
             cardinality_ratio = None
             if float(total_values) > 0:
@@ -142,7 +148,7 @@ class FieldNetwork:
 
     def enumerate_relation(self, relation):
         for nid in self.iterate_ids():
-            db_name, source_name, field_name = self.__id_names[nid]
+            db_name, source_name, field_name, data_type = self.__id_names[nid]
             hit = Hit(nid, db_name, source_name, field_name, 0)
             neighbors = self.neighbors_id(hit, relation)
             for n2 in neighbors:
@@ -188,7 +194,7 @@ class FieldNetwork:
                 continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
-                (db_name, source_name, field_name) = self.__id_names[k]
+                (db_name, source_name, field_name, data_type) = self.__id_names[k]
                 data.append(Hit(k, db_name, source_name, field_name, score))
         op = self.get_op_from_relation(relation)
         o_drs = DRS(data, Operation(op, params=[hit]))
