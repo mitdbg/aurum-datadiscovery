@@ -1,3 +1,4 @@
+import re
 from elasticsearch import Elasticsearch
 
 from enum import Enum
@@ -205,8 +206,14 @@ class StoreHandler:
             filtered = []
             for k, v in term_dict.items():
                 if len(k) > 2:
-                    if v > 5:
-                        filtered.append(k)
+                    if v > 3:
+                        try:
+                            float(k)
+                            continue
+                        except ValueError:
+                            matches = re.findall('[0-9]', k)
+                            if len(matches) == 0:
+                                filtered.append(k)
             return filtered
 
         text_signatures = []
