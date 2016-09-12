@@ -68,7 +68,9 @@ class FieldNetwork:
 
     def get_cardinality_of(self, node_id):
         c = self.__G.node[node_id]
-        card = c['cardinality']  # no cardinality is like card 0
+        card = c['cardinality']
+        if card is None:
+            return 0  # no cardinality is like card 0
         return card
 
     def _get_underlying_repr_graph(self):
