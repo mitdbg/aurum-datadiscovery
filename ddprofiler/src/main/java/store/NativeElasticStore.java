@@ -18,6 +18,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -110,6 +111,44 @@ public class NativeElasticStore implements Store {
 		.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) // just default 
 		.build();
 		
+		String settings = "{"
+				+ "\"analysis\": {"
+				+ 	"\"char_filter\": {"
+				+ 		"\"_to-\": {"
+				+ 			"\"type\": \"mapping\","
+				+ 			"\"mappings\": [\"_=>-\"]"
+				+ 		"}"
+				+	"},"
+				+ 	"\"char_filter\": {"
+				+ 		"\"csv_to_none\": {"
+				+ 			"\"type\": \"mapping\","
+				+ 			"\"mappings\": [\".csv=> \"]"
+				+ 		"}"
+				+ 	"},"
+				+ 	"\"filter\": {"
+				+ 		"\"english_stop\": {"
+				+ 			"\"type\": \"stop\","
+				+ 			"\"stopwords\": \"_english_\""
+				+ 		"},"
+				+ 		"\"english_stemmer\": {"
+				+ 		"	\"type\": \"stemmer\","
+				+ 		"	\"language\": \"english\""
+				+ 		"},"
+				+ 		"\"english_possessive_stemmer\": {"
+				+ 		"	\"type\": \"stemmer\","
+				+ 		"	\"language\": \"possessive_english\""
+				+ 		"}"
+				+ 	"},"
+				+ 	"\"analyzer\": {"
+				+ 		"\"aurum_analyzer\": {"
+				+ 			"\"tokenizer\": \"standard\","
+				+ 			"\"char_filter\": [\"_to-\", \"csv_to_none\"],"
+				+ 			"\"filter\": [\"english_possessive_stemmer\", \"lowercase\", \"english_stop\", \"english_stemmer\"]"
+				+ 		"}"
+				+ 	"}"
+				+ "}" // closes analysis
+				+ "}"; // closes object
+		
 		// Create the appropriate mappings for the indices
 		PutMapping textMapping = new PutMapping.Builder(
 				"text",
@@ -136,7 +175,6 @@ public class NativeElasticStore implements Store {
 				+ " "
 				+ "}"
 		).build();
-		System.out.println(textMapping.toString());
 		
 		PutMapping profileMapping = new PutMapping.Builder(
 				"profile",
@@ -146,11 +184,14 @@ public class NativeElasticStore implements Store {
 				+ "\"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"sourceName\" : {\"type\" : \"string\","
+				+ 		"\"index\" : \"analyzed\", "
+				+ 		"\"analyzer\" : \"aurum_analyzer\"},"
 				+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
 				+ 		"\"index\" : \"analyzed\", "
-				+ 		"\"analyzer\" : \"english\"},"
+				+ 		"\"analyzer\" : \"aurum_analyzer\"},"
 				+ "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
@@ -166,7 +207,7 @@ public class NativeElasticStore implements Store {
 		// Make sure the necessary elastic indexes exist and apply the mappings
 		try {
 			client.execute(new CreateIndex.Builder("text").build());
-			client.execute(new CreateIndex.Builder("profile").build());
+			client.execute(new CreateIndex.Builder("profile").settings(Settings.builder().loadFromSource(settings).build().getAsMap()).build());
 			client.execute(textMapping);
 			client.execute(profileMapping);
 		} 

@@ -136,6 +136,29 @@ class DDAPI:
             o_drs = o_drs.absorb(res_drs)
         return o_drs
 
+    def table_name_search(self, kw: str, max_results=10) -> DRS:
+        """
+        Performs a keyword search over the names of the tables
+        :param kw: the keyword to search
+        :param max_results: the maximum number of results to return
+        :return: returns a DRS
+        """
+        hits = store_client.search_keywords(kw, KWType.KW_TABLE, max_results)
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
+        return drs
+
+    def table_names_search(self, kws: [str]) -> DRS:
+        """
+        Given a collection of schema names, it returns the matches in the internal representation
+        :param kws: collection (iterable) of keywords (strings)
+        :return: a DRS
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        for kw in kws:
+            res_drs = self.table_name_search(kw)
+            o_drs = o_drs.absorb(res_drs)
+        return o_drs
+
     def entity_search(self, kw: str, max_results=10) -> DRS:
         """
         Performs a keyword search over the entities represented by the data

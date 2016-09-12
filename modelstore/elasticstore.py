@@ -12,6 +12,7 @@ class KWType(Enum):
     KW_TEXT = 0
     KW_SCHEMA = 1
     KW_ENTITIES = 2
+    KW_TABLE = 3
 
 
 class StoreHandler:
@@ -147,6 +148,10 @@ class StoreHandler:
             index = "profile"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"entities": keywords}}}
+        elif elasticfieldname == KWType.KW_TABLE:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"match": {"sourceName": keywords}}}
         res = client.search(index=index, body=query_body,
                             filter_path=filter_path)
         if res['hits']['total'] == 0:

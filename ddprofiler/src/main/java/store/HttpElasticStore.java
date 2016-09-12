@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.common.settings.Settings;
+
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
 import io.searchbox.client.JestClient;
@@ -37,6 +39,46 @@ public class HttpElasticStore implements Store {
                 .build());
 		client = factory.getObject();
 		
+		// Create custom analyzer
+		String settings = "{"
+				+ "\"analysis\": {"
+				+ 	"\"char_filter\": {"
+				+ 		"\"_to-\": {"
+				+ 			"\"type\": \"mapping\","
+				+ 			"\"mappings\": [\"_=>-\"]"
+				+ 		"},"
+				+	"},"
+				+ 	"\"char_filter\": {"
+				+ 		"\"csv_to_none\": {"
+				+ 			"\"type\": \"mapping\","
+				+ 			"\"mappings\": [\".csv=> \"]"
+				+ 		"},"
+				+ 	"},"
+				+ 	"\"filter\": {"
+				+ 		"\"english_stop\": {"
+				+ 			"\"type\": \"stop\","
+				+ 			"\"stopwords\": \"_english_\""
+				+ 		"},"
+				+ 		"\"english_stemmer\": {"
+				+ 		"	\"type\": \"stemmer\","
+				+ 		"	\"language\": \"english\""
+				+ 		"},"
+				+ 		"\"english_possessive_stemmer\": {"
+				+ 		"	\"type\": \"stemmer\","
+				+ 		"	\"language\": \"possessive_english\""
+				+ 		"}"
+				+ 	"},"
+				+ 	"\"analyzer\": {"
+				+ 		"\"aurum_analyzer\": {"
+				+ 			"\"tokenizer\": \"standard\","
+				+ 			"\"char_filter\": [\"_to-\", \"csv_to_none\"],"
+				+ 			"\"filter\": [\"english_possessive_stemmer\", \"lowercase\", \"english_stop\", \"english_stemmer\"]"
+				+ 		"}"
+				+ 	"}"
+				+ "}" // closes analysis
+				+ "}"; // closes object
+		
+		
 		// Create the appropriate mappings for the indices
 		PutMapping textMapping = new PutMapping.Builder(
 				"text",
@@ -63,7 +105,6 @@ public class HttpElasticStore implements Store {
 				+ " "
 				+ "}"
 		).build();
-		System.out.println(textMapping.toString());
 		
 		PutMapping profileMapping = new PutMapping.Builder(
 				"profile",
@@ -73,11 +114,14 @@ public class HttpElasticStore implements Store {
 				+ "\"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
 				+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-				+ "\"sourceName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+				+ "\"sourceName\" : {\"type\" : \"string\","
+				+ 		"\"index\" : \"analyzed\", "
+				+ 		"\"analyzer\" : \"aurum_analyzer\"},"
 				+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"columnName\" : {\"type\" : \"string\", "
 				+ 		"\"index\" : \"analyzed\", "
-				+ 		"\"analyzer\" : \"english\"},"
+				+ 		"\"analyzer\" : \"aurum_analyzer\"},"
 				+ "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
 				+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
@@ -91,9 +135,9 @@ public class HttpElasticStore implements Store {
 		).build();
 		
 		// Make sure the necessary elastic indexes exist and apply the mappings
-		try {
+		try {			
 			client.execute(new CreateIndex.Builder("text").build());
-			client.execute(new CreateIndex.Builder("profile").build());
+			client.execute(new CreateIndex.Builder("profile").settings(Settings.builder().loadFromSource(settings).build().getAsMap()).build());
 			client.execute(textMapping);
 			client.execute(profileMapping);
 		} 
