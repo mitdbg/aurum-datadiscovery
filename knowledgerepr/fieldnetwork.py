@@ -192,8 +192,6 @@ class FieldNetwork:
         data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():
-            if str(k) == 'cardinality':  # FIXME: with the new way of setting attributes this should not be necessary
-                continue  # skipping node attributes
             if relation in v:
                 score = v[relation]['score']
                 (db_name, source_name, field_name, data_type) = self.__id_names[k]
