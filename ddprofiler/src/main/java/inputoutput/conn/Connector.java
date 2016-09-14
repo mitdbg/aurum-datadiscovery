@@ -13,10 +13,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import inputoutput.Attribute;
 import inputoutput.Record;
+import preanalysis.PreAnalyzer;
 
 public abstract class Connector {
+	
+	final private Logger LOG =
+		      LoggerFactory.getLogger(Connector.class.getName());
+	
+	// Metrics on how many successful and erroneous records are processed
+	private int error_records = 0;
+	private int success_records = 0;
 
 	public abstract String getDBName();
 	public abstract String getPath();
@@ -50,14 +61,24 @@ public abstract class Connector {
 		if(!readData) {
 			return null;
 		}
+		
 		for(Record r : recs) {
 			List<String> values = r.getTuples();
 			int currentIdx = 0;
+			if(values.size() != data.values().size()) {
+				//LOG.error("Format error on record: " + r.getTuples());
+				error_records++;
+				continue; // Some error while parsing data, a row has a different format
+			}
+			success_records++;
 			for(List<String> vals : data.values()) { // ordered iteration
 				vals.add(values.get(currentIdx));
 				currentIdx++;
 			}
 		}
+		// FIXME: local debugging. Instead find a sustainable way of propagating this errors up in the stack to make them
+		// user facing. Introduce Metrics (Coda Hale library)
+		//System.out.println("error: " + error_records + " success: " + success_records);
 		return data;
 	}
 	
