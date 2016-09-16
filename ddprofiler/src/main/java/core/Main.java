@@ -89,6 +89,7 @@ public class Main {
     }
 
     c.stop();
+    s.tearDownStore();
 
     long end = System.nanoTime();
     LOG.info("Finished processing in {}", (end - start));

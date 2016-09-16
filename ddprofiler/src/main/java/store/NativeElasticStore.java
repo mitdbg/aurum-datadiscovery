@@ -288,7 +288,6 @@ public class NativeElasticStore implements Store {
 	public void tearDownStore() {
 		client.shutdownClient();
 		bulkProcessor.close();
-		nativeClient.close();
 		factory = null;
 		client = null;
 	}
