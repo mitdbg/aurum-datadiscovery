@@ -100,7 +100,7 @@ class DDAPI:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
-    def keywords_search(self, kws: [str]) -> DRS:
+    def keywords_search(self, kws: [str], max_results=10) -> DRS:
         """
         Given a collection of keywords, it returns the matches in the internal representation
         :param kws: collection (iterable) of keywords (strings)
@@ -108,7 +108,7 @@ class DDAPI:
         """
         o_drs = DRS([], Operation(OP.NONE))
         for kw in kws:
-            res_drs = self.keyword_search(kw)
+            res_drs = self.keyword_search(kw, max_results=max_results)
             o_drs = o_drs.absorb(res_drs)
         return o_drs
 
@@ -124,7 +124,7 @@ class DDAPI:
             OP.SCHNAME_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
-    def schema_names_search(self, kws: [str]) -> DRS:
+    def schema_names_search(self, kws: [str], max_results=10) -> DRS:
         """
         Given a collection of schema names, it returns the matches in the internal representation
         :param kws: collection (iterable) of keywords (strings)
@@ -132,7 +132,7 @@ class DDAPI:
         """
         o_drs = DRS([], Operation(OP.NONE))
         for kw in kws:
-            res_drs = self.schema_name_search(kw)
+            res_drs = self.schema_name_search(kw, max_results=max_results)
             o_drs = o_drs.absorb(res_drs)
         return o_drs
 
@@ -147,7 +147,7 @@ class DDAPI:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
-    def table_names_search(self, kws: [str]) -> DRS:
+    def table_names_search(self, kws: [str], max_results=10) -> DRS:
         """
         Given a collection of schema names, it returns the matches in the internal representation
         :param kws: collection (iterable) of keywords (strings)
@@ -155,7 +155,7 @@ class DDAPI:
         """
         o_drs = DRS([], Operation(OP.NONE))
         for kw in kws:
-            res_drs = self.table_name_search(kw)
+            res_drs = self.table_name_search(kw, max_results=max_results)
             o_drs = o_drs.absorb(res_drs)
         return o_drs
 

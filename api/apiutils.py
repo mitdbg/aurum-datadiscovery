@@ -654,6 +654,7 @@ class DRS:
     """
     Convenience functions
     """
+    # TODO: all these functions were written on-demand. Some refactoring would help a lot here
 
     def print_tables(self):
         mode = self.mode  # save state
@@ -730,18 +731,24 @@ class DRS:
     def pretty_print_columns(self):
         mode = self.mode  # save state
         self.set_fields_mode()
+        seen_nid = dict()
         for x in self:
-            string = "SOURCE: " + x.source_name + "\t\t\t FIELD: " + x.field_name
-            print(string)
+            if x not in seen_nid:
+                string = "SOURCE: " + x.source_name + "\t\t\t FIELD: " + x.field_name
+                print(string)
+            seen_nid[x] = 0
         self._mode = mode  # recover state
 
     def pretty_print_columns_with_scores(self):
         mode = self.mode  # save state
         self.set_fields_mode()
+        seen_nid = dict()
         for x, score in self._chosen_rank:
-            string = "SOURCE: " + x.source_name + "\t FIELD: " + \
-                x.field_name + "\t SCORE: " + str(score)
-            print(string)
+            if x not in seen_nid:
+                string = "SOURCE: " + x.source_name + "\t FIELD: " + \
+                    x.field_name + "\t SCORE: " + str(score)
+                print(string)
+            seen_nid[x] = 0
         self._mode = mode  # recover state
 
 

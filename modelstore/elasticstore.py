@@ -228,7 +228,8 @@ class StoreHandler:
         total = 0
         for nid in network.iterate_ids_text():
             total += 1
-            print("text_sig: " + str(total))
+            if total % 1000 == 0:
+                print("text_sig: " + str(total))
             # We retrieve all documents indexed with the same id in 'text'
             docs = self.get_all_docs_from_text_with_idx_id(nid)
             ids = [x for x in docs]

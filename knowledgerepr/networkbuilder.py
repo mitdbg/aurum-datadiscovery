@@ -19,6 +19,7 @@ rbp = RandomBinaryProjections('default', 30)
 
 
 def create_sim_graph_text(nid_gen, network, text_engine, tfidf, relation, tfidf_is_dense=False):
+    st = time.time()
     row_idx = 0
     for nid in nid_gen:
         if tfidf_is_dense:
@@ -35,6 +36,8 @@ def create_sim_graph_text(nid_gen, network, text_engine, tfidf, relation, tfidf_
                 (data, key, value) = n
                 if nid != key:
                     network.add_relation(nid, key, relation, value)
+    et = time.time()
+    print("Create graph schema: {0}".format(str(et - st)))
 
 
 def index_in_text_engine(nid_gen, tfidf, lsh_projections, tfidf_is_dense=False):
@@ -57,7 +60,7 @@ def index_in_text_engine(nid_gen, tfidf, lsh_projections, tfidf_is_dense=False):
         row_idx += 1
         text_engine.store_vector(array, key)
     et = time.time()
-    print("Total store text: " + str((et - st)))
+    print("Total index text: " + str((et - st)))
     return text_engine
 
 
@@ -99,11 +102,15 @@ def build_schema_relation(network, fields):
 
 
 def build_schema_sim_relation(network):
+    st = time.time()
     docs = []
     for (_, _, field_name, _) in network.iterate_values():
         docs.append(field_name)
 
     tfidf = da.get_tfidf_docs(docs)
+    et = time.time()
+    print("Time to create docs and TF-IDF: ")
+    print("Create docs and TF-IDF: {0}".format(str(et - st)))
     nid_gen = network.iterate_ids()
     text_engine = index_in_text_engine(nid_gen, tfidf, rbp)  # rbp the global variable
     nid_gen = network.iterate_ids()
@@ -156,8 +163,11 @@ def build_content_sim_relation_text_lsa(network, signatures):
     tfidf = da.get_tfidf_docs(docs)
 
     print("TF-IDF shape before LSA: " + str(tfidf.shape))
+    st = time.time()
     tfidf = lsa_dimensionality_reduction(tfidf)
+    et = time.time()
     print("TF-IDF shape after LSA: " + str(tfidf.shape))
+    print("Time to compute LSA: {0}".format(str(et - st)))
     # rbp = RandomBinaryProjections('default', 1000)
     lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
     nid_gen = get_nid_gen(signatures)  # to preserve the order nid -> signature
@@ -212,6 +222,7 @@ def build_content_sim_relation_num(network, id_sig):
 
 def build_pkfk_relation(network):
     seen = set()
+    total_pkfk_relations = 0
     for n in network.iterate_ids():
         seen.add(n)
         n_card = network.get_cardinality_of(n)
@@ -227,7 +238,10 @@ def build_pkfk_relation(network):
                     else:
                         highest_card = ne_card
                     network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
-                    print(str(n) + " -> " + str(ne))
+                    total_pkfk_relations += 1
+                    #print(str(n) + " -> " + str(ne))
+    print("Total number PKFK: {0}".format(str(total_pkfk_relations)))
+
 
 if __name__ == "__main__":
     print("TODO")

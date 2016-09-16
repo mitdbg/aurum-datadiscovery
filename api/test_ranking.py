@@ -9,7 +9,7 @@ class TestRanking(unittest.TestCase):
     # create store handler
     store_client = StoreHandler()
     # read graph
-    path = '../test/test4/'
+    path = '../test/dwh/'
     network = deserialize_network(path)
     api = API(network)
     api.init_store()
