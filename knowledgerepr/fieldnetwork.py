@@ -60,6 +60,10 @@ class FieldNetwork:
             info.append((nid, db_name, source_name, field_name))
         return info
 
+    def get_hits_from_info(self, info):
+        hits = [Hit(nid, db_name, s_name, f_name, 0) for nid, db_name, s_name, f_name in info]
+        return hits
+
     def get_hits_from_table(self, table) -> [Hit]:
         nids = self.get_fields_of_source(table)
         info = self.get_info_for(nids)

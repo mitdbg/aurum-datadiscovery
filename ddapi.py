@@ -37,6 +37,10 @@ class DDAPI:
         drs = DRS([hit], Operation(OP.ORIGIN))
         return drs
 
+    def drs_from_hits(self, hits: [Hit]) -> DRS:
+        drs = DRS(hits, Operation(OP.ORIGIN))
+        return drs
+
     def drs_from_table(self, source: str) -> DRS:
         """
         Given a source, it retrieves all fields of the source and returns them

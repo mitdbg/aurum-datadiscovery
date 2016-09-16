@@ -77,6 +77,7 @@ def build_schema_relation(network, fields):
     tables = defaultdict(list)
     # Separate fields per table
     for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
+        card_outer = 0
         if float(tvals_outer) > 0:
             card_outer = float(uvals_outer) / float(tvals_outer)
         # append tuple with (field_name, cardinality)
@@ -221,18 +222,14 @@ def build_content_sim_relation_num(network, id_sig):
 
 
 def build_pkfk_relation(network):
-    seen = set()
     total_pkfk_relations = 0
     for n in network.iterate_ids():
-        seen.add(n)
         n_card = network.get_cardinality_of(n)
-        # neighborhood = network.neighbors((n.source_name, n.field_name),
-        # Relation.CONTENT_SIM) #  old
-        neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
-        for ne in neighborhood:
-            if ne not in seen and ne is not n:
-                ne_card = network.get_cardinality_of(ne.nid)
-                if n_card > 0.5 or ne_card > 0.5:
+        if n_card > 0.5:  # Early check if this is a candidate
+            neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
+            for ne in neighborhood:
+                if ne is not n:
+                    ne_card = network.get_cardinality_of(ne.nid)
                     if n_card > ne_card:
                         highest_card = n_card
                     else:

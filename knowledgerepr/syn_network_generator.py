@@ -9,18 +9,36 @@ def generate_network_with(num_nodes=10, num_nodes_per_table=2, num_schema_sim=5,
         for i in range(num_nodes):
             table_name = "synt" + str(i)
             for j in range(num_nodes_per_table):
-                element = (i, "syndb", table_name, "synf" + str(i), 100, 50)
+                element = (i, "syndb", table_name, "synf" + str(i), 100, 50, "T")
                 yield element
 
     def gen_pairs_relation(source, num_relations):
-        jump_size = num_nodes / num_relations
-        src = source
-        for i in range(num_relations):
-            trg = src + jump_size
-            if trg >= num_nodes:
-                trg -= num_nodes
-            yield src, trg
-            src = trg + 1
+
+        def create_multiple_conn_per_node(num_conn_per_node):
+            for n in range(num_nodes):  # for each node
+                for i in range(num_conn_per_node):  # num relations
+                    next_node = (n + i + 1) % num_nodes
+                    yield n, next_node
+
+        def create_conn_every_x_node(source_idx, jump_size):
+            src = source_idx
+            for i in range(num_relations):
+                next_node = (src + jump_size) % num_nodes
+                yield src, next_node
+                src = next_node
+
+        if num_relations > num_nodes:
+            #  Create multiple connections per node (roughly even)
+            num_conn_per_node = int(num_relations / num_nodes)
+            gen = create_multiple_conn_per_node(num_conn_per_node)
+            for x in gen:
+                yield x
+        elif num_nodes <= num_relations:
+            jump_size = int(num_nodes / num_relations)
+            gen = create_conn_every_x_node(source, jump_size)
+            for x in gen:
+                yield x
+
 
     # Skeleton, columns and tables
     fn = FieldNetwork()
@@ -30,6 +48,7 @@ def generate_network_with(num_nodes=10, num_nodes_per_table=2, num_schema_sim=5,
     # num schema sim
     gen_schema_sim = gen_pairs_relation(0, num_schema_sim)
     for src, trg in gen_schema_sim:
+        print(str(src) + " - " + str(trg))
         fn.add_relation(src, trg, Relation.SCHEMA_SIM, 0.2)
 
     # num content sim
