@@ -11,29 +11,37 @@ class TestRanking(unittest.TestCase):
     store_client = StoreHandler()
 
     # create synthetic graph
-    network = GENSYN(100, 4, 200, 100, 250)
+    network = GENSYN(5, 5, 20, 50, 10)
 
     api = API(network)
     api.init_store()
 
     def test_compute_ranking_scores_certainty(self):
 
-        nodes = self.network.fields_degree(10)
+        nodes = self.network.fields_degree(3)
+
+        #self.network._visualize_graph()
 
         nids = [x for x, y in nodes]
 
         info = self.network.get_info_for(nids)
         hits = self.network.get_hits_from_info(info)
+
         drs_info = self.api.drs_from_hits(hits)
+
+        #drs_info.visualize_provenance()
 
         res = self.api.similar_schema_name_to(drs_info)
 
-        res = res.rank_certainty()
+        #res.visualize_provenance(labels=True)
+
+        res = res.rank_coverage()
 
         res.pretty_print_columns_with_scores()
 
         self.assertTrue(True)
 
+    """
     def test_compute_ranking_scores_coverage(self):
         table = 'Buildings.csv'
         res = self.api.similar_content_to_table(table)
@@ -56,3 +64,4 @@ class TestRanking(unittest.TestCase):
         res.print_columns()
 
         self.assertTrue(True)
+    """

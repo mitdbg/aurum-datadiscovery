@@ -126,6 +126,8 @@ class Provenance:
         for node in self._p_graph.nodes():
             pre = self._p_graph.predecessors(node)
             suc = self._p_graph.successors(node)
+            no_cycles = set(pre) - set(suc)
+            pre = list(no_cycles)
             if len(pre) == 0:
                 leafs.append(node)
             if len(suc) == 0:
@@ -299,6 +301,7 @@ class DRS:
             nx.draw_networkx(self.get_provenance().prov_graph())
         else:
             nx.draw(self.get_provenance().prov_graph())
+        plt.show()
 
     def absorb_provenance(self, drs, annotate_and_edges=False, annotate_or_edges=False):
         """
@@ -484,10 +487,10 @@ class DRS:
         # Calculate paths from a to leafs, in reverse order and return the
         # leafs.
         paths = self._provenance.compute_paths_from_origin_to(a)
-        origins = []
+        origins = set()
         for p in paths:
-            origins.append(p[0])
-        return origins
+            origins.add(p[0])
+        return list(origins)
 
     def how_id(self, a: int) -> [Hit]:
         """
@@ -533,7 +536,7 @@ class DRS:
         :return:
         """
 
-        def decide_path(pg, ns):
+        def decide_path(pg, ns, nodes_already_visited):
             """
             Given n score_paths, it chooses one according to an aggregation strategy
             :param pg:
@@ -542,13 +545,14 @@ class DRS:
             if aggr_strategy is None:
                 max_score = 0
                 for n in ns:
-                    score = get_score_continuous_path(pg, n)
+                    nodes_already_visited.add(n)
+                    score = get_score_continuous_path(pg, n, nodes_already_visited)
                     if score > max_score:
                         max_score = score
             # FIXME: plug in here the logic for the other aggr strategies
             return score
 
-        def get_score_continuous_path(pg, src):
+        def get_score_continuous_path(pg, src, nodes_already_visited):
             """
             Traverse graph from src forming a score path
             :param pg:
@@ -556,22 +560,26 @@ class DRS:
             :return:
             """
             current_score = float(src.score)
-            ns = [x for x in pg.neighbors(src)]
+            ns = [x for x in pg.neighbors(src) if x not in nodes_already_visited]  # skip already visited nodes
+            #ns = [x for x in pg.neighbors(src)]
             if len(ns) == 1:
+                nodes_already_visited.add(ns[0])
                 current_score = current_score + \
-                    get_score_continuous_path(pg, ns[0])
+                    get_score_continuous_path(pg, ns[0], nodes_already_visited)
             elif len(ns) > 1:
-                current_score = current_score + decide_path(pg, ns)
+                current_score = current_score + decide_path(pg, ns, nodes_already_visited)
             # Last option: when there are no neighbors, we simply return
             # current_store
             return current_score
 
         # We reverse the provenance graph
         pg = self._provenance.prov_graph().reverse()
+        nodes_already_visited = set()
         # Compute recursively the certainty score for every result
         for el in self.data:
-            score = get_score_continuous_path(pg, el)
-            self._rank_data[el]['certainty_score'] = score
+            if el not in nodes_already_visited:
+                score = get_score_continuous_path(pg, el, nodes_already_visited)
+                self._rank_data[el]['certainty_score'] = score
 
     def _compute_coverage_scores(self):
         # Get total number of ORIGIN elements FIXME: (not KW, etc)
@@ -613,7 +621,10 @@ class DRS:
 
         elements = []
         for el, score_dict in self._rank_data.items():
-            value = (el, score_dict['certainty_score'])
+            if 'certainty_score' in score_dict:
+                value = (el, score_dict['certainty_score'])
+            else:
+                value = (el, 0)  # no certainty score is like 0
             elements.append(value)
         elements = sorted(elements, key=lambda a: a[1], reverse=True)
         self._data = [el for (el, score) in elements]  # save data in order
@@ -633,9 +644,10 @@ class DRS:
 
         elements = []
         for el, score_dict in self._rank_data.items():
-            #score, coverage_set = score_dict['coverage_score']
-            #value = (el, score, coverage_set)
-            value = (el, score_dict['coverage_score'])
+            if 'coverage_score' in score_dict:
+                value = (el, score_dict['coverage_score'])
+            else:
+                value = (el, 0)  # no coverage score is like 0
             elements.append(value)
         elements = sorted(elements, key=lambda a: a[1][0], reverse=True)
         self._data = [el for (el, score) in elements]  # save data in order
