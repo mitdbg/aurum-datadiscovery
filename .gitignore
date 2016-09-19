@@ -69,3 +69,6 @@ ddprofiler/.gradle/
 ddprofiler/.project
 ddprofiler/.settings/
 
+# Notes
+notes.sh
+
