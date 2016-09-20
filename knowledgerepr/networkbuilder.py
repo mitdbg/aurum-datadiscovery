@@ -71,37 +71,6 @@ def lsa_dimensionality_reduction(tfidf):
     return new_tfidf_vectors
 
 
-def build_schema_relation(network, fields):
-    print("Building schema relation...")
-    print("Putting fields in buckets...")
-    tables = defaultdict(list)
-    # Separate fields per table
-    for (nid, sn_outer, fn_outer, tvals_outer, uvals_outer) in fields:
-        card_outer = 0
-        if float(tvals_outer) > 0:
-            card_outer = float(uvals_outer) / float(tvals_outer)
-        # append tuple with (field_name, cardinality)
-        tables[sn_outer].append((fn_outer, card_outer))
-    print("Putting fields in buckets...OK")
-
-    print("Filling schema relations for all tables...")
-    total_tables = len(tables.keys())
-    curr_table = 0
-    # Connect fields of same table
-    for table, table_fields in tables.items():
-        curr_table += 1
-        if curr_table % 500 == 0:
-            print(str(curr_table) + "/" + str(total_tables))
-        for f_out in table_fields:
-            field_out, card_out = f_out
-            for f_in in table_fields:
-                field_in, card_in = f_in
-                n_outer = network.add_field(table, field_out, card_out)
-                n_inner = network.add_field(table, field_in, card_in)
-                network.add_relation(n_outer, n_inner, Relation.SCHEMA, 1)
-    print("Filling schema relations for all tables...OK")
-
-
 def build_schema_sim_relation(network):
     st = time.time()
     docs = []
