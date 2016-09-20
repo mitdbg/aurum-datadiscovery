@@ -35,6 +35,7 @@ def create_sim_graph_text(nid_gen, network, text_engine, tfidf, relation, tfidf_
             for n in N:
                 (data, key, value) = n
                 if nid != key:
+                    print("tsim: {0} <-> {1}".format(nid, key))
                     network.add_relation(nid, key, relation, value)
     et = time.time()
     print("Create graph schema: {0}".format(str(et - st)))
@@ -138,8 +139,8 @@ def build_content_sim_relation_text_lsa(network, signatures):
     et = time.time()
     print("TF-IDF shape after LSA: " + str(tfidf.shape))
     print("Time to compute LSA: {0}".format(str(et - st)))
-    # rbp = RandomBinaryProjections('default', 1000)
-    lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
+    lsh_projections = RandomBinaryProjections('default', 10000)
+    #lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
     nid_gen = get_nid_gen(signatures)  # to preserve the order nid -> signature
     text_engine = index_in_text_engine(nid_gen, tfidf, lsh_projections, tfidf_is_dense=True)
     nid_gen = get_nid_gen(signatures)  # to preserve the order nid -> signature
@@ -147,17 +148,23 @@ def build_content_sim_relation_text_lsa(network, signatures):
 
 
 def build_content_sim_relation_text(network, fields, signatures):
+
+    def get_nid_gen(signatures):
+        for nid, sig in signatures:
+            yield nid
+
     docs = []
-    for e in signatures:
+    for nid, e in signatures:
         docs.append(' '.join(e))
 
     # this may become redundant if we exploit the store characteristics
     tfidf = da.get_tfidf_docs(docs)
     # rbp = RandomBinaryProjections('default', 1000)
     lsh_projections = RandomDiscretizedProjections('rnddiscretized', 1000, 2)
-    text_engine = index_in_text_engine(fields, tfidf, lsh_projections)
-    create_sim_graph_text(network, text_engine, fields,
-                          tfidf, Relation.CONTENT_SIM)
+    nid_gen = get_nid_gen(signatures)
+    text_engine = index_in_text_engine(nid_gen, tfidf, lsh_projections)
+    nid_gen = get_nid_gen(signatures)
+    create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.CONTENT_SIM)
 
 
 def build_content_sim_relation_num(network, id_sig):

@@ -67,6 +67,10 @@ class DDAPI:
             o_drs.absorb(drs)
         return o_drs
 
+    def reverse_lookup(self, nid) -> [str]:
+        info = self.__network.get_info_for([nid])
+        return info
+
     """
     View API
     """

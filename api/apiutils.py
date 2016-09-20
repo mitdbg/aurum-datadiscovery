@@ -746,7 +746,8 @@ class DRS:
         seen_nid = dict()
         for x in self:
             if x not in seen_nid:
-                string = "SOURCE: " + x.source_name + "\t\t\t FIELD: " + x.field_name
+                string = "DB: {0:20} TABLE: {1:30} FIELD: {2:30}".format(x.db_name, x.source_name, x.field_name)
+                #string = "DB: " + x.db_name + "\t\t SOURCE: " + x.source_name + "\t\t FIELD: " + x.field_name
                 print(string)
             seen_nid[x] = 0
         self._mode = mode  # recover state
@@ -757,8 +758,9 @@ class DRS:
         seen_nid = dict()
         for x, score in self._chosen_rank:
             if x not in seen_nid:
-                string = "SOURCE: " + x.source_name + "\t FIELD: " + \
-                    x.field_name + "\t SCORE: " + str(score)
+                string = "DB: {0:20} TABLE: {1:30} FIELD: {2:30} SCORE: {3:10}".format(x.db_name, x.source_name, x.field_name, str(score))
+                #string = "DB: " + x.db_name + "\t\t SOURCE: " + x.source_name + "\t FIELD: " + \
+                #    x.field_name + "\t SCORE: " + str(score)
                 print(string)
             seen_nid[x] = 0
         self._mode = mode  # recover state
