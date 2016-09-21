@@ -1,7 +1,7 @@
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr import fieldnetwork
 from knowledgerepr import networkbuilder
-from knowledgerepr.networkbuilder import FieldNetwork
+from fieldnetwork import FieldNetwork
 
 import sys
 import time
