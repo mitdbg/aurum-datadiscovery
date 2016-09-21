@@ -72,3 +72,5 @@ ddprofiler/.settings/
 # Notes
 notes.sh
 
+# Index Pickle Files
+/test/testmodel/*.pickle
