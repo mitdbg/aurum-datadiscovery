@@ -48,7 +48,8 @@ def main(output_path=None):
     # Content_sim num relation
     start_num_sig_sim = time.time()
     id_sig = store.get_all_fields_num_signatures()
-    networkbuilder.build_content_sim_relation_num(network, id_sig)
+    #networkbuilder.build_content_sim_relation_num(network, id_sig)
+    networkbuilder.build_content_sim_relation_num_overlap_distr(network, id_sig)
     end_num_sig_sim = time.time()
     print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
 
@@ -101,7 +102,43 @@ def plot_num():
     plt.show()
 
 
+def test_content_sim_num():
+
+    '''
+    SETUP
+    '''
+
+    start_all = time.time()
+    network = FieldNetwork()
+    store = StoreHandler()
+
+    # Get all fields from store
+    fields_gen = store.get_all_fields()
+
+    # Network skeleton and hierarchical relations (table - field), etc
+    start_schema = time.time()
+    network.init_meta_schema(fields_gen)
+    end_schema = time.time()
+    print("Total skeleton: {0}".format(str(end_schema - start_schema)))
+
+    '''
+    ACTUAL TEST
+    '''
+
+    # Content_sim num relation
+    start_num_sig_sim = time.time()
+    id_sig = store.get_all_fields_num_signatures()
+    # networkbuilder.build_content_sim_relation_num(network, id_sig)
+    networkbuilder.build_content_sim_relation_num_overlap_distr(network, id_sig)
+    end_num_sig_sim = time.time()
+    print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+
+
 if __name__ == "__main__":
+
+    test_content_sim_num()
+    exit()
+
     path = None
     if len(sys.argv) == 3:
         path = sys.argv[2]

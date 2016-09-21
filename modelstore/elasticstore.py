@@ -213,8 +213,8 @@ class StoreHandler:
             # FIXME: add filter by term length
             filtered = []
             for k, v in term_dict.items():
-                if len(k) > 2:
-                    if v > 3:
+                if len(k) > 1:
+                    if v > 1:
                         try:
                             float(k)
                             continue
@@ -228,7 +228,7 @@ class StoreHandler:
         total = 0
         for nid in network.iterate_ids_text():
             total += 1
-            if total % 1000 == 0:
+            if total % 100 == 0:
                 print("text_sig: " + str(total))
             # We retrieve all documents indexed with the same id in 'text'
             docs = self.get_all_docs_from_text_with_idx_id(nid)
@@ -270,7 +270,9 @@ class StoreHandler:
                                          'hits.hits._id',
                                          'hits.total',
                                          'hits.hits._source.median',
-                                         'hits.hits._source.iqr']
+                                         'hits.hits._source.iqr',
+                                         'hits.hits._source.minValue',
+                                         'hits.hits._source.maxValue']
                             )
         scroll_id = res['_scroll_id']
         remaining = res['hits']['total']
@@ -279,14 +281,17 @@ class StoreHandler:
         while remaining > 0:
             hits = res['hits']['hits']
             for h in hits:
-                data = (h['_id'], (h['_source']['median'], h['_source']['iqr']))
+                data = (h['_id'], (h['_source']['median'], h['_source']['iqr'],
+                                   h['_source']['minValue'], h['_source']['maxValue']))
                 id_sig.append(data)
                 remaining -= 1
             res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
                                              'hits.hits._id',
                                              'hits.hits._source.median',
-                                             'hits.hits._source.iqr']
+                                             'hits.hits._source.iqr',
+                                             'hits.hits._source.minValue',
+                                             'hits.hits._source.maxValue']
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)

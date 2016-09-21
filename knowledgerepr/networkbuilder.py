@@ -197,6 +197,200 @@ def build_content_sim_relation_num(network, id_sig):
                     network.add_relation(nid1, nid2, Relation.CONTENT_SIM, 1)
 
 
+def build_content_sim_relation_num_overlap_distr(network, id_sig):
+
+    overlap = 0.7
+
+    fields = []
+    domains = []
+    stats = []
+    for c_k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
+        fields.append(c_k)
+        domain = (c_median + c_iqr) - (c_median - c_iqr)
+        domains.append(domain)
+        extreme_left = c_median - c_iqr
+        extreme_right = c_median + c_iqr
+        stats.append((extreme_left, extreme_right))
+
+    fields = [x for (y, x) in sorted(zip(domains, fields), reverse=True)]  # order fields according to domains
+    stats = [x for (y, x) in sorted(zip(domains, stats), reverse=True)]    # order stats  according to domains too
+
+    domains = sorted(domains, reverse=True)  # order domains
+
+    candidate_entries = []
+    for i in range(len(domains)):
+        candidate_entries.append((domains[i], stats[i][0], stats[i][1]))
+
+
+    entries = dict()
+    entries[candidate_entries[0]] = []
+
+    for candidate in candidate_entries:
+        candidate_domain, candidate_x_left, candidate_x_right = candidate
+        for entry in entries.keys():
+            ref_domain, ref_x_left, ref_x_right = entry
+            if  candidate_domain / ref_domain <= overlap:
+                continue  # early stop, not even the entire domain would overlap the necessary amount
+            else:
+                if candidate_x_left > ref_x_left and candidate_x_right < ref_x_right:
+                    if candidate_domain / ref_domain >= overlap:
+                        True
+                if candidate_x_left > ref_x_left:
+                    total_overlap = ref_x_right - candidate_x_left
+                    if total_overlap / candidate_domain >= overlap:
+                        True
+
+
+
+
+    for entry in entries:
+        for (ref_domain, ref_extreme_left, ref_extreme_right) in candidate:
+            continue
+
+
+
+
+
+def build_content_sim_relation_num_overlap_distr_old(network, id_sig):
+
+    # populate vectors
+    entries_initial = dict()
+    total = 0
+    for c_k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
+        total += 1
+        appended = False
+        for k, v in entries_initial.items():
+            (key, median, iqr, min_v, max_v) = k
+            c_extreme_left = c_median - c_iqr
+            c_extreme_right = c_median + c_iqr
+            ref_extreme_left = median - iqr
+            ref_extreme_right = median + iqr
+
+            if c_median < ref_extreme_left or c_median > ref_extreme_right:  ## median has to fall in the range
+                continue
+
+            if c_extreme_left < 0 or c_extreme_right < 0 or ref_extreme_right < 0 or ref_extreme_left < 0:
+                continue
+            """
+            check = False
+            if c_median > median:
+                if (c_median - median) > c_median + iqr:
+                    check = True
+            if c_median <= median:
+                if (median - c_median) > c_median + iqr:
+                    check = True
+            if not check:
+                continue
+            """
+
+            if c_extreme_left >= ref_extreme_left\
+                and c_extreme_left <= ref_extreme_right\
+                or c_extreme_right >= ref_extreme_left\
+                and c_extreme_right <= ref_extreme_right:
+                #if c_median - c_iqr >= median - iqr or c_median + c_iqr <= median + iqr:
+                    entries_initial[k].append((c_k, c_median, c_iqr, c_min_v, c_max_v))
+                    appended = True
+        if not appended:
+            entries_initial[(c_k, c_median, c_iqr, c_min_v, c_max_v)] = [(c_k, c_median, c_iqr, c_min_v, c_max_v)]  # I include myself for convenience
+
+    print("Total entries: " + str(len(entries_initial.keys())))
+
+    for k, v in entries_initial.items():
+        (nid, median, iqr, min_v, max_v) = k
+        info = network.get_info_for([nid])
+        (nid, db_name, source_name, field_name) = info[0]
+        print("SUBSUBMED BY: " + source_name + " - " + field_name + " median: " + str(median))
+        print("")
+        for (nid, median, iqr, min_v, max_v) in v:
+            info = network.get_info_for([nid])
+            (nid, db_name, source_name, field_name) = info[0]
+            print(source_name + " - " + field_name + " median: " + str(median) + " iqr: " + str(iqr))
+        print("")
+
+
+
+def build_content_sim_relation_num_double_clustering(network, id_sig):
+
+    fields = []
+    median_vector = []
+    iqr_vector = []
+
+    # populate vectors
+    total = 0
+    for k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
+        total += 1
+        fields.append(k)
+        median_vector.append(c_median)
+        iqr_vector.append(c_iqr)
+
+    print("Total samples: " + str(total))
+
+    #median_vector = median_vector.reshape(-1, 1)
+    #iqr_vector = iqr_vector.reshape(-1, 1)
+
+    x_median = np.asarray(median_vector)
+    x_iqr = np.asarray(iqr_vector)
+    x_median = x_median.reshape(-1, 1)
+    x_iqr = x_iqr.reshape(-1, 1)
+
+    db_median = DBSCAN(eps=0.1, min_samples=3).fit(x_median)
+    db_iqr = DBSCAN(eps=0.1, min_samples=3).fit(x_iqr)
+    labels_median = db_median.labels_
+    labels_iqr = db_iqr.labels_
+    n_clusters_median = len(set(labels_median)) - (1 if -1 in labels_median else 0)
+    n_clusters_iqr = len(set(labels_iqr)) - (1 if -1 in labels_iqr else 0)
+    print("Num clusters median: " + str(n_clusters_median))
+    print("Num clusters iqr: " + str(n_clusters_iqr))
+
+    clusters_median = defaultdict(list)
+    for i in range(len(labels_median)):
+        clusters_median[labels_median[i]].append(i)
+
+    clusters_iqr = defaultdict(list)
+    for i in range(len(labels_iqr)):
+        clusters_iqr[labels_iqr[i]].append(i)
+
+    print("Clusters median")
+    print("")
+    for k, v in clusters_median.items():
+        if k == -1:
+            continue
+        print("cluster: " + str(k))
+        for el in v:
+            nid = fields[el]
+            info = network.get_info_for([nid])
+            (nid, db_name, source_name, field_name) = info[0]
+            print(source_name + " - " + field_name + " median: " + str(median_vector[el]))
+        print("")
+        print("")
+
+    print("Clusters IQR")
+    print("")
+    for k, v in clusters_iqr.items():
+        if k == -1:
+            continue
+        print("cluster: " + str(k))
+        for el in v:
+            nid = fields[el]
+            info = network.get_info_for([nid])
+            (nid, db_name, source_name, field_name) = info[0]
+            print(source_name + " - " + field_name + " iqr: " + str(iqr_vector[el]))
+        print("")
+        print("")
+
+    """
+    for k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
+        info = network.get_info_for([k])
+        (nid, db_name, source_name, field_name) = info[0]
+        print("{0}-{1} has: {2}-{3}-{4}, iqr: {5}".format(source_name, field_name, c_min_v, c_median, c_max_v, c_iqr))
+        # Check whether the new entry fits in one of the existing entries
+        for k, v in entries.items():
+            (min, median_low, median, median_upper, max) = k
+            if c_min_v > min or c_max_v <= max:
+                continue
+    """
+
+
 def build_pkfk_relation(network):
     total_pkfk_relations = 0
     for n in network.iterate_ids():
