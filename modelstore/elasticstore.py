@@ -213,8 +213,8 @@ class StoreHandler:
             # FIXME: add filter by term length
             filtered = []
             for k, v in term_dict.items():
-                if len(k) > 1:
-                    if v > 1:
+                if len(k) > 3:
+                    if v > 3:
                         try:
                             float(k)
                             continue

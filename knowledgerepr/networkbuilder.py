@@ -35,7 +35,7 @@ def create_sim_graph_text(nid_gen, network, text_engine, tfidf, relation, tfidf_
             for n in N:
                 (data, key, value) = n
                 if nid != key:
-                    print("tsim: {0} <-> {1}".format(nid, key))
+                    #print("tsim: {0} <-> {1}".format(nid, key))
                     network.add_relation(nid, key, relation, value)
     et = time.time()
     print("Create graph schema: {0}".format(str(et - st)))
@@ -167,37 +167,10 @@ def build_content_sim_relation_text(network, fields, signatures):
     create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.CONTENT_SIM)
 
 
-def build_content_sim_relation_num(network, id_sig):
-
-    def get_sig_gen(id_sig):
-        for nid, sig in id_sig:
-            yield sig
-
-    features_gen = get_sig_gen(id_sig)
-    fields = [x[0] for x in id_sig]
-
-    X = np.asarray([x for x in features_gen])
-    db = DBSCAN(eps=0.3, min_samples=2).fit(X)
-    labels = db.labels_
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    print("Total num clusters found: " + str(n_clusters))
-    # group indices by label
-    clusters = defaultdict(list)
-    for i in range(len(labels)):
-        clusters[labels[i]].append(i)
-    # create relations
-    for k, v in clusters.items():
-        if k == -1:
-            continue
-        for el1 in v:
-            for el2 in v:
-                if el1 != el2:
-                    nid1 = fields[el1]
-                    nid2 = fields[el2]
-                    network.add_relation(nid1, nid2, Relation.CONTENT_SIM, 1)
-
-
 def build_content_sim_relation_num_overlap_distr(network, id_sig):
+
+    def connect(nid1, nid2, score):
+        network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
 
     overlap = 0.7
 
@@ -210,103 +183,103 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
         domains.append(domain)
         extreme_left = c_median - c_iqr
         extreme_right = c_median + c_iqr
+        #print(str(extreme_left) + " - " + str(domain) + " - " + str(extreme_right))
         stats.append((extreme_left, extreme_right))
 
-    fields = [x for (y, x) in sorted(zip(domains, fields), reverse=True)]  # order fields according to domains
-    stats = [x for (y, x) in sorted(zip(domains, stats), reverse=True)]    # order stats  according to domains too
+    zipped_and_sorted = sorted(zip(domains, fields, stats), reverse=True)
+    candidate_entries = [(y, x, z[0], z[1]) for (x,y,z) in zipped_and_sorted]
 
-    domains = sorted(domains, reverse=True)  # order domains
+    single_points = []
 
-    candidate_entries = []
-    for i in range(len(domains)):
-        candidate_entries.append((domains[i], stats[i][0], stats[i][1]))
+    for ref in candidate_entries:
+        ref_nid, ref_domain, ref_x_left, ref_x_right = ref
 
+        if ref_domain == 0:
+            single_points.append(ref)
 
-    entries = dict()
-    entries[candidate_entries[0]] = []
+        info1 = network.get_info_for([ref_nid])
 
-    for candidate in candidate_entries:
-        candidate_domain, candidate_x_left, candidate_x_right = candidate
-        for entry in entries.keys():
-            ref_domain, ref_x_left, ref_x_right = entry
-            if  candidate_domain / ref_domain <= overlap:
-                continue  # early stop, not even the entire domain would overlap the necessary amount
-            else:
-                if candidate_x_left > ref_x_left and candidate_x_right < ref_x_right:
-                    if candidate_domain / ref_domain >= overlap:
-                        True
-                if candidate_x_left > ref_x_left:
-                    total_overlap = ref_x_right - candidate_x_left
-                    if total_overlap / candidate_domain >= overlap:
-                        True
+        (nid, db_name, source_name, field_name) = info1[0]
+        #print("")
+        #print("")
+        #print("Checking: " + source_name + " - " + field_name)
+        #print("")
+        #print("")
 
+        for entry in candidate_entries:
+            candidate_nid, candidate_domain, candidate_x_left, candidate_x_right = entry
 
+            if candidate_nid == ref_nid:
+                continue
 
+            if ref_domain == 0:
+                continue
 
-    for entry in entries:
-        for (ref_domain, ref_extreme_left, ref_extreme_right) in candidate:
+            if float(candidate_domain / ref_domain) <= overlap:
+                # early stop, not even the entire domain would overlap the necessary amount
+                # also non of the subsequent domains would, so just skip the loop
+                break
+
+            if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
+                if float(candidate_domain / ref_domain) >= overlap:  # has to be as per the break condition above
+                    actual_overlap = float(candidate_domain / ref_domain)
+                    #info2 = network.get_info_for([candidate_nid])
+                    #(nid, db_name, source_name, field_name) = info2[0]
+                    #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
+                    connect(candidate_nid, ref_nid, actual_overlap)
+            elif candidate_x_left >= ref_x_left and candidate_x_left <= ref_x_right:  # make sure there's overlap
+                domain_overlap = ref_x_right - candidate_x_left
+                if float(domain_overlap / ref_domain) >= overlap:
+                    actual_overlap = float(domain_overlap / ref_domain)
+                    #info2 = network.get_info_for([candidate_nid])
+                    #(nid, db_name, source_name, field_name) = info2[0]
+                    #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
+                    connect(candidate_nid, ref_nid, actual_overlap)
+            elif candidate_x_right <= ref_x_right and candidate_x_right >= ref_x_left:  # make sure there's overlap
+                domain_overlap = candidate_x_right - ref_x_left
+                if float(domain_overlap / ref_domain) >= overlap:
+                    actual_overlap = float(domain_overlap / ref_domain)
+                    #info2 = network.get_info_for([candidate_nid])
+                    #(nid, db_name, source_name, field_name) = info2[0]
+                    #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
+                    connect(candidate_nid, ref_nid, actual_overlap)
+
+    # Final clustering for single points
+
+    fields = []
+    medians = []
+
+    for (nid, domain, x_left, x_right) in single_points:
+        median = x_right - float(x_right / 2)
+        fields.append(nid)
+        medians.append(median)
+
+    x_median = np.asarray(medians)
+    x_median = x_median.reshape(-1, 1)
+
+    db_median = DBSCAN(eps=0.1, min_samples=2).fit(x_median)
+    labels_median = db_median.labels_
+    n_clusters = len(set(labels_median)) - (1 if -1 in labels_median else 0)
+    print("#clusters: " + str(n_clusters))
+
+    clusters_median = defaultdict(list)
+    for i in range(len(labels_median)):
+        clusters_median[labels_median[i]].append(i)
+
+    for k, v in clusters_median.items():
+        if k == -1:
             continue
-
-
-
-
-
-def build_content_sim_relation_num_overlap_distr_old(network, id_sig):
-
-    # populate vectors
-    entries_initial = dict()
-    total = 0
-    for c_k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
-        total += 1
-        appended = False
-        for k, v in entries_initial.items():
-            (key, median, iqr, min_v, max_v) = k
-            c_extreme_left = c_median - c_iqr
-            c_extreme_right = c_median + c_iqr
-            ref_extreme_left = median - iqr
-            ref_extreme_right = median + iqr
-
-            if c_median < ref_extreme_left or c_median > ref_extreme_right:  ## median has to fall in the range
-                continue
-
-            if c_extreme_left < 0 or c_extreme_right < 0 or ref_extreme_right < 0 or ref_extreme_left < 0:
-                continue
-            """
-            check = False
-            if c_median > median:
-                if (c_median - median) > c_median + iqr:
-                    check = True
-            if c_median <= median:
-                if (median - c_median) > c_median + iqr:
-                    check = True
-            if not check:
-                continue
-            """
-
-            if c_extreme_left >= ref_extreme_left\
-                and c_extreme_left <= ref_extreme_right\
-                or c_extreme_right >= ref_extreme_left\
-                and c_extreme_right <= ref_extreme_right:
-                #if c_median - c_iqr >= median - iqr or c_median + c_iqr <= median + iqr:
-                    entries_initial[k].append((c_k, c_median, c_iqr, c_min_v, c_max_v))
-                    appended = True
-        if not appended:
-            entries_initial[(c_k, c_median, c_iqr, c_min_v, c_max_v)] = [(c_k, c_median, c_iqr, c_min_v, c_max_v)]  # I include myself for convenience
-
-    print("Total entries: " + str(len(entries_initial.keys())))
-
-    for k, v in entries_initial.items():
-        (nid, median, iqr, min_v, max_v) = k
-        info = network.get_info_for([nid])
-        (nid, db_name, source_name, field_name) = info[0]
-        print("SUBSUBMED BY: " + source_name + " - " + field_name + " median: " + str(median))
-        print("")
-        for (nid, median, iqr, min_v, max_v) in v:
+        print("Cluster: " + str(k))
+        for el in v:
+            nid = fields[el]
             info = network.get_info_for([nid])
             (nid, db_name, source_name, field_name) = info[0]
-            print(source_name + " - " + field_name + " median: " + str(median) + " iqr: " + str(iqr))
-        print("")
-
+            print(source_name + " - " + field_name + " median: " + str(medians[el]))
+            for el2 in v:
+                if el != el2:
+                    nid1 = fields[el]
+                    nid2 = fields[el2]
+                    connect(nid1, nid2, overlap)
 
 
 def build_content_sim_relation_num_double_clustering(network, id_sig):
@@ -378,17 +351,35 @@ def build_content_sim_relation_num_double_clustering(network, id_sig):
         print("")
         print("")
 
-    """
-    for k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
-        info = network.get_info_for([k])
-        (nid, db_name, source_name, field_name) = info[0]
-        print("{0}-{1} has: {2}-{3}-{4}, iqr: {5}".format(source_name, field_name, c_min_v, c_median, c_max_v, c_iqr))
-        # Check whether the new entry fits in one of the existing entries
-        for k, v in entries.items():
-            (min, median_low, median, median_upper, max) = k
-            if c_min_v > min or c_max_v <= max:
-                continue
-    """
+
+def build_content_sim_relation_num(network, id_sig):
+
+    def get_sig_gen(id_sig):
+        for nid, sig in id_sig:
+            yield sig
+
+    features_gen = get_sig_gen(id_sig)
+    fields = [x[0] for x in id_sig]
+
+    X = np.asarray([x for x in features_gen])
+    db = DBSCAN(eps=0.3, min_samples=2).fit(X)
+    labels = db.labels_
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    print("Total num clusters found: " + str(n_clusters))
+    # group indices by label
+    clusters = defaultdict(list)
+    for i in range(len(labels)):
+        clusters[labels[i]].append(i)
+    # create relations
+    for k, v in clusters.items():
+        if k == -1:
+            continue
+        for el1 in v:
+            for el2 in v:
+                if el1 != el2:
+                    nid1 = fields[el1]
+                    nid2 = fields[el2]
+                    network.add_relation(nid1, nid2, Relation.CONTENT_SIM, 1)
 
 
 def build_pkfk_relation(network):

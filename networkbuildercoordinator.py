@@ -136,8 +136,8 @@ def test_content_sim_num():
 
 if __name__ == "__main__":
 
-    test_content_sim_num()
-    exit()
+    #test_content_sim_num()
+    #exit()
 
     path = None
     if len(sys.argv) == 3:
