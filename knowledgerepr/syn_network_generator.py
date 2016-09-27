@@ -33,7 +33,7 @@ def generate_network_with(num_nodes=10, num_nodes_per_table=2, num_schema_sim=5,
             gen = create_multiple_conn_per_node(num_conn_per_node)
             for x in gen:
                 yield x
-        elif num_nodes <= num_relations:
+        elif num_relations <= num_nodes:
             jump_size = int(num_nodes / num_relations)
             gen = create_conn_every_x_node(source, jump_size)
             for x in gen:
@@ -66,7 +66,8 @@ def generate_network_with(num_nodes=10, num_nodes_per_table=2, num_schema_sim=5,
 if __name__ == "__main__":
     print("Synthetic Network Generator")
 
-    ex = generate_network_with(num_nodes=1000, num_nodes_per_table=10, num_schema_sim=2000, num_content_sim=1500, num_pkfk=500)
+    ex = generate_network_with(num_nodes=1000, num_nodes_per_table=10, num_schema_sim=2000, num_content_sim=1500,
+                               num_pkfk=500)
 
     path = "/Users/ra-mit/development/discovery_proto/syn/test1/"
     serialize_network(ex, path)

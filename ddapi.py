@@ -407,9 +407,20 @@ class DDAPI:
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
-    def traverse_field(self, a, primitives, max_hops) -> DRS:
-        # TODO:
-        return
+    def traverse_field(self, a: DRS, primitives, max_hops) -> DRS:
+        o_drs = DRS([], Operation(OP.NONE))
+        if a.mode == DRSMode.TABLE:
+            print("ERROR: input mode TABLE not supported")
+            return []
+        fringe = a
+        o_drs.absorb_provenance(a)
+        while max_hops > 0:
+            max_hops = max_hops - 1
+            for h in fringe:
+                hits_drs = self.__network.neighbors_id(h, primitives)
+                o_drs = self.union(o_drs, hits_drs)
+            fringe = o_drs  # grow the initial input
+        return o_drs
 
     """
     Convenience functions
