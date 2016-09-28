@@ -372,11 +372,15 @@ class DDAPI:
         if a.mode == DRSMode.FIELDS:
             for h1 in a:  # h1 is a Hit
                 for h2 in b:  # h2 is a Hit
+                    if h1 == h2:
+                        return o_drs  # same source and target field
                     res_drs = self.__network.find_path_hit(h1, h2, primitives)
                     o_drs = o_drs.absorb(res_drs)
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in b:  # h2 is a table: str
+                    if h1 == h2:
+                        return o_drs  # same source ant target table
                     res_drs = self.__network.find_path_table(
                         h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
@@ -407,19 +411,19 @@ class DDAPI:
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
-    def traverse_field(self, a: DRS, primitives, max_hops) -> DRS:
+    def traverse(self, a: DRS, primitives, max_hops) -> DRS:
         o_drs = DRS([], Operation(OP.NONE))
         if a.mode == DRSMode.TABLE:
             print("ERROR: input mode TABLE not supported")
             return []
-        fringe = a
+        fringe = [x for x in a]
         o_drs.absorb_provenance(a)
         while max_hops > 0:
             max_hops = max_hops - 1
             for h in fringe:
                 hits_drs = self.__network.neighbors_id(h, primitives)
                 o_drs = self.union(o_drs, hits_drs)
-            fringe = o_drs  # grow the initial input
+            fringe = [x for x in o_drs]  # grow the initial input
         return o_drs
 
     """
