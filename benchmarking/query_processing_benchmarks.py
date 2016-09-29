@@ -146,7 +146,7 @@ def experiment_changing_graph_density_constant_size(repetitions=10):
 
 def experiment_changing_max_hops_tc_queries(repetitions=100):
     perf_results = dict()
-    for i in range(30):
+    for i in range(10):
         i = i +1
         fn = syn.generate_network_with(num_nodes=1000, num_nodes_per_table=10, num_schema_sim=500,
                                        num_content_sim=500, num_pkfk=500)
@@ -182,6 +182,7 @@ def get_percentiles(list_of_lists):
         results.append(percentiles)
     return results
 
+
 def test():
     # Fixed graph density, differing sizes (nodes)
 
@@ -216,21 +217,86 @@ def test():
     print("q4: " + str(p5) + " - " + str(p50) + " - " + str(p95))
 
 
+def write_csv(name, lines):
+    with open(name, 'a') as csvfile:
+        for line in lines:
+            csvfile.write(line)
+            csvfile.write('\n')
+
+
+def write_results_to_csv_three_queries(name, results, csv=False, dat=False):
+    lines = []
+
+    from collections import OrderedDict
+    od = OrderedDict(sorted(results.items()))
+
+    header = None
+    if csv:
+        header = "x_axis,q2_5p,q2_median,q2_95p,q3_5p,q3_median,q3_95p,q4_5p,q4_median,q4_95p"
+    elif dat:
+        header = "# x_axis q2_5p q2_median q2_95p q3_5p q3_median q3_95p q4_5p q4_median q4_95p"
+    lines.append(header)
+    for k, v in od.items():
+        (q2, q3, q4) = v
+        (fivep_2, median_2, ninetyp_2) = q2
+        (fivep_3, median_3, ninetyp_3) = q3
+        (fivep_4, median_4, ninetyp_4) = q4
+        separator = None
+        if csv:
+            separator = ','
+        elif dat:
+            separator = ' '
+        string = separator.join([str(k), str(fivep_2), str(median_2), str(ninetyp_2), str(fivep_3),
+                           str(median_3), str(ninetyp_3), str(fivep_4), str(median_4), str(ninetyp_4)])
+        lines.append(string)
+
+    write_csv(name, lines)
+
+
+def write_results_to_csv_one_query(name, results, csv=False, dat=False):
+    lines = []
+
+    from collections import OrderedDict
+    od = OrderedDict(sorted(results.items()))
+
+    header = None
+    if csv:
+        header = "x_axis,q2_5p,q2_median,q2_95p,q3_5p,q3_median,q3_95p,q4_5p,q4_median,q4_95p"
+    elif dat:
+        header = "# x_axis q2_5p q2_median q2_95p q3_5p q3_median q3_95p q4_5p q4_median q4_95p"
+    lines.append(header)
+    for k, v in od.items():
+        (fivep_2, median_2, ninetyp_2) = v[0]
+        separator = None
+        if csv:
+            separator = ','
+        elif dat:
+            separator = ' '
+        string = separator.join([str(k), str(fivep_2), str(median_2), str(ninetyp_2)])
+        lines.append(string)
+
+    write_csv(name, lines)
+
+
 if __name__ == "__main__":
 
-    #changing_size_results = experiment_changing_input_size(repetitions=10)
-    #for k, v in changing_size_results.items():
-    #    print(str(k) + " -> " + str(v))
+    changing_size_results = experiment_changing_input_size(repetitions=10)
+    for k, v in changing_size_results.items():
+        print(str(k) + " -> " + str(v))
+    write_results_to_csv_three_queries("/Users/ra-mit/research/data-discovery/papers/dd-paper/evaluation_results/qp_performance/data/changing_input_size.dat", changing_size_results, dat=True)
 
-    #changing_graph_size_results = experment_changing_graph_size_constant_density(repetitions=10)
-    #for k, v in changing_graph_size_results.items():
-    #    print(str(k) + " -> " + str(v))
+    changing_graph_size_results = experiment_changing_graph_size_constant_density(repetitions=10)
+    for k, v in changing_graph_size_results.items():
+        print(str(k) + " -> " + str(v))
+    write_results_to_csv_three_queries("/Users/ra-mit/research/data-discovery/papers/dd-paper/evaluation_results/qp_performance/data/changing_graph_size_density_constant.dat", changing_graph_size_results, dat=True)
 
-    #changing_graph_density_results = experiment_changing_graph_density_constant_size(repetitions=10)
-    #for k, v in changing_graph_density_results.items():
-    #    print(str(k) + " -> " + str(v))
+    changing_graph_density_results = experiment_changing_graph_density_constant_size(repetitions=10)
+    for k, v in changing_graph_density_results.items():
+        print(str(k) + " -> " + str(v))
+    write_results_to_csv_three_queries("/Users/ra-mit/research/data-discovery/papers/dd-paper/evaluation_results/qp_performance/data/changing_graph_density_fixed_graph_size.dat", changing_graph_density_results, dat=True)
 
     changing_hops_results = experiment_changing_max_hops_tc_queries(repetitions=10)
     for k, v in changing_hops_results.items():
         print(str(k) + " -> " + str(v))
+    write_results_to_csv_one_query("/Users/ra-mit/research/data-discovery/papers/dd-paper/evaluation_results/qp_performance/data/changing_hops_tc.dat", changing_hops_results, dat=True)
 
