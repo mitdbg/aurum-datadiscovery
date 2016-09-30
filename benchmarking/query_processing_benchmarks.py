@@ -1,5 +1,5 @@
 from knowledgerepr import syn_network_generator as syn
-from api.apiutils import  Relation
+from api.apiutils import Relation
 import numpy as np
 from ddapi import API
 

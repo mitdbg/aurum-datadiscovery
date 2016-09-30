@@ -256,6 +256,67 @@ class FieldNetwork:
         return None
 
     def _bidirectional_pred_succ_with_table_hops(self, source, target, relation, api):
+
+        def get_table_neighbors(hit, relation):
+            direct_neighbors = self.neighbors_id(hit, relation)
+            table_neighbors = api.drs_expand_to_table(direct_neighbors)
+            return [x for x in table_neighbors]
+
+        def deep_explore(candidates, target_group, already_visited, path, max_hops):
+            """
+            Recursively depth-first explore the graph.
+            Returns (boolean, [])
+            """
+
+            local_max_hops = max_hops
+
+            if local_max_hops == 0:
+                return False
+
+            # first check membership
+            for c in candidates:
+                if c in target_group:
+                    path.insert(0, c)
+                    return True
+
+            # if not, then we explore these individually
+            for c in candidates:
+                if c in already_visited:
+                    continue  # next candidate
+                else:
+                    already_visited.append(c)  # add candidate to set of already visited
+
+                next_level_candidates = get_table_neighbors(c, relation)  # get next set of candidates
+                if len(next_level_candidates) == 0:
+                    continue
+                next_max_hops = local_max_hops - 1  # reduce one level depth and go ahead
+                success = deep_explore(next_level_candidates, target_group, already_visited, path, next_max_hops)
+                if success:
+                    path.insert(0, c)
+                    return True
+            return False  # if all nodes were already visited
+
+        # maximum number of hops
+        max_hops = 5
+
+        o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
+
+        # TODO: same src == trg, etc
+
+        src_drs = api.drs_from_table(source)
+        trg_drs = api.drs_from_table(target)
+
+        found_paths = []
+        path = []
+        candidates = [x for x in src_drs]
+
+        for c in candidates:
+            success = deep_explore([c], [x for x in trg_drs], [], path, max_hops)
+            if success:
+                found_paths.append(path)
+            path = []
+
+    def real_bidirectional_pred_succ_with_table_hops(self, source, target, relation, api):
         """
         Bidirectional shortest path with table hops, i.e. two-relation exploration
         :returns (pred,succ,w) where
