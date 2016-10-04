@@ -372,11 +372,15 @@ class DDAPI:
         if a.mode == DRSMode.FIELDS:
             for h1 in a:  # h1 is a Hit
                 for h2 in b:  # h2 is a Hit
+                    if h1 == h2:
+                        return o_drs  # same source and target field
                     res_drs = self.__network.find_path_hit(h1, h2, primitives)
                     o_drs = o_drs.absorb(res_drs)
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
                 for h2 in b:  # h2 is a table: str
+                    if h1 == h2:
+                        return o_drs  # same source ant target table
                     res_drs = self.__network.find_path_table(
                         h1, h2, primitives, self)
                     o_drs = o_drs.absorb(res_drs)
@@ -407,9 +411,20 @@ class DDAPI:
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
-    def traverse_field(self, a, primitives, max_hops) -> DRS:
-        # TODO:
-        return
+    def traverse(self, a: DRS, primitives, max_hops) -> DRS:
+        o_drs = DRS([], Operation(OP.NONE))
+        if a.mode == DRSMode.TABLE:
+            print("ERROR: input mode TABLE not supported")
+            return []
+        fringe = [x for x in a]
+        o_drs.absorb_provenance(a)
+        while max_hops > 0:
+            max_hops = max_hops - 1
+            for h in fringe:
+                hits_drs = self.__network.neighbors_id(h, primitives)
+                o_drs = self.union(o_drs, hits_drs)
+            fringe = [x for x in o_drs]  # grow the initial input
+        return o_drs
 
     """
     Convenience functions
@@ -466,126 +481,6 @@ class DDAPI:
                  "the field in the following way:")
         print(
             "field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
-
-    """
-    Function API
-    """
-
-    def __join_path(self, source, target):
-        """
-        Provides the join path between the source and target fields, if any
-        :param source: the source field
-        :param target: the target field
-        :return: the join path between source and target if any
-        """
-        first_class_path = self.__network.find_path(
-            source, target, Relation.PKFK)
-        second_class_path = self.__network.find_path(
-            source, target, Relation.CONTENT_SIM)
-        path = first_class_path.extend(second_class_path)
-        if path is None:
-            return []
-        return path
-
-    def __schema_complement(self, source_name):
-        """
-        Given a source of reference (e.g. a relational table) it uses information from
-        other available tables (tables) to enrich the schema of the provided one -- to add columns
-        :param source_name: the name of the reference source
-        :return:
-        """
-        # Retrieve all fields of the given source
-        results = store_client.get_all_fields_of_source(source_name)
-        res = [x for x in results]
-        matches = list()
-        # Find if there are pkfk connections for any of the columns
-        for r in res:
-            id, source_name, field_name = r
-            q = (source_name, field_name)
-            ns = self.__network.neighbors(q, Relation.PKFK)
-            for neighbor in ns:
-                matches.append(neighbor)
-
-        # Find if there are any content_sim connection
-        for r in res:
-            id, source_name, field_name = r
-            q = (source_name, field_name)
-            ns = self.__network.neighbors(q, Relation.CONTENT_SIM)
-            for neighbor in ns:
-                matches.append(neighbor)
-
-        return matches
-
-    def __entity_complement(self):
-        """
-        Given a table of reference (table_to_enrich) it uses information from
-        other available tables (tables) to add entities -- to add rows
-        """
-        print("TODO")
-
-    def __fill_schema(self, virtual_schema):
-        tokens = virtual_schema.split(",")
-        tokens = [t.strip() for t in tokens]
-        aprox = dict()
-        # Find set of schema_sim for each field provided in the virtual schema
-        for t in tokens:
-            hits = self.schema_name_search(t)
-            aprox[t] = hits
-
-        # Find the most suitable table, by checking which of the previous fields are schema-connected,
-        # and selecting the set with the biggest size.
-        # TODO:
-
-        # Use table as seed. Find PKFK for any of the fields in the table, that may join to the other
-        # requested attributes
-        # TODO:
-
-        return aprox
-
-    def __find_tables_matching_schema(self, list_keywords, topk):
-        """
-        Given a string with comma separated values, such as 'x, y, z', it tries to find
-        tables in the data that contains as many of the attributes included in the original string,
-        for the given example, tables with attributes x and y and z
-        :param list_keywords: the string with comma separated keywords
-        :param topk: the maximum number of results to return
-        :return: topk results or as many as available
-        """
-
-        def attr_similar_to(keyword, topk, score):
-            results = self.schema_name_search(keyword, max_results=100)
-            r = [(x.source_name, x.field_name, x.score) for x in results]
-            return r
-
-        '''
-        Return list of tables that contain the required schema
-        '''
-        all_res = []
-        # First get results for each of the provided keywords
-        # (input_keyword , [((table, column), score)]
-        for keyword in list_keywords:
-            res = attr_similar_to(keyword, 30, False)
-            all_res.append((keyword, res))
-
-        # Group by tables, and include the (kw, score) that matched
-        group_by_table_keyword = dict()
-        for (keyword, res) in all_res:
-            for (fname, cname, score) in res:
-                if fname not in group_by_table_keyword:
-                    group_by_table_keyword[fname] = []
-                included = False
-                for kw, score in group_by_table_keyword[fname]:
-                    if keyword.lower() == kw.lower():
-                        included = True  # don't include more than once
-                if not included:
-                    group_by_table_keyword[fname].append((keyword, score))
-                else:
-                    continue
-
-        # Create final output
-        to_return = sorted(group_by_table_keyword.items(),
-                           key=lambda x: len(x[1]), reverse=True)
-        return to_return[:topk]
 
 
 class ResultFormatter:

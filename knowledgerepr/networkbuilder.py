@@ -386,7 +386,7 @@ def build_pkfk_relation(network):
     total_pkfk_relations = 0
     for n in network.iterate_ids():
         n_card = network.get_cardinality_of(n)
-        if n_card > 0.5:  # Early check if this is a candidate
+        if n_card > 0.7:  # Early check if this is a candidate
             neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
             for ne in neighborhood:
                 if ne is not n:
