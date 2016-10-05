@@ -1,4 +1,5 @@
 import unittest
+from api.apiutils import Scope
 from algebra import API
 from mock import Mock, \
                  MagicMock, \
@@ -9,13 +10,39 @@ from mock import Mock, \
 class TestAPI(unittest.TestCase):
 
     def setUp(self):
-        self.mock_network = MagicMock()
+        self.m_network = MagicMock()
+        self.m_store_client = MagicMock()
 
-    @patch('algebra.StoreHandler')
     def test_initialization(self, *args):
-        api = API(self.mock_network)
-        self.assertEqual(api._Algebra__network, self.mock_network)
-        self.assertTrue(isinstance(api._Algebra__store_client, MagicMock))
+        api = API(self.m_network, self.m_store_client)
+
+        self.assertEqual(api._Algebra__network, self.m_network)
+        self.assertEqual(api._Algebra__store_client, self.m_store_client)
+        # self.assertTrue(isinstance(api._Algebra__store_client, MagicMock))
+
+
+class testAlgebra(unittest.TestCase):
+
+    # @patch('algebra.StoreHandler')
+    def setUp(self):
+        self.m_network = MagicMock()
+        self.m_store_client = MagicMock()
+        self.api = API(self.m_network, self.m_store_client)
+
+    def test_keyword_search_db(self):
+        kw = 'foo'
+        scope = Scope.DB
+        self.api.search_keyword(kw=kw, scope=scope)
+        self.m_network.assert_not_called()
+
+    def test_keyword_search_source(self):
+        pass
+
+    def test_keyword_search_field(self):
+        pass
+
+    def test_keyword_search_content(self):
+        pass
 
 
 
