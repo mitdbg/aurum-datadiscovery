@@ -23,12 +23,42 @@ class Algebra:
     Basic API
     """
 
-    def search_keyword(self, kw: str, scope: KWType, max_results=10) -> DRS:
-        import pdb; pdb.set_trace()
-        hits = self.__store_client.search_keyword(
-            kw, scope, max_results=max_results)
+    def search_keyword(self, kw: str, scope: Scope, max_results=10) -> DRS:
+        """
+        Performs a keyword search over the contents of the data.
+        Scope specifies where elasticsearch should be looking for matches.
+        i.e. table titles (SOURCE), columns (FIELD), or comment (SOURCE)
 
-        pass
+        :param kw: the keyword to serch
+        :param max_results: maximum number of results to return
+        :return: returns a DRS
+        """
+
+        kw_type = self._scope_to_kw_type(scope)
+        hits = self._store_client.search_keyword(
+            keywords=kw, elasticfieldname=kw_type, max_results=max_results)
+
+        # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
+        return drs
+
+
+    def _scope_to_kw_type(self, scope: Scope) -> KWType:
+        kw_type = None
+        if scope == Scope.DB:
+            raise Error('DB Scope is not implemeneted')
+            # # raise Exception('spam', 'eggs')
+            # # raise(NameError())
+            # raise ValueError('The day is too frabjous.')
+        elif scope == Scope.SOURCE:
+            kw_type = KWType.KW_TABLE
+        elif scope == Scope.FIELD:
+            kw_type = KWType.KW_SCHEMA
+        elif scope == Scope.CONTENT:
+            kw_type = KWType.KW_TEXT
+
+        return kw_type
+
 
 class API(Algebra):
     def __init__(self, *args, **kwargs):
