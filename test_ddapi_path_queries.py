@@ -54,7 +54,10 @@ class TestDDApiPathQueries(unittest.TestCase):
         for el in data:
             print(str(el))
 
-        res.paths()
+        print("Paths: ")
+        paths = res.paths()
+        for p in paths:
+            print(str(p))
 
     def test_paths_between_from_tables(self):
         print(self._testMethodName)
@@ -72,7 +75,10 @@ class TestDDApiPathQueries(unittest.TestCase):
         for el in data:
             print(str(el))
 
-        res.paths()
+        print("Paths: ")
+        paths = res.paths()
+        for p in paths:
+            print(str(p))
 
     def test_paths(self):
         print(self._testMethodName)
