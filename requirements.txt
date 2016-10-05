@@ -64,3 +64,7 @@ urllib3==1.15.1
 uWSGI==2.0.12
 Werkzeug==0.11.3
 wheel==0.24.0
+
+# testing
+mock==2.0.0
+pdb==0.1
