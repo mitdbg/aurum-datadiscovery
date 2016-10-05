@@ -2,10 +2,7 @@ import unittest
 from modelstore.elasticstore import KWType
 from api.apiutils import Scope
 from algebra import API
-from mock import Mock, \
-                 MagicMock, \
-                 patch, \
-                 mock_open
+from mock import MagicMock, patch
 
 
 class TestAPI(unittest.TestCase):
@@ -34,45 +31,27 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
+    @patch('algebra.DRS', MagicMock(return_value='return_drs'))
+    def test_keyword_search_source(self, *args):
+        kw = 'foo'
+        scope = Scope.SOURCE
+        max_results = 11
+        search_keyword = self.m_store_client.search_keyword
 
-        # hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
-        # drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
-        # return drs
+        result = self.api.search_keyword(
+            kw=kw, scope=scope, max_results=max_results)
 
-    # def test_keyword_search_source(self):
-    #     kw = 'foo'
-    #     scope = Scope.SOURCE
-    #     max_results = 11
-    #     search_keywords = self.m_store_client.search_keywords
-
-    #     self.api.search_keyword(kw=kw, scope=scope, max_results=max_results)
-
-    #     self.m_network.assert_not_called()
-    #     # import pdb; pdb.set_trace()
-    #     search_keywords.assert_called_with(
-    #         kw=kw, elasticfieldname=KWType.KW_TABLE, max_results=max_results)
-
-    #     # pass
+        self.m_network.assert_not_called()
+        search_keyword.assert_called_with(
+            keywords=kw, elasticfieldname=KWType.KW_TABLE,
+            max_results=max_results)
+        self.assertEqual(result, 'return_drs')
 
     def test_keyword_search_field(self):
         pass
 
     def test_keyword_search_content(self):
         pass
-
-
-
-
-    # def test_isupper(self):
-    #     self.assertTrue('FOO'.isupper())
-    #     self.assertFalse('Foo'.isupper())
-
-    # def test_split(self):
-    #     s = 'hello world'
-    #     self.assertEqual(s.split(), ['hello', 'world'])
-    #     # check that s.split fails when the separator is not a string
-    #     with self.assertRaises(TypeError):
-    #         s.split(2)
 
 
 if __name__ == '__main__':
