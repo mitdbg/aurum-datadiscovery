@@ -1,4 +1,5 @@
 import unittest
+from modelstore.elasticstore import KWType
 from api.apiutils import Scope
 from algebra import API
 from mock import Mock, \
@@ -16,9 +17,9 @@ class TestAPI(unittest.TestCase):
     def test_initialization(self, *args):
         api = API(self.m_network, self.m_store_client)
 
-        self.assertEqual(api._Algebra__network, self.m_network)
-        self.assertEqual(api._Algebra__store_client, self.m_store_client)
-        # self.assertTrue(isinstance(api._Algebra__store_client, MagicMock))
+        self.assertEqual(api._network, self.m_network)
+        self.assertEqual(api._store_client, self.m_store_client)
+        # self.assertTrue(isinstance(api._store_client, MagicMock))
 
 
 class testAlgebra(unittest.TestCase):
@@ -30,13 +31,28 @@ class testAlgebra(unittest.TestCase):
         self.api = API(self.m_network, self.m_store_client)
 
     def test_keyword_search_db(self):
-        kw = 'foo'
-        scope = Scope.DB
-        self.api.search_keyword(kw=kw, scope=scope)
-        self.m_network.assert_not_called()
-
-    def test_keyword_search_source(self):
+        # not implemented
         pass
+
+
+        # hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
+        # drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
+        # return drs
+
+    # def test_keyword_search_source(self):
+    #     kw = 'foo'
+    #     scope = Scope.SOURCE
+    #     max_results = 11
+    #     search_keywords = self.m_store_client.search_keywords
+
+    #     self.api.search_keyword(kw=kw, scope=scope, max_results=max_results)
+
+    #     self.m_network.assert_not_called()
+    #     # import pdb; pdb.set_trace()
+    #     search_keywords.assert_called_with(
+    #         kw=kw, elasticfieldname=KWType.KW_TABLE, max_results=max_results)
+
+    #     # pass
 
     def test_keyword_search_field(self):
         pass
