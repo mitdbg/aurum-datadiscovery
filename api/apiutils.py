@@ -39,7 +39,7 @@ def compute_field_id(db_name, source_name, field_name):
 
 class Scope(Enum):
     DB = 0
-    Source = 1
+    SOURCE = 1
     FIELD = 2
     CONTENT = 3
 
