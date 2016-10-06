@@ -2,6 +2,7 @@ from modelstore.elasticstore import StoreHandler
 
 from modelstore.elasticstore import KWType
 
+from api.apiutils import compute_field_id as id_from
 from api.apiutils import Operation
 from api.apiutils import OP
 from api.apiutils import Scope
@@ -23,7 +24,7 @@ class Algebra:
     Basic API
     """
 
-    def search_keyword(self, kw: str, scope: Scope, max_results=10) -> DRS:
+    def keyword_search(self, kw: str, scope: Scope, max_results=10) -> DRS:
         """
         Performs a keyword search over the contents of the data.
         Scope specifies where elasticsearch should be looking for matches.
@@ -42,8 +43,14 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
+    """
+    Helper Functions
+    """
 
     def _scope_to_kw_type(self, scope: Scope) -> KWType:
+        """
+        Converts a relation scope to a keyword type for elasticsearch.
+        """
         kw_type = None
         if scope == Scope.DB:
             raise Error('DB Scope is not implemeneted')
@@ -58,6 +65,18 @@ class Algebra:
             kw_type = KWType.KW_TEXT
 
         return kw_type
+
+    def _node_to_hit(self, node: (str, str, str)) -> DRS:
+        """
+        Given a field and source name, it returns a Hit with its representation
+        :param field: a tuple with the name of the field,
+            (db_name, source_name, field_name)
+        :return: a Hit
+        """
+        db, source, field = node
+        nid = id_from(db, source, field)
+        hit = Hit(nid, db, source, field, 0)
+        return hit
 
 
 class API(Algebra):
