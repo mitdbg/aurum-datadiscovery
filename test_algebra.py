@@ -30,6 +30,7 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
+    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_source(self, *args):
         kw = 'foo'
@@ -42,10 +43,11 @@ class testAlgebra(unittest.TestCase):
 
         self.m_network.assert_not_called()
         search_keyword.assert_called_with(
-            keywords=kw, elasticfieldname=KWType.KW_TABLE,
+            keywords=kw, elasticfieldname=0,
             max_results=max_results)
         self.assertEqual(result, 'return_drs')
 
+    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_field(self):
         kw = 'foo'
@@ -58,10 +60,11 @@ class testAlgebra(unittest.TestCase):
 
         self.m_network.assert_not_called()
         search_keyword.assert_called_with(
-            keywords=kw, elasticfieldname=KWType.KW_SCHEMA,
+            keywords=kw, elasticfieldname=0,
             max_results=max_results)
         self.assertEqual(result, 'return_drs')
 
+    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_content(self):
         kw = 'foo'
@@ -74,12 +77,12 @@ class testAlgebra(unittest.TestCase):
 
         self.m_network.assert_not_called()
         search_keyword.assert_called_with(
-            keywords=kw, elasticfieldname=KWType.KW_TEXT,
+            keywords=kw, elasticfieldname=0,
             max_results=max_results)
         self.assertEqual(result, 'return_drs')
 
     # @patch('algebra.DRS', MagicMock(return_value='return_drs'))
-    # @patch('algebra._hit_from_node', MagicMock(return_value='return_hit'))
+    # @patch('algebra._node_to_hit', MagicMock(return_value='return_hit'))
     # def test_neighbor_search_pkfk_node(self):
     #     db = 'db'
     #     source = 'source_table'
