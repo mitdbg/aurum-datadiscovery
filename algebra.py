@@ -46,7 +46,8 @@ class Algebra:
                         relation: Relation,
                         max_hops=None):
 
-        pass
+        i_hit = self._node_or_hit_to_hit(node_or_hit)
+        hits = self._network.neighbor_id(i_hit, relation)
 
     """
     Helper Functions
@@ -71,17 +72,28 @@ class Algebra:
 
         return kw_type
 
-    def _node_or_hit_to_hit(self, node_or_hit: (str, str, str)) -> DRS:
+    def _node_hit_or_drs_to_drs(self, node_hit_or_drs) -> DRS:
+        if isinstance(node_hit_or_drs, DRS):
+            return DRS
+        if isinstance(node_hit_or_drs, Hit):
+            return self._hit_to_drs(node_hit_or_drs)
+        if isinstance(node_hit_or_drs, tuple):
+            node_hit_or_drs = self._node_to_hit(node_hit_or_drs)
+            node_hit_or_drs = self._hit_to_drs(node_hit_or_drs)
+            return node_hit_or_drs
+
+    def _hit_to_drs(self, hit: Hit) -> DRS:
+        drs = DRS([hit], Operation(OP.ORIGIN))
+        return drs
+
+    def _node_to_hit(self, node: (str, str, str)) -> Hit:
         """
         Given a field and source name, it returns a Hit with its representation
         :param field: a tuple with the name of the field,
             (db_name, source_name, field_name)
         :return: a Hit
         """
-        if isinstance(node_or_hit, Hit):
-            return node_or_hit
-
-        db, source, field = node_or_hit
+        db, source, field = node
         nid = id_from(db, source, field)
         hit = Hit(nid, db, source, field, 0)
         return hit

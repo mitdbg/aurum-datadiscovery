@@ -90,8 +90,8 @@ class testAlgebra(unittest.TestCase):
     """
 
     # @patch('algebra.DRS', MagicMock(return_value='return_drs'))
-    # @patch(
-    #     'algebra.Algebra._node_or_hit_to_hit', MagicMock(return_value='return_hit'))
+    # @patch('algebra.Algebra._node_or_hit_to_hit',
+    #        MagicMock(return_value='return_hit'))
     # def test_neighbor_search_pkfk_node(self):
     #     db = 'db'
     #     source = 'source_table'
@@ -117,11 +117,24 @@ class TestAlgebraHelpers(unittest.TestCase):
 
     @patch('algebra.Hit', MagicMock(return_value='result_hit'))
     @patch('algebra.id_from', MagicMock())
-    @patch('algebra.isinstance', MagicMock(return_value=False))
-    def test_node_or_hit_to_hit(self):
+    # @patch('algebra.isinstance', MagicMock(return_value=False))
+    def test_node_to_hit(self):
         node = ('foo', 'bar', 'fizz')
-        result = self.api._node_or_hit_to_hit(node_or_hit=node)
+        result = self.api._node_to_hit(node=node)
         self.assertEqual(result, 'result_hit')
+
+    @patch('algebra.DRS', MagicMock(return_value='result_drs'))
+    # @patch('algebra.isinstance', MagicMock(return_value=False))
+    def test_hit_to_drs(self):
+        hit = 'hit'
+        result = self.api._hit_to_drs(hit=hit)
+        self.assertEqual(result, 'result_drs')
+
+    @patch('algebra.Hit', MagicMock(return_value='result_hit'))
+    @patch('algebra.id_from', MagicMock())
+    @patch('algebra.isinstance', MagicMock(return_value=False))
+    def test_node_hit_or_drs_to_drs(self):
+        pass
 
 
 
