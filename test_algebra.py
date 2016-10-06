@@ -30,6 +30,10 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
+    """
+    Neighbor Search
+    """
+
     @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_source(self, *args):
@@ -81,8 +85,13 @@ class testAlgebra(unittest.TestCase):
             max_results=max_results)
         self.assertEqual(result, 'return_drs')
 
+    """
+    Neighbor Search
+    """
+
     # @patch('algebra.DRS', MagicMock(return_value='return_drs'))
-    # @patch('algebra._node_to_hit', MagicMock(return_value='return_hit'))
+    # @patch(
+    #     'algebra.Algebra._node_or_hit_to_hit', MagicMock(return_value='return_hit'))
     # def test_neighbor_search_pkfk_node(self):
     #     db = 'db'
     #     source = 'source_table'
@@ -90,10 +99,10 @@ class testAlgebra(unittest.TestCase):
     #     node = (db, source, field)
 
     #     relation = Relation.PKFK
-    #     max_results = 11
+    #     max_hops = 11
 
     #     result = self.api.neighbor_search(
-    #         node=node, relation=relation, max_results=max_results)
+    #         node_or_hit=node, relation=relation, max_hops=max_hops)
 
     #     self.m_network.assert_called_with('return_hit', Relation.PKFK)
     #     self.assertEqual(result, 'return_drs')
@@ -108,9 +117,10 @@ class TestAlgebraHelpers(unittest.TestCase):
 
     @patch('algebra.Hit', MagicMock(return_value='result_hit'))
     @patch('algebra.id_from', MagicMock())
-    def test_node_to_hit(self):
+    @patch('algebra.isinstance', MagicMock(return_value=False))
+    def test_node_or_hit_to_hit(self):
         node = ('foo', 'bar', 'fizz')
-        result = self.api._node_to_hit(node=node)
+        result = self.api._node_or_hit_to_hit(node_or_hit=node)
         self.assertEqual(result, 'result_hit')
 
 

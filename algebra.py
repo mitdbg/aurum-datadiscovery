@@ -12,8 +12,6 @@ from api.apiutils import DRSMode
 from api.apiutils import Hit
 
 
-
-
 class Algebra:
 
     def __init__(self, network, store_client):
@@ -43,6 +41,13 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
+    def neighbor_search(self,
+                        node_or_hit: (str, str, str),
+                        relation: Relation,
+                        max_hops=None):
+
+        pass
+
     """
     Helper Functions
     """
@@ -66,14 +71,17 @@ class Algebra:
 
         return kw_type
 
-    def _node_to_hit(self, node: (str, str, str)) -> DRS:
+    def _node_or_hit_to_hit(self, node_or_hit: (str, str, str)) -> DRS:
         """
         Given a field and source name, it returns a Hit with its representation
         :param field: a tuple with the name of the field,
             (db_name, source_name, field_name)
         :return: a Hit
         """
-        db, source, field = node
+        if isinstance(node_or_hit, Hit):
+            return node_or_hit
+
+        db, source, field = node_or_hit
         nid = id_from(db, source, field)
         hit = Hit(nid, db, source, field, 0)
         return hit
