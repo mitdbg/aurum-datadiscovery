@@ -82,6 +82,8 @@ class Algebra:
         :param b: another iterable object
         :return: the intersection of the two provided iterable objects
         """
+        a = self._general_to_drs(a)
+        b = self._general_to_drs(b)
         error_text = ("Input parameters are not in the same mode ",
                       "(fields, table)")
         assert a.mode == b.mode, error_text
@@ -95,6 +97,8 @@ class Algebra:
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
+        a = self._general_to_drs(a)
+        b = self._general_to_drs(b)
         error_text = ("Input parameters are not in the same mode ",
                       "(fields, table)")
         assert a.mode == b.mode, error_text
@@ -102,6 +106,8 @@ class Algebra:
         return o_drs
 
     def difference(self, a: DRS, b: DRS) -> DRS:
+        a = self._general_to_drs(a)
+        b = self._general_to_drs(b)
         """
         Returns elements that are in either a or b
         :param a: an iterable object
