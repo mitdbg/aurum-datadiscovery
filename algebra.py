@@ -41,13 +41,33 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
-    # def neighbor_search(self,
-    #                     node_or_hit: (str, str, str),
-    #                     relation: Relation,
-    #                     max_hops=None):
+    def neighbor_search(self,
+                        general_input,
+                        relation: Relation,
+                        max_hops=None):
+        """
+        Given an nid, node, hit or DRS, finds neighbors with specified
+        relation.
+        :param nid, node tuple, Hit, or DRS:
+        """
+        # convert whatever input to a DRS
+        i_drs = self._general_to_drs(general_input)
 
-    #     i_hit = self._node_or_hit_to_hit(node_or_hit)
-    #     hits = self._network.neighbor_id(i_hit, relation)
+        # import pdb; pdb.set_trace()
+        # prepare an output DRS
+        import pdb; pdb.set_trace()
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, relation)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
 
     """
     Helper Functions
@@ -88,7 +108,7 @@ class Algebra:
             return general_input
         else:
             raise ValueError(
-                'Input is not an integer, field tuple, hit, or DRS')
+                'Input is not an integer, field tuple, Hit, or DRS')
 
     def _nid_to_hit(self, nid: int) -> Hit:
         """
@@ -112,13 +132,22 @@ class Algebra:
         hit = Hit(nid, db, source, field, 0)
         return hit
 
-    def _hit_to_drs(self, hit: Hit) -> DRS:
+    def _hit_to_drs(self, hit: Hit, table_mode=False) -> DRS:
         """
-        Given a Hit, return a DRS
+        Given a Hit, return a DRS. If in table mode, the resulting DRS will
+        contain Hits representing that table.
         :param hit: Hit
+        :param table_mode: if the Hit represents an entire table
         :return: DRS
         """
-        drs = DRS([hit], Operation(OP.ORIGIN))
+        drs = None
+        if table_mode:
+            table = hit.source_name
+            hits = self._network.get_hits_from_table(table)
+            drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+        else:
+            drs = DRS([hit], Operation(OP.ORIGIN))
+
         return drs
 
 
