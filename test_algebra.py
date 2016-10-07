@@ -116,15 +116,21 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.api = API(self.m_network, self.m_store_client)
 
     @patch('algebra.Hit', MagicMock(return_value='result_hit'))
+    def test_nid_to_node(self):
+        self.api._network.get_info_for = MagicMock(
+            return_value=('t', 'o', 'op', 'le'))
+        nid = 123
+        result = self.api._nid_to_hit(nid=nid)
+        self.assertEqual(result, 'result_hit')
+
+    @patch('algebra.Hit', MagicMock(return_value='result_hit'))
     @patch('algebra.id_from', MagicMock())
-    # @patch('algebra.isinstance', MagicMock(return_value=False))
     def test_node_to_hit(self):
         node = ('foo', 'bar', 'fizz')
         result = self.api._node_to_hit(node=node)
         self.assertEqual(result, 'result_hit')
 
     @patch('algebra.DRS', MagicMock(return_value='result_drs'))
-    # @patch('algebra.isinstance', MagicMock(return_value=False))
     def test_hit_to_drs(self):
         hit = 'hit'
         result = self.api._hit_to_drs(hit=hit)
@@ -132,12 +138,20 @@ class TestAlgebraHelpers(unittest.TestCase):
 
     @patch('algebra.Hit', MagicMock(return_value='result_hit'))
     @patch('algebra.id_from', MagicMock())
-    @patch('algebra.isinstance', MagicMock(return_value=False))
-    def test_node_hit_or_drs_to_drs(self):
-        pass
+    @patch('algebra.isinstance', MagicMock(return_value=True))
+    def test_general_to_drs(self):
+        nid = 1
+        self.api._nid_to_hit = MagicMock(return_value='n_hit')
+        self.api._node_to_hit = MagicMock(return_value='t_hit')
+        self.api._hit_to_drs = MagicMock(return_value='drs')
 
+        result = self.api._general_to_drs(nid)
 
+        self.api._nid_to_hit.assert_called_with(nid)
+        self.api._node_to_hit.assert_called_with('n_hit')
+        self.api._hit_to_drs.assert_called_with('t_hit')
 
+        self.assertEqual(result, 'drs')
 
 
 if __name__ == '__main__':
