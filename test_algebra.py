@@ -1,4 +1,5 @@
 import unittest
+from collections import namedtuple
 from modelstore.elasticstore import KWType
 from api.apiutils import Scope, Relation
 from algebra import API
@@ -89,9 +90,7 @@ class testAlgebra(unittest.TestCase):
     Neighbor Search
     """
 
-    # @patch('algebra.DRS', MagicMock(return_value='return_drs'))
-    # @patch('algebra.Algebra._node_or_hit_to_hit',
-    #        MagicMock(return_value='return_hit'))
+    # @patch('algebra.DRS', MagicMock(return_value=MagicMock()))
     # def test_neighbor_search_pkfk_node(self):
     #     db = 'db'
     #     source = 'source_table'
@@ -101,11 +100,17 @@ class testAlgebra(unittest.TestCase):
     #     relation = Relation.PKFK
     #     max_hops = 11
 
+    #     self.api._general_to_drs = MagicMock()
+
     #     result = self.api.neighbor_search(
-    #         node_or_hit=node, relation=relation, max_hops=max_hops)
+    #         general_input=node, relation=relation, max_hops=max_hops)
+
+    #     self.api._general_to_drs.assert_called_with(node)
+    #     # there should be a test to make sure that
+    #     # o_drs.absorb_provenance(i_drs) is called.
 
     #     self.m_network.assert_called_with('return_hit', Relation.PKFK)
-    #     self.assertEqual(result, 'return_drs')
+    #     # self.assertEqual(result, 'return_drs')
 
 
 class TestAlgebraHelpers(unittest.TestCase):
@@ -131,12 +136,25 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.assertEqual(result, 'result_hit')
 
     @patch('algebra.DRS', MagicMock(return_value='result_drs'))
-    def test_hit_to_drs(self):
+    def test_hit_to_drs_no_table_mode(self):
+        self.api._network.get_hits_from_table = MagicMock()
         hit = 'hit'
         result = self.api._hit_to_drs(hit=hit)
         self.assertEqual(result, 'result_drs')
+        self.api._network.get_hits_from_table.assert_not_called()
 
-    @patch('algebra.Hit', MagicMock(return_value='result_hit'))
+    @patch('algebra.DRS', MagicMock(return_value='result_drs'))
+    def test_hit_to_drs_with_table_mode(self):
+        self.api._network.get_hits_from_table = MagicMock()
+        hit = namedtuple(
+            'Hit', 'nid, db_name, source_name, field_name, score',
+            verbose=False)
+        hit.source_name = 'table'
+
+        result = self.api._hit_to_drs(hit=hit, table_mode=True)
+        self.assertEqual(result, 'result_drs')
+        self.assertEqual(self.api._network.get_hits_from_table.called, True)
+
     @patch('algebra.id_from', MagicMock())
     @patch('algebra.isinstance', MagicMock(return_value=True))
     def test_general_to_drs(self):
@@ -152,6 +170,11 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.api._hit_to_drs.assert_called_with('t_hit')
 
         self.assertEqual(result, 'drs')
+
+    # assertRaises is unexpectedly not passing this test.
+    # @patch('algebra.isinstance', MagicMock(return_value=False))
+    # def test_general_to_drs_fail_case(self):
+    #     self.assertRaises(ValueError, self.api._general_to_drs('bad_input'))
 
 
 if __name__ == '__main__':
