@@ -90,27 +90,31 @@ class testAlgebra(unittest.TestCase):
     Neighbor Search
     """
 
-    # @patch('algebra.DRS', MagicMock(return_value=MagicMock()))
-    # def test_neighbor_search_pkfk_node(self):
-    #     db = 'db'
-    #     source = 'source_table'
-    #     field = 'column'
-    #     node = (db, source, field)
+    @patch('algebra.DRS', MagicMock(return_value=MagicMock()))
+    def test_neighbor_search_pkfk_node(self):
+        db = 'db'
+        source = 'source_table'
+        field = 'column'
+        node = (db, source, field)
 
-    #     relation = Relation.PKFK
-    #     max_hops = 11
+        relation = Relation.PKFK
+        max_hops = 11
+        # algebra.DRS.mode = 'foo'
 
-    #     self.api._general_to_drs = MagicMock()
+        self.api._general_to_drs = MagicMock()
 
-    #     result = self.api.neighbor_search(
-    #         general_input=node, relation=relation, max_hops=max_hops)
+        self.api.neighbor_search(
+            general_input=node, relation=relation, max_hops=max_hops)
 
-    #     self.api._general_to_drs.assert_called_with(node)
-    #     # there should be a test to make sure that
-    #     # o_drs.absorb_provenance(i_drs) is called.
+        self.api._general_to_drs.assert_called_with(node)
 
-    #     self.m_network.assert_called_with('return_hit', Relation.PKFK)
-    #     # self.assertEqual(result, 'return_drs')
+        # there should be a test to make sure that
+        # o_drs.absorb_provenance(i_drs) is called.
+
+        # We should be able to check this, but have trouble because the i_drs
+        # mock isn't flushed out as well as it should be.
+        # self.m_network.assert_called_with('return_hit', Relation.PKFK)
+        # self.assertEqual(result, 'return_drs')
 
 
 class TestAlgebraHelpers(unittest.TestCase):
