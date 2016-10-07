@@ -41,13 +41,13 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
-    def neighbor_search(self,
-                        node_or_hit: (str, str, str),
-                        relation: Relation,
-                        max_hops=None):
+    # def neighbor_search(self,
+    #                     node_or_hit: (str, str, str),
+    #                     relation: Relation,
+    #                     max_hops=None):
 
-        i_hit = self._node_or_hit_to_hit(node_or_hit)
-        hits = self._network.neighbor_id(i_hit, relation)
+    #     i_hit = self._node_or_hit_to_hit(node_or_hit)
+    #     hits = self._network.neighbor_id(i_hit, relation)
 
     """
     Helper Functions
@@ -59,10 +59,7 @@ class Algebra:
         """
         kw_type = None
         if scope == Scope.DB:
-            raise Error('DB Scope is not implemeneted')
-            # # raise Exception('spam', 'eggs')
-            # # raise(NameError())
-            # raise ValueError('The day is too frabjous.')
+            raise ValueError('DB Scope is not implemeneted')
         elif scope == Scope.SOURCE:
             kw_type = KWType.KW_TABLE
         elif scope == Scope.FIELD:
@@ -72,36 +69,63 @@ class Algebra:
 
         return kw_type
 
-    def _node_hit_or_drs_to_drs(self, node_hit_or_drs) -> DRS:
-        if isinstance(node_hit_or_drs, DRS):
-            return DRS
-        if isinstance(node_hit_or_drs, Hit):
-            return self._hit_to_drs(node_hit_or_drs)
-        if isinstance(node_hit_or_drs, tuple):
-            node_hit_or_drs = self._node_to_hit(node_hit_or_drs)
-            node_hit_or_drs = self._hit_to_drs(node_hit_or_drs)
-            return node_hit_or_drs
+    def _general_to_drs(self, general_input) -> DRS:
+        """
+        Given an nid, node, hit, or DRS and convert it to a DRS.
+        :param nid: int
+        :param node: (db_name, source_name, field_name)
+        :param hit: Hit
+        :param DRS: DRS
+        :return: DRS
+        """
+        if isinstance(general_input, int):
+            general_input = self._nid_to_hit(general_input)
+        if isinstance(general_input, tuple):
+            general_input = self._node_to_hit(general_input)
+        if isinstance(general_input, Hit):
+            general_input = self._hit_to_drs(general_input)
+        if isinstance(general_input, DRS):
+            return general_input
+        else:
+            raise ValueError(
+                'Input is not an integer, field tuple, hit, or DRS')
 
-    def _hit_to_drs(self, hit: Hit) -> DRS:
-        drs = DRS([hit], Operation(OP.ORIGIN))
-        return drs
+    def _nid_to_hit(self, nid: int) -> Hit:
+        """
+        Given a node id, convert it to a Hit
+        :param nid: int
+        :return: DRS
+        """
+        nid, db, source, field = self._network.get_info_for([nid])
+        hit = Hit(nid, db, source, field)
+        return hit
 
     def _node_to_hit(self, node: (str, str, str)) -> Hit:
         """
         Given a field and source name, it returns a Hit with its representation
-        :param field: a tuple with the name of the field,
+        :param node: a tuple with the name of the field,
             (db_name, source_name, field_name)
-        :return: a Hit
+        :return: Hit
         """
         db, source, field = node
         nid = id_from(db, source, field)
         hit = Hit(nid, db, source, field, 0)
         return hit
 
+    def _hit_to_drs(self, hit: Hit) -> DRS:
+        """
+        Given a Hit, return a DRS
+        :param hit: Hit
+        :return: DRS
+        """
+        drs = DRS([hit], Operation(OP.ORIGIN))
+        return drs
+
 
 class API(Algebra):
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
+
 
 if __name__ == '__main__':
     print("Aurum API")
