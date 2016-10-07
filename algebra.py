@@ -71,6 +71,48 @@ class Algebra:
             o_drs = o_drs.absorb(hits_drs)
         return o_drs
 
+    """
+    Combiner API
+    """
+
+    def intersection(self, a: DRS, b: DRS) -> DRS:
+        """
+        Returns elements that are both in a and b
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the intersection of the two provided iterable objects
+        """
+        error_text = ("Input parameters are not in the same mode ",
+                      "(fields, table)")
+        assert a.mode == b.mode, error_text
+        o_drs = a.intersection(b)
+        return o_drs
+
+    def union(self, a: DRS, b: DRS) -> DRS:
+        """
+        Returns elements that are in either a or b
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the union of the two provided iterable objects
+        """
+        error_text = ("Input parameters are not in the same mode ",
+                      "(fields, table)")
+        assert a.mode == b.mode, error_text
+        o_drs = a.union(b)
+        return o_drs
+
+    def difference(self, a: DRS, b: DRS) -> DRS:
+        """
+        Returns elements that are in either a or b
+        :param a: an iterable object
+        :param b: another iterable object
+        :return: the union of the two provided iterable objects
+        """
+        error_text = ("Input parameters are not in the same mode ",
+                      "(fields, table)")
+        assert a.mode == b.mode, error_text
+        o_drs = a.set_difference(b)
+        return o_drs
 
     """
     Helper Functions
