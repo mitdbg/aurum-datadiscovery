@@ -55,19 +55,22 @@ class Algebra:
 
         # import pdb; pdb.set_trace()
         # prepare an output DRS
-        import pdb; pdb.set_trace()
         o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(i_drs)
 
+        # get all of the table Hits in a DRS, if necessary.
         if i_drs.mode == DRSMode.TABLE:
             i_drs.set_fields_mode()
             for h in i_drs:
-                fields_table = self.drs_from_table_hit(h)
+                fields_table = self._hit_to_drs(h, table_mode=True)
                 i_drs = i_drs.absorb(fields_table)
+
+        # Check neighbors
         for h in i_drs:
-            hits_drs = self.__network.neighbors_id(h, relation)
+            hits_drs = self._network.neighbors_id(h, relation)
             o_drs = o_drs.absorb(hits_drs)
         return o_drs
+
 
     """
     Helper Functions
