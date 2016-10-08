@@ -204,248 +204,6 @@ class FieldNetwork:
         o_drs = DRS(data, Operation(op, params=[hit]))
         return o_drs
 
-    def _bidirectional_pred_succ(self, source, target, relation):
-        # FIXME: embedded by unique caller
-        def deep_explore(candidates, target_group, already_visited, path, max_hops):
-            """
-            Recursively depth-first explore the graph, checking if candidates are in target_group
-            Returns (boolean, [])
-            """
-            local_max_hops = max_hops
-
-            if local_max_hops == 0:
-                return False
-
-            # first check membership
-            for c in candidates:
-                if c in target_group:
-                    path.insert(0, c)
-                    return True
-
-            # if not, then we explore these individually
-            for c in candidates:
-                if c in already_visited:
-                    continue  # next candidate
-                else:
-                    already_visited.append(c)  # add candidate to set of already visited
-
-                next_level_candidates = [x for x in self.neighbors_id(c, relation)]  # get next set of candidates
-
-                if len(next_level_candidates) == 0:
-                    continue
-                next_max_hops = local_max_hops - 1  # reduce one level depth and go ahead
-                success = deep_explore(next_level_candidates, target_group, already_visited, path, next_max_hops)
-                if success:
-                    path.insert(0, c)
-                    return True
-            return False  # if all nodes were already visited
-
-        # maximum number of hops
-        max_hops = 5
-
-        o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
-
-        # TODO: same src == trg, etc
-
-        path = []
-
-        success = deep_explore([source], [target], [], path, max_hops)
-        if success:
-            return path
-        else:
-            return None
-
-    def real_bidirectional_pred_succ(self, source, target, relation):
-        # FIXME: DEPRECATED
-        """
-        Bidirectional shortest path helper.
-        :returns (pred,succ,w) where
-        :param pred is a dictionary of predecessors from w to the source, and
-        :param succ is a dictionary of successors from w to the target.
-        """
-        o_drs = DRS([], Operation(OP.NONE))  # Works as a carrier of provenance
-        # does BFS from both source and target and meets in the middle
-        if target == source:
-            return {target: None}, {source: None}, source, o_drs
-
-        # we always have an undirected graph
-        Gpred = self.neighbors_id
-        Gsucc = self.neighbors_id
-
-        # predecesssor and successors in search
-        pred = {source: None}
-        succ = {target: None}
-
-        # initialize fringes, start with forward
-        forward_fringe = [source]
-        reverse_fringe = [target]
-
-        while forward_fringe and reverse_fringe:
-            if len(forward_fringe) <= len(reverse_fringe):
-                this_level = forward_fringe
-                forward_fringe = []
-                for v in this_level:
-                    successors = Gsucc(v, relation)
-                    o_drs = o_drs.absorb(successors)  # Keep provenance
-                    for w in successors:
-                        if w not in pred:
-                            forward_fringe.append(w)
-                            pred[w] = v
-                        if w in succ:
-                            return pred, succ, w, o_drs  # found path
-            else:
-                this_level = reverse_fringe
-                reverse_fringe = []
-                for v in this_level:
-                    predecessors = Gpred(v, relation)
-                    o_drs = o_drs.absorb(predecessors)
-                    for w in predecessors:
-                        if w not in succ:
-                            succ[w] = v
-                            reverse_fringe.append(w)
-                        if w in pred:
-                            return pred, succ, w, o_drs  # found path
-        return None
-
-    def _bidirectional_pred_succ_with_table_hops(self, source, target, relation, api):
-        # FIXME: embedded by only caller, remove
-        def get_table_neighbors(hit, relation):
-            direct_neighbors = self.neighbors_id(hit, relation)
-            table_neighbors = api.drs_expand_to_table(direct_neighbors)
-            return [x for x in table_neighbors]
-
-        def deep_explore(candidates, target_group, already_visited, path, max_hops):
-            """
-            Recursively depth-first explore the graph, checking if candidates are in target_group
-            Returns (boolean, [])
-            """
-            local_max_hops = max_hops
-
-            if local_max_hops == 0:
-                return False
-
-            # first check membership
-            for c in candidates:
-                if c in target_group:
-                    path.insert(0, c)
-                    return True
-
-            # if not, then we explore these individually
-            for c in candidates:
-                if c in already_visited:
-                    continue  # next candidate
-                else:
-                    already_visited.append(c)  # add candidate to set of already visited
-
-                next_level_candidates = get_table_neighbors(c, relation)  # get next set of candidates
-                if len(next_level_candidates) == 0:
-                    continue
-                next_max_hops = local_max_hops - 1  # reduce one level depth and go ahead
-                success = deep_explore(next_level_candidates, target_group, already_visited, path, next_max_hops)
-                if success:
-                    path.insert(0, c)
-                    return True
-            return False  # if all nodes were already visited
-
-        # maximum number of hops
-        max_hops = 5
-
-        o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
-
-        # TODO: same src == trg, etc
-
-        src_drs = api.drs_from_table(source)
-        trg_drs = api.drs_from_table(target)
-
-        found_paths = []
-        path = []
-        candidates = [x for x in src_drs]
-
-        for c in candidates:
-            success = deep_explore([c], [x for x in trg_drs], [], path, max_hops)
-            if success:
-                found_paths.append(path)
-            path = []
-
-    def real_bidirectional_pred_succ_with_table_hops(self, source, target, relation, api):
-        # FIXME: DEPRECATED
-        """
-        Bidirectional shortest path with table hops, i.e. two-relation exploration
-        :returns (pred,succ,w) where
-        :param pred is a dictionary of predecessors from w to the source, and
-        :param succ is a dictionary of successors from w to the target.
-        """
-        def neighbors_with_table_hop(hit, rel) -> DRS:
-            o_drs = DRS([], Operation(OP.NONE))
-
-            hits = self.get_hits_from_table(hit.source_name)
-            table_neighbors_drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
-
-            o_drs = o_drs.absorb_provenance(table_neighbors_drs)
-            neighbors_with_table = set()
-            for n in table_neighbors_drs:
-                neighbors_of_n = self.neighbors_id(n, rel)
-                o_drs = o_drs.absorb_provenance(neighbors_of_n)
-                for match in neighbors_of_n:
-                    neighbors_with_table.add(match)
-            # just assign data here
-            o_drs = o_drs.set_data(neighbors_with_table)
-            return o_drs
-
-        o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
-
-        # does BFS from both source and target and meets in the middle
-        src_drs = api.drs_from_table(source)
-        o_drs = o_drs.absorb(src_drs)
-        trg_drs = api.drs_from_table(target)
-        o_drs = o_drs.absorb(trg_drs)
-        src_drs.set_table_mode()
-        if target in src_drs:  # source and target are in the same table
-            return {x: None for x in trg_drs}, {x: None for x in src_drs}, [x for x in src_drs], o_drs
-        src_drs.set_fields_mode()
-        trg_drs.set_fields_mode()
-
-        # we always have an undirected graph
-        Gpred = neighbors_with_table_hop
-        Gsucc = neighbors_with_table_hop
-
-        # predecessor and successors in search
-        # pred = {source: None}
-        # succ = {target: None}
-        pred = {x: None for x in src_drs}
-        succ = {x: None for x in trg_drs}
-
-        # initialize fringes, start with forward
-        forward_fringe = [x for x in src_drs]
-        reverse_fringe = [x for x in trg_drs]
-
-        while forward_fringe and reverse_fringe:
-            if len(forward_fringe) <= len(reverse_fringe):
-                this_level = forward_fringe
-                forward_fringe = []
-                for v in this_level:
-                    successors = Gsucc(v, relation)
-                    o_drs = o_drs.absorb(successors)
-                    for w in successors:
-                        if w not in pred:
-                            forward_fringe.append(w)
-                            pred[w] = v
-                        if w in succ:
-                            return pred, succ, w, o_drs  # found path
-            else:
-                this_level = reverse_fringe
-                reverse_fringe = []
-                for v in this_level:
-                    predecessors = Gpred(v, relation)
-                    o_drs = o_drs.absorb(predecessors)
-                    for w in predecessors:
-                        if w not in succ:
-                            succ[w] = v
-                            reverse_fringe.append(w)
-                        if w in pred:
-                            return pred, succ, w, o_drs  # found path
-        return None
-
     def find_path_hit(self, source, target, relation, max_hops=5):
 
         def assemble_field_path_provenance(o_drs, path, relation):
@@ -512,23 +270,13 @@ class FieldNetwork:
         else:
             return DRS([], Operation(OP.NONE))
 
-    def _find_path_hit(self, source, target, relation):
-        # FIXME: replace the call to bidirectional by the implementation directly here
-        # source and target are Hit
-        results = self._bidirectional_pred_succ(source, target, relation)
-        if results is None:  # check for None result
-            return DRS([], Operation(OP.NONE))
-        pred, succ, w, o_drs = results
-
-        return o_drs
-
-    def find_path_table(self, source: str, target: str, relation, api):
+    def find_path_table(self, source: str, target: str, relation, api, max_hops=3):
 
         def assemble_table_path_provenance(o_drs, paths, relation):
 
             for path in paths:
                 src, src_sibling = path[0]
-                assert(src_sibling is None)  # sibling of source should be None, as source is an origin
+                assert (src_sibling is None)  # sibling of source should be None, as source is an origin
                 tgt, tgt_sibling = path[-1]
                 origin = DRS([src], Operation(OP.ORIGIN))
                 o_drs.absorb_provenance(origin)
@@ -545,49 +293,54 @@ class FieldNetwork:
                 o_drs.absorb(linker)
             return o_drs
 
-        def get_table_neighbors(hit, relation):
+        def check_membership(c, paths):
+            for p in paths:
+                for (s, sibling) in p:
+                    if c.source_name == s.source_name:
+                        return True
+            return False
+
+        def append_to_paths(paths, c):
+            new_paths = []
+            for p in paths:
+                new_path = []
+                new_path.extend(p)
+                new_path.append(c)
+                new_paths.append(new_path)
+            return new_paths
+
+        def get_table_neighbors(hit, relation, paths):
             results = []
             direct_neighbors = self.neighbors_id(hit, relation)
+            # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
-                t_neighbors = api.drs_from_table_hit(n)
-                results.extend([(x, n) for x in t_neighbors])
+                if not check_membership(n, paths):
+                    t_neighbors = api.drs_from_table_hit(n)
+                    results.extend([(x, n) for x in t_neighbors])
             return results  # note how we include hit as sibling of x here
 
-        def deep_explore(candidates, target_group, already_visited, path, max_hops):
-            """
-            Recursively depth-first explore the graph, checking if candidates are in target_group
-            Returns (boolean, [])
-            """
-            local_max_hops = max_hops
+        def dfs_explore(sources, targets, max_hops, paths):
 
-            if local_max_hops == 0:
-                return False
-
-            # first check membership
-            for (c, sibling) in candidates:  # sibling refers to element in same table as c that justifies c's presence
-                if c in target_group:
-                    path.insert(0, (c, sibling))  # include sibling for later dealing with provenance
+            # Check if sources have reached targets
+            for (s, sibling) in sources:
+                if s in targets:
+                    # Append successful paths to found_paths
+                    next_paths = append_to_paths(paths, (s, sibling))
+                    found_paths.extend(next_paths)
                     return True
 
-            # if not, then we explore these individually
-            for (c, sibling) in candidates:
-                if c in already_visited:
-                    continue  # next candidate
-                else:
-                    already_visited.append(c)  # add candidate to set of already visited
+            # Check if no more hops are allowed:
+            if max_hops == 0:
+                return False  # not found path
 
-                next_level_candidates = get_table_neighbors(c, relation)  # get next set of candidates
-                if len(next_level_candidates) == 0:
+            # Get next set of candidates and keep exploration
+            for (s, sibling) in sources:
+                next_candidates = get_table_neighbors(s, relation, paths)  # updated paths to test membership
+                # recursive on new candidates, one fewer hop and updated paths
+                if len(next_candidates) == 0:
                     continue
-                next_max_hops = local_max_hops - 1  # reduce one level depth and go ahead
-                success = deep_explore(next_level_candidates, target_group, already_visited, path, next_max_hops)
-                if success:
-                    path.insert(0, (c, sibling))
-                    return True
-            return False  # if all nodes were already visited
-
-        # maximum number of hops
-        max_hops = 5
+                next_paths = append_to_paths(paths, (s, sibling))
+                dfs_explore(next_candidates, targets, max_hops - 1, next_paths)
 
         o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
 
@@ -597,28 +350,13 @@ class FieldNetwork:
         trg_drs = api.drs_from_table(target)
 
         found_paths = []
-        path = []
         candidates = [(x, None) for x in src_drs]  # tuple carrying candidate and same-table attribute
 
-        for c in candidates:
-            success = deep_explore([c], [x for x in trg_drs], [], path, max_hops)
-            if success:
-                found_paths.append(path)
-            path = []
+        paths = [[]]  # to carry partial paths
 
-        if len(found_paths) == 0:
-            return DRS([], Operation(OP.NONE))
-        else:
-            o_drs = assemble_table_path_provenance(o_drs, found_paths, relation)
-            return o_drs
+        dfs_explore(candidates, [x for x in trg_drs], max_hops, paths)
 
-    def _find_path_table(self, source: str, target: str, relation, api):
-
-        # source and target are strings with the table name
-        results = self._bidirectional_pred_succ_with_table_hops(source, target, relation, api)
-        if results is None:  # check for None result
-            return DRS([], Operation(OP.NONE))
-        pred, succ, w, o_drs = results
+        o_drs = assemble_table_path_provenance(o_drs, found_paths, relation)
 
         return o_drs
 

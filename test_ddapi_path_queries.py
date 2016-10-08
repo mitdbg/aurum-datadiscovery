@@ -55,6 +55,8 @@ class TestDDApiPathQueries(unittest.TestCase):
             print(str(el))
 
         print("Paths: ")
+        res.visualize_provenance()
+        res.debug_print()
         paths = res.paths()
         for p in paths:
             print(str(p))

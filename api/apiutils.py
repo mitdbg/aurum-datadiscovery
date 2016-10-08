@@ -296,6 +296,25 @@ class DRS:
     Provenance functions
     """
 
+    def debug_print(self):
+        len_data = len(self.data)
+        total_nodes_provenance = len(self._provenance.prov_graph().nodes())
+        print("Total data: " + str(len_data))
+        print("Total nodes prov graph: " + str(total_nodes_provenance))
+
+    def visualize_provenance(self, labels=False):
+        if labels:
+            nx.draw_networkx(self.get_provenance().prov_graph())
+        else:
+            nx.draw(self.get_provenance().prov_graph())
+        plt.show()
+
+    def debug_print(self):
+        len_data = len(self.data)
+        total_nodes_provenance = len(self._provenance.prov_graph().nodes())
+        print("Total data: " + str(len_data))
+        print("Total nodes prov graph: " + str(total_nodes_provenance))
+
     def visualize_provenance(self, labels=False):
         if labels:
             nx.draw_networkx(self.get_provenance().prov_graph())
