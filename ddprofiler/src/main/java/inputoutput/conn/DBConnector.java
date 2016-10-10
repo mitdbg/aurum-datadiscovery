@@ -30,6 +30,12 @@ public class DBConnector extends Connector {
 	private String connectPath;
 	private String sourceName;
 	
+	// Open conn variables
+	private boolean firstTime = true;
+	private Statement theStatement;
+	private ResultSet theRS;
+	
+	// Other connector variables
 	private DBType db;// db system name e.g., mysq/oracle etc.
 	private String username;// db conn user name;
 	private String password; // db conn password;
@@ -93,27 +99,15 @@ public class DBConnector extends Connector {
 			e.printStackTrace();
 		}
 	}
-
-	@Override
-	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
-		String sql = null;
-		// TODO: add mysql here
-		// FIXME: HUGE inefficiency on reads here. We read all data to access only to a subset
-		// implement a better scrolling mechanism. In the meantime consider using a bigger num
-		// of records
-		if(this.db == DBType.POSTGRESQL) {
-			sql = "SELECT * FROM "+sourceName+ " LIMIT "+ num + " OFFSET " + currentOffset;
-		}
-		else if(this.db == DBType.ORACLE) {
-			long newLimit = num + currentOffset;
-			sql = " SELECT * FROM ( SELECT * FROM "+sourceName+") WHERE ROWNUM BETWEEN "+currentOffset+" AND " + newLimit + " ";
-		}
-		ResultSet rs = null;
-		Statement stat = null;
+	
+	private boolean handleFirstTime(int fetchSize) {		
+		String sql = "SELECT * FROM " + sourceName;
+		
 		try {
-			stat = conn.createStatement();
-			// stat.closeOnCompletion(); // CORRECT, but not supported by 10g
-			rs = stat.executeQuery(sql);
+			conn.setAutoCommit(false);
+			theStatement = conn.createStatement();
+			theStatement.setFetchSize(fetchSize);
+			theRS = theStatement.executeQuery(sql);
 		}
 		catch(SQLException sqle) {
 			System.out.println("ERROR: " + sqle.getLocalizedMessage());
@@ -123,12 +117,26 @@ public class DBConnector extends Connector {
 			System.out.println("ERROR: executeQuery failed");
 			return false;
 		}
+		return true;
+	}
+	
+	@Override
+	public boolean readRows(int num, List<Record> rec_list) throws IOException, SQLException {
+		if(firstTime) {
+			handleFirstTime(num);
+			firstTime = false;
+		}
+		
 		boolean new_row = false;
-		while(rs.next()) {
+		
+		while(num > 0 && theRS.next()) {  // while there are some available and we need to read more records
 			new_row = true;
+			
+			num--;
+			// FIXME: profile and optimize this
 			Record rec = new Record();
 			for(int i = 0; i < this.tbInfo.getTableAttributes().size(); i++) {
-				Object obj = rs.getObject(i+1);
+				Object obj = theRS.getObject(i+1);
 				if(obj != null) {
 					String v1 = obj.toString();
 					rec.getTuples().add(v1);
@@ -139,9 +147,7 @@ public class DBConnector extends Connector {
 			}
 			rec_list.add(rec);
 		}
-		currentOffset += rec_list.size();
-		stat.close();
-		rs.close();
+		
 		return new_row;
 	}
 

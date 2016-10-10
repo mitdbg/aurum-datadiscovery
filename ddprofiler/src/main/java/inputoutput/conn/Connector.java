@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
-import preanalysis.PreAnalyzer;
 
 public abstract class Connector {
 	
