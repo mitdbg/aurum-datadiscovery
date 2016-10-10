@@ -312,19 +312,6 @@ class DRS:
             nx.draw(self.get_provenance().prov_graph())
         plt.show()
 
-    def debug_print(self):
-        len_data = len(self.data)
-        total_nodes_provenance = len(self._provenance.prov_graph().nodes())
-        print("Total data: " + str(len_data))
-        print("Total nodes prov graph: " + str(total_nodes_provenance))
-
-    def visualize_provenance(self, labels=False):
-        if labels:
-            nx.draw_networkx(self.get_provenance().prov_graph())
-        else:
-            nx.draw(self.get_provenance().prov_graph())
-        plt.show()
-
     def absorb_provenance(self, drs, annotate_and_edges=False, annotate_or_edges=False):
         """
         Merge provenance of the input parameter into self, *not* the data.
@@ -586,8 +573,7 @@ class DRS:
             #ns = [x for x in pg.neighbors(src)]
             if len(ns) == 1:
                 nodes_already_visited.add(ns[0])
-                current_score = current_score + \
-                    get_score_continuous_path(pg, ns[0], nodes_already_visited)
+                current_score = current_score + get_score_continuous_path(pg, ns[0], nodes_already_visited)
             elif len(ns) > 1:
                 current_score = current_score + decide_path(pg, ns, nodes_already_visited)
             # Last option: when there are no neighbors, we simply return

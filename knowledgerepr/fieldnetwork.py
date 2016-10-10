@@ -270,7 +270,7 @@ class FieldNetwork:
         else:
             return DRS([], Operation(OP.NONE))
 
-    def find_path_table(self, source: str, target: str, relation, api, max_hops=2):
+    def find_path_table(self, source: str, target: str, relation, api, max_hops=3):
 
         def assemble_table_path_provenance(o_drs, paths, relation):
 
