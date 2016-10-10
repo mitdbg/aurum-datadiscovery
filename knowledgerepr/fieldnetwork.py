@@ -270,7 +270,7 @@ class FieldNetwork:
         else:
             return DRS([], Operation(OP.NONE))
 
-    def find_path_table(self, source: str, target: str, relation, api, max_hops=3):
+    def find_path_table(self, source: str, target: str, relation, api, max_hops=2):
 
         def assemble_table_path_provenance(o_drs, paths, relation):
 
@@ -284,13 +284,18 @@ class FieldNetwork:
                 for c, sibling in path[1:-1]:
                     nxt = DRS([sibling], Operation(OP.PKFK, params=[prev_c]))
                     o_drs.absorb_provenance(nxt)
-                    linker = DRS([c], Operation(OP.TABLE, params=[sibling]))
-                    o_drs.absorb_provenance(linker)
+                    if c.nid != sibling.nid:  # avoid loop on head nodes of the graph
+                        linker = DRS([c], Operation(OP.TABLE, params=[sibling]))
+                        o_drs.absorb_provenance(linker)
                     prev_c = c
                 sink = DRS([tgt_sibling], Operation(OP.PKFK, params=[prev_c]))
-                o_drs = o_drs.absorb_provenance(sink)
-                linker = DRS([tgt], Operation(OP.TABLE, params=[tgt_sibling]))
-                o_drs.absorb(linker)
+
+                if tgt.nid != tgt_sibling.nid:
+                    o_drs = o_drs.absorb_provenance(sink)
+                    linker = DRS([tgt], Operation(OP.TABLE, params=[tgt_sibling]))
+                    o_drs.absorb(linker)
+                else:
+                    o_drs = o_drs.absorb(sink)
             return o_drs
 
         def check_membership(c, paths):
@@ -355,6 +360,9 @@ class FieldNetwork:
         paths = [[]]  # to carry partial paths
 
         dfs_explore(candidates, [x for x in trg_drs], max_hops, paths)
+
+        for p in found_paths:
+            print(p)
 
         o_drs = assemble_table_path_provenance(o_drs, found_paths, relation)
 

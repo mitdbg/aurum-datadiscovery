@@ -128,6 +128,9 @@ class Provenance:
             suc = self._p_graph.successors(node)
             no_cycles = set(pre) - set(suc)
             pre = list(no_cycles)
+            if len(pre) == 0 and len(suc) == 0:
+                # FIXME
+                continue  # this should not happen anyway, what does it mean?
             if len(pre) == 0:
                 leafs.append(node)
             if len(suc) == 0:
