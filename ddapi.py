@@ -355,7 +355,7 @@ class DDAPI:
     TC Primitive API
     """
 
-    def paths_between(self, a: DRS, b: DRS, primitives) -> DRS:
+    def paths_between(self, a: DRS, b: DRS, primitives, max_hops=2) -> DRS:
         """
         Is there a transitive relationship between any element in a with any element in b?
         This functions finds the answer constrained on the primitive (singular for now) that is passed
@@ -374,7 +374,7 @@ class DDAPI:
                 for h2 in b:  # h2 is a Hit
                     if h1 == h2:
                         return o_drs  # same source and target field
-                    res_drs = self.__network.find_path_hit(h1, h2, primitives)
+                    res_drs = self.__network.find_path_hit(h1, h2, primitives, max_hops=max_hops)
                     o_drs = o_drs.absorb(res_drs)
         elif a.mode == DRSMode.TABLE:
             for h1 in a:  # h1 is a table: str
@@ -382,7 +382,7 @@ class DDAPI:
                     if h1 == h2:
                         return o_drs  # same source ant target table
                     res_drs = self.__network.find_path_table(
-                        h1, h2, primitives, self)
+                        h1, h2, primitives, self, max_hops=max_hops)
                     o_drs = o_drs.absorb(res_drs)
         return o_drs
 
