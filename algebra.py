@@ -59,10 +59,7 @@ class Algebra:
 
         # get all of the table Hits in a DRS, if necessary.
         if i_drs.mode == DRSMode.TABLE:
-            i_drs.set_fields_mode()
-            for h in i_drs:
-                fields_table = self._hit_to_drs(h, table_mode=True)
-                i_drs = i_drs.absorb(fields_table)
+            self._general_to_field_drs(i_drs)
 
         # Check neighbors
         for h in i_drs:
@@ -197,6 +194,16 @@ class Algebra:
             drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
         else:
             drs = DRS([hit], Operation(OP.ORIGIN))
+
+        return drs
+
+    def _general_to_field_drs(self, general_input):
+        drs = self._general_to_drs(general_input)
+
+        drs.set_fields_mode()
+        for h in drs:
+            fields_table = self._hit_to_drs(h, table_mode=True)
+            drs = drs.absorb(fields_table)
 
         return drs
 
