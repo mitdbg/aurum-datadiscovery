@@ -53,7 +53,6 @@ class Algebra:
         # convert whatever input to a DRS
         i_drs = self._general_to_drs(general_input)
 
-        # import pdb; pdb.set_trace()
         # prepare an output DRS
         o_drs = DRS([], Operation(OP.NONE))
         o_drs = o_drs.absorb_provenance(i_drs)

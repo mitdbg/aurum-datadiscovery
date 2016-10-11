@@ -2,7 +2,7 @@ import unittest
 from collections import namedtuple
 from modelstore.elasticstore import KWType
 from api.apiutils import Scope, Relation
-from algebra import API
+from algebra import API, DRS
 from mock import MagicMock, patch
 
 
@@ -91,6 +91,7 @@ class testAlgebra(unittest.TestCase):
     """
 
     @patch('algebra.DRS', MagicMock(return_value=MagicMock()))
+    # @patch('algebra.DRSMode.TABLE', MagicMock(return_value=True))
     def test_neighbor_search_pkfk_node(self):
         db = 'db'
         source = 'source_table'
@@ -101,7 +102,10 @@ class testAlgebra(unittest.TestCase):
         max_hops = 11
         # algebra.DRS.mode = 'foo'
 
+        # mock out i_drs in neighbor_search. Make it iterable
         self.api._general_to_drs = MagicMock()
+        # self.api._general_to_drs.return_value.mode = True
+        # self.api._general_to_drs.return_value = iter(['foo', 'bar'])
 
         self.api.neighbor_search(
             general_input=node, relation=relation, max_hops=max_hops)
