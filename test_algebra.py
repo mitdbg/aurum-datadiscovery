@@ -179,10 +179,9 @@ class TestAlgebraHelpers(unittest.TestCase):
 
         self.assertEqual(result, 'drs')
 
-    # assertRaises is unexpectedly not passing this test.
-    # @patch('algebra.isinstance', MagicMock(return_value=False))
-    # def test_general_to_drs_fail_case(self):
-    #     self.assertRaises(ValueError, self.api._general_to_drs('bad_input'))
+    @patch('algebra.isinstance', MagicMock(return_value=False))
+    def test_general_to_drs_fail_case(self):
+        self.assertRaises(ValueError, self.api._general_to_drs, 'bad input')
 
 
 if __name__ == '__main__':
