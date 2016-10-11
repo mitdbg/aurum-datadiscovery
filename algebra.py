@@ -1,4 +1,4 @@
-from modelstore.elasticstore import StoreHandler
+import itertools
 
 from modelstore.elasticstore import KWType
 
@@ -34,8 +34,8 @@ class Algebra:
         """
 
         kw_type = self._scope_to_kw_type(scope)
-        hits = self._store_client.search_keyword(
-            keywords=kw, elasticfieldname=kw_type, max_results=max_results)
+        hits = self._store_client.search_keywords(
+            keywords=kw, elasticfieldname=kw_type, max_hits=max_results)
 
         # materialize generator
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
@@ -66,6 +66,13 @@ class Algebra:
             hits_drs = self._network.neighbors_id(h, relation)
             o_drs = o_drs.absorb(hits_drs)
         return o_drs
+
+    """
+    TC API
+    """
+
+    # need to do paths_between, paths, traverse here.
+    # Figure out how many functions those will be.
 
     """
     Combiner API
@@ -147,7 +154,8 @@ class Algebra:
         """
         if isinstance(general_input, int):
             general_input = self._nid_to_hit(general_input)
-        if isinstance(general_input, tuple):
+        # Hit is a subclassed from tuple
+        if isinstance(general_input, tuple) and not isinstance(Hit):
             general_input = self._node_to_hit(general_input)
         if isinstance(general_input, Hit):
             general_input = self._hit_to_drs(general_input)
