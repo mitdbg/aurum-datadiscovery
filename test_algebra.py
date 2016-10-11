@@ -41,15 +41,15 @@ class testAlgebra(unittest.TestCase):
         kw = 'foo'
         scope = Scope.SOURCE
         max_results = 11
-        search_keyword = self.m_store_client.search_keyword
+        search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
             kw=kw, scope=scope, max_results=max_results)
 
         self.m_network.assert_not_called()
-        search_keyword.assert_called_with(
+        search_keywords.assert_called_with(
             keywords=kw, elasticfieldname=0,
-            max_results=max_results)
+            max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
     @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
@@ -58,15 +58,15 @@ class testAlgebra(unittest.TestCase):
         kw = 'foo'
         scope = Scope.FIELD
         max_results = 11
-        search_keyword = self.m_store_client.search_keyword
+        search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
             kw=kw, scope=scope, max_results=max_results)
 
         self.m_network.assert_not_called()
-        search_keyword.assert_called_with(
+        search_keywords.assert_called_with(
             keywords=kw, elasticfieldname=0,
-            max_results=max_results)
+            max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
     @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
@@ -75,16 +75,25 @@ class testAlgebra(unittest.TestCase):
         kw = 'foo'
         scope = Scope.CONTENT
         max_results = 11
-        search_keyword = self.m_store_client.search_keyword
+        search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
             kw=kw, scope=scope, max_results=max_results)
 
         self.m_network.assert_not_called()
-        search_keyword.assert_called_with(
+        search_keywords.assert_called_with(
             keywords=kw, elasticfieldname=0,
-            max_results=max_results)
+            max_hits=max_results)
         self.assertEqual(result, 'return_drs')
+
+    def test_union(self):
+        pass
+
+    def test_intersection(self):
+        pass
+
+    def test_difference(self):
+        pass
 
     """
     Neighbor Search
@@ -165,8 +174,8 @@ class TestAlgebraHelpers(unittest.TestCase):
         result = self.api._general_to_drs(nid)
 
         self.api._nid_to_hit.assert_called_with(nid)
-        self.api._node_to_hit.assert_called_with('n_hit')
-        self.api._hit_to_drs.assert_called_with('t_hit')
+        # self.api._node_to_hit.assert_called_with('n_hit')
+        self.api._hit_to_drs.assert_called_with('n_hit')
 
         self.assertEqual(result, 'drs')
 
