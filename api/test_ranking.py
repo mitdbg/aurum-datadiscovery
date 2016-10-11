@@ -41,6 +41,35 @@ class TestRanking(unittest.TestCase):
 
         self.assertTrue(True)
 
+    def test_ranking_certainty_chem(self):
+        path = '../models/chemical/'
+        network = deserialize_network(path)
+        api = API(network)
+        api.init_store()
+
+        table = 'activities'
+        table_drs = api.drs_from_table(table)
+
+        sim_tables = api.similar_content_to(table_drs)
+
+        sim_tables.rank_certainty()
+
+        print("All columns CERTAINTY: ")
+        sim_tables.pretty_print_columns_with_scores()
+        print("")
+        print("All tables CERTAINTY: ")
+        sim_tables.print_tables_with_scores()
+        print("")
+
+        sim_tables.rank_coverage()
+
+        print("All columns COVERAGE: ")
+        sim_tables.pretty_print_columns_with_scores()
+        print("")
+        print("All tables COVERAGE: ")
+        sim_tables.print_tables_with_scores()
+        print("")
+
     """
     def test_compute_ranking_scores_coverage(self):
         table = 'Buildings.csv'
