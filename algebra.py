@@ -71,8 +71,78 @@ class Algebra:
     TC API
     """
 
-    # need to do paths_between, paths, traverse here.
-    # Figure out how many functions those will be.
+    def paths(self, primitives, a: DRS, b=None, max_hops=2) -> DRS:
+        """
+        Is there a transitive relationship between any element in a with any
+        element in b?
+        This function finds the answer constrained on the primitive
+        (singular for now) that is passed as a parameter.
+        If b is not passed, assumes the user is searching for paths between
+        elements in a.
+        :param a:
+        :param b:
+        :param primitives:
+        :return:
+        """
+        # create b if it wasn't passed in.
+        a = self._general_to_drs(a)
+        b = b or a
+
+        self._assert_same_mode(a, b)
+
+        # absorb the provenance of both a and b
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs.absorb_provenance(a)
+        if b != a:
+            o_drs.absorb_provenance(b)
+
+        for h1, h2 in itertools.product(a, b):
+
+            # test to see if a and b are different DRS's that share
+            # the same element
+            # I'm not sure if this is really a feature or a bug,
+            # but am carrying it over from ddapi
+            if a != b and h1 == h2:
+                return o_drs
+
+            # there are different network operations for table and field mode
+            res_drs = None
+            if a.mode == DRSMode.FIELDS:
+                res_drs = self._network.find_path_hit(
+                    h1, h2, primitives, max_hops=max_hops)
+            else:
+                res_drs = self._network.find_path_table(
+                    h1, h2, primitives, self, max_hops=max_hops)
+
+            o_drs = o_drs.absorb(res_drs)
+
+        return o_drs
+
+    def traverse(self, a: DRS, primitive, max_hops=2) -> DRS:
+        """
+        Conduct a breadth first search of nodes matching a primitive, starting
+        with an initial DRS.
+        :param a: a nid, node, tuple, or DRS
+        :param primitive: The element to search
+        :max_hops: maximum number of rounds on the graph
+        """
+        a = self._general_to_drs(a)
+
+        o_drs = DRS([], Operation(OP.NONE))
+
+        if a.mode == DRSMode.TABLE:
+            raise ValueError(
+                'input mode DRSMode.TABLE not supported')
+
+        fringe = a
+        o_drs.absorb_provenance(a)
+        while max_hops > 0:
+            max_hops = max_hops - 1
+            for h in fringe:
+                hits_drs = self.__network.neighbors_id(h, primitive)
+                o_drs = self.union(o_drs, hits_drs)
+            fringe = o_drs  # grow the initial input
+        return o_drs
 
     """
     Combiner API
@@ -87,9 +157,8 @@ class Algebra:
         """
         a = self._general_to_drs(a)
         b = self._general_to_drs(b)
-        error_text = ("Input parameters are not in the same mode ",
-                      "(fields, table)")
-        assert a.mode == b.mode, error_text
+        self._assert_same_mode(a, b)
+
         o_drs = a.intersection(b)
         return o_drs
 
@@ -102,9 +171,8 @@ class Algebra:
         """
         a = self._general_to_drs(a)
         b = self._general_to_drs(b)
-        error_text = ("Input parameters are not in the same mode ",
-                      "(fields, table)")
-        assert a.mode == b.mode, error_text
+        self._assert_same_mode(a, b)
+
         o_drs = a.union(b)
         return o_drs
 
@@ -117,9 +185,10 @@ class Algebra:
         :param b: another iterable object
         :return: the union of the two provided iterable objects
         """
-        error_text = ("Input parameters are not in the same mode ",
-                      "(fields, table)")
-        assert a.mode == b.mode, error_text
+        a = self._general_to_drs(a)
+        b = self._general_to_drs(b)
+        self._assert_same_mode(a, b)
+
         o_drs = a.set_difference(b)
         return o_drs
 
@@ -152,18 +221,25 @@ class Algebra:
         :param DRS: DRS
         :return: DRS
         """
+        # test for DRS initially for speed
+        if isinstance(general_input, DRS):
+            return general_input
+
+        if general_input is None:
+            general_input = DRS(data=[], operation=Operation(OP.NONE))
         if isinstance(general_input, int):
             general_input = self._nid_to_hit(general_input)
         # Hit is a subclassed from tuple
-        if isinstance(general_input, tuple) and not isinstance(Hit):
+        if (isinstance(general_input, tuple) and
+                not isinstance(general_input, Hit)):
             general_input = self._node_to_hit(general_input)
         if isinstance(general_input, Hit):
             general_input = self._hit_to_drs(general_input)
         if isinstance(general_input, DRS):
             return general_input
-        else:
-            raise ValueError(
-                'Input is not an integer, field tuple, Hit, or DRS')
+
+        raise ValueError(
+            'Input is not None, an integer, field tuple, Hit, or DRS')
 
     def _nid_to_hit(self, nid: int) -> Hit:
         """
@@ -214,6 +290,11 @@ class Algebra:
             drs = drs.absorb(fields_table)
 
         return drs
+
+    def _assert_same_mode(a: DRS, b: DRS) -> None:
+        error_text = ("Input parameters are not in the same mode ",
+                      "(fields, table)")
+        assert a.mode == b.mode, error_text
 
 
 class API(Algebra):
