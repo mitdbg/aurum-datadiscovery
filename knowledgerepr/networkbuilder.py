@@ -147,7 +147,7 @@ def build_content_sim_relation_text_lsa(network, signatures):
     create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.CONTENT_SIM, tfidf_is_dense=True)
 
 
-def build_content_sim_relation_text(network, fields, signatures):
+def build_content_sim_relation_text(network, signatures):
 
     def get_nid_gen(signatures):
         for nid, sig in signatures:
