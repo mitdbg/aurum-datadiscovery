@@ -291,7 +291,7 @@ class Algebra:
 
         return drs
 
-    def _assert_same_mode(a: DRS, b: DRS) -> None:
+    def _assert_same_mode(self, a: DRS, b: DRS) -> None:
         error_text = ("Input parameters are not in the same mode ",
                       "(fields, table)")
         assert a.mode == b.mode, error_text
