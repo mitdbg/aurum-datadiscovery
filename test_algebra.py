@@ -31,10 +31,6 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
-    """
-    Neighbor Search
-    """
-
     @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_source(self, *args):
@@ -87,12 +83,51 @@ class testAlgebra(unittest.TestCase):
         self.assertEqual(result, 'return_drs')
 
     def test_union(self):
-        pass
+        a = MagicMock()
+        b = MagicMock()
+        self.api._general_to_drs = MagicMock(return_value=a)
+
+        res = self.api.union(a, b)
+
+        self.api._general_to_drs.assert_called()
+        self.assertEqual(a.union(b), res)
 
     def test_intersection(self):
+        a = MagicMock()
+        b = MagicMock()
+        self.api._general_to_drs = MagicMock(return_value=a)
+        self.api._assert_same_mode = MagicMock()
+
+        res = self.api.intersection(a, b)
+
+        self.api._general_to_drs.assert_called()
+        self.assertEqual(a.intersection(b), res)
         pass
 
     def test_difference(self):
+        a = MagicMock()
+        b = MagicMock()
+        self.api._general_to_drs = MagicMock(return_value=a)
+        self.api._assert_same_mode = MagicMock()
+
+        res = self.api.difference(a, b)
+
+        self.api._general_to_drs.assert_called()
+        self.assertEqual(a.set_difference(b), res)
+        pass
+
+    def test_paths(self):
+        self.api._general_to_drs = MagicMock()
+        pass
+
+    @patch('algebra.DRS', MagicMock())
+    def test_traverse(self):
+        self.api._general_to_drs = MagicMock()
+        res = self.api.traverse(a='drs', primitive='primitive')
+
+        self.api._general_to_drs.assert_called()
+        res.absorb_provenance.assert_called()
+
         pass
 
     """
@@ -164,7 +199,9 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.assertEqual(self.api._network.get_hits_from_table.called, True)
 
     @patch('algebra.id_from', MagicMock())
-    @patch('algebra.isinstance', MagicMock(return_value=True))
+    @patch('algebra.isinstance', MagicMock(
+        side_effect=[False, True, True, True, True, True, True]))
+    @patch('algebra.DRS', None)
     def test_general_to_drs(self):
         nid = 1
         self.api._nid_to_hit = MagicMock(return_value='n_hit')
@@ -175,7 +212,7 @@ class TestAlgebraHelpers(unittest.TestCase):
 
         self.api._nid_to_hit.assert_called_with(nid)
         # self.api._node_to_hit.assert_called_with('n_hit')
-        self.api._hit_to_drs.assert_called_with('n_hit')
+        # self.api._hit_to_drs.assert_called_with('n_hit')
 
         self.assertEqual(result, 'drs')
 
