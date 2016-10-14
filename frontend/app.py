@@ -42,6 +42,7 @@ pkfk = Relation.PKFK
 
 app = Flask(__name__)
 
+
 @app.route('/query/<query>')
 def query(query):
     try:
@@ -55,7 +56,6 @@ def query(query):
 @app.route('/convert/<nid>')
 def convert(nid):
     try:
-        import pdb; pdb.set_trace()
         nid = int(nid)
         res = api._general_to_drs(nid)
         res = json.dumps(res.data)
