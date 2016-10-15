@@ -12,18 +12,22 @@ import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.Entities;
 import analysis.modules.EntityAnalyzer;
+import analysis.modules.KMinHash;
 
 public class TextualAnalyzer implements TextualAnalysis {
 
   private List<DataConsumer> analyzers;
   private CardinalityAnalyzer ca;
+  private KMinHash mh;
   private EntityAnalyzer ea;
 
   private TextualAnalyzer(EntityAnalyzer ea) {
     analyzers = new ArrayList<>();
+    mh = new KMinHash();
     ca = new CardinalityAnalyzer();
     this.ea = ea;
     analyzers.add(ca);
+    analyzers.add(mh);
     analyzers.add(ea);
   }
 
@@ -58,4 +62,10 @@ public class TextualAnalyzer implements TextualAnalysis {
   public Entities getEntities() {
     return ea.getEntities();
   }
+  
+  @Override
+  public int[] getMH() {
+	  return mh.getMH();
+  }
+  
 }

@@ -196,6 +196,7 @@ public class NativeElasticStore implements Store {
 				+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," // array
+				+ "\"minhash\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"}," // array
 				+ "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
 				+ "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
 				+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
@@ -266,6 +267,21 @@ public class NativeElasticStore implements Store {
 						.field("totalValues", wtr.getTotalValues())
 						.field("uniqueValues", wtr.getUniqueValues())
 						.field("entities", wtr.getEntities().toString())
+			
+						.startArray("minhash");
+						
+						int[] mh = wtr.getMH();
+						if (mh != null) { // that's an integer column
+							for (int i : mh) {
+								builder.value(i);
+							}
+						}
+						else {
+							builder.value(-1);
+						}
+						
+						builder.endArray()
+			
 						.field("minValue", wtr.getMinValue())
 						.field("maxValue", wtr.getMaxValue())
 						.field("avgValue", wtr.getAvgValue())

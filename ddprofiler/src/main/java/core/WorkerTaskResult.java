@@ -12,6 +12,7 @@ public class WorkerTaskResult {
 	final private int totalValues;
 	final private int uniqueValues;
 	final private String entities;
+	final private int[] minhash;
 	final private float minValue;
 	final private float maxValue;
 	final private float avgValue;
@@ -27,7 +28,8 @@ public class WorkerTaskResult {
 			String dataType,
 			int totalValues,
 			int uniqueValues,
-			String entities) {
+			String entities,
+			int[] minhash) {
 		this.id = id;
 		this.dbName = dbName;
 		this.path = path;
@@ -37,6 +39,7 @@ public class WorkerTaskResult {
 		this.totalValues = totalValues;
 		this.uniqueValues = uniqueValues;
 		this.entities = entities;
+		this.minhash = minhash;
 		this.minValue = 0; // non existent
 		this.maxValue = 0; // non existent
 		this.avgValue = 0; // non existent
@@ -72,6 +75,7 @@ public class WorkerTaskResult {
 		this.avgValue = avgValue;
 		this.median = median;
 		this.iqr = iqr;
+		this.minhash = null;
 	}
 	
 	public long getId() {
@@ -108,6 +112,10 @@ public class WorkerTaskResult {
 
 	public String getEntities() {
 		return entities;
+	}
+	
+	public int[] getMH() {
+		return minhash;
 	}
 
 	public float getMinValue() {

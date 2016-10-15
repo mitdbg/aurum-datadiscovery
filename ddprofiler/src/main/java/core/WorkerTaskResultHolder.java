@@ -76,6 +76,7 @@ public class WorkerTaskResultHolder {
 			else if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = ((TextualAnalysis)an);
 				Entities e = ta.getEntities();
+				int[] mh = ta.getMH();
 				List<String> ents = e.getEntities();
 				StringBuffer sb = new StringBuffer();
 				for(String str : ents) {
@@ -93,7 +94,8 @@ public class WorkerTaskResultHolder {
 						"T",
 						(int)ta.getCardinality().getTotalRecords(),
 						(int)ta.getCardinality().getUniqueElements(),
-						entities);
+						entities,
+						mh);
 				rs.add(wtr);
 			}
 		}
