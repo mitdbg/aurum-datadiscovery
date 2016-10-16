@@ -7,7 +7,8 @@ bitarray==0.8.1
 celery==3.1.20
 cycler==0.9.0
 dataset==0.6.2
-decorator
+datasketch==0.2.4
+decorator==4.0.5
 editdistance==0.2
 elasticsearch==2.3.0
 elasticsearch-dsl==2.0.0
@@ -37,7 +38,7 @@ networkx==1.11
 nltk==3.1
 normality==0.2.4
 notebook==4.0.6
-numpy
+numpy==1.11.1
 path.py==8.1.2
 pexpect==4.0.1
 pickleshare==0.5
@@ -52,8 +53,8 @@ PyYAML==3.11
 pyzmq==15.1.0
 qtconsole==4.1.1
 redis==2.10.5
-scikit-learn
-scipy
+scikit-learn==0.17
+scipy==0.16.1
 simplegeneric==0.8.1
 six==1.10.0
 SQLAlchemy==1.0.12
@@ -64,3 +65,4 @@ urllib3==1.15.1
 uWSGI==2.0.12
 Werkzeug==0.11.3
 wheel==0.24.0
+yappi==0.94
