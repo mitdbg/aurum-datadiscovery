@@ -9,6 +9,6 @@ import analysis.modules.Entities;
 public interface TextualAnalysis extends Analysis, TextualDataConsumer {
 
   public Entities getEntities();
-  public int[] getMH();
+  public long[] getMH();
   
 }

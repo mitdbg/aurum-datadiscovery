@@ -12,7 +12,7 @@ public class WorkerTaskResult {
 	final private int totalValues;
 	final private int uniqueValues;
 	final private String entities;
-	final private int[] minhash;
+	final private long[] minhash;
 	final private float minValue;
 	final private float maxValue;
 	final private float avgValue;
@@ -29,7 +29,7 @@ public class WorkerTaskResult {
 			int totalValues,
 			int uniqueValues,
 			String entities,
-			int[] minhash) {
+			long[] minhash) {
 		this.id = id;
 		this.dbName = dbName;
 		this.path = path;
@@ -114,7 +114,7 @@ public class WorkerTaskResult {
 		return entities;
 	}
 	
-	public int[] getMH() {
+	public long[] getMH() {
 		return minhash;
 	}
 

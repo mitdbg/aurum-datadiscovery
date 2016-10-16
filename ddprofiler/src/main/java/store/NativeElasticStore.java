@@ -196,7 +196,7 @@ public class NativeElasticStore implements Store {
 				+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
 				+ "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," // array
-				+ "\"minhash\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"}," // array
+				+ "\"minhash\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}," // array
 				+ "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
 				+ "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
 				+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
@@ -270,9 +270,9 @@ public class NativeElasticStore implements Store {
 			
 						.startArray("minhash");
 						
-						int[] mh = wtr.getMH();
+						long[] mh = wtr.getMH();
 						if (mh != null) { // that's an integer column
-							for (int i : mh) {
+							for (long i : mh) {
 								builder.value(i);
 							}
 						}

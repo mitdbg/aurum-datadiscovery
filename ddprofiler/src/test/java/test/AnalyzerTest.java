@@ -73,7 +73,7 @@ public class AnalyzerTest {
         System.out.println("median: " + na.getQuantile(0.5));
       }
       if (at.equals(AttributeType.STRING)) {
-        TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer();
+        TextualAnalysis ta = AnalyzerFactory.makeTextualAnalyzer(1);
         taMapping.put(a.getKey(), ta);
         List<String> strs = new ArrayList<>();
         for (String s : a.getValue().getStrings()) {

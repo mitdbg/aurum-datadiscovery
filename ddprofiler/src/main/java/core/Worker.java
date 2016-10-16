@@ -28,6 +28,8 @@ public class Worker implements Runnable {
 
 	final private Logger LOG = LoggerFactory.getLogger(Worker.class.getName());
 	
+	private final int pseudoRandomSeed = 1;
+	
 	private Conductor conductor;
 	private boolean doWork = true;
 	private String workerName;
@@ -182,7 +184,7 @@ public class Worker implements Runnable {
 				((NumericalAnalysis)analysis).feedIntegerData(entry.getValue().getIntegers());
 			}
 			else if(at.equals(AttributeType.STRING)) {
-				analysis = AnalyzerFactory.makeTextualAnalyzer(ea);
+				analysis = AnalyzerFactory.makeTextualAnalyzer(ea, pseudoRandomSeed);
 				((TextualAnalysis)analysis).feedTextData(entry.getValue().getStrings());
 			}
 			analyzers.put(a.getColumnName(), analysis);

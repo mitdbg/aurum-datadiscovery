@@ -76,7 +76,7 @@ public class WorkerTaskResultHolder {
 			else if(at.equals(AttributeType.STRING)) {
 				TextualAnalysis ta = ((TextualAnalysis)an);
 				Entities e = ta.getEntities();
-				int[] mh = ta.getMH();
+				long[] mh = ta.getMH();
 				List<String> ents = e.getEntities();
 				StringBuffer sb = new StringBuffer();
 				for(String str : ents) {

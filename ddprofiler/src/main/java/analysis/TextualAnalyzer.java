@@ -21,9 +21,9 @@ public class TextualAnalyzer implements TextualAnalysis {
   private KMinHash mh;
   private EntityAnalyzer ea;
 
-  private TextualAnalyzer(EntityAnalyzer ea) {
+  private TextualAnalyzer(EntityAnalyzer ea, int pseudoRandomSeed) {
     analyzers = new ArrayList<>();
-    mh = new KMinHash();
+    mh = new KMinHash(pseudoRandomSeed);
     ca = new CardinalityAnalyzer();
     this.ea = ea;
     analyzers.add(ca);
@@ -31,9 +31,9 @@ public class TextualAnalyzer implements TextualAnalysis {
     analyzers.add(ea);
   }
 
-  public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2) {
+  public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2, int pseudoRandomSeed) {
     ea2.clear();
-    return new TextualAnalyzer(ea2);
+    return new TextualAnalyzer(ea2, pseudoRandomSeed);
   }
 
   @Override
@@ -64,7 +64,7 @@ public class TextualAnalyzer implements TextualAnalysis {
   }
   
   @Override
-  public int[] getMH() {
+  public long[] getMH() {
 	  return mh.getMH();
   }
   

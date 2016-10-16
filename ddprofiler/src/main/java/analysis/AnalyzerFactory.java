@@ -9,14 +9,14 @@ public class AnalyzerFactory {
     return na;
   }
 
-  public static TextualAnalysis makeTextualAnalyzer(EntityAnalyzer ea) {
-    TextualAnalyzer ta = TextualAnalyzer.makeAnalyzer(ea);
+  public static TextualAnalysis makeTextualAnalyzer(EntityAnalyzer ea, int pseudoRandomSeed) {
+    TextualAnalyzer ta = TextualAnalyzer.makeAnalyzer(ea, pseudoRandomSeed);
     return ta;
   }
 
-  public static TextualAnalysis makeTextualAnalyzer() {
+  public static TextualAnalysis makeTextualAnalyzer(int pseudoRandomSeed) {
     EntityAnalyzer ea = new EntityAnalyzer();
-    TextualAnalyzer ta = TextualAnalyzer.makeAnalyzer(ea);
+    TextualAnalyzer ta = TextualAnalyzer.makeAnalyzer(ea, pseudoRandomSeed);
     return ta;
   }
 }

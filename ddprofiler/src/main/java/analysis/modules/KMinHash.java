@@ -8,33 +8,46 @@ import java.util.List;
 import java.util.Random;
 
 import analysis.TextualDataConsumer;
-import core.MurmurHash3;
 
 public class KMinHash implements TextualDataConsumer {
 	
-	final private int K = 256;
-	final private int SEED = 666; // Not caring about security for now
-	private int[] minhash;
-	private int[] rndSeeds;
+	final private int K = 512;
+	final private long MERSENNE_PRIME = (1 << 61) - 1;
+	private long[] minhash;
+	private long[][] rndSeeds;
 	
-	public KMinHash() {
-		minhash = new int[K];
-		rndSeeds = new int[K];
-		Random rnd = new Random();
+	public KMinHash(int pseudoRandomSeed) {
+		minhash = new long[K];
+		rndSeeds = new long[K][2];
+		Random rnd = new Random(pseudoRandomSeed);
+		
 		for(int i = 0; i < minhash.length; i++) {
-			minhash[i] = Integer.MAX_VALUE;
-			int nextSeed = rnd.nextInt();
-			rndSeeds[i] = nextSeed;
+			minhash[i] = Long.MAX_VALUE;
+			long nextSeed = rnd.nextLong();
+			rndSeeds[i][0] = nextSeed;
+			nextSeed = rnd.nextLong();
+			rndSeeds[i][1] = nextSeed;
 		}
+	}
+	
+	private static long hash(String string) {
+		long h = (1 << 61) - 1; // prime
+		int len = string.length();
+
+		for (int i = 0; i < len; i++) {
+			h = 31*h + string.charAt(i);
+		}
+		return h;
 	}
 
 	@Override
 	public boolean feedTextData(List<String> records) {
 
 		for (String r : records) {
-			int rawHash = MurmurHash3.murmurhash3_x86_32(r, 0, r.length(), SEED);
+			long rawHash = hash(r);
 			for (int i = 0; i < K; i++) {
-				int hash = (rawHash >>> (i+1)) ^ rndSeeds[i]; // rotation + XOR
+				// h = (a * x) + b
+				long hash = (rndSeeds[i][0] * rawHash + rndSeeds[i][1]) % MERSENNE_PRIME;
 				if(hash < minhash[i]) {
 					minhash[i] = hash;
 				}
@@ -44,7 +57,7 @@ public class KMinHash implements TextualDataConsumer {
 		return true;
 	}
 	
-	public int[] getMH() {
+	public long[] getMH() {
 		return minhash;
 	}
 	
