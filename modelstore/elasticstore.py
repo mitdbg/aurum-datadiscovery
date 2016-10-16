@@ -258,6 +258,38 @@ class StoreHandler:
                 text_signatures.append(data)
         return text_signatures
 
+    def get_all_mh_text_signatures(self):
+        """
+        Retrieves id-mh fields
+        :return: (fields, numsignatures)
+        """
+        query_body = {
+            "query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
+        res = client.search(index='profile', body=query_body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.minhash']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+
+        id_sig = []
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                data = (h['_id'], h['_source']['minhash'])
+                id_sig.append(data)
+                remaining -= 1
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source.minhash']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+        return id_sig
+
     def get_all_fields_num_signatures(self):
         """
         Retrieves numerical fields and signatures from the store

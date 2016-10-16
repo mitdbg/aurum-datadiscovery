@@ -2,13 +2,14 @@ import time
 
 from dataanalysis import dataanalysis as da
 
-from knowledgerepr.fieldnetwork import FieldNetwork
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
 from nearpy.hashes import RandomDiscretizedProjections
 from nearpy.distances import CosineDistance
 from sklearn.decomposition import TruncatedSVD
+from datasketch import MinHash, MinHashLSH
+from knowledgerepr.fieldnetwork import FieldNetwork
 
 from sklearn.cluster import DBSCAN
 import numpy as np
@@ -167,6 +168,38 @@ def build_content_sim_relation_text(network, signatures):
     create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.CONTENT_SIM)
 
 
+def build_content_sim_mh_text(network, mh_signatures):
+
+    def connect(nid1, nid2, score):
+        network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
+
+    # Materialize signatures for convenience
+    mh_sig_obj = []
+
+    lsh = MinHashLSH(threshold=0.75, num_perm=512)
+
+
+    # Create minhashe objects and index
+    for nid, mh_sig in mh_signatures:
+        mh_obj = MinHash(num_perm=512)
+        mh_array = np.asarray(mh_sig, dtype=int)
+        mh_obj.hashvalues = mh_array
+        lsh.insert(nid, mh_obj)
+        #print(mh_obj.hashvalues)
+        mh_sig_obj.append((nid, mh_obj))
+
+    # Query objects
+    for nid, mh_obj in mh_sig_obj:
+        res = lsh.query(mh_obj)
+        for r_nid in res:
+            if r_nid != nid:
+                connect(nid, r_nid, 1)
+        #if len(res) > 1:
+        #    print("sim to: " + str(nid))
+        #    for r in res:
+        #        print(str(r))
+
+
 def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
     def connect(nid1, nid2, score):
@@ -260,7 +293,7 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
     db_median = DBSCAN(eps=0.1, min_samples=2).fit(x_median)
     labels_median = db_median.labels_
     n_clusters = len(set(labels_median)) - (1 if -1 in labels_median else 0)
-    print("#clusters: " + str(n_clusters))
+    #print("#clusters: " + str(n_clusters))
 
     clusters_median = defaultdict(list)
     for i in range(len(labels_median)):
@@ -269,12 +302,12 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
     for k, v in clusters_median.items():
         if k == -1:
             continue
-        print("Cluster: " + str(k))
+        #print("Cluster: " + str(k))
         for el in v:
             nid = fields[el]
             info = network.get_info_for([nid])
             (nid, db_name, source_name, field_name) = info[0]
-            print(source_name + " - " + field_name + " median: " + str(medians[el]))
+            #print(source_name + " - " + field_name + " median: " + str(medians[el]))
             for el2 in v:
                 if el != el2:
                     nid1 = fields[el]
