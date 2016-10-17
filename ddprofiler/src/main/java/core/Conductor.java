@@ -1,5 +1,7 @@
 package core;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.Meter;
+
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
+import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import store.Store;
 
@@ -42,6 +47,7 @@ public class Conductor {
   private int totalFailedTasks = 0;
   private AtomicInteger totalProcessedTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
+  private Meter m;
 
   public Conductor(ProfilerConfig pc, Store s) {
     this.pc = pc;
@@ -71,6 +77,9 @@ public class Conductor {
     this.consumer = new Thread(runnable);
     String errorLogFileName = pc.getString(ProfilerConfig.ERROR_LOG_FILE_NAME);
     this.errorLogFile = new File(errorLogFileName);
+    
+    // Metrics
+    m = Metrics.REG.meter(name(Conductor.class, "tasks", "per", "sec"));
   }
 
   public void start() {
@@ -118,6 +127,7 @@ public class Conductor {
 
   public void notifyProcessedTask(int numCols) {
     totalProcessedTasks.incrementAndGet();
+    m.mark();
     LOG.info(" {}/{} ", totalProcessedTasks, totalTasksSubmitted);
     LOG.info(" Failed tasks: {} ", totalFailedTasks);
     totalColumns.addAndGet(numCols);

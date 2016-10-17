@@ -29,8 +29,10 @@ import core.config.ProfilerConfig;
 import inputoutput.conn.DBType;
 import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
+import metrics.Metrics;
 import store.Store;
 import store.StoreFactory;
+
 
 public class Main {
 
@@ -216,9 +218,19 @@ public class Main {
 
     // Start main
 
+    configureMetricsReporting(pc);
+    
     Main m = new Main();
     m.startProfiler(pc);
+    
   }
+  
+  static private void configureMetricsReporting(ProfilerConfig pc){
+		int reportConsole = pc.getInt(ProfilerConfig.REPORT_METRICS_CONSOLE);
+		if(reportConsole > 0){
+			Metrics.startConsoleReporter(reportConsole);
+		}
+	}
 
   private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources,
                                            String separator) {

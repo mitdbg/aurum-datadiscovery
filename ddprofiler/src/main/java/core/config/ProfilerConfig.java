@@ -63,6 +63,9 @@ public class ProfilerConfig extends Config {
   public static final String CSV_SEPARATOR = "csv.separator";
   private static final String CSV_SEPARATOR_DOC =
       "The separator used to split CSV/TSV files";
+  
+  public static final String REPORT_METRICS_CONSOLE = "console.metrics";
+  private static final String REPORT_METRICS_CONSOLE_DOC = "Output metrics to console";
 
   static {
     config =
@@ -89,7 +92,9 @@ public class ProfilerConfig extends Config {
             .define(ERROR_LOG_FILE_NAME, Type.STRING, "error_profiler.log",
                     Importance.MEDIUM, ERROR_LOG_FILE_NAME_DOC)
             .define(CSV_SEPARATOR, Type.STRING, ",", Importance.MEDIUM,
-                    CSV_SEPARATOR_DOC);
+                    CSV_SEPARATOR_DOC)
+    		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, 
+    				Importance.HIGH, REPORT_METRICS_CONSOLE_DOC);
   }
 
   public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {
