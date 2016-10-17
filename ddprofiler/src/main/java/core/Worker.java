@@ -19,6 +19,8 @@ import core.TaskPackage.TaskPackageType;
 import core.config.ProfilerConfig;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
+import inputoutput.conn.BenchmarkingConnector;
+import inputoutput.conn.BenchmarkingData;
 import inputoutput.conn.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
@@ -39,6 +41,10 @@ public class Worker implements Runnable {
 	
 	private BlockingQueue<TaskPackage> taskQueue;
 	private BlockingQueue<ErrorPackage> errorQueue;
+	
+	// Benchmark variables
+	private boolean first = true;
+	private BenchmarkingData benchData;
 	
 	// cached object
 	private EntityAnalyzer ea;
@@ -71,6 +77,17 @@ public class Worker implements Runnable {
 			}
 			else if(tp.getType() == TaskPackageType.DB) {
 				wt = WorkerTask.makeWorkerTaskForDB(tp.getDBName(), tp.getDBType(), tp.getIp(), tp.getPort(), tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
+			}
+			else if(tp.getType() == TaskPackageType.BENCH) {
+				if(first) {
+					first = false;
+					// Populate data for benchConnector
+					benchData = new BenchmarkingData();
+					char separator = tp.getSeparator().charAt(0);
+					benchData.populateDataFromCSVFile(tp.getPath(), separator);
+				}
+				BenchmarkingConnector benchConnector = BenchmarkingConnector.makeOne(benchData);
+				wt = WorkerTask.makeWorkerTaskForBenchmarking(benchConnector);
 			}
 		}
 		catch (InterruptedException e) {

@@ -39,7 +39,8 @@ public class Main {
   public enum ExecutionMode {
     ONLINE(0),
     OFFLINE_FILES(1),
-    OFFLINE_DB(2);
+    OFFLINE_DB(2),
+    BENCHMARK(3);
 
     int mode;
 
@@ -52,11 +53,11 @@ public class Main {
 
     // Default is elastic, if we have more in the future, just pass a property
     // to configure this
-    Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
+    //Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
 
     // for test purpose, use this and comment above line when elasticsearch is
     // not configured
-    //Store s = StoreFactory.makeNullStore(pc);
+    Store s = StoreFactory.makeNullStore(pc);
 
     Conductor c = new Conductor(pc, s);
     c.start();
@@ -67,15 +68,20 @@ public class Main {
       // Start infrastructure for REST server
       WebServer ws = new WebServer(pc, c);
       ws.init();
-    } else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
+    } 
+    else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
       // Run with the configured input parameters and produce results to file
       // (?)
-      String pathToSources =
-          pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-      this.readDirectoryAndCreateTasks(
-          dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
-    } else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
+      String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+      this.readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+    } 
+    else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
       this.readTablesFromDBAndCreateTasks(dbName, c);
+    }
+    else if(executionMode == ExecutionMode.BENCHMARK.mode) {
+      // Piggyback property to benchmark system with one file 
+      String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+      this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
     }
 
     while (c.isTherePendingWork()) {
@@ -225,8 +231,7 @@ public class Main {
       if (f.isFile()) {
         String path = f.getParent() + File.separator;
         String name = f.getName();
-        TaskPackage tp =
-            TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
+        TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
         totalFiles++;
         c.submitTask(tp);
       }
@@ -247,19 +252,23 @@ public class Main {
 
     LOG.info("Conn to DB on: {}:{}/{}", ip, port, dbname);
 
-    Connection dbConn =
-        DBUtils.getDBConnection(dbType, ip, port, dbname, username, password);
+    Connection dbConn = DBUtils.getDBConnection(dbType, ip, port, dbname, username, password);
 
     List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
     for (String str : tables) {
       LOG.info("Detected relational table: {}", str);
-      // TODO: to test
-//      WorkerTask wt = WorkerTask.makeWorkerTaskForDB(dbName, dbType, ip, port, dbname,
-//                                                     str, username, password);
       TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, dbType, ip, port, dbname,
                                                      str, username, password);
       c.submitTask(tp);
     }
+  }
+  
+  private void benchmarkSystem(Conductor c, String path, String separator) {
+	  TaskPackage tp = TaskPackage.makeBenchmarkTask(path, separator);
+	  // Make sure there's always work to process
+	  while(c.approxQueueLenght() < 1000) {
+		  c.submitTask(tp);
+	  }
   }
 
   private DBType getType(String type) {

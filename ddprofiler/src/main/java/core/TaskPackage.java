@@ -18,10 +18,12 @@ public class TaskPackage {
   private String str;
   private String username;
   private String password;
+  
+  // Static global for benchmarking purposes
 
   private TaskPackageType type;
 
-  public enum TaskPackageType { CSV, DB }
+  public enum TaskPackageType { CSV, DB, BENCH }
 
   private TaskPackage(String dbName, String path, String name, String separator,
                       TaskPackageType type) {
@@ -44,6 +46,12 @@ public class TaskPackage {
     this.password = password;
     this.type = type;
   }
+  
+  private TaskPackage(String path, String separator) {
+	  this.path = path;
+	  this.separator = separator;
+	  this.type = TaskPackageType.BENCH;
+  }
 
   public static TaskPackage makeCSVFileTaskPackage(String dbName, String path, String name,
                                                    String separator) {
@@ -56,6 +64,10 @@ public class TaskPackage {
                                               String password) {
     return new TaskPackage(dbName, dbType, ip, port, dbname, str, username, password,
                            TaskPackageType.DB);
+  }
+ 
+  public static TaskPackage makeBenchmarkTask(String path, String separator) {
+		return new TaskPackage(path, separator);
   }
 
   public String getPath() { return path; }
@@ -79,4 +91,5 @@ public class TaskPackage {
   public String getUsername() { return username; }
 
   public String getPassword() { return password; }
+
 }

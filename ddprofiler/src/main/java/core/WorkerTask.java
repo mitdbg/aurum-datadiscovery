@@ -49,6 +49,16 @@ public class WorkerTask implements Closeable {
     int id = computeTaskId(sourceName, tableName);
     return new WorkerTask(id, dbc);
   }
+  
+  public WorkerTask(Connector c) {
+	  this.taskId = -666;
+	  this.connector = c;
+  }
+  
+  public static WorkerTask makeWorkerTaskForBenchmarking(Connector c) {
+	  
+	  return new WorkerTask(c);
+  }
 
   private static int computeTaskId(String path, String name) {
     String c = path.concat(name);
@@ -65,4 +75,5 @@ public class WorkerTask implements Closeable {
     String sourceName = connector.getSourceName();
     return taskId + " - " + sourceName;
   }
+
 }

@@ -61,8 +61,7 @@ public class Conductor {
     for (int i = 0; i < numWorkers; i++) {
       String name = "Worker-" + new Integer(i).toString();
       EntityAnalyzer cached = new EntityAnalyzer(modelList, modelNameList);
-      Worker w =
-          new Worker(this, pc, name, taskQueue, errorQueue, store, cached);
+      Worker w = new Worker(this, pc, name, taskQueue, errorQueue, store, cached);
       Thread t = new Thread(w, name);
       workerPool.add(t);
       activeWorkers.add(w);
@@ -91,6 +90,10 @@ public class Conductor {
   public boolean submitTask(TaskPackage task) {
     totalTasksSubmitted++;
     return taskQueue.add(task);
+  }
+  
+  public int approxQueueLenght() {
+	  return taskQueue.size();
   }
 
   public boolean isTherePendingWork() {

@@ -19,7 +19,7 @@ public class ProfilerConfig extends Config {
   
   public static final String EXECUTION_MODE = "execution.mode";
   private static final String EXECUTION_MODE_DOC =
-      "(online - 0) for server mode and (offline files - 1) for one-shot read files from directory and (offline db - 2) for one-shot read tables from db";
+      "(online - 0) for server mode and (offline files - 1) for one-shot read files from directory and (offline db - 2) for one-shot read tables from db, (benchmark 3) for benchmarking purposes";
 
   public static final String WEB_SERVER_PORT = "web.server.port";
   private static final String WEB_SERVER_PORT_DOC =
