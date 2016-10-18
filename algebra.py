@@ -227,7 +227,7 @@ class Algebra:
 
         if general_input is None:
             general_input = DRS(data=[], operation=Operation(OP.NONE))
-        if isinstance(general_input, int):
+        if isinstance(general_input, int) or isinstance(general_input, str):
             general_input = self._nid_to_hit(general_input)
         # Hit is a subclassed from tuple
         if (isinstance(general_input, tuple) and
@@ -244,11 +244,13 @@ class Algebra:
     def _nid_to_hit(self, nid: int) -> Hit:
         """
         Given a node id, convert it to a Hit
-        :param nid: int
+        :param nid: int or string
         :return: DRS
         """
-        nid, db, source, field = self._network.get_info_for([nid])
-        hit = Hit(nid, db, source, field)
+        nid = str(nid)
+        score = 0.0
+        nid, db, source, field = self._network.get_info_for([nid])[0]
+        hit = Hit(nid, db, source, field, score)
         return hit
 
     def _node_to_hit(self, node: (str, str, str)) -> Hit:
