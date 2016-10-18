@@ -4,6 +4,7 @@ from collections import defaultdict
 from enum import Enum
 import binascii
 import networkx as nx
+import time
 import numpy as np
 from bitarray import bitarray
 
@@ -614,8 +615,14 @@ class DRS:
 
     def compute_ranking_scores(self):
 
+        st = time.time()
         self._compute_certainty_scores()
+        et = time.time()
+        print("Time to compute certainty scores: " + str(et - st))
+        st = time.time()
         self._compute_coverage_scores()
+        et = time.time()
+        print("Time to compute coverage scores: " + str(et - st))
 
         self._ranked = True
 
