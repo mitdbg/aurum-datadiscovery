@@ -166,7 +166,7 @@ class TestAlgebraHelpers(unittest.TestCase):
     @patch('algebra.Hit', MagicMock(return_value='result_hit'))
     def test_nid_to_node(self):
         self.api._network.get_info_for = MagicMock(
-            return_value=('t', 'o', 'op', 'le'))
+            return_value=[('t', 'o', 'op', 'le')])
         nid = 123
         result = self.api._nid_to_hit(nid=nid)
         self.assertEqual(result, 'result_hit')
