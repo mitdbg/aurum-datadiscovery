@@ -2,7 +2,6 @@ import time
 
 from dataanalysis import dataanalysis as da
 
-from knowledgerepr.fieldnetwork import FieldNetwork
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
