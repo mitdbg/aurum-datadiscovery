@@ -85,6 +85,8 @@ public class Worker implements Runnable {
 					benchData = new BenchmarkingData();
 					char separator = tp.getSeparator().charAt(0);
 					benchData.populateDataFromCSVFile(tp.getPath(), separator);
+					float sizeInMB = benchData.approxSizeOfDataInMemory();
+					System.out.println("SIZE_IN_MB_MEM: " + sizeInMB);
 				}
 				BenchmarkingConnector benchConnector = BenchmarkingConnector.makeOne(benchData);
 				wt = WorkerTask.makeWorkerTaskForBenchmarking(benchConnector);
@@ -136,6 +138,7 @@ public class Worker implements Runnable {
 				while(data != null) {
 					indexer.indexData(task.getConnector().getDBName(), task.getConnector().getPath(), data);
 					records = records + data.size();
+					Conductor.recordsPerSecond.mark(records);
 					// Do the processing
 					// FIXME: feedValuesToAnalyzers(data, analyzers);
 					feedValuesToAnalyzers(data, analyzers);

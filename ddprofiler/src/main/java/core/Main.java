@@ -55,11 +55,11 @@ public class Main {
 
     // Default is elastic, if we have more in the future, just pass a property
     // to configure this
-    //Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
+    Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
 
     // for test purpose, use this and comment above line when elasticsearch is
     // not configured
-    Store s = StoreFactory.makeNullStore(pc);
+    //Store s = StoreFactory.makeNullStore(pc);
 
     Conductor c = new Conductor(pc, s);
     c.start();
@@ -278,7 +278,7 @@ public class Main {
   private void benchmarkSystem(Conductor c, String path, String separator) {
 	  TaskPackage tp = TaskPackage.makeBenchmarkTask(path, separator);
 	  // Make sure there's always work to process
-	  while(c.approxQueueLenght() < 1000) {
+	  while(c.approxQueueLenght() < 30000) {
 		  c.submitTask(tp);
 	  }
   }

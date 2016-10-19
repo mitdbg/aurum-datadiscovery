@@ -48,6 +48,7 @@ public class Conductor {
   private AtomicInteger totalProcessedTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
   private Meter m;
+  public static Meter recordsPerSecond;
 
   public Conductor(ProfilerConfig pc, Store s) {
     this.pc = pc;
@@ -80,6 +81,7 @@ public class Conductor {
     
     // Metrics
     m = Metrics.REG.meter(name(Conductor.class, "tasks", "per", "sec"));
+    recordsPerSecond = Metrics.REG.meter(name(Conductor.class, "records", "per", "sec"));
   }
 
   public void start() {

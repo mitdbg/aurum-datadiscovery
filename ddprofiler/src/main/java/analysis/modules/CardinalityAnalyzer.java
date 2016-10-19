@@ -32,7 +32,6 @@ public class CardinalityAnalyzer
 
   @Override
   public boolean feedTextData(List<String> records) {
-
     for (String r : records) {
       totalRecords++;
       ic.offer(r);

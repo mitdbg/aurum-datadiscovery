@@ -60,4 +60,17 @@ public class BenchmarkingData {
 		return records;
 	}
 	
+	public float approxSizeOfDataInMemory() {
+		Record r = records.get(0);
+		List<String> tuples = r.getTuples();
+		int totalBytes = 0;
+		for (String t : tuples) {
+			totalBytes += t.length();
+		}
+		float approxMemoryBytes = totalBytes * records.size();
+		float approxMemoryMB = approxMemoryBytes/1024/1024;
+		
+		return approxMemoryMB;
+	}
+	
 }

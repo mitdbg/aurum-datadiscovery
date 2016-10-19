@@ -31,6 +31,7 @@ public class KMinHash implements TextualDataConsumer {
 	}
 	
 	private static long hash(String string) {
+		
 		long h = (1 << 61) - 1; // prime
 		int len = string.length();
 
@@ -42,7 +43,6 @@ public class KMinHash implements TextualDataConsumer {
 
 	@Override
 	public boolean feedTextData(List<String> records) {
-
 		for (String r : records) {
 			long rawHash = hash(r);
 			for (int i = 0; i < K; i++) {
