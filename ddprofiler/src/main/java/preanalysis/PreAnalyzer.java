@@ -16,19 +16,22 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import core.Main;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.conn.Connector;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 
-  final private Logger LOG =
-      LoggerFactory.getLogger(PreAnalyzer.class.getName());
+  final private Logger LOG = LoggerFactory.getLogger(PreAnalyzer.class.getName());
 
   private Connector c;
   private List<Attribute> attributes;
   private boolean knownDataTypes = false;
+  
+  // Metrics for fault tolerance
+  
+  private int errors;
+  private int successes;
 
   private static final Pattern _DOUBLE_PATTERN = Pattern.compile(
       "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
@@ -46,6 +49,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
 
   /**
    * Implementation of IO interface
+ * @throws Exception 
    */
 
   @Override
@@ -75,15 +79,16 @@ public class PreAnalyzer implements PreAnalysis, IO {
         for (String s : e.getValue()) {
           float f = 0f;
           if (DOUBLE_PATTERN.matcher(s).matches()) {
-            s = s.replace(
-                ",", ""); // remove commas, floats should be indicated with dots
+            s = s.replace(",", ""); // remove commas, floats should be indicated with dots
             f = Float.valueOf(s).floatValue();
-          } else {
+          }
+          else {
             continue;
           }
           castValues.add(f);
         }
-      } else if (at.equals(AttributeType.INT)) {
+      } 
+      else if (at.equals(AttributeType.INT)) {
         List<Long> castValues = new ArrayList<>();
         vs = Values.makeIntegerValues(castValues);
         for (String s : e.getValue()) {
@@ -91,21 +96,35 @@ public class PreAnalyzer implements PreAnalysis, IO {
           if (INT_PATTERN.matcher(s).matches()) {
             try {
               f = Long.valueOf(s).longValue();
-            } catch (NumberFormatException nfe) {
+              successes++;
+            } 
+            catch (NumberFormatException nfe) {
               LOG.warn("Error while parsing: {}", nfe.getMessage());
+              errors++;
               continue; // skip problematic value
             }
-          } else {
+          } 
+          else {
             continue;
           }
           castValues.add(f);
         }
-      } else if (at.equals(AttributeType.STRING)) {
+      } 
+      else if (at.equals(AttributeType.STRING)) {
         List<String> castValues = new ArrayList<>();
         vs = Values.makeStringValues(castValues);
         e.getValue().forEach(s -> castValues.add(s));
       }
 
+      // Check the ratio error-success is still ok
+      int totalRecords = successes + errors;
+      if(totalRecords > 1000) {
+    	  float ratio = successes / errors;
+    	  if(ratio > 0.3) {
+    		  continue;
+          }
+      }
+      
       castData.put(e.getKey(), vs);
     }
 

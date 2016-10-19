@@ -7,4 +7,6 @@ import java.util.Map;
 
 import inputoutput.Attribute;
 
-public interface IO { public Map<Attribute, Values> readRows(int num); }
+public interface IO { 
+	public Map<Attribute, Values> readRows(int num) throws Exception; 
+}
