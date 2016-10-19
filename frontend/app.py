@@ -1,17 +1,15 @@
 import os
 import sys
 import inspect
-import json
-from flask import Flask
+from flask import Flask, jsonify
 
-# move to top level
+# move to top level and import some more things
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from api.apiutils import Scope, Relation
-
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr import fieldnetwork
 from algebra import API
@@ -53,18 +51,21 @@ app = Flask(__name__)
 def query(query):
     try:
         res = eval(query, {"__builtins__": None}, safe_dict)
-        res = json.dumps(res.data)
+        data = res.data
+        edges = res.get_provenance().prov_graph().edges()
+
+        res = {'data': data, 'edges': edges}
+        res = jsonify(res)
     except Exception as e:
         res = "error: " + str(e)
     return res
 
 
-@app.route('/convert/<nid>')
-def convert(nid):
+@app.route('/convert/<input>')
+def convert(input):
     try:
-        nid = int(nid)
-        res = api._general_to_drs(nid)
-        res = json.dumps(res.data)
+        res = api._general_to_drs(input)
+        res = jsonify({'data': res.data})
     except Exception as e:
         res = "error: " + str(e)
     return res
