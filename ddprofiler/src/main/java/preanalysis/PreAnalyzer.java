@@ -59,7 +59,8 @@ public class PreAnalyzer implements PreAnalysis, IO {
       data = c.readRows(num);
       if (data == null)
         return null;
-    } catch (IOException | SQLException e) {
+    }
+    catch (IOException | SQLException e) {
       e.printStackTrace();
     }
 
@@ -101,6 +102,14 @@ public class PreAnalyzer implements PreAnalysis, IO {
             catch (NumberFormatException nfe) {
               LOG.warn("Error while parsing: {}", nfe.getMessage());
               errors++;
+              // Check the ratio error-success is still ok
+              int totalRecords = successes + errors;
+              if(totalRecords > 1000) {
+            	  float ratio = successes / errors;
+            	  if(ratio > 0.3) {
+            		  break;
+                  }
+              }
               continue; // skip problematic value
             }
           } 
@@ -114,15 +123,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
         List<String> castValues = new ArrayList<>();
         vs = Values.makeStringValues(castValues);
         e.getValue().forEach(s -> castValues.add(s));
-      }
-
-      // Check the ratio error-success is still ok
-      int totalRecords = successes + errors;
-      if(totalRecords > 1000) {
-    	  float ratio = successes / errors;
-    	  if(ratio > 0.3) {
-    		  continue;
-          }
       }
       
       castData.put(e.getKey(), vs);
