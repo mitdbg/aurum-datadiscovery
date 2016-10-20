@@ -2,6 +2,7 @@ import time
 
 from dataanalysis import dataanalysis as da
 
+from enum import Enum
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
 from nearpy.hashes import RandomBinaryProjections
@@ -200,6 +201,88 @@ def build_content_sim_mh_text(network, mh_signatures):
         #        print(str(r))
 
 
+def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
+
+    def compute_overlap(value1, value2):
+        ov = 0
+        if value1 == value2:
+            ov = 1
+        if value1 > value2:
+            if value1 > 0:
+                ov = value2 / value1
+        else:
+            if value2 > 0:
+                ov = value1 / value2
+        return ov
+
+    def check_overlap_maybe_connect(overlap):
+        return
+
+
+    class Event(Enum):
+        OPEN = 0
+        CLOSE = 1
+        FINISHED = 2
+
+    overlap = 0.7
+
+    # Materialize data
+    nids = []
+    # events are one of (value, open_event) or (value, close_event)
+    events = []
+    for c_k, (c_median, c_iqr, c_min_v, c_max_v) in id_sig:
+        nids.append(c_k)
+        open_event_value = c_median - c_iqr
+        events.append((open_event_value, Event.OPEN))
+        nids.append(c_k)
+        close_event_value = c_median + c_iqr
+        events.append((close_event_value, Event.CLOSE))
+
+    # Sort data
+    sorted_data = sorted(zip(events, nids), key=lambda x: x[0][0])
+    events = [x for x, y in sorted_data]
+    nids = [y for x, y in sorted_data]
+    active_set = dict()
+    start_events = dict()
+
+    # Iterate data
+    for idx in range(len(events)):
+        event_value, event_type = events[idx]
+        current_nid = nids[idx]
+        # Open or Close event?
+        if event_type == Event.OPEN:
+            for active_element_nid, active_element_values in active_set.items():
+                active_element_values[current_nid] = (event_value, event_type)
+            active_set[current_nid] = dict()
+            start_events[current_nid] = event_value
+        elif event_type == Event.CLOSE:
+            for key in list(active_set.keys()):
+                active_element_nid = key
+                active_element_values = active_set[active_element_nid]
+                if current_nid != active_element_nid:
+                    if current_nid in active_element_values.keys():
+                        open_event_value = active_element_values[current_nid][0]  # 1 is event_type
+                        overlap = event_value - open_event_value
+                        active_element_values[current_nid] = (overlap, Event.FINISHED)
+                elif current_nid == active_element_nid:
+                    for key in list(active_element_values.keys()):
+                        ae_nid = key
+                        ae_event = active_element_values[ae_nid]
+                        ae_value, ae_type = ae_event
+                        if ae_type == Event.FINISHED:
+                            closing_event_start_time = start_events[current_nid]
+                            overlap = compute_overlap(closing_event_start_time, ae_value)
+                            check_overlap_maybe_connect(overlap)
+                        elif ae_type == Event.OPEN:
+                            overlap = compute_overlap(event_value, ae_value)
+                            # store value in the active element
+                            active_set[active_element_nid][ae_nid] = (overlap, Event.FINISHED)
+                        # remove entry from values
+                        #del active_element_values[current_nid]
+                    # remove entry from active set
+                    del active_set[current_nid]
+
+
 def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
     def connect(nid1, nid2, score):
@@ -220,7 +303,7 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
         stats.append((extreme_left, extreme_right))
 
     zipped_and_sorted = sorted(zip(domains, fields, stats), reverse=True)
-    candidate_entries = [(y, x, z[0], z[1]) for (x,y,z) in zipped_and_sorted]
+    candidate_entries = [(y, x, z[0], z[1]) for (x, y, z) in zipped_and_sorted]
 
     single_points = []
 
