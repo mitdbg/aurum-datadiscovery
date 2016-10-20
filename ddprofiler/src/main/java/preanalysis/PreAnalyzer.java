@@ -28,11 +28,6 @@ public class PreAnalyzer implements PreAnalysis, IO {
   private List<Attribute> attributes;
   private boolean knownDataTypes = false;
   
-  // Metrics for fault tolerance
-  
-  private int errors;
-  private int successes;
-
   private static final Pattern _DOUBLE_PATTERN = Pattern.compile(
       "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
       +
@@ -92,6 +87,8 @@ public class PreAnalyzer implements PreAnalysis, IO {
       else if (at.equals(AttributeType.INT)) {
         List<Long> castValues = new ArrayList<>();
         vs = Values.makeIntegerValues(castValues);
+        int successes = 0;
+        int errors = 0;
         for (String s : e.getValue()) {
           long f = 0;
           if (INT_PATTERN.matcher(s).matches()) {
