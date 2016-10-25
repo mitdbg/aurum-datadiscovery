@@ -96,11 +96,15 @@ class Provenance:
         op = operation.op
         params = operation.params
         self.populate_provenance(data, op, params)
+        # cache for leafs and heads
+        self._cached_leafs_and_heads = (None, None)
 
     def prov_graph(self):
+        self.invalidate_leafs_heads_cache()  # for safety invalidate cache
         return self._p_graph
 
     def swap_p_graph(self, new):
+        self.invalidate_leafs_heads_cache()  # for safety invalidate cache
         self._p_graph = new
 
     def populate_provenance(self, data, op, params):
@@ -125,10 +129,12 @@ class Provenance:
             for element in data:  # now we connect the new node to data with the op
                 self._p_graph.add_node(element)
                 self._p_graph.add_edge(hit, element, op)
+                self.invalidate_leafs_heads_cache()
 
     def get_leafs_and_heads(self):
         # Compute leafs and heads
-        # FIXME: cache this to avoid graph traversal every time
+        if self._cached_leafs_and_heads[0] is not None and self._cached_leafs_and_heads[1] is not None:
+            return self._cached_leafs_and_heads[0], self._cached_leafs_and_heads[1]
         leafs = []
         heads = []
         for node in self._p_graph.nodes():
@@ -143,7 +149,11 @@ class Provenance:
                 leafs.append(node)
             if len(suc) == 0:
                 heads.append(node)
+        #self._cached_leafs_and_heads = (leafs, heads)
         return leafs, heads
+
+    def invalidate_leafs_heads_cache(self):
+        self._cached_leafs_and_heads = (None, None)
 
     def compute_paths_from_origin_to(self, a: Hit, leafs=None, heads=None):
         if leafs is None and heads is None:
