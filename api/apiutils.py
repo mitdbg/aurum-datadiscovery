@@ -86,6 +86,19 @@ class DRSMode(Enum):
     TABLE = 1
 
 
+class Metadata:
+    WARNING = 0
+    INSIGHT = 1
+    QUESTION = 2
+
+
+class MetadataRef:
+    MEANS_SAME = 0
+    MEANS_DIFF = 1
+    IS_HYPERNYM = 2
+    IS_HOLONYM = 3
+
+
 class Provenance:
     """
     Nodes are Hit (only). Origin nodes are given a special Hit object too.

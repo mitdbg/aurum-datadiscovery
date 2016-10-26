@@ -329,6 +329,51 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
         return id_sig
 
+    def delete_all_metadata(self):
+      """
+      Deletes all documents indexed of index='metadata' and doc_type='annotation'.
+      For testing purposes.
+      """
+      res = self.get_all_metadata_fields()["hits"]["hits"]
+      for annotation in res:
+        client.delete(index='metadata', doc_type='annotation', id=annotation["_id"])
+      return self.get_all_metadata_fields()
+
+    def write_metadata(self, author: str, md_class: str):
+      """
+      :param author: user or process who wrote the metadata
+      :param class: warning, insight, or question
+      :param source: nid of column source
+      :param target: nid of column 
+      :param relation: 
+
+      """
+      body = {
+        "author": author,
+        "class": md_class,
+        "source": "SOURCE",
+        "ref": {
+          "target": "TARGET",
+          "type": "REF_TYPE"
+        }
+      }
+      res = client.create(index='metadata', doc_type='annotation', body=body)
+      return res
+
+    def get_all_metadata_fields(self):
+      """
+      Returns all metadata fields.
+      """
+      body = {"query": {"match_all": {}}}
+      res = client.search(index='metadata', body=body, scroll="10m")
+      return res
+
+    def get_all_metadata_fields_with(self, node):
+      """
+      Returns all metadata fields that reference the given nid or node.
+      """
+      pass
+
 
 if __name__ == "__main__":
     print("Elastic Store")

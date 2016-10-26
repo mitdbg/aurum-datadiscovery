@@ -19,6 +19,26 @@ class Algebra:
         self._store_client = store_client
 
     """
+    Metadata API
+    """
+
+    def annotate(self):
+        """
+        Create a new annotation to elasticsearch graph as metadata.
+        Schema: user/process, creation date, class, source, description,
+        comments, entities, ref (target/type).
+        """
+        pass
+
+
+    def get_annotations(self, general_input) -> DRS:
+        """
+        Given an nid, node, (table?), return list of annotations that mention it
+        """
+        pass
+
+
+    """
     Basic API
     """
 
