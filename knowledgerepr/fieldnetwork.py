@@ -190,7 +190,7 @@ class FieldNetwork:
 
     def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
         if isinstance(hit, Hit):
-            nid = hit.nid
+            nid = str(hit.nid)
         if isinstance(hit, str):
             nid = hit
         data = []
