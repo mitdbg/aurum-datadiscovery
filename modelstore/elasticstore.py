@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from elasticsearch import Elasticsearch
 
 from enum import Enum
@@ -334,46 +335,65 @@ class StoreHandler:
       Deletes all documents indexed of index='metadata' and doc_type='annotation'.
       For testing purposes.
       """
-      res = self.get_all_metadata_fields()["hits"]["hits"]
+      res = self.get_all_metadata()["hits"]["hits"]
       for annotation in res:
         client.delete(index='metadata', doc_type='annotation', id=annotation["_id"])
-      return self.get_all_metadata_fields()
+      return self.get_all_metadata()
 
-    def write_metadata(self, author: str, md_class: str):
+    def write_metadata(self, author: str, description: str, md_class, source: str, ref=None):
       """
+      Adds metadata document to the elasticsearch graph. Does not modify the graph
+      if either the source nid or the target nid (if given) does not exist.
       :param author: user or process who wrote the metadata
-      :param class: warning, insight, or question
+      :param description: free text annotation
+      :param md_class: metadata class
       :param source: nid of column source
-      :param target: nid of column 
-      :param relation: 
-
+      :param ref: (optional) {
+          "target": nid of column target,
+          "type": metadata relation
+        }
       """
       body = {
         "author": author,
+        "description": description,
         "class": md_class,
-        "source": "SOURCE",
-        "ref": {
-          "target": "TARGET",
-          "type": "REF_TYPE"
-        }
+        "source": source,
+        "comments": None,
+        "entities": [],
+        "creation_date": datetime.utcnow(),
+        "updated_date": datetime.utcnow()
       }
+
+      if ref is None:
+        body["ref_target"] = None
+        body["ref_type"] = None
+      else:
+        body["ref_target"] = ref["target"]
+        body["ref_type"] = ref["type"]
+
       res = client.create(index='metadata', doc_type='annotation', body=body)
       return res
 
-    def get_all_metadata_fields(self):
+    def get_all_metadata(self):
       """
-      Returns all metadata fields.
+      Returns all metadata.
       """
       body = {"query": {"match_all": {}}}
       res = client.search(index='metadata', body=body, scroll="10m")
       return res
 
-    def get_all_metadata_fields_with(self, node):
+    def get_metadata_with(self, nid):
       """
-      Returns all metadata fields that reference the given nid or node.
+      Searches for all metadata that reference the given nid.
       """
-      pass
-
+      body = { "query": { "bool": {
+        "should": [
+          { "term": { "source": nid } },
+          { "term": { "ref_target": nid } }
+        ]
+      }}}
+      res = client.search(index='metadata', body=body, scroll="10m")
+      return res
 
 if __name__ == "__main__":
     print("Elastic Store")

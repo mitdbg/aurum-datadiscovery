@@ -10,6 +10,8 @@ from api.apiutils import Relation
 from api.apiutils import DRS
 from api.apiutils import DRSMode
 from api.apiutils import Hit
+from api.apiutils import MDClass
+from api.apiutils import MDRelation
 
 
 class Algebra:
@@ -22,21 +24,55 @@ class Algebra:
     Metadata API
     """
 
-    def annotate(self):
+    def annotate(self, author: str, description: str, md_class: MDClass, source: str, ref=None):
         """
         Create a new annotation to elasticsearch graph as metadata.
-        Schema: user/process, creation date, class, source, description,
-        comments, entities, ref (target/type).
+        :param author: identifiable name of user or process
+        :param description: free text annotation
+        :param md_class: MDClass
+        :param source: nid of column source
+        :param ref: (optional) {
+            "target": nid of column target,
+            "type": MDRelation
+        }
         """
-        pass
+        if ref is not None:
+            ref = {
+                "target": ref["target"],
+                "type": self._mdrelation_to_str(ref["type"])
+            }
 
+        res = self._store_client.write_metadata(author=author,
+            description=description,
+            md_class=self._mdclass_to_str(md_class),
+            source=source,
+            ref=ref)
+        return res
 
-    def get_annotations(self, general_input) -> DRS:
+    def metadata_search(self, nid):
         """
-        Given an nid, node, (table?), return list of annotations that mention it
+        Given an nid, node, (table?), searches for all annotations that mention it
+        :param general_input: nid to search for
         """
-        pass
+        return self._store_client.get_metadata_with(str(nid))["hits"]["hits"]
 
+    def pretty_print_md(self, metadata):
+        """
+        Pretty prints metadata documents.
+        :param metadata: list of metadata documents returned by elasticsearch
+        """
+        for md in metadata:
+            source = md["_source"]["source"]
+            description = md["_source"]["description"]
+            ref_target = md["_source"]["ref_target"]
+            ref_type = md["_source"]["ref_type"]
+
+            if ref_target is None:
+                relation = "{}".format(source)
+            else:
+                relation = "{} {} {}".format(source, ref_type, ref_target)
+
+            print("RELATION: {0:40} DESCRIPTION: {1:50}".format(relation, description))
 
     """
     Basic API
@@ -312,6 +348,23 @@ class Algebra:
             drs = drs.absorb(fields_table)
 
         return drs
+
+    def _mdclass_to_str(self, md_class: MDClass):
+        ref_table = {
+            MDClass.WARNING: "warning",
+            MDClass.INSIGHT: "insight",
+            MDClass.QUESTION: "question"
+        }
+        return ref_table[md_class]
+
+    def _mdrelation_to_str(self, md_relation: MDRelation):
+        ref_table = {
+            MDRelation.MEANS_SAME: "MEANS SAME AS",
+            MDRelation.MEANS_DIFF: "MEANS DIFF FROM",
+            MDRelation.IS_HYPERNYM: "IS HYPERNYM OF",
+            MDRelation.IS_HOLONYM: "IS HOLONYM OF"
+        }
+        return ref_table[md_relation]
 
     def _assert_same_mode(self, a: DRS, b: DRS) -> None:
         error_text = ("Input parameters are not in the same mode ",

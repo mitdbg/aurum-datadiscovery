@@ -86,13 +86,13 @@ class DRSMode(Enum):
     TABLE = 1
 
 
-class Metadata:
+class MDClass(Enum):
     WARNING = 0
     INSIGHT = 1
     QUESTION = 2
 
 
-class MetadataRef:
+class MDRelation(Enum):
     MEANS_SAME = 0
     MEANS_DIFF = 1
     IS_HYPERNYM = 2
