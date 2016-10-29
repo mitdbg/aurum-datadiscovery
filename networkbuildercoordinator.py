@@ -20,12 +20,14 @@ def main(output_path=None):
     network.init_meta_schema(fields_gen)
     end_schema = time.time()
     print("Total skeleton: {0}".format(str(end_schema - start_schema)))
+    print("!!1 " + str(end_schema - start_schema))
 
     # Schema_sim relation
     start_schema_sim = time.time()
     networkbuilder.build_schema_sim_relation(network)
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
+    print("!!2 " + str(end_schema_sim - start_schema_sim))
 
     # Entity_sim relation
     start_entity_sim = time.time()
@@ -41,10 +43,14 @@ def main(output_path=None):
     text_signatures = store.get_all_fields_text_signatures(network)
     et = time.time()
     print("Time to extract signatures from store: {0}".format(str(et - st)))
+    print("!!3 " + str(et - st))
 
     networkbuilder.build_content_sim_relation_text_lsa(network, text_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("!!4 " + str(end_text_sig_sim - start_text_sig_sim))
+
+
     """
 
     # Content_sim text relation (minhash-based)
@@ -53,24 +59,30 @@ def main(output_path=None):
     mh_signatures = store.get_all_mh_text_signatures()
     et = time.time()
     print("Time to extract minhash signatures from store: {0}".format(str(et - st)))
+    print("!!3 " + str(et - st))
 
     networkbuilder.build_content_sim_mh_text(network, mh_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim (minhash): {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+    print("!!4 " + str(end_text_sig_sim - start_text_sig_sim))
+
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
     id_sig = store.get_all_fields_num_signatures()
     #networkbuilder.build_content_sim_relation_num(network, id_sig)
     networkbuilder.build_content_sim_relation_num_overlap_distr(network, id_sig)
+    #networkbuilder.build_content_sim_relation_num_overlap_distr_indexed(network, id_sig)
     end_num_sig_sim = time.time()
     print("Total num-sig-sim: {0}".format(str(end_num_sig_sim - start_num_sig_sim)))
+    print("!!5 " + str(end_num_sig_sim - start_num_sig_sim))
 
     # Primary Key / Foreign key relation
     start_pkfk = time.time()
     networkbuilder.build_pkfk_relation(network)
     end_pkfk = time.time()
     print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
+    print("!!6 " + str(end_pkfk - start_pkfk))
 
     #topk = 100
     #degree = network.fields_degree(topk)
@@ -85,6 +97,7 @@ def main(output_path=None):
 
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
+    print("!!7 " + str(end_all - start_all))
 
     path = "test/datagov/"
     if output_path is not None:
