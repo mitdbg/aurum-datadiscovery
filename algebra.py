@@ -1,4 +1,5 @@
 import itertools
+import re
 
 from modelstore.elasticstore import KWType
 
@@ -26,9 +27,10 @@ class Algebra:
 
     def annotate(self, author: str, description: str, md_class: MDClass, source: str, ref=None):
         """
-        Create a new annotation to elasticsearch graph as metadata.
+        Create a new annotation in the elasticsearch graph as metadata. Parses tags
+        as keywords that follow a # symbol i.e. #data.
         :param author: identifiable name of user or process
-        :param description: free text annotation
+        :param description: free text description
         :param md_class: MDClass
         :param source: nid of column source
         :param ref: (optional) {
@@ -42,26 +44,39 @@ class Algebra:
                 "type": self._mdrelation_to_str(ref["type"])
             }
 
+        tags = re.findall("(?<=#)[a-zA-Z0-9]+", description)
+        tags = [tag.lower() for tag in tags]
+
         res = self._store_client.write_metadata(author=author,
             description=description,
             md_class=self._mdclass_to_str(md_class),
             source=source,
-            ref=ref)
+            ref=ref,
+            tags=tags)
         return res
+
+    def add_tags(self, md_id, tags: list):
+        """
+        Add tags/keywords to metadata with the given md_id.
+        :param md_id: metadata id
+        :param tags: a list of tags to add
+        """
+        return self._store_client.add_tags(str(md_id), tags)
 
     def metadata_search(self, nid):
         """
-        Given an nid, node, (table?), searches for all annotations that mention it
-        :param general_input: nid to search for
+        Given an nid, searches for all metadata that mention it
+        :param nid: nid to search for
         """
-        return self._store_client.get_metadata_with(str(nid))["hits"]["hits"]
+        return self._store_client.get_metadata_about(str(nid))
 
     def pretty_print_md(self, metadata):
         """
         Pretty prints metadata documents.
         :param metadata: list of metadata documents returned by elasticsearch
         """
-        for md in metadata:
+        for md in metadata["hits"]["hits"]:
+            md_id = md["_id"]
             source = md["_source"]["source"]
             description = md["_source"]["description"]
             ref_target = md["_source"]["ref_target"]
@@ -72,7 +87,14 @@ class Algebra:
             else:
                 relation = "{} {} {}".format(source, ref_type, ref_target)
 
-            print("RELATION: {0:40} DESCRIPTION: {1:50}".format(relation, description))
+            print("ID: {0:20} RELATION: {1:40} DESCRIPTION: {2}".format(md_id, relation, description))
+
+    def pretty_print_nid(self, nid: str):
+        """
+        Pretty prints sourceName and columnName of given nid.
+        """
+        sourceName, columnName = self._store_client.get_readable_doc_with_nid(nid)
+        print("({0}, {1}, {2})".format(nid, sourceName, columnName))
 
     """
     Basic API
@@ -359,10 +381,12 @@ class Algebra:
 
     def _mdrelation_to_str(self, md_relation: MDRelation):
         ref_table = {
-            MDRelation.MEANS_SAME: "MEANS SAME AS",
-            MDRelation.MEANS_DIFF: "MEANS DIFF FROM",
-            MDRelation.IS_HYPERNYM: "IS HYPERNYM OF",
-            MDRelation.IS_HOLONYM: "IS HOLONYM OF"
+            MDRelation.MEANS_SAME_AS: "MEANS SAME AS",
+            MDRelation.MEANS_DIFF_FROM: "MEANS DIFF FROM",
+            MDRelation.IS_SUBCLASS_OF: "IS SUBCLASS OF",
+            MDRelation.IS_SUPERCLASS_OF: "IS SUPERCLASS OF",
+            MDRelation.IS_MEMBER_OF: "IS MEMBER OF",
+            MDRelation.IS_CONTAINER_OF: "CONTAINS"
         }
         return ref_table[md_relation]
 

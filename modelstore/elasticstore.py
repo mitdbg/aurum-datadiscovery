@@ -340,10 +340,12 @@ class StoreHandler:
         client.delete(index='metadata', doc_type='annotation', id=annotation["_id"])
       return self.get_all_metadata()
 
-    def write_metadata(self, author: str, description: str, md_class, source: str, ref=None):
+    def write_metadata(self, author: str, description: str, md_class,
+      source: str, ref=None, tags=[]):
       """
-      Adds metadata document to the elasticsearch graph. Does not modify the graph
-      if either the source nid or the target nid (if given) does not exist.
+      Adds metadata document to the elasticsearch graph.
+      TODO: Does not modify the graph if either the source nid or the target nid (if given)
+      does not exist.
       :param author: user or process who wrote the metadata
       :param description: free text annotation
       :param md_class: metadata class
@@ -352,14 +354,17 @@ class StoreHandler:
           "target": nid of column target,
           "type": metadata relation
         }
+      :param tags: (optional) keyword tags
+      :return: true if metadata was successfully added, false otherwise
       """
+
       body = {
         "author": author,
         "description": description,
         "class": md_class,
         "source": source,
         "comments": None,
-        "entities": [],
+        "tags": tags,
         "creation_date": datetime.utcnow(),
         "updated_date": datetime.utcnow()
       }
@@ -374,6 +379,33 @@ class StoreHandler:
       res = client.create(index='metadata', doc_type='annotation', body=body)
       return res
 
+    def add_tags(self, md_id: str, tags: list):
+      """
+      Add tags/keywords to metadata with the given md_id.
+      """
+      search_body = {"query": {"terms": {"_id": [md_id]}}}
+      res = client.search(index='metadata', doc_type='annotation', body=search_body)
+      
+      # given md_id does not exist
+      if res["hits"]["total"] == 0:
+        return False
+
+      current_tags = res["hits"]["hits"][0]["_source"]["tags"]
+      # TODO: there may be duplicate tags
+      # TODO: this just doesn't work
+      update_body = {
+        "script": {
+          "inline": "ctx._source.tags.addAll(params.tags)",
+          "lang": "groovy",
+          "params": {
+            "tags": "hello"
+          }
+        }
+      }
+      client.update(index='metadata', doc_type='annotation', id=md_id, body=update_body)
+      return True
+
+
     def get_all_metadata(self):
       """
       Returns all metadata.
@@ -382,18 +414,34 @@ class StoreHandler:
       res = client.search(index='metadata', body=body, scroll="10m")
       return res
 
-    def get_metadata_with(self, nid):
+    def get_metadata_about(self, nid):
       """
       Searches for all metadata that reference the given nid.
       """
-      body = { "query": { "bool": {
+      body = {"query": {"bool": {
         "should": [
-          { "term": { "source": nid } },
-          { "term": { "ref_target": nid } }
+          {"term": {"source": nid}},
+          {"term": {"ref_target": nid}}
         ]
       }}}
       res = client.search(index='metadata', body=body, scroll="10m")
       return res
+
+    def get_readable_doc_with_nid(self, nid):
+      """
+      Returns (sourceName, columnName) of document with given nid, if
+      it exists. Else returns (None, None).
+      """
+      search_body = {"query": {"terms": {"_id": [nid]}}}
+      res = client.search(index='profile', body=search_body,
+                          filter_path=['hits.hits._source.sourceName',
+                                       'hits.hits._source.columnName'])
+      
+      if len(res) == 0:
+        return (None, None)
+
+      source = res["hits"]["hits"][0]["_source"]
+      return (source["sourceName"], source["columnName"])
 
 if __name__ == "__main__":
     print("Elastic Store")

@@ -91,13 +91,13 @@ class MDClass(Enum):
     INSIGHT = 1
     QUESTION = 2
 
-
 class MDRelation(Enum):
-    MEANS_SAME = 0
-    MEANS_DIFF = 1
-    IS_HYPERNYM = 2
-    IS_HOLONYM = 3
-
+    MEANS_SAME_AS = 0
+    MEANS_DIFF_FROM = 1
+    IS_SUBCLASS_OF = 2
+    IS_SUPERCLASS_OF = 3
+    IS_MEMBER_OF = 4
+    IS_CONTAINER_OF = 5
 
 class Provenance:
     """
