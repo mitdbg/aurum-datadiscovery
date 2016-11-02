@@ -22,7 +22,7 @@ class Algebra:
     Basic API
     """
 
-    def keyword_search(self, kw: str, scope: Scope, max_results=10) -> DRS:
+    def keyword_search(self, kw: str, kw_type: KWType, max_results=10) -> DRS:
         """
         Performs a keyword search over the contents of the data.
         Scope specifies where elasticsearch should be looking for matches.
@@ -33,7 +33,6 @@ class Algebra:
         :return: returns a DRS
         """
 
-        kw_type = self._scope_to_kw_type(scope)
         hits = self._store_client.search_keywords(
             keywords=kw, elasticfieldname=kw_type, max_hits=max_results)
 
@@ -195,22 +194,6 @@ class Algebra:
     """
     Helper Functions
     """
-
-    def _scope_to_kw_type(self, scope: Scope) -> KWType:
-        """
-        Converts a relation scope to a keyword type for elasticsearch.
-        """
-        kw_type = None
-        if scope == Scope.DB:
-            raise ValueError('DB Scope is not implemeneted')
-        elif scope == Scope.SOURCE:
-            kw_type = KWType.KW_TABLE
-        elif scope == Scope.FIELD:
-            kw_type = KWType.KW_SCHEMA
-        elif scope == Scope.CONTENT:
-            kw_type = KWType.KW_TEXT
-
-        return kw_type
 
     def _general_to_drs(self, general_input) -> DRS:
         """

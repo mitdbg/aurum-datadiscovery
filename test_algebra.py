@@ -31,16 +31,15 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_source(self, *args):
         kw = 'foo'
-        scope = Scope.SOURCE
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(
@@ -48,16 +47,15 @@ class testAlgebra(unittest.TestCase):
             max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_field(self):
         kw = 'foo'
-        scope = Scope.FIELD
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(
@@ -65,16 +63,15 @@ class testAlgebra(unittest.TestCase):
             max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_content(self):
         kw = 'foo'
-        scope = Scope.CONTENT
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(

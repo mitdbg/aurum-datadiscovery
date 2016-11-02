@@ -54,14 +54,6 @@ class Scope(Enum):
     CONTENT = 3
 
 
-class Relation(Enum):
-    SCHEMA = 0
-    SCHEMA_SIM = 1
-    CONTENT_SIM = 2
-    ENTITY_SIM = 3
-    PKFK = 5
-
-
 class OP(Enum):
     NONE = 0  # for initial creation of DRS
     ORIGIN = 1
