@@ -24,36 +24,58 @@ class Algebra:
     """
     Metadata API
     """
-
-    def annotate(self, author: str, description: str, md_class: MDClass, source: str, ref=None):
+    # use _general_to_drs
+    def annotate(self, author: str, description: str, md_class: MDClass,
+        general_input, ref={"general_target": None, "type": None}):
         """
         Create a new annotation in the elasticsearch graph as metadata. Parses tags
         as keywords that follow a # symbol i.e. #data.
         :param author: identifiable name of user or process
         :param description: free text description
         :param md_class: MDClass
-        :param source: nid of column source
+        :param nid, node tuple, Hit, or DRS: source(s)
         :param ref: (optional) {
-            "target": nid of column target,
+            "general_target": nid, node tuple, Hit, or DRS of target(s),
             "type": MDRelation
         }
         """
-        if ref is not None:
-            ref = {
-                "target": ref["target"],
-                "type": self._mdrelation_to_str(ref["type"])
-            }
+        drs_source = self._general_to_drs(general_input)
+        drs_target = self._general_to_drs(ref["general_target"])
+        
+        if drs_source.mode != DRSMode.FIELDS or drs_target.mode != DRSMode.FIELDS:
+            raise ValueError("source and targets must be columns")
 
         tags = re.findall("(?<=#)[a-zA-Z0-9]+", description)
         tags = [tag.lower() for tag in tags]
+        md_class = self._mdclass_to_str(md_class)
 
-        res = self._store_client.write_metadata(author=author,
-            description=description,
-            md_class=self._mdclass_to_str(md_class),
-            source=source,
-            ref=ref,
-            tags=tags)
-        return res
+        # non-relational metadata
+        if ref["type"] is None:
+            for hit_source in drs_source:
+                res = self._store_client.write_metadata(
+                    author=author,
+                    description=description,
+                    md_class=md_class,
+                    source=hit_source.nid,
+                    tags=tags)
+                if not res["created"]:
+                    return False
+            return True
+
+        # relational metadata
+        md_relation = self._mdrelation_to_str(ref["type"])
+        for hit_source in drs_source:
+            for hit_target in drs_target:
+                res = self._store_client.write_metadata(
+                    author=author,
+                    description=description,
+                    md_class=md_class,
+                    source=hit_source.nid,
+                    ref={"target": hit_target.nid, "type": md_relation},
+                    tags=tags)
+                if not res["created"]:
+                    return False
+            return True
 
     def add_tags(self, md_id, tags: list):
         """
