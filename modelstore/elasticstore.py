@@ -379,32 +379,26 @@ class StoreHandler:
       res = client.create(index='metadata', doc_type='annotation', body=body)
       return res
 
-    def add_tags(self, md_id: str, tags: list):
+    def add_tags(self, md_id: str, new_tags: list):
       """
       Add tags/keywords to metadata with the given md_id.
       """
       search_body = {"query": {"terms": {"_id": [md_id]}}}
       res = client.search(index='metadata', doc_type='annotation', body=search_body)
       
-      # given md_id does not exist
       if res["hits"]["total"] == 0:
-        return False
+        raise ValueError("Given md_id does not exist.")
 
-      current_tags = res["hits"]["hits"][0]["_source"]["tags"]
-      # TODO: there may be duplicate tags
-      # TODO: this just doesn't work
-      update_body = {
-        "script": {
-          "inline": "ctx._source.tags.addAll(params.tags)",
-          "lang": "groovy",
-          "params": {
-            "tags": "hello"
-          }
+      tags = res["hits"]["hits"][0]["_source"]["tags"]
+      tags.extend(new_tags)
+      body = {
+        "doc": {
+          "tags": list(set(tags)),
+          "updated_date": datetime.utcnow()
         }
       }
-      client.update(index='metadata', doc_type='annotation', id=md_id, body=update_body)
-      return True
-
+      res = client.update(index='metadata', doc_type='annotation', id=md_id, body=body)
+      return res
 
     def get_all_metadata(self):
       """
