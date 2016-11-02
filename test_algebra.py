@@ -186,7 +186,7 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.assertEqual(result, 'result_drs')
         self.api._network.get_hits_from_table.assert_not_called()
 
-    @patch('algebra.DRS', MagicMock(return_value='result_drs'))
+    @patch('algebra.DRS', MagicMock())
     def test_hit_to_drs_with_table_mode(self):
         self.api._network.get_hits_from_table = MagicMock()
         hit = namedtuple(
@@ -194,8 +194,7 @@ class TestAlgebraHelpers(unittest.TestCase):
             verbose=False)
         hit.source_name = 'table'
 
-        result = self.api._hit_to_drs(hit=hit, table_mode=True)
-        self.assertEqual(result, 'result_drs')
+        self.api._hit_to_drs(hit=hit, table_mode=True)
         self.assertEqual(self.api._network.get_hits_from_table.called, True)
 
     @patch('algebra.id_from', MagicMock())
@@ -204,7 +203,7 @@ class TestAlgebraHelpers(unittest.TestCase):
     @patch('algebra.DRS', None)
     def test_general_to_drs(self):
         nid = 1
-        self.api._nid_to_hit = MagicMock(return_value='n_hit')
+        self.api._nid_to_hit = MagicMock()
         self.api._node_to_hit = MagicMock(return_value='t_hit')
         self.api._hit_to_drs = MagicMock(return_value='drs')
 

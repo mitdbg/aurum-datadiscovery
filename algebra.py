@@ -234,7 +234,14 @@ class Algebra:
                 not isinstance(general_input, Hit)):
             general_input = self._node_to_hit(general_input)
         if isinstance(general_input, Hit):
-            general_input = self._hit_to_drs(general_input)
+            field = general_input.field_name
+            if field is '' or field is None:
+                # If the Hit's field is not defined, it is in table mode
+                # and all Hits from the table need to be found
+                general_input = self._hit_to_drs(
+                    general_input, table_mode=True)
+            else:
+                general_input = self._hit_to_drs(general_input)
         if isinstance(general_input, DRS):
             return general_input
 
@@ -278,6 +285,7 @@ class Algebra:
             table = hit.source_name
             hits = self._network.get_hits_from_table(table)
             drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+            drs.set_table_mode()
         else:
             drs = DRS([hit], Operation(OP.ORIGIN))
 
