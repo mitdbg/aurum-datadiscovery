@@ -76,15 +76,15 @@ def experiment_changing_input_size(repetitions=100):
 
     # Create a graph
 
-    fn = syn.generate_network_with(num_nodes=200, num_nodes_per_table=10, num_schema_sim=200,
-                                   num_content_sim=150, num_pkfk=50)
+    fn = syn.generate_network_with(num_nodes=100000, num_nodes_per_table=10, num_schema_sim=100000,
+                                   num_content_sim=100000, num_pkfk=100000)
 
     api = API(fn)
 
     perf_results = dict()
 
     # input size from 1 to 100
-    for i in range(20):
+    for i in range(30):
         i = i + 1
         nodes = fn.fields_degree(i)
         nids = [x for x, y in nodes]
@@ -99,7 +99,7 @@ def experiment_changing_input_size(repetitions=100):
 
 
 def experiment_changing_graph_size_constant_density(repetitions=100):
-    sizes = [100, 1000, 10000, 100000]
+    sizes = [100, 1000, 10000, 100000, 1000000]
     perf_results = dict()
     for size in sizes:
         relations = int(size/10)
@@ -122,7 +122,7 @@ def experiment_changing_graph_size_constant_density(repetitions=100):
 
 
 def experiment_changing_graph_density_constant_size(repetitions=10):
-    size = 10000
+    size = 100000
     densities = [100, 1000, 10000, 100000, 1000000]
     perf_results = dict()
     for density in densities:
@@ -148,8 +148,8 @@ def experiment_changing_max_hops_tc_queries(repetitions=100):
     perf_results = dict()
     for i in range(10):
         i = i +1
-        fn = syn.generate_network_with(num_nodes=1000, num_nodes_per_table=10, num_schema_sim=500,
-                                       num_content_sim=500, num_pkfk=500)
+        fn = syn.generate_network_with(num_nodes=100000, num_nodes_per_table=10, num_schema_sim=100000,
+                                       num_content_sim=100000, num_pkfk=100000)
 
         api = API(fn)
 
