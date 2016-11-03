@@ -47,11 +47,12 @@ def compute_field_id(db_name, source_name, field_name):
     return str(nid)
 
 
-class Scope(Enum):
-    DB = 0
-    SOURCE = 1
-    FIELD = 2
-    CONTENT = 3
+class Relation(Enum):
+    SCHEMA = 0
+    SCHEMA_SIM = 1
+    CONTENT_SIM = 2
+    ENTITY_SIM = 3
+    PKFK = 5
 
 
 class OP(Enum):

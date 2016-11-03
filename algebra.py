@@ -5,7 +5,6 @@ from modelstore.elasticstore import KWType
 from api.apiutils import compute_field_id as id_from
 from api.apiutils import Operation
 from api.apiutils import OP
-from api.apiutils import Scope
 from api.apiutils import Relation
 from api.apiutils import DRS
 from api.apiutils import DRSMode
