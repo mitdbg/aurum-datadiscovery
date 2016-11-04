@@ -209,12 +209,22 @@ class Algebra:
 
         if general_input is None:
             general_input = DRS(data=[], operation=Operation(OP.NONE))
-        if isinstance(general_input, int) or isinstance(general_input, str):
+
+        # Test for ints or strings that represent integers
+        if self._represents_int(general_input):
             general_input = self._nid_to_hit(general_input)
-        # Hit is a subclassed from tuple
+
+        # Test for strings that represent tables
+        if isinstance(general_input, str):
+            hits = self._network.get_hits_from_table(general_input)
+            general_input = DRS([x for x in hits], Operation(OP.ORIGIN))
+
+        # Test for tuples that are not Hits
         if (isinstance(general_input, tuple) and
                 not isinstance(general_input, Hit)):
             general_input = self._node_to_hit(general_input)
+
+        # Test for Hits
         if isinstance(general_input, Hit):
             field = general_input.field_name
             if field is '' or field is None:
@@ -287,6 +297,13 @@ class Algebra:
         error_text = ("Input parameters are not in the same mode ",
                       "(fields, table)")
         assert a.mode == b.mode, error_text
+
+    def _represents_int(self, string: str) -> bool:
+        try:
+            int(string)
+            return True
+        except:
+            return False
 
 
 class API(Algebra):

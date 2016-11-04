@@ -1,7 +1,7 @@
 import unittest
 from collections import namedtuple
 from modelstore.elasticstore import KWType
-from api.apiutils import Scope, Relation
+from api.apiutils import Relation
 from algebra import API, DRS
 from mock import MagicMock, patch
 
@@ -197,7 +197,7 @@ class TestAlgebraHelpers(unittest.TestCase):
     @patch('algebra.id_from', MagicMock())
     @patch('algebra.isinstance', MagicMock(
         side_effect=[False, True, True, True, True, True, True]))
-    @patch('algebra.DRS', None)
+    @patch('algebra.DRS', MagicMock())
     def test_general_to_drs(self):
         nid = 1
         self.api._nid_to_hit = MagicMock()
