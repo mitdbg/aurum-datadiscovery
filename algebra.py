@@ -24,7 +24,6 @@ class Algebra:
     """
     Metadata API
     """
-    # use _general_to_drs
     def annotate(self, author: str, description: str, md_class: MDClass,
         general_input, ref={"general_target": None, "type": None}):
         """
@@ -77,13 +76,21 @@ class Algebra:
                     return False
             return True
 
-    def add_tags(self, md_id, tags: list):
+    def add_comments(self, author: str, md_id: str, comments: list):
+        """
+        Add comment to metadata with the given md_id.
+        :param md_id: metadata id
+        :param comments: list of comments
+        """
+        return self._store_client.extend_field(author, "comments", md_id, comments)
+
+    def add_tags(self, author: str, md_id: str, tags: list):
         """
         Add tags/keywords to metadata with the given md_id.
         :param md_id: metadata id
         :param tags: a list of tags to add
         """
-        return self._store_client.add_tags(str(md_id), tags)
+        return self._store_client.extend_field(author, "tags", md_id, tags)
 
     def metadata_search(self, nid):
         """

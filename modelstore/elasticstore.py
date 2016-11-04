@@ -330,16 +330,9 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
         return id_sig
 
-    def delete_all_metadata(self):
-      """
-      Deletes all documents indexed of index='metadata' and doc_type='annotation'.
-      For testing purposes.
-      """
-      res = self.get_all_metadata()["hits"]["hits"]
-      for annotation in res:
-        client.delete(index='metadata', doc_type='annotation', id=annotation["_id"])
-      return self.get_all_metadata()
-
+    """
+    Metadata
+    """
     def write_metadata(self, author: str, description: str, md_class,
       source: str, ref=None, tags=[]):
       """
@@ -357,16 +350,17 @@ class StoreHandler:
       :param tags: (optional) keyword tags
       :return: true if metadata was successfully added, false otherwise
       """
+      timestamp = datetime.utcnow()
 
       body = {
         "author": author,
         "description": description,
         "class": md_class,
         "source": source,
-        "comments": None,
-        "tags": tags,
-        "creation_date": datetime.utcnow(),
-        "updated_date": datetime.utcnow()
+        "comments": [],
+        "tags": self._format_data(author, tags, timestamp),
+        "creation_date": timestamp,
+        "updated_date": timestamp
       }
 
       if ref is None:
@@ -379,26 +373,46 @@ class StoreHandler:
       res = client.create(index='metadata', doc_type='annotation', body=body)
       return res
 
-    def add_tags(self, md_id: str, new_tags: list):
+    def extend_field(self, author: str, field: str, md_id: str, data: list):
       """
-      Add tags/keywords to metadata with the given md_id.
+      Extend field with data in the metadata with the given md_id.
+      :param field: field to extend i.e. tags, comments
+      :param md_id: metadata id
+      :param data: list of data
       """
+      if field != "tags" and field != "comments":
+        raise ValueError("\"{}\" is not a valid field name.".format(field))
+
+      timestamp = datetime.utcnow()
       search_body = {"query": {"terms": {"_id": [md_id]}}}
       res = client.search(index='metadata', doc_type='annotation', body=search_body)
       
       if res["hits"]["total"] == 0:
         raise ValueError("Given md_id does not exist.")
 
-      tags = res["hits"]["hits"][0]["_source"]["tags"]
-      tags.extend(new_tags)
+      new_data = res["hits"]["hits"][0]["_source"][field]
+      new_data.extend(self._format_data(author, data, timestamp))
       body = {
         "doc": {
-          "tags": list(set(tags)),
-          "updated_date": datetime.utcnow()
+          "updated_date": timestamp,
+          field: new_data
         }
       }
       res = client.update(index='metadata', doc_type='annotation', id=md_id, body=body)
       return res
+
+    def _format_data(self, author: str, data: list, timestamp: datetime):
+      """
+      Formats list data for elasticsearch
+      """
+      new_data = []
+      for chunk in data:
+        new_data.append({
+          "author": author,
+          "creation_date": timestamp,
+          "data": chunk
+          })
+      return new_data
 
     def get_all_metadata(self):
       """
@@ -420,6 +434,14 @@ class StoreHandler:
       }}}
       res = client.search(index='metadata', body=body, scroll="10m")
       return res
+
+    def delete_all_metadata(self):
+      """
+      Deletes the index 'metadata' and all its documents, then recreates the index.
+      For testing purposes. Allows you to change the mapping of the document.
+      """
+      client.indices.delete(index='metadata')
+      return client.indices.create(index='metadata')
 
     def get_readable_doc_with_nid(self, nid):
       """
