@@ -177,7 +177,7 @@ def build_content_sim_mh_text(network, mh_signatures):
     # Materialize signatures for convenience
     mh_sig_obj = []
 
-    lsh = MinHashLSH(threshold=0.75, num_perm=512)
+    lsh = MinHashLSH(threshold=0.7, num_perm=512)
 
 
     # Create minhashe objects and index
@@ -285,10 +285,13 @@ def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
 
 def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
-    def connect(nid1, nid2, score):
-        network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
+    def connect(nid1, nid2, score, inddep=False):
+        if inddep is False:
+            network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
+        else:
+            network.add_relation(nid1, nid2, Relation.INCLUSION_DEPENDENCY, score)
 
-    overlap = 0.7
+    overlap = 0.85
 
     fields = []
     domains = []
@@ -310,6 +313,9 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
     for ref in candidate_entries:
         ref_nid, ref_domain, ref_x_left, ref_x_right = ref
 
+        if ref_nid == '2497639301':
+            debug = True
+
         if ref_domain == 0:
             single_points.append(ref)
 
@@ -325,16 +331,43 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
         for entry in candidate_entries:
             candidate_nid, candidate_domain, candidate_x_left, candidate_x_right = entry
 
+            if candidate_nid == '1677029088':
+                debug = True
+
             if candidate_nid == ref_nid:
                 continue
 
             if ref_domain == 0:
                 continue
 
-            if float(candidate_domain / ref_domain) <= overlap:
-                # early stop, not even the entire domain would overlap the necessary amount
-                # also non of the subsequent domains would, so just skip the loop
-                break
+            # Check for filtered inclusion dependencies first
+            if not isinstance(candidate_domain, float):  # Filter these out
+                # Check ind. dep.
+                info2 = network.get_info_for([candidate_nid])
+                if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
+                    # TODO: probably want to apply some filter here, division of medians or similar
+                    # TODO: or maybe try max min instead of median-+iqr
+                    #candidate_median = int((candidate_x_left + candidate_x_right)/2)
+                    #ref_median = float((ref_x_left + ref_x_right)/2)
+                    #heuristic = 0  # uninitialized
+                    #if ref_median > 0:
+                    #    heuristic = float(candidate_median / ref_median)
+                    #elif candidate_median > 0:
+                    #    heuristic = float(ref_median / candidate_median)
+                    #else:
+                    #    continue
+                    #if heuristic > 0.2 and heuristic < 5:
+
+                    if candidate_x_left > 0:  # Only consider positive numbers as IDs
+
+                        info2 = network.get_info_for([candidate_nid])
+                        #(nid, db_name, source_name, field_name) = info2[0]
+                        #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
+                        connect(candidate_nid, ref_nid, 1, inddep=True)
+
+            #if float(candidate_domain / ref_domain) <= overlap:
+            #    # There won't be a content sim relation -> not even the entire domain would overlap more than the th.
+            #    break
 
             if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
                 if float(candidate_domain / ref_domain) >= overlap:  # has to be as per the break condition above
@@ -499,11 +532,21 @@ def build_content_sim_relation_num(network, id_sig):
 
 
 def build_pkfk_relation(network):
+
+    def get_neighborhood(n):
+        neighbors = []
+        data_type = network.get_data_type_of(n)
+        if data_type == "N":
+            neighbors = network.neighbors_id(n, Relation.INCLUSION_DEPENDENCY)
+        if data_type == "T":
+            neighbors = network.neighbors_id(n, Relation.CONTENT_SIM)
+        return neighbors
+
     total_pkfk_relations = 0
     for n in network.iterate_ids():
         n_card = network.get_cardinality_of(n)
         if n_card > 0.7:  # Early check if this is a candidate
-            neighborhood = network.neighbors_id(n, Relation.CONTENT_SIM)
+            neighborhood = get_neighborhood(n)
             for ne in neighborhood:
                 if ne is not n:
                     ne_card = network.get_cardinality_of(ne.nid)

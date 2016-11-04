@@ -51,6 +51,7 @@ class Relation(Enum):
     CONTENT_SIM = 2
     ENTITY_SIM = 3
     PKFK = 5
+    INCLUSION_DEPENDENCY = 6
 
 
 class OP(Enum):

@@ -250,8 +250,7 @@ class StoreHandler:
                         terms_and_freq = term_vectors['text']['terms']
                         for term, freq_dict in terms_and_freq.items():
                             # we don't care about the value
-                            all_terms[term] = all_terms[
-                                                  term] + freq_dict['term_freq']
+                            all_terms[term] = all_terms[term] + freq_dict['term_freq']
             filtered_term_vector = filter_term_vector_by_frequency(all_terms)
             if len(filtered_term_vector) > 0:
                 data = (nid, filtered_term_vector)

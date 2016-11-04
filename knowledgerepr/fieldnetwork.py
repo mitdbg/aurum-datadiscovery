@@ -53,6 +53,10 @@ class FieldNetwork:
     def get_fields_of_source(self, source) -> [int]:
         return self.__source_ids[source]
 
+    def get_data_type_of(self, nid):
+        _, _, _, data_type = self.__id_names[nid]
+        return data_type
+
     def get_info_for(self, nids):
         info = []
         for nid in nids:
@@ -169,12 +173,13 @@ class FieldNetwork:
                 print(x)
         if relation == Relation.SCHEMA_SIM:
             for x in self.enumerate_relation(Relation.SCHEMA):
+                total_relationships += 1
                 print(x)
         if relation == Relation.PKFK:
             for x in self.enumerate_relation(Relation.PKFK):
+                total_relationships += 1
                 print(x)
-        print("Total " + str(relation) +
-              " relations: " + str(total_relationships))
+        print("Total " + str(relation) + " relations: " + str(total_relationships))
 
     def get_op_from_relation(self, relation):
         if relation == Relation.CONTENT_SIM:
