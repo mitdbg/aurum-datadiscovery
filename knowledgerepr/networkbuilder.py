@@ -285,6 +285,18 @@ def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
 
 def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
+    def compute_overlap(ref_left, ref_right, left, right):
+        ov = 0
+        if left >= ref_left and right <= ref_right:
+            ov = float((right - left) / (ref_right - ref_left))
+        elif left >= ref_left and left <= ref_right:
+            domain_ov = ref_right - left
+            ov = float(domain_ov / (ref_right - ref_left))
+        elif right <= ref_right and right >= ref_left:
+            domain_ov = right - ref_left
+            ov = float(domain_ov / (ref_right - ref_left))
+        return float(ov)
+
     def connect(nid1, nid2, score, inddep=False):
         if inddep is False:
             network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
@@ -301,19 +313,21 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
         domain = (c_median + c_iqr) - (c_median - c_iqr)
         domains.append(domain)
         extreme_left = c_median - c_iqr
+        min = c_min_v
         extreme_right = c_median + c_iqr
+        max = c_max_v
         #print(str(extreme_left) + " - " + str(domain) + " - " + str(extreme_right))
-        stats.append((extreme_left, extreme_right))
+        stats.append((min, extreme_left, extreme_right, max))
 
     zipped_and_sorted = sorted(zip(domains, fields, stats), reverse=True)
-    candidate_entries = [(y, x, z[0], z[1]) for (x, y, z) in zipped_and_sorted]
+    candidate_entries = [(y, x, z[0], z[1], z[2], z[3]) for (x, y, z) in zipped_and_sorted]
 
     single_points = []
 
     for ref in candidate_entries:
-        ref_nid, ref_domain, ref_x_left, ref_x_right = ref
+        ref_nid, ref_domain, ref_x_min, ref_x_left, ref_x_right, ref_x_max = ref
 
-        if ref_nid == '2497639301':
+        if ref_nid == '2314808454':
             debug = True
 
         if ref_domain == 0:
@@ -329,9 +343,9 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
         #print("")
 
         for entry in candidate_entries:
-            candidate_nid, candidate_domain, candidate_x_left, candidate_x_right = entry
+            candidate_nid, candidate_domain, candidate_x_min, candidate_x_left, candidate_x_right, candidate_x_max = entry
 
-            if candidate_nid == '1677029088':
+            if candidate_nid == '1504465753':
                 debug = True
 
             if candidate_nid == ref_nid:
@@ -344,31 +358,48 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
             if not isinstance(candidate_domain, float):  # Filter these out
                 # Check ind. dep.
                 info2 = network.get_info_for([candidate_nid])
-                if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
-                    # TODO: probably want to apply some filter here, division of medians or similar
-                    # TODO: or maybe try max min instead of median-+iqr
-                    #candidate_median = int((candidate_x_left + candidate_x_right)/2)
-                    #ref_median = float((ref_x_left + ref_x_right)/2)
-                    #heuristic = 0  # uninitialized
-                    #if ref_median > 0:
-                    #    heuristic = float(candidate_median / ref_median)
-                    #elif candidate_median > 0:
-                    #    heuristic = float(ref_median / candidate_median)
-                    #else:
-                    #    continue
-                    #if heuristic > 0.2 and heuristic < 5:
+                (_, _, sn1, fn1) = info1[0]
+                (_, _, sn2, fn2) = info2[0]
+                print("!"+sn2+"-"+fn2+" ( "+str(candidate_x_min)+", "+str(candidate_x_max)+" ) -> " + sn1+"-"+fn1+" ( "+str(ref_x_min)+", "+str(ref_x_max)+" ) -> ")
+                if candidate_x_min >= ref_x_min and candidate_x_max <= ref_x_max:
+                    # inclusion relation
+                    if candidate_x_min >= 0:
 
-                    if candidate_x_left > 0:  # Only consider positive numbers as IDs
+                        # min overlap for precision
+                        actual_overlap = compute_overlap(ref_x_left, ref_x_right, candidate_x_left, candidate_x_right)
+                        if actual_overlap >= 0.5:
+                            connect(candidate_nid, ref_nid, 1, inddep=True)
+                    """
+                    if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
+                        # TODO: probably want to apply some filter here, division of medians or similar
+                        # TODO: or maybe try max min instead of median-+iqr
+                        #candidate_median = int((candidate_x_left + candidate_x_right)/2)
+                        #ref_median = float((ref_x_left + ref_x_right)/2)
+                        #heuristic = 0  # uninitialized
+                        #if ref_median > 0:
+                        #    heuristic = float(candidate_median / ref_median)
+                        #elif candidate_median > 0:
+                        #    heuristic = float(ref_median / candidate_median)
+                        #else:
+                        #    continue
+                        #if heuristic > 0.2 and heuristic < 5:
 
-                        info2 = network.get_info_for([candidate_nid])
-                        #(nid, db_name, source_name, field_name) = info2[0]
-                        #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
-                        connect(candidate_nid, ref_nid, 1, inddep=True)
+                        if candidate_x_min >= 0:  # Only consider positive numbers as IDs
+
+                            info2 = network.get_info_for([candidate_nid])
+                            #(nid, db_name, source_name, field_name) = info2[0]
+                            #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
+                            connect(candidate_nid, ref_nid, 1, inddep=True)
+                    """
 
             #if float(candidate_domain / ref_domain) <= overlap:
             #    # There won't be a content sim relation -> not even the entire domain would overlap more than the th.
             #    break
+            actual_overlap = compute_overlap(ref_x_left, ref_x_right, candidate_x_left, candidate_x_right)
+            if actual_overlap >= overlap:
+                connect(candidate_nid, ref_nid, actual_overlap)
 
+            """
             if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
                 if float(candidate_domain / ref_domain) >= overlap:  # has to be as per the break condition above
                     actual_overlap = float(candidate_domain / ref_domain)
@@ -392,13 +423,14 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
                     #(nid, db_name, source_name, field_name) = info2[0]
                     #print(str(source_name) + " - " + str(field_name) + " ov: " + str(actual_overlap))
                     connect(candidate_nid, ref_nid, actual_overlap)
+            """
 
     # Final clustering for single points
 
     fields = []
     medians = []
 
-    for (nid, domain, x_left, x_right) in single_points:
+    for (nid, domain, x_min, x_left, x_right, x_max) in single_points:
         median = x_right - float(x_right / 2)
         fields.append(nid)
         medians.append(median)
@@ -545,10 +577,14 @@ def build_pkfk_relation(network):
     total_pkfk_relations = 0
     for n in network.iterate_ids():
         n_card = network.get_cardinality_of(n)
+        if n == '2314808454' or n == '1504465753':
+            debug = True
         if n_card > 0.7:  # Early check if this is a candidate
             neighborhood = get_neighborhood(n)
             for ne in neighborhood:
                 if ne is not n:
+                    if ne.nid == '1504465753' or ne.nid == '2314808454':
+                        debug = True
                     ne_card = network.get_cardinality_of(ne.nid)
                     if n_card > ne_card:
                         highest_card = n_card

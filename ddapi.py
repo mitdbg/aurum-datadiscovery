@@ -277,6 +277,24 @@ class DDAPI:
             o_drs = o_drs.absorb(hits_drs)
         return o_drs
 
+    def inclusion_dependency_to(self, i_drs: DRS) -> DRS:
+        """
+        Given a DRS it returns another DRS that contains all fields similar to the fields of the input
+        :param i_drs: the input DRS
+        :return: DRS
+        """
+        o_drs = DRS([], Operation(OP.NONE))
+        o_drs = o_drs.absorb_provenance(i_drs)
+        if i_drs.mode == DRSMode.TABLE:
+            i_drs.set_fields_mode()
+            for h in i_drs:
+                fields_table = self.drs_from_table_hit(h)
+                i_drs = i_drs.absorb(fields_table)
+        for h in i_drs:
+            hits_drs = self.__network.neighbors_id(h, Relation.INCLUSION_DEPENDENCY)
+            o_drs = o_drs.absorb(hits_drs)
+        return o_drs
+
     def pkfk_field(self, field: (str, str, str)) -> DRS:
         """
         Returns all the attributes/fields that are primary-key or foreign-key candidates with respect to the
