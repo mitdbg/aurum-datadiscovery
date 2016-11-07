@@ -6,6 +6,7 @@ from enum import Enum
 from collections import defaultdict
 
 from api.apiutils import Hit
+from api.annotation import MDHit, MRS
 import config as c
 
 
@@ -334,130 +335,179 @@ class StoreHandler:
     Metadata
     """
     def write_metadata(self, author: str, description: str, md_class,
-      source: str, ref=None, tags=[]):
-      """
-      Adds metadata document to the elasticsearch graph.
-      TODO: Does not modify the graph if either the source nid or the target nid (if given)
-      does not exist.
-      :param author: user or process who wrote the metadata
-      :param description: free text annotation
-      :param md_class: metadata class
-      :param source: nid of column source
-      :param ref: (optional) {
-          "target": nid of column target,
-          "type": metadata relation
+        source: str, ref=None, tags=[]):
+        """
+        Adds metadata document to the elasticsearch graph.
+        TODO: Does not modify the graph if either the source nid or the target nid (if given)
+        does not exist.
+        :param author: user or process who wrote the metadata
+        :param description: free text annotation
+        :param md_class: metadata class
+        :param source: nid of column source
+        :param ref: (optional) {
+            "target": nid of column target,
+            "type": metadata relation
         }
-      :param tags: (optional) keyword tags
-      :return: true if metadata was successfully added, false otherwise
-      """
-      timestamp = datetime.utcnow()
+        :param tags: (optional) keyword tags
+        :return: true if metadata was successfully added, false otherwise
+        """
+        timestamp = datetime.utcnow()
 
-      body = {
-        "author": author,
-        "description": description,
-        "class": md_class,
-        "source": source,
-        "comments": [],
-        "tags": self._format_data(author, tags, timestamp),
-        "creation_date": timestamp,
-        "updated_date": timestamp
-      }
+        body = {
+            "author": author,
+            "description": description,
+            "class": md_class,
+            "source": source,
+            "comments": [],
+            "tags": self._format_data(author, tags, timestamp),
+            "creation_date": timestamp,
+            "updated_date": timestamp
+        }
 
-      if ref is None:
-        body["ref_target"] = None
-        body["ref_type"] = None
-      else:
-        body["ref_target"] = ref["target"]
-        body["ref_type"] = ref["type"]
+        if ref is None:
+            body["ref_target"] = None
+            body["ref_type"] = None
+        else:
+            body["ref_target"] = ref["target"]
+            body["ref_type"] = ref["type"]
 
-      res = client.create(index='metadata', doc_type='annotation', body=body)
-      return res
+        res = client.create(index='metadata', doc_type='annotation', body=body)
+        hit = MDHit(res["_id"], author, md_class, source, body["ref_target"],
+                       body["ref_type"], description)
+        return hit
 
     def extend_field(self, author: str, field: str, md_id: str, data: list):
-      """
-      Extend field with data in the metadata with the given md_id.
-      :param field: field to extend i.e. tags, comments
-      :param md_id: metadata id
-      :param data: list of data
-      """
-      if field != "tags" and field != "comments":
-        raise ValueError("\"{}\" is not a valid field name.".format(field))
+        """
+        Extend field with data in the metadata with the given md_id.
+        :param field: field to extend i.e. tags, comments
+        :param md_id: metadata id
+        :param data: list of data
+        """
+        if field != "tags" and field != "comments":
+            raise ValueError("\"{}\" is not a valid field name.".format(field))
 
-      timestamp = datetime.utcnow()
-      search_body = {"query": {"terms": {"_id": [md_id]}}}
-      res = client.search(index='metadata', doc_type='annotation', body=search_body)
-      
-      if res["hits"]["total"] == 0:
-        raise ValueError("Given md_id does not exist.")
+        timestamp = datetime.utcnow()
+        search_body = {"query": {"terms": {"_id": [md_id]}}}
+        res = client.search(index='metadata', doc_type='annotation', body=search_body)
 
-      new_data = res["hits"]["hits"][0]["_source"][field]
-      new_data.extend(self._format_data(author, data, timestamp))
-      body = {
-        "doc": {
-          "updated_date": timestamp,
-          field: new_data
+        if res["hits"]["total"] == 0:
+            raise ValueError("Given md_id does not exist.")
+
+        new_data = res["hits"]["hits"][0]["_source"][field]
+        new_data.extend(self._format_data(author, data, timestamp))
+        body = {
+            "doc": {
+                "updated_date": timestamp,
+                field: new_data
+            }
         }
-      }
-      res = client.update(index='metadata', doc_type='annotation', id=md_id, body=body)
-      return res
+        res = client.update(index='metadata', doc_type='annotation', id=md_id, body=body)
+        return res
 
     def _format_data(self, author: str, data: list, timestamp: datetime):
-      """
-      Formats list data for elasticsearch
-      """
-      new_data = []
-      for chunk in data:
-        new_data.append({
-          "author": author,
-          "creation_date": timestamp,
-          "data": chunk
-          })
-      return new_data
+        """
+        Formats list data for elasticsearch
+        """
+        new_data = []
+        for chunk in data:
+            new_data.append({
+                "author": author,
+                "creation_date": timestamp,
+                "data": chunk
+            })
+        return new_data
 
     def get_all_metadata(self):
-      """
-      Returns all metadata.
-      """
-      body = {"query": {"match_all": {}}}
-      res = client.search(index='metadata', body=body, scroll="10m")
-      return res
+        """
+        Returns all metadata.
+        """
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='metadata', body=body, scroll="10m")
+        md_hits = []
+        for hit in res["hits"]["hits"]:
+            md_hits.append(MDHit(hit["_id"], hit["_source"]["author"],
+                hit["_source"]["class"], hit["_source"]["source"],
+                hit["_source"]["ref_target"], hit["_source"]["ref_type"],
+                hit["_source"]["description"]))
+        return MRS(md_hits)
 
-    def get_metadata_about(self, nid):
-      """
-      Searches for all metadata that reference the given nid.
-      """
-      body = {"query": {"bool": {
-        "should": [
-          {"term": {"source": nid}},
-          {"term": {"ref_target": nid}}
-        ]
-      }}}
-      res = client.search(index='metadata', body=body, scroll="10m")
-      return res
+    def get_metadata_about(self, nid, relation=None):
+        """
+        Searches for all metadata that reference the given nid.
+        """
+        #if relation is None:
+        body = {"query": {"bool": {
+            "should": [
+                {"term": {"source": nid}},
+                {"term": {"ref_target": nid}}
+            ]
+        }}}
+        #else:
+        #  body = {"query": {"constant_score": {"filter": {"bool": {
+        #    "should": [
+        #      {"bool": {
+        #        "must": [
+        #          {"term": {"source": nid}},
+        #          {"term": {"ref_type": relation}}
+        #        ]
+        #      }},
+        #      {"bool": {
+        #        "must": [
+        #          {"term": {"ref_target": nid}},
+        #          {"term": {"ref_type": relation}}
+        #        ]
+        #      }}
+        #    ]
+        #  }}}}}
+        res = client.search(index='metadata', body=body, scroll="10m")
+        for hit in res["hits"]["hits"]:
+            yield MDHit(hit["_id"], hit["_source"]["author"],
+                hit["_source"]["class"], hit["_source"]["source"],
+                hit["_source"]["ref_target"], hit["_source"]["ref_type"],
+                hit["_source"]["description"])
 
     def delete_all_metadata(self):
-      """
-      Deletes the index 'metadata' and all its documents, then recreates the index.
-      For testing purposes. Allows you to change the mapping of the document.
-      """
-      client.indices.delete(index='metadata')
-      return client.indices.create(index='metadata')
+        """
+        Deletes the index 'metadata' and all its documents, then recreates the index.
+        For testing purposes. Allows you to change the mapping of the document.
+        """
+        client.indices.delete(index='metadata')
+        # TODO: create mappings for metadata
+        # TODO: store doc_type = "entity"?
+        # TODO: store doc_type = "comment"?
+        #body = {
+        #    "mappings": {
+        #        "annotation": {
+        #            "properties": {
+        #                "author": {"type": "keyword"},
+        #                "description": {"type": "text"},
+        #                "class": {"type": "keyword"},
+        #                "source": {"type": "keyword"},
+        #                "comments": [],
+        #                "tags": self._format_data(author, tags, timestamp),
+        #                "creation_date": timestamp,
+        #                "updated_date": timestamp
+        #            }
+        #        }
+        #    }
+        #}
+        return client.indices.create(index='metadata')
 
     def get_readable_doc_with_nid(self, nid):
-      """
-      Returns (sourceName, columnName) of document with given nid, if
-      it exists. Else returns (None, None).
-      """
-      search_body = {"query": {"terms": {"_id": [nid]}}}
-      res = client.search(index='profile', body=search_body,
-                          filter_path=['hits.hits._source.sourceName',
-                                       'hits.hits._source.columnName'])
-      
-      if len(res) == 0:
-        return (None, None)
+        """
+        Returns (sourceName, columnName) of document with given nid, if
+        it exists. Else returns (None, None).
+        """
+        search_body = {"query": {"terms": {"_id": [nid]}}}
+        res = client.search(index='profile', body=search_body,
+                            filter_path=['hits.hits._source.sourceName',
+                                        'hits.hits._source.columnName'])
 
-      source = res["hits"]["hits"][0]["_source"]
-      return (source["sourceName"], source["columnName"])
+        if len(res) == 0:
+            return (None, None)
+
+        source = res["hits"]["hits"][0]["_source"]
+        return (source["sourceName"], source["columnName"])
 
 if __name__ == "__main__":
     print("Elastic Store")

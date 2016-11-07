@@ -86,19 +86,6 @@ class DRSMode(Enum):
     TABLE = 1
 
 
-class MDClass(Enum):
-    WARNING = 0
-    INSIGHT = 1
-    QUESTION = 2
-
-class MDRelation(Enum):
-    MEANS_SAME_AS = 0
-    MEANS_DIFF_FROM = 1
-    IS_SUBCLASS_OF = 2
-    IS_SUPERCLASS_OF = 3
-    IS_MEMBER_OF = 4
-    IS_CONTAINER_OF = 5
-
 class Provenance:
     """
     Nodes are Hit (only). Origin nodes are given a special Hit object too.

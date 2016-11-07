@@ -11,8 +11,10 @@ from api.apiutils import Relation
 from api.apiutils import DRS
 from api.apiutils import DRSMode
 from api.apiutils import Hit
-from api.apiutils import MDClass
-from api.apiutils import MDRelation
+from api.annotation import MDClass
+from api.annotation import MDRelation
+from api.annotation import MDHit
+from api.annotation import MRS
 
 
 class Algebra:
@@ -25,7 +27,7 @@ class Algebra:
     Metadata API
     """
     def annotate(self, author: str, description: str, md_class: MDClass,
-        general_input, ref={"general_target": None, "type": None}):
+        general_input, ref={"general_target": None, "type": None}) -> MRS:
         """
         Create a new annotation in the elasticsearch graph as metadata. Parses tags
         as keywords that follow a # symbol i.e. #data.
@@ -37,16 +39,18 @@ class Algebra:
             "general_target": nid, node tuple, Hit, or DRS of target(s),
             "type": MDRelation
         }
+        :return: MRS of the new metadata
         """
         drs_source = self._general_to_drs(general_input)
         drs_target = self._general_to_drs(ref["general_target"])
-        
+
         if drs_source.mode != DRSMode.FIELDS or drs_target.mode != DRSMode.FIELDS:
             raise ValueError("source and targets must be columns")
 
         tags = re.findall("(?<=#)[a-zA-Z0-9]+", description)
         tags = [tag.lower() for tag in tags]
         md_class = self._mdclass_to_str(md_class)
+        md_hits = []
 
         # non-relational metadata
         if ref["type"] is None:
@@ -57,9 +61,8 @@ class Algebra:
                     md_class=md_class,
                     source=hit_source.nid,
                     tags=tags)
-                if not res["created"]:
-                    return False
-            return True
+                md_hits.append(res)
+            return MRS(md_hits)
 
         # relational metadata
         md_relation = self._mdrelation_to_str(ref["type"])
@@ -72,9 +75,8 @@ class Algebra:
                     source=hit_source.nid,
                     ref={"target": hit_target.nid, "type": md_relation},
                     tags=tags)
-                if not res["created"]:
-                    return False
-            return True
+                md_hits.append(res)
+            return MRS(md_hits)
 
     def add_comments(self, author: str, md_id: str, comments: list):
         """
@@ -92,31 +94,34 @@ class Algebra:
         """
         return self._store_client.extend_field(author, "tags", md_id, tags)
 
-    def metadata_search(self, nid):
+    def metadata_search(self, nid) -> MRS:
         """
         Given an nid, searches for all metadata that mention it
         :param nid: nid to search for
         """
-        return self._store_client.get_metadata_about(str(nid))
+        md_hits = self._store_client.get_metadata_about(str(nid))
+        mrs = MRS([x for x in md_hits])
+        return mrs
 
-    def pretty_print_md(self, metadata):
+    def pretty_print_mrs(self, mrs: MRS):
         """
         Pretty prints metadata documents.
         :param metadata: list of metadata documents returned by elasticsearch
         """
-        for md in metadata["hits"]["hits"]:
-            md_id = md["_id"]
-            source = md["_source"]["source"]
-            description = md["_source"]["description"]
-            ref_target = md["_source"]["ref_target"]
-            ref_type = md["_source"]["ref_type"]
+        for hit in mrs:
+            md_id = hit.id
+            source = hit.source
+            description = hit.description
+            ref_target = hit.ref_target
+            ref_type = hit.ref_type
 
             if ref_target is None:
                 relation = "{}".format(source)
             else:
                 relation = "{} {} {}".format(source, ref_type, ref_target)
 
-            print("ID: {0:20} RELATION: {1:40} DESCRIPTION: {2}".format(md_id, relation, description))
+            print("ID: {0:20} RELATION: {1:40} DESCRIPTION: {2}".format(
+                md_id, relation, description))
 
     def pretty_print_nid(self, nid: str):
         """
