@@ -110,7 +110,24 @@ def neighbors(i_drs, relations=Relation, exclude_origin=True):
         print(msg)
 
 
-def paths_between(a, b, primitive):
+def path(drs_a, drs_b=None, relation=pkfk):
+    try:
+        if isinstance(drs_b, Relation):
+            relation, drs_b = drs_b, drs_a
+        drs = api.paths(drs_a, drs_b, relation)
+        return drs
+    except:
+        msg = (
+            '--- Error ---' +
+            '\nThis function returns a drs showing how to get between one drs' +
+            'and another, using a specified Relation.'
+            '\nusage:\n\tpath(drs_a, drs_b)' +
+            '\ne.g.:\n\tdrs_a = search(\'school\')' +
+            '\n\tdrs_b = search(\'occupation\')' +
+            '\n\tpath(drs_a, drs_b, pkfk)'
+            )
+        print(msg)
+
     pass
 
 
