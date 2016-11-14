@@ -6,7 +6,7 @@ from enum import Enum
 from collections import defaultdict
 
 from api.apiutils import Hit
-from api.annotation import MDHit, MRS
+from api.annotation import MDHit, MDComment, MRS
 import config as c
 
 
@@ -334,61 +334,75 @@ class StoreHandler:
     """
     Metadata
     """
-    def write_metadata(self, author: str, description: str, md_class,
-        source: str, ref=None, tags=[]):
+    def add_annotation(self, author: str, text: str, md_class: str,
+        source: str, target={"id": None, "type": None}, tags=[]):
         """
-        Adds metadata document to the elasticsearch graph.
-        TODO: Does not modify the graph if either the source nid or the target nid (if given)
-        does not exist.
+        Adds annotation document to the elasticsearch graph.
+        TODO: Does not modify the graph if either the source nid or the target
+        nid (if given) does not exist.
         :param author: user or process who wrote the metadata
-        :param description: free text annotation
+        :param text: free text annotation
         :param md_class: metadata class
         :param source: nid of column source
-        :param ref: (optional) {
-            "target": nid of column target,
+        :param target: (optional) {
+            "id": nid of column target,
             "type": metadata relation
         }
         :param tags: (optional) keyword tags
-        :return: true if metadata was successfully added, false otherwise
+        :return: an MRS of the newly-added annotation
         """
-        timestamp = datetime.utcnow()
+        timestamp = self._current_time()
 
         body = {
             "author": author,
-            "description": description,
+            "text": text,
             "class": md_class,
             "source": source,
-            "comments": [],
+            "target": target,
             "tags": self._format_data(author, tags, timestamp),
             "creation_date": timestamp,
             "updated_date": timestamp
         }
 
-        if ref is None:
-            body["ref_target"] = None
-            body["ref_type"] = None
-        else:
-            body["ref_target"] = ref["target"]
-            body["ref_type"] = ref["type"]
-
         res = client.create(index='metadata', doc_type='annotation', body=body)
-        hit = MDHit(res["_id"], author, md_class, source, body["ref_target"],
-                       body["ref_type"], description)
+        hit = MDHit(res["_id"], author, md_class, text, source,
+            target["id"], target["type"])
         return hit
+
+    def add_comment(self, author: str, text: str, md_id: str):
+        """
+        Adds a comment document to the elasticsearch graph, whose parent is
+        the annotation document with the given md_id.
+        """
+        timestamp = self._current_time()
+        body = {
+            "author": author,
+            "text": text,
+            "date": timestamp
+        }
+
+        # TODO: RequestError: TransportError(400, 'illegal_argument_exception',
+        # "Can't specify parent if no parent field has been configured")
+        res = client.create(index='metadata', doc_type='comment', body=body,
+            parent=md_id)
+        return MDComment(res["_id"], author, text, md_id)
 
     def extend_field(self, author: str, field: str, md_id: str, data: list):
         """
         Extend field with data in the metadata with the given md_id.
-        :param field: field to extend i.e. tags, comments
+        :param field: field to extend i.e. tags
         :param md_id: metadata id
         :param data: list of data
         """
-        if field != "tags" and field != "comments":
+        # TODO: since comments are stored as their own documents, this method
+        # is only necessary for tags; change the name? We may also want to
+        # represent tags differently, but not sure
+        if field != "tags":
             raise ValueError("\"{}\" is not a valid field name.".format(field))
 
-        timestamp = datetime.utcnow()
-        search_body = {"query": {"terms": {"_id": [md_id]}}}
-        res = client.search(index='metadata', doc_type='annotation', body=search_body)
+        timestamp = self._current_time()
+        res = client.search(index='metadata', doc_type='annotation',
+            body={"query": {"terms": {"_id": [md_id]}}})
 
         if res["hits"]["total"] == 0:
             raise ValueError("Given md_id does not exist.")
@@ -401,10 +415,12 @@ class StoreHandler:
                 field: new_data
             }
         }
-        res = client.update(index='metadata', doc_type='annotation', id=md_id, body=body)
-        return res
+        res = client.update(index='metadata', doc_type='annotation', id=md_id,
+            body=body)
+        hit = MDHit(res["_id"], author, md_class, source, text,
+            target["id"], target["type"])
 
-    def _format_data(self, author: str, data: list, timestamp: datetime):
+    def _format_data(self, author: str, data: list, timestamp: str):
         """
         Formats list data for elasticsearch
         """
@@ -422,78 +438,125 @@ class StoreHandler:
         Returns all metadata.
         """
         body = {"query": {"match_all": {}}}
-        res = client.search(index='metadata', body=body, scroll="10m")
+        res = client.search(index='metadata', body=body, scroll="10m",
+                            filter_path=['hits.hits._id',
+                                        'hits.hits._source.author',
+                                        'hits.hits._source.class',
+                                        'hits.hits._source.source',
+                                        'hits.hits._source.target',
+                                        'hits.hits._source.text'])
+
         md_hits = []
         for hit in res["hits"]["hits"]:
-            md_hits.append(MDHit(hit["_id"], hit["_source"]["author"],
-                hit["_source"]["class"], hit["_source"]["source"],
-                hit["_source"]["ref_target"], hit["_source"]["ref_type"],
-                hit["_source"]["description"]))
+            import pdb; pdb.set_trace()
+            md_hits.append(MDHit(hit["_id"],
+                hit["_source"]["author"],
+                hit["_source"]["class"],
+                hit["_source"]["text"],
+                hit["_source"]["source"],
+                hit["_source"]["target"]["id"],
+                hit["_source"]["target"]["type"]))
         return MRS(md_hits)
 
     def get_metadata_about(self, nid, relation=None):
         """
         Searches for all metadata that reference the given nid.
         """
-        #if relation is None:
-        body = {"query": {"bool": {
+        # TODO: search complementary relations directly
+        # TODO: address elasticsearch keyword search issue for relations,
+        # perhaps we should store the relations as enums?
+        if relation is None:
+            body = {"query": {"bool": {
+                "should": [
+                    {"term": {"source": nid}},
+                    {"term": {"target.id": nid}}
+                ]
+            }}}
+        else:
+            body = {"query": {"constant_score": {"filter": {"bool": {
             "should": [
-                {"term": {"source": nid}},
-                {"term": {"ref_target": nid}}
-            ]
-        }}}
-        #else:
-        #  body = {"query": {"constant_score": {"filter": {"bool": {
-        #    "should": [
-        #      {"bool": {
-        #        "must": [
-        #          {"term": {"source": nid}},
-        #          {"term": {"ref_type": relation}}
-        #        ]
-        #      }},
-        #      {"bool": {
-        #        "must": [
-        #          {"term": {"ref_target": nid}},
-        #          {"term": {"ref_type": relation}}
-        #        ]
-        #      }}
-        #    ]
-        #  }}}}}
+                {"bool": {
+                    "must": [
+                        {"term": {"source": nid}},
+                        {"term": {"target.type": relation.lower()}}
+                    ]
+                }}
+                #{"bool": {
+                #    "must": [
+                #        {"term": {"target.id": nid}},
+                #        {"term": {"target.type": relation.lower()}}
+                #    ]
+                #}}
+            ]}}}}}
         res = client.search(index='metadata', body=body, scroll="10m")
         for hit in res["hits"]["hits"]:
-            yield MDHit(hit["_id"], hit["_source"]["author"],
-                hit["_source"]["class"], hit["_source"]["source"],
-                hit["_source"]["ref_target"], hit["_source"]["ref_type"],
-                hit["_source"]["description"])
+            yield MDHit(hit["_id"],
+                hit["_source"]["author"],
+                hit["_source"]["class"],
+                hit["_source"]["text"],
+                hit["_source"]["source"],
+                hit["_source"]["target"]["id"],
+                hit["_source"]["target"]["type"])
 
-    def delete_all_metadata(self):
+    def delete_metadata_index(self):
         """
-        Deletes the index 'metadata' and all its documents, then recreates the index.
-        For testing purposes. Allows you to change the mapping of the document.
+        Deletes the index 'metadata' and all its documents.
         """
-        client.indices.delete(index='metadata')
-        # TODO: create mappings for metadata
-        # TODO: store doc_type = "entity"?
-        # TODO: store doc_type = "comment"?
-        #body = {
-        #    "mappings": {
-        #        "annotation": {
-        #            "properties": {
-        #                "author": {"type": "keyword"},
-        #                "description": {"type": "text"},
-        #                "class": {"type": "keyword"},
-        #                "source": {"type": "keyword"},
-        #                "comments": [],
-        #                "tags": self._format_data(author, tags, timestamp),
-        #                "creation_date": timestamp,
-        #                "updated_date": timestamp
-        #            }
-        #        }
-        #    }
-        #}
-        return client.indices.create(index='metadata')
+        return client.indices.delete(index='metadata')
 
-    def get_readable_doc_with_nid(self, nid):
+    def create_metadata_index(self):
+        """
+        Creates the index 'metadata' with 'annotation' and 'comment' document
+        types and their corresponding mappings.
+        """
+        body = {
+            "mappings": {
+                "annotation": {
+                    "properties": {
+                        "author": {"type": "keyword"},
+                        "text": {"type": "text"},
+                        "class": {"type": "keyword"},
+                        "source": {"type": "keyword"},
+                        "target": {
+                            "id": {"type": "keyword"},
+                            "type": {"type": "keyword"}
+                        },
+                        "tags": {
+                            "type": "string",
+                            "index_name": "tag",
+                        },
+                        "creation_date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        },
+                        "updated_date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        }
+                    }
+                },
+                "comment": {
+                    "_parent": {"type": "annotation"},
+                    "properties": {
+                        "author": {"type": "keyword"},
+                        "date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        },
+                        "text": {"type": "text"}
+                    }
+                }
+            }
+        }
+        return client.indices.create(index='metadata', body='body')
+
+    def _current_time(self):
+        """
+        Returns the current time in basic_date_time_no_millis format.
+        """
+        return datetime.utcnow().strftime("%Y%m%d'T'%H%M%S")
+
+    def _get_readable_doc_with_nid(self, nid):
         """
         Returns (sourceName, columnName) of document with given nid, if
         it exists. Else returns (None, None).

@@ -26,28 +26,28 @@ class Algebra:
     """
     Metadata API
     """
-    def annotate(self, author: str, description: str, md_class: MDClass,
-        general_input, ref={"general_target": None, "type": None}) -> MRS:
+    def annotate(self, author: str, text: str, md_class: MDClass,
+        general_source, ref={"general_target": None, "type": None}) -> MRS:
         """
-        Create a new annotation in the elasticsearch graph as metadata. Parses tags
-        as keywords that follow a # symbol i.e. #data.
+        Create a new annotation in the elasticsearch graph as metadata. Parses
+        tags as keywords that follow a # symbol i.e. #data.
         :param author: identifiable name of user or process
-        :param description: free text description
+        :param text: free text description
         :param md_class: MDClass
-        :param nid, node tuple, Hit, or DRS: source(s)
+        :param general_source: nid, node tuple, Hit, or DRS
         :param ref: (optional) {
             "general_target": nid, node tuple, Hit, or DRS of target(s),
             "type": MDRelation
         }
         :return: MRS of the new metadata
         """
-        drs_source = self._general_to_drs(general_input)
+        drs_source = self._general_to_drs(general_source)
         drs_target = self._general_to_drs(ref["general_target"])
 
         if drs_source.mode != DRSMode.FIELDS or drs_target.mode != DRSMode.FIELDS:
             raise ValueError("source and targets must be columns")
 
-        tags = re.findall("(?<=#)[a-zA-Z0-9]+", description)
+        tags = re.findall("(?<=#)[a-zA-Z0-9]+", text)
         tags = [tag.lower() for tag in tags]
         md_class = self._mdclass_to_str(md_class)
         md_hits = []
@@ -55,9 +55,9 @@ class Algebra:
         # non-relational metadata
         if ref["type"] is None:
             for hit_source in drs_source:
-                res = self._store_client.write_metadata(
+                res = self._store_client.add_annotation(
                     author=author,
-                    description=description,
+                    text=text,
                     md_class=md_class,
                     source=hit_source.nid,
                     tags=tags)
@@ -68,23 +68,28 @@ class Algebra:
         md_relation = self._mdrelation_to_str(ref["type"])
         for hit_source in drs_source:
             for hit_target in drs_target:
-                res = self._store_client.write_metadata(
+                res = self._store_client.add_annotation(
                     author=author,
-                    description=description,
+                    text=text,
                     md_class=md_class,
                     source=hit_source.nid,
-                    ref={"target": hit_target.nid, "type": md_relation},
+                    target={"id": hit_target.nid, "type": md_relation},
                     tags=tags)
                 md_hits.append(res)
             return MRS(md_hits)
 
-    def add_comments(self, author: str, md_id: str, comments: list):
+    def add_comments(self, author: str, comments: list, md_id: str):
         """
         Add comment to metadata with the given md_id.
         :param md_id: metadata id
         :param comments: list of comments
         """
-        return self._store_client.extend_field(author, "comments", md_id, comments)
+        md_comments = []
+        for comment in comments:
+            res = self._store_client.add_comment(
+                author=author, text=comment, md_id=md_id)
+            md_comments.append(res)
+        return MRS(md_comments)
 
     def add_tags(self, author: str, md_id: str, tags: list):
         """

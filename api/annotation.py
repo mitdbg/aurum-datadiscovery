@@ -2,7 +2,8 @@ from collections import namedtuple
 from enum import Enum
 
 BaseMDHit = namedtuple(
-    'MDHit', 'id, author, md_class, source, ref_target, ref_type, description')
+    'MDHit', 'id, author, md_class, description, source, target, relation')
+BaseMDComment = namedtuple('MDComment', 'id, author, text, ref_id')
 
 
 class MDClass(Enum):
@@ -27,6 +28,18 @@ class MDHit(BaseMDHit):
 
     def __eq__(self, other):
         if isinstance(other, MDHit):
+            return self.id == other.id
+        elif isinstance(other, str):
+            return self.id == other
+        return False
+
+class MDComment(BaseMDComment):
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, MDComment):
             return self.id == other.id
         elif isinstance(other, str):
             return self.id == other
