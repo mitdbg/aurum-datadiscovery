@@ -76,15 +76,15 @@ def experiment_changing_input_size(repetitions=100):
 
     # Create a graph
 
-    fn = syn.generate_network_with(num_nodes=100000, num_nodes_per_table=10, num_schema_sim=100000,
-                                   num_content_sim=100000, num_pkfk=100000)
+    fn = syn.generate_network_with(num_nodes=100000, num_nodes_per_table=10, num_schema_sim=90000,
+                                   num_content_sim=90000, num_pkfk=90000)
 
     api = API(fn)
 
     perf_results = dict()
 
     # input size from 1 to 100
-    for i in range(30):
+    for i in range(50):
         i = i + 1
         nodes = fn.fields_degree(i)
         nids = [x for x, y in nodes]
@@ -98,11 +98,11 @@ def experiment_changing_input_size(repetitions=100):
     return perf_results
 
 
-def experiment_changing_graph_size_constant_density(repetitions=100):
+def experiment_changing_graph_size_constant_density(repetitions=10):
     sizes = [100, 1000, 10000, 100000, 1000000]
     perf_results = dict()
     for size in sizes:
-        relations = int(size/10)
+        relations = int(size)
         fn = syn.generate_network_with(num_nodes=size, num_nodes_per_table=10, num_schema_sim=relations,
                                        num_content_sim=relations, num_pkfk=relations)
 
