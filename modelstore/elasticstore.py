@@ -448,7 +448,6 @@ class StoreHandler:
 
         md_hits = []
         for hit in res["hits"]["hits"]:
-            import pdb; pdb.set_trace()
             md_hits.append(MDHit(hit["_id"],
                 hit["_source"]["author"],
                 hit["_source"]["class"],
@@ -458,13 +457,14 @@ class StoreHandler:
                 hit["_source"]["target"]["type"]))
         return MRS(md_hits)
 
-    def get_metadata_about(self, nid, relation=None):
+    def get_metadata_about(self, nid: str, relation: str=None,
+                           nid_is_source: bool=True):
         """
         Searches for all metadata that reference the given nid.
+        :param nid: node id
+        :relation:
+        :nid_is_source: true if node with nid is the source, false if target
         """
-        # TODO: search complementary relations directly
-        # TODO: address elasticsearch keyword search issue for relations,
-        # perhaps we should store the relations as enums?
         if relation is None:
             body = {"query": {"bool": {
                 "should": [
@@ -473,21 +473,14 @@ class StoreHandler:
                 ]
             }}}
         else:
-            body = {"query": {"constant_score": {"filter": {"bool": {
-            "should": [
-                {"bool": {
-                    "must": [
-                        {"term": {"source": nid}},
-                        {"term": {"target.type": relation.lower()}}
-                    ]
-                }}
-                #{"bool": {
-                #    "must": [
-                #        {"term": {"target.id": nid}},
-                #        {"term": {"target.type": relation.lower()}}
-                #    ]
-                #}}
-            ]}}}}}
+            nid_term = "source" if nid_is_source else "target.id"
+            body = {"query": {"bool": {
+                "must": [
+                    {"term": {nid_term: nid}},
+                    {"term": {"target.type": relation}}
+                ]
+            }}}
+
         res = client.search(index='metadata', body=body, scroll="10m")
         for hit in res["hits"]["hits"]:
             yield MDHit(hit["_id"],
