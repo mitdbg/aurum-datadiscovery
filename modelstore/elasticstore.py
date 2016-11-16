@@ -398,7 +398,9 @@ class StoreHandler:
         body = {"from": 0, "size": max_hits, "query": {
                       "match": {"text": keywords}}}
         filter_path = ['hits.total',
+                       'hits.hits._type',
                        'hits.hits._id',
+                       'hits.hits._parent',
                        'hits.hits._source.author',
                        'hits.hits._source.class',
                        'hits.hits._source.source',
@@ -408,14 +410,19 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = MDHit(el["_id"],
-                         el["_source"]["author"],
-                         el["_source"]["class"],
-                         el["_source"]["text"],
-                         el["_source"]["source"],
-                         el["_source"]["target"]["id"],
-                         el["_source"]["target"]["type"])
-            yield data
+            if el["_type"] == "comment":
+                yield MDComment(el["_id"],
+                                el["_source"]["author"],
+                                el["_source"]["text"],
+                                el["_parent"])
+            elif el["_type"] == "annotation":
+                yield MDHit(el["_id"],
+                            el["_source"]["author"],
+                            el["_source"]["class"],
+                            el["_source"]["text"],
+                            el["_source"]["source"],
+                            el["_source"]["target"]["id"],
+                            el["_source"]["target"]["type"])
 
     def extend_field(self, author: str, field: str, md_id: str, data: list):
         """
