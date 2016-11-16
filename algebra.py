@@ -107,7 +107,7 @@ class Algebra:
         """
         return self._store_client.extend_field(author, "tags", md_id, tags)
 
-    def annotation_search(self, nid, relation: MDRelation=None) -> MRS:
+    def metadata_search(self, nid, relation: MDRelation=None) -> MRS:
         """
         Given an nid, searches for all annotations that mention it. If a
         relation is given, searches for annotations in which the node is the
@@ -136,6 +136,19 @@ class Algebra:
         mrs = MRS([x for x in md_hits])
         return mrs
 
+    def metadata_keyword_search(self, kw: str, max_results=10) -> MRS:
+        """
+        Performs a keyword search over metadata annotations and comments.
+        :param kw: the keyword to search
+        :param max_results: maximum number of results to return
+        :return: returns a MRS
+        """
+        hits = self._store_client.search_metadata_keywords(
+            keywords=kw, max_hits=max_results)
+
+        mrs = MRS([x for x in hits])
+        return mrs
+
     def pretty_print_mrs(self, mrs: MRS):
         """
         Pretty prints metadata documents.
@@ -145,8 +158,8 @@ class Algebra:
             md_id = hit.id
             source = hit.source
             description = hit.description
-            ref_target = hit.ref_target
-            ref_type = hit.ref_type
+            ref_target = hit.target
+            ref_type = hit.relation
 
             if ref_target is None:
                 relation = "{}".format(source)

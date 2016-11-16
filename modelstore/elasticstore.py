@@ -15,6 +15,7 @@ class KWType(Enum):
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
+    KW_METADATA = 4
 
 
 class StoreHandler:
@@ -386,6 +387,35 @@ class StoreHandler:
         res = client.create(index='metadata', doc_type='comment', body=body,
             parent=md_id)
         return MDComment(res["_id"], author, text, md_id)
+
+    def search_metadata_keywords(self, keywords, max_hits=15):
+        """
+        Performs a search query on metadata to match the provided keywords
+        :param keywords: the list of keyword to match
+        :return: the list of documents that contain the keywords
+        """
+        index = "metadata"
+        body = {"from": 0, "size": max_hits, "query": {
+                      "match": {"text": keywords}}}
+        filter_path = ['hits.total',
+                       'hits.hits._id',
+                       'hits.hits._source.author',
+                       'hits.hits._source.class',
+                       'hits.hits._source.source',
+                       'hits.hits._source.target',
+                       'hits.hits._source.text']
+        res = client.search(index=index, body=body, filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+        for el in res['hits']['hits']:
+            data = MDHit(el["_id"],
+                         el["_source"]["author"],
+                         el["_source"]["class"],
+                         el["_source"]["text"],
+                         el["_source"]["source"],
+                         el["_source"]["target"]["id"],
+                         el["_source"]["target"]["type"])
+            yield data
 
     def extend_field(self, author: str, field: str, md_id: str, data: list):
         """
