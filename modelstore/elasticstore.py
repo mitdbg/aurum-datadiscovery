@@ -536,18 +536,24 @@ class StoreHandler:
             "mappings": {
                 "annotation": {
                     "properties": {
-                        "author": {"type": "keyword"},
-                        "text": {"type": "text"},
-                        "class": {"type": "keyword"},
-                        "source": {"type": "keyword"},
+                        "author": {"type": "string", "index": "not_analyzed"},
+                        "text": {"type": "string"},
+                        "class": {"type": "string", "index": "not_analyzed"},
+                        "source": {"type": "string", "index": "not_analyzed"},
                         "target": {
-                            "id": {"type": "keyword"},
-                            "type": {"type": "keyword"}
+                            "type": "nested",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
                         },
-                        "tags": {
-                            "type": "string",
-                            "index_name": "tag",
-                        },
+                        "tags": {"type": "object"},
                         "creation_date": {
                             "type": "date",
                             "format": "basic_date_time_no_millis"
@@ -561,23 +567,23 @@ class StoreHandler:
                 "comment": {
                     "_parent": {"type": "annotation"},
                     "properties": {
-                        "author": {"type": "keyword"},
+                        "author": {"type": "string", "index": "not_analyzed"},
                         "date": {
                             "type": "date",
                             "format": "basic_date_time_no_millis"
                         },
-                        "text": {"type": "text"}
+                        "text": {"type": "string"}
                     }
                 }
             }
         }
-        return client.indices.create(index='metadata', body='body')
+        return client.indices.create(index='metadata', body=body)
 
     def _current_time(self):
         """
         Returns the current time in basic_date_time_no_millis format.
         """
-        return datetime.utcnow().strftime("%Y%m%d'T'%H%M%S")
+        return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
     def _get_readable_doc_with_nid(self, nid):
         """
