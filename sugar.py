@@ -113,10 +113,8 @@ def neighbors(i_drs, relations=Relation, exclude_origin=True):
         print(msg)
 
 
-def path(drs_a, drs_b=None, relation=pkfk):
+def path(drs_a, drs_b, relation=pkfk):
     try:
-        if isinstance(drs_b, Relation):
-            relation, drs_b = drs_b, drs_a
         drs_a = make_drs(drs_a)
         drs_b = make_drs(drs_b)
         drs = api.paths(drs_a, drs_b, relation)
@@ -129,7 +127,9 @@ def path(drs_a, drs_b=None, relation=pkfk):
             '\nusage:\n\tpath(drs_a, drs_b)' +
             '\ne.g.:\n\tdrs_a = search(\'school\')' +
             '\n\tdrs_b = search(\'occupation\')' +
-            '\n\tpath(drs_a, drs_b, pkfk)'
+            '\n\tpath(drs_a, drs_b, pkfk). ' +
+            '\n\nIf you are trying to find paths internal to a DRS, use ' +
+            '\n\tdrs.paths()'
         )
         print(msg)
 

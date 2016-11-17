@@ -69,7 +69,7 @@ class Algebra:
     TC API
     """
 
-    def paths(self, drs_a: DRS, drs_b=None, relation=Relation.PKFK, max_hops=2) -> DRS:
+    def paths(self, drs_a: DRS, drs_b: DRS, relation=Relation.PKFK, max_hops=2) -> DRS:
         """
         Is there a transitive relationship between any element in a with any
         element in b?
@@ -84,7 +84,6 @@ class Algebra:
         """
         # create b if it wasn't passed in.
         drs_a = self._general_to_drs(drs_a)
-        drs_b = drs_b or drs_a
         drs_b = self._general_to_drs(drs_b)
 
         self._assert_same_mode(drs_a, drs_b)
@@ -96,15 +95,6 @@ class Algebra:
             o_drs.absorb_provenance(drs_b)
 
         for h1, h2 in itertools.product(drs_a, drs_b):
-
-            # test to see if a and b are different DRS's that share
-            # the same element
-            # I'm not sure if this is really a feature or a bug,
-            # but am carrying it over from ddapi
-            # We use the data parameter, because it's possible to have seperate
-            # instances of drs's that are identical
-            if h1 == h2:
-                return o_drs
 
             # there are different network operations for table and field mode
             res_drs = None
