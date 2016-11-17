@@ -188,6 +188,11 @@ class Algebra:
     """
 
     def make_drs(self, general_input):
+        '''
+        Makes a DRS from general_input.
+        general_input can include an array of strings, Hits, DRS's, etc,
+        or just a single DRS.
+        '''
         try:
 
             # If this is a list of inputs, condense it into a single drs
