@@ -76,6 +76,7 @@ def search(kws, contexts=[source, field, content]):
 
 def neighbors(i_drs, relations=Relation, exclude_origin=True):
     try:
+        i_drs = api.make_drs(i_drs)
         o_drs = None
 
         if relations is None:
@@ -116,6 +117,8 @@ def path(drs_a, drs_b=None, relation=pkfk):
     try:
         if isinstance(drs_b, Relation):
             relation, drs_b = drs_b, drs_a
+        drs_a = make_drs(drs_a)
+        drs_b = make_drs(drs_b)
         drs = api.paths(drs_a, drs_b, relation)
         return drs
     except:
@@ -129,8 +132,6 @@ def path(drs_a, drs_b=None, relation=pkfk):
             '\n\tpath(drs_a, drs_b, pkfk)'
         )
         print(msg)
-
-    pass
 
 
 def provenance(i_drs):
