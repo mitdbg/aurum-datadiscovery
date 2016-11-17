@@ -238,6 +238,15 @@ class TestAlgebraHelpers(unittest.TestCase):
         # self.assertEqual(result, 'return_drs')
         pass
 
+    @patch('algebra.isinstance', MagicMock(return_value=True))
+    def test_make_drs(self):
+        general_input = ['foo', 'bar']
+        self.api._general_to_drs = MagicMock(return_value=True)
+        self.api.union = MagicMock(return_value=True)
+        res = self.api.make_drs(general_input)
+
+        self.assertTrue(res)
+
 
 if __name__ == '__main__':
     unittest.main()

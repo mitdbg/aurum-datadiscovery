@@ -197,6 +197,32 @@ class Algebra:
     Helper Functions
     """
 
+    def make_drs(self, general_input):
+        try:
+
+            # If this is a list of inputs, condense it into a single drs
+            if isinstance(general_input, list):
+                general_input = [
+                    self._general_to_drs(x) for x in general_input]
+
+                combined_drs = DRS([], Operation(OP.NONE))
+                for drs in general_input:
+                    combined_drs = self.union(combined_drs, drs)
+                general_input = combined_drs
+
+            # else, just convert it to a DRS
+            o_drs = self._general_to_drs(general_input)
+            return o_drs
+        except:
+            msg = (
+                '--- Error ---' +
+                '\nThis function returns domain result set from the ' +
+                'supplied input' +
+                '\nusage:\n\tmake_drs( table name/hit id | [table name/hit ' +
+                'id, drs/hit/string/int] )' +
+                '\ne.g.:\n\tmake_drs(1600820766)')
+            print(msg)
+
     def _general_to_drs(self, general_input) -> DRS:
         """
         Given an nid, node, hit, or DRS and convert it to a DRS.

@@ -39,6 +39,8 @@ keyword_search = api.keyword_search
 neighbor_search = api.neighbor_search
 paths = api.paths
 traverse = api.traverse
+make_drs = api.make_drs
+
 intersection = api.intersection
 union = api.union
 difference = api.difference
@@ -99,8 +101,8 @@ def neighbors(i_drs, relations=Relation, exclude_origin=True):
             '\nThis function searches for neighbors of domain result set ' +
             'or one of its precursors.' +
             '\nusage:\n\tneighbors( ' +
-            '(drs/table name/hit id | [drs/hit/table name/hit id, ' +
-            'drs/hit/table name/hit id])' +
+            '(drs/table name/hit id | [drs/hit/table_name/hit id, ' +
+            'drs/hit/table_name/hit id])' +
             '\n\t\t[, Relation | (Relation, Relation, Relation)]' +
             '\n\t\t[,exclude_origin=True/False] )' +
             '\ne.g.:\n\tneighbors(\'Boston Capital Phase_pfp2-xvaj.csv\')' +
@@ -119,13 +121,13 @@ def path(drs_a, drs_b=None, relation=pkfk):
     except:
         msg = (
             '--- Error ---' +
-            '\nThis function returns a drs showing how to get between one drs' +
-            'and another, using a specified Relation.'
+            '\nThis function returns a drs showing how to get between one ' +
+            'drs and another, using a specified Relation.' +
             '\nusage:\n\tpath(drs_a, drs_b)' +
             '\ne.g.:\n\tdrs_a = search(\'school\')' +
             '\n\tdrs_b = search(\'occupation\')' +
             '\n\tpath(drs_a, drs_b, pkfk)'
-            )
+        )
         print(msg)
 
     pass
@@ -142,21 +144,6 @@ def provenance(i_drs):
             '\nusage:\n\tprovenance(drs)' +
             '\ne.g.:\n\tmy_drs = search(\'school\')' +
             '\n\tprovenance(my_drs)')
-        print(msg)
-
-
-def make_drs(general_input):
-    try:
-        o_drs = api._general_to_drs(general_input)
-        return o_drs
-    except:
-        msg = (
-            '--- Error ---' +
-            '\nThis function returns domain result set from the supplied ' +
-            'input' +
-            '\nusage:\n\tmake_drs( table name/hit id | [table name/hit id, ' +
-            'drs/hit/string/int] )' +
-            '\ne.g.:\n\tmake_drs(1600820766)')
         print(msg)
 
 
