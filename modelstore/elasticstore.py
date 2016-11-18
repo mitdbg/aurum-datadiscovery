@@ -6,7 +6,7 @@ from enum import Enum
 from collections import defaultdict
 
 from api.apiutils import Hit
-from api.annotation import MDHit, MDComment, MRS
+from api.annotation import MDHit, MDComment
 import config as c
 
 
@@ -350,7 +350,7 @@ class StoreHandler:
             "type": metadata relation
         }
         :param tags: (optional) keyword tags
-        :return: an MRS of the newly-added annotation
+        :return: an MDHit of the new annotation
         """
         timestamp = self._current_time()
 
@@ -496,36 +496,65 @@ class StoreHandler:
                 }}}
             ]}}}
 
-        res = client.search(index='metadata', body=body, scroll="10m",
-                            filter_path=['hits.hits._id',
-                                        'hits.total',
-                                        'hits.hits._parent',
-                                        'hits.hits._type',
-                                        'hits.hits._source.author',
-                                        'hits.hits._source.class',
-                                        'hits.hits._source.source',
-                                        'hits.hits._source.target',
-                                        'hits.hits._source.text'])
+        res = client.search(index='metadata', doc_type="annotation", body=body,
+            scroll="10m", filter_path=['hits.hits._id',
+                                       'hits.total',
+                                       'hits.hits._source.author',
+                                       'hits.hits._source.class',
+                                       'hits.hits._source.source',
+                                       'hits.hits._source.target',
+                                       'hits.hits._source.text'])
 
         if res["hits"]["total"] == 0:
-            return MRS([])
+            return
 
         md_hits = []
         for md in res["hits"]["hits"]:
-            if md["_type"] == "annotation":
-                md_hits.append(MDHit(md["_id"],
-                    md["_source"]["author"],
-                    md["_source"]["class"],
-                    md["_source"]["text"],
-                    md["_source"]["source"],
-                    md["_source"]["target"]["id"],
-                    md["_source"]["target"]["type"]))
-            elif md["_type"] == "comment":
-                md_hits.append(MDComment(md["_id"],
-                    md["_source"]["author"],
-                    md["_source"]["text"],
-                    md["_parent"]))
-        return MRS(md_hits)
+            md_hit = MDHit(md["_id"],
+                md["_source"]["author"],
+                md["_source"]["class"],
+                md["_source"]["text"],
+                md["_source"]["source"],
+                md["_source"]["target"]["id"],
+                md["_source"]["target"]["type"])
+            md_hits.append(md_hit)
+            yield md_hit
+
+        for comment in self.get_comments(list(map(lambda x: x.id, md_hits))):
+            yield comment
+
+    def get_comments(self, md_ids: list=[]):
+        """
+        Searches for all comments that reference the given md_ids.
+        :param md_id: metadata id
+        """
+        if len(md_ids) == 0:
+            body = {"query": {"match_all": {}}}
+        else:
+            body = {"query": {
+                "has_parent": {
+                    "parent_type": "annotation",
+                    "query": {"bool": {"should": [
+                        {"term": {"_id": md_id}} for md_id in md_ids
+                    ]}}
+                }
+            }}
+
+        res = client.search(index='metadata', doc_type="comment", body=body,
+            scroll="10m", filter_path=['hits.hits._id',
+                                       'hits.total',
+                                       'hits.hits._parent',
+                                       'hits.hits._source.author',
+                                       'hits.hits._source.text'])
+
+        if res["hits"]["total"] == 0:
+            return
+
+        for md in res["hits"]["hits"]:
+            yield MDComment(md["_id"],
+                md["_source"]["author"],
+                md["_source"]["text"],
+                md["_parent"])
 
     def delete_metadata_index(self):
         """

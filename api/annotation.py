@@ -39,7 +39,7 @@ class MDHit(BaseMDHit):
         else:
             relation = "{} {} {}".format(
                 self.source, self.relation, self.target)
-        return "ID: {0:21} RELATION: {1:40} TEXT: {2}".format(
+        return "ID: {0:20} RELATION: {1:30} TEXT: {2}".format(
             self.id, relation, self.text)
 
     def __str__(self):
@@ -59,7 +59,8 @@ class MDComment(BaseMDComment):
         return False
 
     def __repr__(self):
-        return "AID: {0:20} TEXT: {1}".format(self.id, self.text)
+        return "ID: {0:20} REF_ID: {1:32} TEXT: {2}".format(
+            self.id, self.ref_id, self.text)
 
     def __str__(self):
         return self.__repr__()

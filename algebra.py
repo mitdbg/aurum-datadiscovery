@@ -153,7 +153,7 @@ class Algebra:
         """
         Pretty prints sourceName and columnName of given nid.
         """
-        sourceName, columnName = self._store_client.get_readable_doc_with_nid(nid)
+        sourceName, columnName = self._store_client._get_readable_doc_with_nid(nid)
         print("({0}, {1}, {2})".format(nid, sourceName, columnName))
 
     """
