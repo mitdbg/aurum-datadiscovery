@@ -382,8 +382,6 @@ class StoreHandler:
             "date": timestamp
         }
 
-        # TODO: RequestError: TransportError(400, 'illegal_argument_exception',
-        # "Can't specify parent if no parent field has been configured")
         res = client.create(index='metadata', doc_type='comment', body=body,
             parent=md_id)
         return MDComment(res["_id"], author, text, md_id)
@@ -470,63 +468,64 @@ class StoreHandler:
             })
         return new_data
 
-    def get_all_metadata(self):
-        """
-        Returns all metadata.
-        """
-        body = {"query": {"match_all": {}}}
-        res = client.search(index='metadata', body=body, scroll="10m",
-                            filter_path=['hits.hits._id',
-                                        'hits.hits._source.author',
-                                        'hits.hits._source.class',
-                                        'hits.hits._source.source',
-                                        'hits.hits._source.target',
-                                        'hits.hits._source.text'])
-
-        md_hits = []
-        for hit in res["hits"]["hits"]:
-            md_hits.append(MDHit(hit["_id"],
-                hit["_source"]["author"],
-                hit["_source"]["class"],
-                hit["_source"]["text"],
-                hit["_source"]["source"],
-                hit["_source"]["target"]["id"],
-                hit["_source"]["target"]["type"]))
-        return MRS(md_hits)
-
-    def get_metadata_about(self, nid: str, relation: str=None,
-                           nid_is_source: bool=True):
+    def get_metadata(self, nid: str=None, relation: str=None,
+                     nid_is_source: bool=True):
         """
         Searches for all metadata that reference the given nid.
         :param nid: node id
         :relation:
         :nid_is_source: true if node with nid is the source, false if target
         """
-        if relation is None:
-            body = {"query": {"bool": {
-                "should": [
-                    {"term": {"source": nid}},
-                    {"term": {"target.id": nid}}
-                ]
-            }}}
-        else:
-            nid_term = "source" if nid_is_source else "target.id"
-            body = {"query": {"bool": {
-                "must": [
-                    {"term": {nid_term: nid}},
-                    {"term": {"target.type": relation}}
-                ]
-            }}}
+        match_source_id = {"term": {"source": nid}}
+        match_target_id = {"nested": {"path": "target", "query": {
+            "bool": {"should": [{"term": {"target.id": nid}}]}
+        }}}
 
-        res = client.search(index='metadata', body=body, scroll="10m")
-        for hit in res["hits"]["hits"]:
-            yield MDHit(hit["_id"],
-                hit["_source"]["author"],
-                hit["_source"]["class"],
-                hit["_source"]["text"],
-                hit["_source"]["source"],
-                hit["_source"]["target"]["id"],
-                hit["_source"]["target"]["type"])
+        if nid is None:
+            body = {"query": {"match_all": {}}}
+        elif relation is None:
+            body = {"query": {"bool": {"should": [
+                match_source_id, match_target_id
+            ]}}}
+        else:
+            match_id = match_source_id if nid_is_source else match_target_id
+            body = {"query": {"bool": { "must": [
+                match_id,
+                {"nested": {"path": "target", "query": {
+                    "bool": {"should": [{"term": {"target.type": relation}}]}
+                }}}
+            ]}}}
+
+        res = client.search(index='metadata', body=body, scroll="10m",
+                            filter_path=['hits.hits._id',
+                                        'hits.total',
+                                        'hits.hits._parent',
+                                        'hits.hits._type',
+                                        'hits.hits._source.author',
+                                        'hits.hits._source.class',
+                                        'hits.hits._source.source',
+                                        'hits.hits._source.target',
+                                        'hits.hits._source.text'])
+
+        if res["hits"]["total"] == 0:
+            return MRS([])
+
+        md_hits = []
+        for md in res["hits"]["hits"]:
+            if md["_type"] == "annotation":
+                md_hits.append(MDHit(md["_id"],
+                    md["_source"]["author"],
+                    md["_source"]["class"],
+                    md["_source"]["text"],
+                    md["_source"]["source"],
+                    md["_source"]["target"]["id"],
+                    md["_source"]["target"]["type"]))
+            elif md["_type"] == "comment":
+                md_hits.append(MDComment(md["_id"],
+                    md["_source"]["author"],
+                    md["_source"]["text"],
+                    md["_parent"]))
+        return MRS(md_hits)
 
     def delete_metadata_index(self):
         """

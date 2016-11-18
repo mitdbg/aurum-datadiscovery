@@ -66,14 +66,9 @@ class Algebra:
             return MRS(md_hits)
 
         # relational metadata
-        if ref["type"] == MDRelation.IS_SUPERCLASS_OF:
-            md_relation = self._mdrelation_to_str(MDRelation.IS_SUBCLASS_OF)
+        md_relation, nid_is_source = self._mdrelation_to_str(ref["type"])
+        if not nid_is_source:
             drs_source, drs_target = drs_target, drs_source
-        elif ref["type"] == MDRelation.IS_CONTAINER_OF:
-            md_relation = self._mdrelation_to_str(MDRelation.IS_MEMBER_OF)
-            drs_source, drs_target = drs_target, drs_source
-        else:
-            md_relation = self._mdrelation_to_str(ref["type"])
 
         for hit_source in drs_source:
             for hit_target in drs_target:
@@ -90,8 +85,9 @@ class Algebra:
     def add_comments(self, author: str, comments: list, md_id: str) -> MRS:
         """
         Add comment to metadata with the given md_id.
-        :param md_id: metadata id
+        :param author: identifiable name of user or process
         :param comments: list of comments
+        :param md_id: metadata id
         """
         md_comments = []
         for comment in comments:
@@ -108,34 +104,37 @@ class Algebra:
         """
         return self._store_client.extend_field(author, "tags", md_id, tags)
 
-    def metadata_search(self, nid, relation: MDRelation=None) -> MRS:
+    def metadata_search(self, general_input=None,
+                        relation: MDRelation=None) -> MRS:
         """
         Given an nid, searches for all annotations that mention it. If a
         relation is given, searches for annotations in which the node is the
         source of the relation.
-        :param nid: nid to search for
+        :param general_input:
         :param relation: an MDRelation
         """
+        # return all metadata
+        if general_input is None:
+            return MRS([x for x in self._store_client.get_metadata()])
+
+        drs_nodes = self._general_to_drs(general_input)
+        if drs_nodes.mode != DRSMode.FIELDS:
+            raise ValueError("general_input must be columns")
+
+        # return metadata that reference the nid inputs
         if relation is None:
-            md_hits = self._store_client.get_metadata_about(str(nid))
-            mrs = MRS([x for x in md_hits])
-            return mrs
+            md_hits = []
+            for node in drs_nodes:
+                md_hits.extend(self._store_client.get_metadata(nid=node.nid))
+            return MRS(md_hits)
 
-        # convert MDRelation to str for elasticsearch
-        if relation == MDRelation.IS_SUPERCLASS_OF:
-            store_relation = self._mdrelation_to_str(MDRelation.IS_SUBCLASS_OF)
-            nid_is_source = False
-        elif relation == MDRelation.IS_CONTAINER_OF:
-            store_relation = self._mdrelation_to_str(MDRelation.IS_MEMBER_OF)
-            nid_is_source = False
-        else:
-            store_relation = self._mdrelation_to_str(relation)
-            nid_is_source = True
-
-        md_hits = self._store_client.get_metadata_about(str(nid),
-            relation=store_relation, nid_is_source=nid_is_source)
-        mrs = MRS([x for x in md_hits])
-        return mrs
+        # return metadata that reference the nid inputs with the given relation
+        md_hits = []
+        store_relation, nid_is_source = self._mdrelation_to_str(relation)
+        for node in drs_nodes:
+            md_hits.extend(self._store_client.get_metadata(nid=node.nid,
+                relation=store_relation, nid_is_source=nid_is_source))
+        return MRS(md_hits)
 
     def metadata_keyword_search(self, kw: str, max_results=10) -> MRS:
         """
@@ -441,11 +440,16 @@ class Algebra:
         return ref_table[md_class]
 
     def _mdrelation_to_str(self, md_relation: MDRelation):
+        """
+        :return: (str, nid_is_source)
+        """
         ref_table = {
-            MDRelation.MEANS_SAME_AS: "same",
-            MDRelation.MEANS_DIFF_FROM: "different",
-            MDRelation.IS_SUBCLASS_OF: "subclass",
-            MDRelation.IS_MEMBER_OF: "member"
+            MDRelation.MEANS_SAME_AS: ("same", True),
+            MDRelation.MEANS_DIFF_FROM: ("different", True),
+            MDRelation.IS_SUBCLASS_OF: ("subclass", True),
+            MDRelation.IS_SUPERCLASS_OF: ("subclass", False),
+            MDRelation.IS_MEMBER_OF: ("member", True),
+            MDRelation.IS_CONTAINER_OF: ("member", False)
         }
         return ref_table[md_relation]
 
