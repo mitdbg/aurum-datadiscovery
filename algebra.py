@@ -14,6 +14,7 @@ from api.apiutils import Hit
 from api.annotation import MDClass
 from api.annotation import MDRelation
 from api.annotation import MDHit
+from api.annotation import MDComment
 from api.annotation import MRS
 
 
@@ -148,26 +149,6 @@ class Algebra:
 
         mrs = MRS([x for x in hits])
         return mrs
-
-    def pretty_print_mrs(self, mrs: MRS):
-        """
-        Pretty prints metadata documents.
-        :param metadata: list of metadata documents returned by elasticsearch
-        """
-        for hit in mrs:
-            md_id = hit.id
-            source = hit.source
-            description = hit.description
-            ref_target = hit.target
-            ref_type = hit.relation
-
-            if ref_target is None:
-                relation = "{}".format(source)
-            else:
-                relation = "{} {} {}".format(source, ref_type, ref_target)
-
-            print("ID: {0:20} RELATION: {1:40} DESCRIPTION: {2}".format(
-                md_id, relation, description))
 
     def pretty_print_nid(self, nid: str):
         """

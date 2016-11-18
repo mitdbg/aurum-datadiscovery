@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 BaseMDHit = namedtuple(
-    'MDHit', 'id, author, md_class, description, source, target, relation')
+    'MDHit', 'id, author, md_class, text, source, target, relation')
 BaseMDComment = namedtuple('MDComment', 'id, author, text, ref_id')
 
 
@@ -33,6 +33,19 @@ class MDHit(BaseMDHit):
             return self.id == other
         return False
 
+    def __repr__(self):
+        if self.target is None:
+            relation = "{}".format(self.source)
+        else:
+            relation = "{} {} {}".format(
+                self.source, self.relation, self.target)
+        return "ID: {0:21} RELATION: {1:40} TEXT: {2}".format(
+            self.id, relation, self.text)
+
+    def __str__(self):
+        return self.__repr__()
+
+
 class MDComment(BaseMDComment):
 
     def __hash__(self):
@@ -44,6 +57,12 @@ class MDComment(BaseMDComment):
         elif isinstance(other, str):
             return self.id == other
         return False
+
+    def __repr__(self):
+        return "AID: {0:20} TEXT: {1}".format(self.id, self.text)
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class MRS():
@@ -62,6 +81,12 @@ class MRS():
         else:
             self._idx = 0
             raise StopIteration
+
+    def __repr__(self):
+        return str.join("\n", map(str, self._data))
+
+    def __str__(self):
+        return self.__repr__()
 
     @property
     def data(self):
