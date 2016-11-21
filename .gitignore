@@ -74,3 +74,6 @@ notes.sh
 
 # Index Pickle Files
 /test/testmodel/*.pickle
+
+# Frontend node modules
+UI/node_modules/*

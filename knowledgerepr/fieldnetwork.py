@@ -198,6 +198,7 @@ class FieldNetwork:
             nid = str(hit.nid)
         if isinstance(hit, str):
             nid = hit
+        nid = str(nid)
         data = []
         neighbours = self.__G[nid]
         for k, v in neighbours.items():

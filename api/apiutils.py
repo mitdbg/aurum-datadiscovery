@@ -31,18 +31,20 @@ class Hit(BaseHit):
             return True
         return False
 
+    def __repr__(self):
+        to_print = (
+            str(self.db_name) + '.' + str(self.source_name) + '.' +
+            str(self.field_name) + ' ' + str(self.nid) + ' ' + str(self.score))
+        return to_print
+
+    def __str__(self):
+        return self.__repr__()
+
 
 def compute_field_id(db_name, source_name, field_name):
     string = db_name + source_name + field_name
     nid = binascii.crc32(bytes(string, encoding="UTF-8"))
     return str(nid)
-
-
-class Scope(Enum):
-    DB = 0
-    SOURCE = 1
-    FIELD = 2
-    CONTENT = 3
 
 
 class Relation(Enum):

@@ -1,7 +1,7 @@
 import unittest
 from collections import namedtuple
 from modelstore.elasticstore import KWType
-from api.apiutils import Scope, Relation
+from api.apiutils import Relation
 from algebra import API, DRS
 from mock import MagicMock, patch
 
@@ -31,16 +31,15 @@ class testAlgebra(unittest.TestCase):
         # not implemented
         pass
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_source(self, *args):
         kw = 'foo'
-        scope = Scope.SOURCE
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(
@@ -48,16 +47,15 @@ class testAlgebra(unittest.TestCase):
             max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_field(self):
         kw = 'foo'
-        scope = Scope.FIELD
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(
@@ -65,16 +63,15 @@ class testAlgebra(unittest.TestCase):
             max_hits=max_results)
         self.assertEqual(result, 'return_drs')
 
-    @patch('algebra.Algebra._scope_to_kw_type', MagicMock(return_value=0))
     @patch('algebra.DRS', MagicMock(return_value='return_drs'))
     def test_keyword_search_content(self):
         kw = 'foo'
-        scope = Scope.CONTENT
+        kw_type = 0
         max_results = 11
         search_keywords = self.m_store_client.search_keywords
 
         result = self.api.keyword_search(
-            kw=kw, scope=scope, max_results=max_results)
+            kw=kw, kw_type=kw_type, max_results=max_results)
 
         self.m_network.assert_not_called()
         search_keywords.assert_called_with(
@@ -186,7 +183,7 @@ class TestAlgebraHelpers(unittest.TestCase):
         self.assertEqual(result, 'result_drs')
         self.api._network.get_hits_from_table.assert_not_called()
 
-    @patch('algebra.DRS', MagicMock(return_value='result_drs'))
+    @patch('algebra.DRS', MagicMock())
     def test_hit_to_drs_with_table_mode(self):
         self.api._network.get_hits_from_table = MagicMock()
         hit = namedtuple(
@@ -194,17 +191,16 @@ class TestAlgebraHelpers(unittest.TestCase):
             verbose=False)
         hit.source_name = 'table'
 
-        result = self.api._hit_to_drs(hit=hit, table_mode=True)
-        self.assertEqual(result, 'result_drs')
+        self.api._hit_to_drs(hit=hit, table_mode=True)
         self.assertEqual(self.api._network.get_hits_from_table.called, True)
 
     @patch('algebra.id_from', MagicMock())
     @patch('algebra.isinstance', MagicMock(
         side_effect=[False, True, True, True, True, True, True]))
-    @patch('algebra.DRS', None)
+    @patch('algebra.DRS', MagicMock())
     def test_general_to_drs(self):
         nid = 1
-        self.api._nid_to_hit = MagicMock(return_value='n_hit')
+        self.api._nid_to_hit = MagicMock()
         self.api._node_to_hit = MagicMock(return_value='t_hit')
         self.api._hit_to_drs = MagicMock(return_value='drs')
 
@@ -241,6 +237,15 @@ class TestAlgebraHelpers(unittest.TestCase):
         # self.m_network.assert_called_with('return_hit', Relation.PKFK)
         # self.assertEqual(result, 'return_drs')
         pass
+
+    @patch('algebra.isinstance', MagicMock(return_value=True))
+    def test_make_drs(self):
+        general_input = ['foo', 'bar']
+        self.api._general_to_drs = MagicMock(return_value=True)
+        self.api.union = MagicMock(return_value=True)
+        res = self.api.make_drs(general_input)
+
+        self.assertTrue(res)
 
 
 if __name__ == '__main__':

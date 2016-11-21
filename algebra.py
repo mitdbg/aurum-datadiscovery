@@ -5,7 +5,6 @@ from modelstore.elasticstore import KWType
 from api.apiutils import compute_field_id as id_from
 from api.apiutils import Operation
 from api.apiutils import OP
-from api.apiutils import Scope
 from api.apiutils import Relation
 from api.apiutils import DRS
 from api.apiutils import DRSMode
@@ -22,7 +21,7 @@ class Algebra:
     Basic API
     """
 
-    def keyword_search(self, kw: str, scope: Scope, max_results=10) -> DRS:
+    def keyword_search(self, kw: str, kw_type: KWType, max_results=10) -> DRS:
         """
         Performs a keyword search over the contents of the data.
         Scope specifies where elasticsearch should be looking for matches.
@@ -33,7 +32,6 @@ class Algebra:
         :return: returns a DRS
         """
 
-        kw_type = self._scope_to_kw_type(scope)
         hits = self._store_client.search_keywords(
             keywords=kw, elasticfieldname=kw_type, max_hits=max_results)
 
@@ -71,7 +69,7 @@ class Algebra:
     TC API
     """
 
-    def paths(self, primitives, a: DRS, b=None, max_hops=2) -> DRS:
+    def paths(self, drs_a: DRS, drs_b: DRS, relation=Relation.PKFK, max_hops=2) -> DRS:
         """
         Is there a transitive relationship between any element in a with any
         element in b?
@@ -79,40 +77,33 @@ class Algebra:
         (singular for now) that is passed as a parameter.
         If b is not passed, assumes the user is searching for paths between
         elements in a.
-        :param a:
-        :param b:
-        :param primitives:
+        :param a: DRS
+        :param b: DRS
+        :param Relation: Relation
         :return:
         """
         # create b if it wasn't passed in.
-        a = self._general_to_drs(a)
-        b = b or a
+        drs_a = self._general_to_drs(drs_a)
+        drs_b = self._general_to_drs(drs_b)
 
-        self._assert_same_mode(a, b)
+        self._assert_same_mode(drs_a, drs_b)
 
         # absorb the provenance of both a and b
         o_drs = DRS([], Operation(OP.NONE))
-        o_drs.absorb_provenance(a)
-        if b != a:
-            o_drs.absorb_provenance(b)
+        o_drs.absorb_provenance(drs_a)
+        if drs_b != drs_a:
+            o_drs.absorb_provenance(drs_b)
 
-        for h1, h2 in itertools.product(a, b):
-
-            # test to see if a and b are different DRS's that share
-            # the same element
-            # I'm not sure if this is really a feature or a bug,
-            # but am carrying it over from ddapi
-            if a != b and h1 == h2:
-                return o_drs
+        for h1, h2 in itertools.product(drs_a, drs_b):
 
             # there are different network operations for table and field mode
             res_drs = None
-            if a.mode == DRSMode.FIELDS:
+            if drs_a.mode == DRSMode.FIELDS:
                 res_drs = self._network.find_path_hit(
-                    h1, h2, primitives, max_hops=max_hops)
+                    h1, h2, relation, max_hops=max_hops)
             else:
                 res_drs = self._network.find_path_table(
-                    h1, h2, primitives, self, max_hops=max_hops)
+                    h1, h2, relation, self, max_hops=max_hops)
 
             o_drs = o_drs.absorb(res_drs)
 
@@ -196,21 +187,36 @@ class Algebra:
     Helper Functions
     """
 
-    def _scope_to_kw_type(self, scope: Scope) -> KWType:
-        """
-        Converts a relation scope to a keyword type for elasticsearch.
-        """
-        kw_type = None
-        if scope == Scope.DB:
-            raise ValueError('DB Scope is not implemeneted')
-        elif scope == Scope.SOURCE:
-            kw_type = KWType.KW_TABLE
-        elif scope == Scope.FIELD:
-            kw_type = KWType.KW_SCHEMA
-        elif scope == Scope.CONTENT:
-            kw_type = KWType.KW_TEXT
+    def make_drs(self, general_input):
+        '''
+        Makes a DRS from general_input.
+        general_input can include an array of strings, Hits, DRS's, etc,
+        or just a single DRS.
+        '''
+        try:
 
-        return kw_type
+            # If this is a list of inputs, condense it into a single drs
+            if isinstance(general_input, list):
+                general_input = [
+                    self._general_to_drs(x) for x in general_input]
+
+                combined_drs = DRS([], Operation(OP.NONE))
+                for drs in general_input:
+                    combined_drs = self.union(combined_drs, drs)
+                general_input = combined_drs
+
+            # else, just convert it to a DRS
+            o_drs = self._general_to_drs(general_input)
+            return o_drs
+        except:
+            msg = (
+                '--- Error ---' +
+                '\nThis function returns domain result set from the ' +
+                'supplied input' +
+                '\nusage:\n\tmake_drs( table name/hit id | [table name/hit ' +
+                'id, drs/hit/string/int] )' +
+                '\ne.g.:\n\tmake_drs(1600820766)')
+            print(msg)
 
     def _general_to_drs(self, general_input) -> DRS:
         """
@@ -227,14 +233,31 @@ class Algebra:
 
         if general_input is None:
             general_input = DRS(data=[], operation=Operation(OP.NONE))
-        if isinstance(general_input, int) or isinstance(general_input, str):
+
+        # Test for ints or strings that represent integers
+        if self._represents_int(general_input):
             general_input = self._nid_to_hit(general_input)
-        # Hit is a subclassed from tuple
+
+        # Test for strings that represent tables
+        if isinstance(general_input, str):
+            hits = self._network.get_hits_from_table(general_input)
+            general_input = DRS([x for x in hits], Operation(OP.ORIGIN))
+
+        # Test for tuples that are not Hits
         if (isinstance(general_input, tuple) and
                 not isinstance(general_input, Hit)):
             general_input = self._node_to_hit(general_input)
+
+        # Test for Hits
         if isinstance(general_input, Hit):
-            general_input = self._hit_to_drs(general_input)
+            field = general_input.field_name
+            if field is '' or field is None:
+                # If the Hit's field is not defined, it is in table mode
+                # and all Hits from the table need to be found
+                general_input = self._hit_to_drs(
+                    general_input, table_mode=True)
+            else:
+                general_input = self._hit_to_drs(general_input)
         if isinstance(general_input, DRS):
             return general_input
 
@@ -278,6 +301,7 @@ class Algebra:
             table = hit.source_name
             hits = self._network.get_hits_from_table(table)
             drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+            drs.set_table_mode()
         else:
             drs = DRS([hit], Operation(OP.ORIGIN))
 
@@ -297,6 +321,13 @@ class Algebra:
         error_text = ("Input parameters are not in the same mode ",
                       "(fields, table)")
         assert a.mode == b.mode, error_text
+
+    def _represents_int(self, string: str) -> bool:
+        try:
+            int(string)
+            return True
+        except:
+            return False
 
 
 class API(Algebra):
