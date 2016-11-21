@@ -1,5 +1,4 @@
 import itertools
-import re
 
 from modelstore.elasticstore import KWType
 
@@ -30,63 +29,58 @@ class Algebra:
     def annotate(self, author: str, text: str, md_class: MDClass,
         general_source, ref={"general_target": None, "type": None}) -> MRS:
         """
-        Create a new annotation in the elasticsearch graph as metadata. Parses
-        tags as keywords that follow a # symbol i.e. #data.
+        Create a new annotation in the elasticsearch graph.
         :param author: identifiable name of user or process
         :param text: free text description
         :param md_class: MDClass
         :param general_source: nid, node tuple, Hit, or DRS
         :param ref: (optional) {
-            "general_target": nid, node tuple, Hit, or DRS of target(s),
+            "general_target": nid, node tuple, Hit, or DRS,
             "type": MDRelation
         }
         :return: MRS of the new metadata
         """
-        drs_source = self._general_to_drs(general_source)
-        drs_target = self._general_to_drs(ref["general_target"])
+        source = self._general_to_drs(general_source)
+        target = self._general_to_drs(ref["general_target"])
 
-        if drs_source.mode != DRSMode.FIELDS or drs_target.mode != DRSMode.FIELDS:
+        if source.mode != DRSMode.FIELDS or target.mode != DRSMode.FIELDS:
             raise ValueError("source and targets must be columns")
 
-        tags = re.findall("(?<=#)[a-zA-Z0-9]+", text)
-        tags = [tag.lower() for tag in tags]
         md_class = self._mdclass_to_str(md_class)
         md_hits = []
 
         # non-relational metadata
         if ref["type"] is None:
-            for hit_source in drs_source:
+            for hit_source in source:
                 res = self._store_client.add_annotation(
                     author=author,
                     text=text,
                     md_class=md_class,
-                    source=hit_source.nid,
-                    tags=tags)
+                    source=hit_source.nid)
                 md_hits.append(res)
             return MRS(md_hits)
 
         # relational metadata
         md_relation, nid_is_source = self._mdrelation_to_str(ref["type"])
         if not nid_is_source:
-            drs_source, drs_target = drs_target, drs_source
+            source, target = target, source
 
-        for hit_source in drs_source:
-            for hit_target in drs_target:
+        for hit_source in source:
+            for hit_target in target:
                 res = self._store_client.add_annotation(
                     author=author,
                     text=text,
                     md_class=md_class,
                     source=hit_source.nid,
-                    target={"id": hit_target.nid, "type": md_relation},
-                    tags=tags)
+                    target={"id": hit_target.nid, "type": md_relation})
                 md_hits.append(res)
             return MRS(md_hits)
 
     def add_comments(self, author: str, comments: list, md_id: str) -> MRS:
         """
-        Add comment to metadata with the given md_id.
+        Add comments to the annotation with the given md_id.
         :param author: identifiable name of user or process
-        :param comments: list of comments
+        :param comments: list of free text comments
         :param md_id: metadata id
         """
         md_comments = []
@@ -96,21 +90,22 @@ class Algebra:
             md_comments.append(res)
         return MRS(md_comments)
 
-    def add_tags(self, author: str, md_id: str, tags: list):
+    def add_tags(self, author: str, tags: list, md_id: str):
         """
         Add tags/keywords to metadata with the given md_id.
         :param md_id: metadata id
         :param tags: a list of tags to add
         """
-        return self._store_client.extend_field(author, "tags", md_id, tags)
+        return self._store_client.add_tags(author, tags, md_id)
 
-    def metadata_search(self, general_input=None,
+    def md_search(self, general_input=None,
                         relation: MDRelation=None) -> MRS:
         """
-        Given an nid, searches for all annotations that mention it. If a
-        relation is given, searches for annotations in which the node is the
-        source of the relation.
-        :param general_input:
+        Searches for metadata that reference the nodes in the general
+        input. If a relation is given, searches for metadata that mention the
+        nodes as the source of the relation. If no parameters are given,
+        searches for all metadata.
+        :param general_input: nid, node tuple, Hit, or DRS
         :param relation: an MDRelation
         """
         # return all metadata
@@ -121,14 +116,14 @@ class Algebra:
         if drs_nodes.mode != DRSMode.FIELDS:
             raise ValueError("general_input must be columns")
 
-        # return metadata that reference the nid inputs
+        # return metadata that reference the input
         if relation is None:
             md_hits = []
             for node in drs_nodes:
                 md_hits.extend(self._store_client.get_metadata(nid=node.nid))
             return MRS(md_hits)
 
-        # return metadata that reference the nid inputs with the given relation
+        # return metadata that reference the input with the given relation
         md_hits = []
         store_relation, nid_is_source = self._mdrelation_to_str(relation)
         for node in drs_nodes:
@@ -136,25 +131,18 @@ class Algebra:
                 relation=store_relation, nid_is_source=nid_is_source))
         return MRS(md_hits)
 
-    def metadata_keyword_search(self, kw: str, max_results=10) -> MRS:
+    def md_keyword_search(self, kw: str, max_results=10) -> MRS:
         """
         Performs a keyword search over metadata annotations and comments.
         :param kw: the keyword to search
         :param max_results: maximum number of results to return
         :return: returns a MRS
         """
-        hits = self._store_client.search_metadata_keywords(
+        hits = self._store_client.search_keywords_md(
             keywords=kw, max_hits=max_results)
 
         mrs = MRS([x for x in hits])
         return mrs
-
-    def pretty_print_nid(self, nid: str):
-        """
-        Pretty prints sourceName and columnName of given nid.
-        """
-        sourceName, columnName = self._store_client._get_readable_doc_with_nid(nid)
-        print("({0}, {1}, {2})".format(nid, sourceName, columnName))
 
     """
     Basic API

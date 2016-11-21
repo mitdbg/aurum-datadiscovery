@@ -336,7 +336,8 @@ class StoreHandler:
     Metadata
     """
     def add_annotation(self, author: str, text: str, md_class: str,
-        source: str, target={"id": None, "type": None}, tags=[]):
+                       source: str, target={"id": None, "type": None},
+                       tags=[]):
         """
         Adds annotation document to the elasticsearch graph.
         TODO: Does not modify the graph if either the source nid or the target
@@ -354,47 +355,62 @@ class StoreHandler:
         """
         timestamp = self._current_time()
 
+        mapped_tags = []
+        for tag in tags:
+            mapped_tags.append({
+                "author": author,
+                "creation_date": timestamp,
+                "tag": tag
+            })
+
         body = {
             "author": author,
             "text": text,
             "class": md_class,
             "source": source,
             "target": target,
-            "tags": self._format_data(author, tags, timestamp),
+            "tags": mapped_tags,
             "creation_date": timestamp,
             "updated_date": timestamp
         }
 
         res = client.create(index='metadata', doc_type='annotation', body=body)
         hit = MDHit(res["_id"], author, md_class, text, source,
-            target["id"], target["type"])
+                    target["id"], target["type"])
         return hit
 
     def add_comment(self, author: str, text: str, md_id: str):
         """
         Adds a comment document to the elasticsearch graph, whose parent is
         the annotation document with the given md_id.
+        :return: an MDComment of the new comment
         """
         timestamp = self._current_time()
         body = {
             "author": author,
             "text": text,
-            "date": timestamp
+            "creation_date": timestamp
         }
 
         res = client.create(index='metadata', doc_type='comment', body=body,
-            parent=md_id)
+                            parent=md_id)
         return MDComment(res["_id"], author, text, md_id)
 
-    def search_metadata_keywords(self, keywords, max_hits=15):
+    def search_keywords_md(self, keywords: list, max_hits=15):
         """
         Performs a search query on metadata to match the provided keywords
-        :param keywords: the list of keyword to match
-        :return: the list of documents that contain the keywords
+        :param keywords: the list of keywords to match
+        :param max_hits: max number of results to return
+        :return: the metadata that contain the keywords
         """
         index = "metadata"
         body = {"from": 0, "size": max_hits, "query": {
-                      "match": {"text": keywords}}}
+                "bool": {"should": [
+                    {"match": {"text": keywords}},
+                    {"nested": {"path": "tags", "query": {
+                        "bool": {"should": [{"match": {"tags.tag": keywords}}]}
+                    }}}
+                ]}}}
         filter_path = ['hits.total',
                        'hits.hits._type',
                        'hits.hits._id',
@@ -404,9 +420,11 @@ class StoreHandler:
                        'hits.hits._source.source',
                        'hits.hits._source.target',
                        'hits.hits._source.text']
+
         res = client.search(index=index, body=body, filter_path=filter_path)
         if res['hits']['total'] == 0:
             return []
+
         for el in res['hits']['hits']:
             if el["_type"] == "comment":
                 yield MDComment(el["_id"],
@@ -422,59 +440,52 @@ class StoreHandler:
                             el["_source"]["target"]["id"],
                             el["_source"]["target"]["type"])
 
-    def extend_field(self, author: str, field: str, md_id: str, data: list):
+    def add_tags(self, author: str, tags: list, md_id: str):
         """
-        Extend field with data in the metadata with the given md_id.
-        :param field: field to extend i.e. tags
+        Add tags to the annotation with the given md_id.
+        :param author: identifiable name of user or process
+        :param tags: list of tags
         :param md_id: metadata id
-        :param data: list of data
+        :return: an MDHit of the updated annotation
         """
-        # TODO: since comments are stored as their own documents, this method
-        # is only necessary for tags; change the name? We may also want to
-        # represent tags differently, but not sure
-        if field != "tags":
-            raise ValueError("\"{}\" is not a valid field name.".format(field))
-
         timestamp = self._current_time()
-        res = client.search(index='metadata', doc_type='annotation',
-            body={"query": {"terms": {"_id": [md_id]}}})
 
+        res = client.search(index='metadata', doc_type='annotation',
+                            body={"query": {"terms": {"_id": [md_id]}}})
         if res["hits"]["total"] == 0:
             raise ValueError("Given md_id does not exist.")
 
-        new_data = res["hits"]["hits"][0]["_source"][field]
-        new_data.extend(self._format_data(author, data, timestamp))
+        source = res["hits"]["hits"][0]["_source"]
+
+        new_tags = []
+        for tag in tags:
+            new_tags.append({
+                "author": author,
+                "creation_date": timestamp,
+                "tag": tag
+            })
+        new_tags.extend(source["tags"])
+
         body = {
             "doc": {
                 "updated_date": timestamp,
-                field: new_data
+                "tags": new_tags
             }
         }
         res = client.update(index='metadata', doc_type='annotation', id=md_id,
-            body=body)
-        hit = MDHit(res["_id"], author, md_class, source, text,
-            target["id"], target["type"])
-
-    def _format_data(self, author: str, data: list, timestamp: str):
-        """
-        Formats list data for elasticsearch
-        """
-        new_data = []
-        for chunk in data:
-            new_data.append({
-                "author": author,
-                "creation_date": timestamp,
-                "data": chunk
-            })
-        return new_data
+                            body=body)
+        return MDHit(res["_id"], author, source["class"], source["text"],
+                     source["source"], source["target"]["id"],
+                     source["target"]["type"])
 
     def get_metadata(self, nid: str=None, relation: str=None,
                      nid_is_source: bool=True):
         """
-        Searches for all metadata that reference the given nid.
         :param nid: node id
-        :relation:
-        :nid_is_source: true if node with nid is the source, false if target
+        :param relation: the relation to search for
+        :param nid_is_source: true iff nid is the source of the relation
+        :return: metadata that reference the nid with the given relation, or
+        all metadata if fields are empty
         """
         match_source_id = {"term": {"source": nid}}
         match_target_id = {"nested": {"path": "target", "query": {
@@ -489,7 +500,7 @@ class StoreHandler:
             ]}}}
         else:
             match_id = match_source_id if nid_is_source else match_target_id
-            body = {"query": {"bool": { "must": [
+            body = {"query": {"bool": {"must": [
                 match_id,
                 {"nested": {"path": "target", "query": {
                     "bool": {"should": [{"term": {"target.type": relation}}]}
@@ -497,13 +508,14 @@ class StoreHandler:
             ]}}}
 
         res = client.search(index='metadata', doc_type="annotation", body=body,
-            scroll="10m", filter_path=['hits.hits._id',
-                                       'hits.total',
-                                       'hits.hits._source.author',
-                                       'hits.hits._source.class',
-                                       'hits.hits._source.source',
-                                       'hits.hits._source.target',
-                                       'hits.hits._source.text'])
+                            scroll="10m", filter_path=[
+                            'hits.hits._id',
+                            'hits.total',
+                            'hits.hits._source.author',
+                            'hits.hits._source.class',
+                            'hits.hits._source.source',
+                            'hits.hits._source.target',
+                            'hits.hits._source.text'])
 
         if res["hits"]["total"] == 0:
             return
@@ -511,50 +523,49 @@ class StoreHandler:
         md_hits = []
         for md in res["hits"]["hits"]:
             md_hit = MDHit(md["_id"],
-                md["_source"]["author"],
-                md["_source"]["class"],
-                md["_source"]["text"],
-                md["_source"]["source"],
-                md["_source"]["target"]["id"],
-                md["_source"]["target"]["type"])
+                           md["_source"]["author"],
+                           md["_source"]["class"],
+                           md["_source"]["text"],
+                           md["_source"]["source"],
+                           md["_source"]["target"]["id"],
+                           md["_source"]["target"]["type"])
             md_hits.append(md_hit)
             yield md_hit
 
-        for comment in self.get_comments(list(map(lambda x: x.id, md_hits))):
-            yield comment
+        for hit in md_hits:
+            for comment in self.get_comments(hit.id):
+                yield comment
 
-    def get_comments(self, md_ids: list=[]):
+    def get_comments(self, md_id: str):
         """
-        Searches for all comments that reference the given md_ids.
-        :param md_id: metadata id
+        :param md_id: metadata id of annotation
+        :return: metadata comments that reference the md_id
         """
-        if len(md_ids) == 0:
-            body = {"query": {"match_all": {}}}
-        else:
-            body = {"query": {
-                "has_parent": {
-                    "parent_type": "annotation",
-                    "query": {"bool": {"should": [
-                        {"term": {"_id": md_id}} for md_id in md_ids
-                    ]}}
-                }
-            }}
+
+        body = {"query": {
+            "has_parent": {
+                "parent_type": "annotation",
+                "query": {"bool": {"should": [
+                    {"term": {"_id": md_id}}
+                ]}}
+            }
+        }}
 
         res = client.search(index='metadata', doc_type="comment", body=body,
-            scroll="10m", filter_path=['hits.hits._id',
-                                       'hits.total',
-                                       'hits.hits._parent',
-                                       'hits.hits._source.author',
-                                       'hits.hits._source.text'])
+                            scroll="10m", filter_path=['hits.hits._id',
+                            'hits.total',
+                            'hits.hits._parent',
+                            'hits.hits._source.author',
+                            'hits.hits._source.text'])
 
         if res["hits"]["total"] == 0:
             return
 
         for md in res["hits"]["hits"]:
             yield MDComment(md["_id"],
-                md["_source"]["author"],
-                md["_source"]["text"],
-                md["_parent"])
+                            md["_source"]["author"],
+                            md["_source"]["text"],
+                            md["_parent"])
 
     def delete_metadata_index(self):
         """
@@ -588,7 +599,20 @@ class StoreHandler:
                                 }
                             }
                         },
-                        "tags": {"type": "object"},
+                        "tags": {
+                            "type": "nested",
+                            "properties": {
+                                "author": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                },
+                                "creation_date": {
+                                    "type": "date",
+                                    "format": "basic_date_time_no_millis"
+                                },
+                                "tag": {"type": "string"}
+                            }
+                        },
                         "creation_date": {
                             "type": "date",
                             "format": "basic_date_time_no_millis"
@@ -603,7 +627,7 @@ class StoreHandler:
                     "_parent": {"type": "annotation"},
                     "properties": {
                         "author": {"type": "string", "index": "not_analyzed"},
-                        "date": {
+                        "creation_date": {
                             "type": "date",
                             "format": "basic_date_time_no_millis"
                         },
@@ -619,22 +643,6 @@ class StoreHandler:
         Returns the current time in basic_date_time_no_millis format.
         """
         return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-
-    def _get_readable_doc_with_nid(self, nid):
-        """
-        Returns (sourceName, columnName) of document with given nid, if
-        it exists. Else returns (None, None).
-        """
-        search_body = {"query": {"terms": {"_id": [nid]}}}
-        res = client.search(index='profile', body=search_body,
-                            filter_path=['hits.hits._source.sourceName',
-                                        'hits.hits._source.columnName'])
-
-        if len(res) == 0:
-            return (None, None)
-
-        source = res["hits"]["hits"][0]["_source"]
-        return (source["sourceName"], source["columnName"])
 
 if __name__ == "__main__":
     print("Elastic Store")
