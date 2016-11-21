@@ -1,10 +1,12 @@
 import re
+from datetime import datetime
 from elasticsearch import Elasticsearch
 
 from enum import Enum
 from collections import defaultdict
 
 from api.apiutils import Hit
+from api.annotation import MDHit, MDComment
 import config as c
 
 
@@ -13,6 +15,7 @@ class KWType(Enum):
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
+    KW_METADATA = 4
 
 
 class StoreHandler:
@@ -328,6 +331,321 @@ class StoreHandler:
         client.clear_scroll(scroll_id=scroll_id)
         return id_sig
 
+    """
+    Metadata
+    """
+    def add_annotation(self, author: str, text: str, md_class: str,
+                       source: str, target={"id": None, "type": None},
+                       tags=[]):
+        """
+        Adds annotation document to the elasticsearch graph.
+        :param author: user or process who wrote the metadata
+        :param text: free text annotation
+        :param md_class: metadata class
+        :param source: nid of column source
+        :param target: (optional) {
+            "id": nid of column target,
+            "type": metadata relation
+        }
+        :param tags: (optional) keyword tags
+        :return: an MDHit of the new annotation
+        """
+        timestamp = self._current_time()
+
+        mapped_tags = []
+        for tag in tags:
+            mapped_tags.append({
+                "author": author,
+                "creation_date": timestamp,
+                "tag": tag
+            })
+
+        body = {
+            "author": author,
+            "text": text,
+            "class": md_class,
+            "source": source,
+            "target": target,
+            "tags": mapped_tags,
+            "creation_date": timestamp,
+            "updated_date": timestamp
+        }
+
+        res = client.create(index='metadata', doc_type='annotation', body=body)
+        hit = MDHit(res["_id"], author, md_class, text, source,
+                    target["id"], target["type"])
+        return hit
+
+    def add_comment(self, author: str, text: str, md_id: str):
+        """
+        Adds a comment document to the elasticsearch graph, whose parent is
+        the annotation document with the given md_id.
+        :return: an MDComment of the new comment
+        """
+        res = client.search(index='metadata', doc_type='annotation',
+                            body={"query": {"terms": {"_id": [md_id]}}})
+        if res["hits"]["total"] == 0:
+            raise ValueError("Given md_id does not exist.")
+
+        timestamp = self._current_time()
+
+        body = {
+            "author": author,
+            "text": text,
+            "creation_date": timestamp
+        }
+
+        res = client.create(index='metadata', doc_type='comment', body=body,
+                            parent=md_id)
+        return MDComment(res["_id"], author, text, md_id)
+
+    def search_keywords_md(self, keywords: list, max_hits=15):
+        """
+        Performs a search query on metadata to match the provided keywords
+        :param keywords: the list of keywords to match
+        :param max_hits: max number of results to return
+        :return: the metadata that contain the keywords
+        """
+        index = "metadata"
+        body = {"from": 0, "size": max_hits, "query": {
+                "bool": {"should": [
+                    {"match": {"text": keywords}},
+                    {"nested": {"path": "tags", "query": {
+                        "bool": {"should": [{"match": {"tags.tag": keywords}}]}
+                    }}}
+                ]}}}
+        filter_path = ['hits.total',
+                       'hits.hits._type',
+                       'hits.hits._id',
+                       'hits.hits._parent',
+                       'hits.hits._source.author',
+                       'hits.hits._source.class',
+                       'hits.hits._source.source',
+                       'hits.hits._source.target',
+                       'hits.hits._source.text']
+
+        res = client.search(index=index, body=body, filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+
+        for el in res['hits']['hits']:
+            if el["_type"] == "comment":
+                yield MDComment(el["_id"],
+                                el["_source"]["author"],
+                                el["_source"]["text"],
+                                el["_parent"])
+            elif el["_type"] == "annotation":
+                yield MDHit(el["_id"],
+                            el["_source"]["author"],
+                            el["_source"]["class"],
+                            el["_source"]["text"],
+                            el["_source"]["source"],
+                            el["_source"]["target"]["id"],
+                            el["_source"]["target"]["type"])
+
+    def add_tags(self, author: str, tags: list, md_id: str):
+        """
+        Add tags to the annotation with the given md_id.
+        :param author: identifiable name of user or process
+        :param tags: list of tags
+        :param md_id: metadata id
+        :return: an MDHit of the updated annotation
+        """
+        timestamp = self._current_time()
+
+        res = client.search(index='metadata', doc_type='annotation',
+                            body={"query": {"terms": {"_id": [md_id]}}})
+        if res["hits"]["total"] == 0:
+            raise ValueError("Given md_id does not exist.")
+
+        source = res["hits"]["hits"][0]["_source"]
+
+        new_tags = []
+        for tag in tags:
+            new_tags.append({
+                "author": author,
+                "creation_date": timestamp,
+                "tag": tag
+            })
+        new_tags.extend(source["tags"])
+
+        body = {
+            "doc": {
+                "updated_date": timestamp,
+                "tags": new_tags
+            }
+        }
+        res = client.update(index='metadata', doc_type='annotation', id=md_id,
+                            body=body)
+        return MDHit(res["_id"], author, source["class"], source["text"],
+                     source["source"], source["target"]["id"],
+                     source["target"]["type"])
+
+    def get_metadata(self, nid: str=None, relation: str=None,
+                     nid_is_source: bool=True):
+        """
+        :param nid: node id
+        :param relation: the relation to search for
+        :param nid_is_source: true iff nid is the source of the relation
+        :return: metadata that reference the nid with the given relation, or
+        all metadata if fields are empty
+        """
+        match_source_id = {"term": {"source": nid}}
+        match_target_id = {"nested": {"path": "target", "query": {
+            "bool": {"should": [{"term": {"target.id": nid}}]}
+        }}}
+
+        if nid is None:
+            body = {"query": {"match_all": {}}}
+        elif relation is None:
+            body = {"query": {"bool": {"should": [
+                match_source_id, match_target_id
+            ]}}}
+        else:
+            match_id = match_source_id if nid_is_source else match_target_id
+            body = {"query": {"bool": {"must": [
+                match_id,
+                {"nested": {"path": "target", "query": {
+                    "bool": {"should": [{"term": {"target.type": relation}}]}
+                }}}
+            ]}}}
+
+        res = client.search(index='metadata', doc_type="annotation", body=body,
+                            scroll="10m", filter_path=[
+                            'hits.hits._id',
+                            'hits.total',
+                            'hits.hits._source.author',
+                            'hits.hits._source.class',
+                            'hits.hits._source.source',
+                            'hits.hits._source.target',
+                            'hits.hits._source.text'])
+
+        if res["hits"]["total"] == 0:
+            return
+
+        md_hits = []
+        for md in res["hits"]["hits"]:
+            md_hit = MDHit(md["_id"],
+                           md["_source"]["author"],
+                           md["_source"]["class"],
+                           md["_source"]["text"],
+                           md["_source"]["source"],
+                           md["_source"]["target"]["id"],
+                           md["_source"]["target"]["type"])
+            md_hits.append(md_hit)
+            yield md_hit
+
+        for hit in md_hits:
+            for comment in self.get_comments(hit.id):
+                yield comment
+
+    def get_comments(self, md_id: str):
+        """
+        :param md_id: metadata id of annotation
+        :return: metadata comments that reference the md_id
+        """
+
+        body = {"query": {
+            "has_parent": {
+                "parent_type": "annotation",
+                "query": {"bool": {"should": [
+                    {"term": {"_id": md_id}}
+                ]}}
+            }
+        }}
+
+        res = client.search(index='metadata', doc_type="comment", body=body,
+                            scroll="10m", filter_path=['hits.hits._id',
+                            'hits.total',
+                            'hits.hits._parent',
+                            'hits.hits._source.author',
+                            'hits.hits._source.text'])
+
+        if res["hits"]["total"] == 0:
+            return
+
+        for md in res["hits"]["hits"]:
+            yield MDComment(md["_id"],
+                            md["_source"]["author"],
+                            md["_source"]["text"],
+                            md["_parent"])
+
+    def delete_metadata_index(self):
+        """
+        Deletes the index 'metadata' and all its documents.
+        """
+        return client.indices.delete(index='metadata')
+
+    def create_metadata_index(self):
+        """
+        Creates the index 'metadata' with 'annotation' and 'comment' document
+        types and their corresponding mappings.
+        """
+        body = {
+            "mappings": {
+                "annotation": {
+                    "properties": {
+                        "author": {"type": "string", "index": "not_analyzed"},
+                        "text": {"type": "string"},
+                        "class": {"type": "string", "index": "not_analyzed"},
+                        "source": {"type": "string", "index": "not_analyzed"},
+                        "target": {
+                            "type": "nested",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                }
+                            }
+                        },
+                        "tags": {
+                            "type": "nested",
+                            "properties": {
+                                "author": {
+                                    "type": "string",
+                                    "index": "not_analyzed"
+                                },
+                                "creation_date": {
+                                    "type": "date",
+                                    "format": "basic_date_time_no_millis"
+                                },
+                                "tag": {"type": "string"}
+                            }
+                        },
+                        "creation_date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        },
+                        "updated_date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        }
+                    }
+                },
+                "comment": {
+                    "_parent": {"type": "annotation"},
+                    "properties": {
+                        "author": {"type": "string", "index": "not_analyzed"},
+                        "creation_date": {
+                            "type": "date",
+                            "format": "basic_date_time_no_millis"
+                        },
+                        "text": {"type": "string"}
+                    }
+                }
+            }
+        }
+        return client.indices.create(index='metadata', body=body)
+
+    def _current_time(self):
+        """
+        Returns the current time in basic_date_time_no_millis format.
+        """
+        return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
 if __name__ == "__main__":
     print("Elastic Store")
