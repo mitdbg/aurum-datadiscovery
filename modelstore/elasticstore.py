@@ -340,8 +340,6 @@ class StoreHandler:
                        tags=[]):
         """
         Adds annotation document to the elasticsearch graph.
-        TODO: Does not modify the graph if either the source nid or the target
-        nid (if given) does not exist.
         :param author: user or process who wrote the metadata
         :param text: free text annotation
         :param md_class: metadata class
@@ -385,7 +383,13 @@ class StoreHandler:
         the annotation document with the given md_id.
         :return: an MDComment of the new comment
         """
+        res = client.search(index='metadata', doc_type='annotation',
+                            body={"query": {"terms": {"_id": [md_id]}}})
+        if res["hits"]["total"] == 0:
+            raise ValueError("Given md_id does not exist.")
+
         timestamp = self._current_time()
+
         body = {
             "author": author,
             "text": text,
