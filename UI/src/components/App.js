@@ -1,4 +1,8 @@
-import React from 'react'
+import React from 'react';
+import Search from './Search';
+import Results from './Results';
+import Graph from './Graph';
+import Pandas from './Pandas';
 
 class App extends React.Component {
   constructor() {
@@ -8,20 +12,13 @@ class App extends React.Component {
   render() {
     return (
       <div className="aurum">
-        <div className="search-bar">
-          search bar
-        </div>
-        <div className="left-bar">
-          Left bar
-        </div>
-        <div className="graph-view">
-          Graph View
-        </div>
-        <div className="pandas-view">
-          Pandas View
-        </div>
-        <div className="toggle-bar">
-        togle bar
+        <Search />
+        <div className="middle-row">
+          <Results />
+          <div className="right-column">
+            <Graph />
+            <Pandas />
+          </div>
         </div>
       </div>
       )
