@@ -4,9 +4,7 @@ class Pandas extends React.Component {
   render() {
 
    return (
-    <div className="pandas-block">
-      Pandas
-    </div>
+    <div id="pandas">pandas</div>
     )
   }
 }

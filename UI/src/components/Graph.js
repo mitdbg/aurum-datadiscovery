@@ -4,9 +4,7 @@ class Graph extends React.Component {
   render() {
 
    return (
-    <div className="graph-block">
-      Graph
-    </div>
+    <div id="graph">graph</div>
     )
   }
 }

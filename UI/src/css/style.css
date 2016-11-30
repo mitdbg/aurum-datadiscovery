@@ -204,22 +204,78 @@ h2 {
 h3 {
   font-size: 3rem;
 }
-.search-row {
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+  background-color: #d3d3d3;
+  margin: 0 0 0 0;
+}
+data-reactroot {
+  height: 100% !important;
+}
+#main {
+  height: 100%;
+}
+#main >:first-child {
+  height: 100%;
+}
+header {
+  height: 42px;
+  top: 0;
+  width: 100%;
+  background-color: #808080;
+  padding: 5px 5px 5px 5px;
+  position: fixed;
+}
+footer {
+  height: 42px;
+  width: 100%;
+  background-color: #808080;
+  position: fixed;
+  bottom: 0;
+}
+#middle {
+  position: fixed;
+  top: 42px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+#left {
+  float: left;
+  height: 100%;
+  background-color: #e6e6fa;
+  min-width: 200px;
+  width: 20%;
+  overflow: scroll;
+}
+#graph {
+  width: 100%;
+  background-color: #ff0;
+  height: 60%;
+  min-height: 150px;
+}
+#pandas {
+  width: 100%;
+  height: 100%;
+  background-color: #d2b48c;
+}
+#search-field {
+  width: 25%;
+  border: 1px solid #808080;
+  border-radius: 4px;
+  margin-left: 10px;
+  padding: 5px 10px 5px 10px;
+  font-size: 0.7em;
+}
+#result-hide-add {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 42px;
   padding-top: 5px;
   padding-bottom: 5px;
   background-color: #d4d4d4;
-}
-.results-column {
-  display: inline-block;
-  width: 20%;
-  height: 90%;
-  vertical-align: top;
-  background-color: #00f;
-}
-.right-column {
-  display: inline-block;
-  width: 80%;
-  height: 90%;
-  vertical-align: top;
-  background-color: #fff;
 }

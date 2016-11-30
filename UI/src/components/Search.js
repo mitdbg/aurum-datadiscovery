@@ -4,9 +4,9 @@ class Search extends React.Component {
   render() {
 
    return (
-    <div className="search-row">
-      <input type="text" placeholder="Search by table, column, or keyword" />
-    </div>
+    <header>
+      <input id="search-field" type="text" placeholder="Search by table, column, or keyword" />
+    </header>
     )
   }
 }

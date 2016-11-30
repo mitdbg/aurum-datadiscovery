@@ -5,21 +5,21 @@ import Graph from './Graph';
 import Pandas from './Pandas';
 
 class App extends React.Component {
-  constructor() {
-    super();
-  }
 
   render() {
     return (
       <div className="aurum">
         <Search />
-        <div className="middle-row">
+        <div id="middle">
           <Results />
-          <div className="right-column">
+          <div className="right">
             <Graph />
             <Pandas />
           </div>
         </div>
+        <footer>
+          footer
+        </footer>
       </div>
       )
   }
