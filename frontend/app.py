@@ -2,6 +2,7 @@ import os
 import sys
 import inspect
 from flask import Flask, jsonify
+from flask_cors import CORS, cross_origin
 
 # move to top level and import some more things
 currentdir = os.path.dirname(
@@ -9,10 +10,11 @@ currentdir = os.path.dirname(
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from api.apiutils import Scope, Relation
+from api.apiutils import Relation
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr import fieldnetwork
 from algebra import API
+from modelstore.elasticstore import KWType
 
 path_to_serialized_model = parentdir + "/test/testmodel/"
 network = fieldnetwork.deserialize_network(path_to_serialized_model)
@@ -32,10 +34,11 @@ safe_dict['difference'] = api.difference
 safe_dict['_general_to_drs'] = api._general_to_drs
 
 # Short names for scopes
-safe_dict['db'] = Scope.DB
-safe_dict['source'] = Scope.SOURCE
-safe_dict['feld'] = Scope.FIELD
-safe_dict['content'] = Scope.CONTENT
+# safe_dict['db'] = NA
+safe_dict['source'] = KWType.KW_TABLE  # table/file/source name
+safe_dict['feld'] = KWType.KW_SCHEMA  # colum names/fields
+safe_dict['content'] = KWType.KW_TEXT
+
 
 # short names for Relations
 safe_dict['schema'] = Relation.SCHEMA
@@ -44,7 +47,9 @@ safe_dict['content_sim'] = Relation.CONTENT_SIM
 safe_dict['entity_sim'] = Relation.ENTITY_SIM
 safe_dict['pkfk'] = Relation.PKFK
 
+
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route('/query/<query>')
