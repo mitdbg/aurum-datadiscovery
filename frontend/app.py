@@ -61,9 +61,11 @@ def query(query):
 
         res = {'data': data, 'edges': edges}
         res = jsonify(res)
+        return res
     except Exception as e:
         res = "error: " + str(e)
-    return res
+        return InvalidUsage(res, status_code=400)
+        # return res, invalid
 
 
 @app.route('/convert/<input>')
@@ -75,6 +77,21 @@ def convert(input):
         res = "error: " + str(e)
     return res
 
+
+class InvalidUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
 
 if __name__ == '__main__':
     app.run()
