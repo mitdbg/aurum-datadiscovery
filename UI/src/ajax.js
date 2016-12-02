@@ -11,18 +11,18 @@ export function makeRequest(query, newCallback) {
     alert('Giving up :( Cannot create an XMLHTTP instance');
     return false;
   }
-  httpRequest.onreadystatechange = alertContents;
+  httpRequest.onreadystatechange = ignoreErr;
   httpRequest.open('GET', url);
   httpRequest.send();
 }
 
-function alertContents() {
+function ignoreErr() {
   if (httpRequest.readyState === XMLHttpRequest.DONE) {
     if (httpRequest.status === 200) {
       callback(httpRequest);
     } else {
-      console.log(httpRequest);
-      alert('There was a problem with the request.');
+      // console.log('There was a problem with the request.');
+      // console.log(httpRequest);
     }
   }
 }
