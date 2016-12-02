@@ -56,11 +56,8 @@ CORS(app)
 def query(query):
     try:
         res = eval(query, {"__builtins__": None}, safe_dict)
-        data = res.data
-        edges = res.get_provenance().prov_graph().edges()
+        res = jsonify(res.return_dictionary())
 
-        res = {'data': data, 'edges': edges}
-        res = jsonify(res)
         return res
     except Exception as e:
         res = "error: " + str(e)

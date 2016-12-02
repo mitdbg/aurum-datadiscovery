@@ -703,6 +703,35 @@ class DRS:
     """
     # TODO: all these functions were written on-demand. Some refactoring would help a lot here
 
+    def return_dictionary(self):
+        '''
+        prepares a dictionary to return for jsonification with the api
+        '''
+        mode = self.mode  # save state
+
+        results = dict()
+        edges = self.get_provenance().prov_graph().edges()
+        self.set_table_mode
+
+        for x in self:
+            table_name = x[2]
+            results[table_name] = []
+
+        self.set_fields_mode()
+        for x in self:
+            source_name = x[2]
+
+            hit = {
+                'nid': x[0],
+                'db_name': x[1],
+                'field_name': x[3],
+                'source': x[4]}
+
+        results[source_name].append(hit)
+
+        self._mode = mode  # recover state
+        return{'edges': edges, 'results': results}
+
     def print_tables(self):
         mode = self.mode  # save state
         self.set_table_mode()
