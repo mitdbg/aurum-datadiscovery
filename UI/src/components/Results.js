@@ -11,4 +11,8 @@ class Results extends React.Component {
   }
 }
 
+Results.propTypes = {
+  result: React.PropTypes.object.isRequired,
+}
+
 export default Results

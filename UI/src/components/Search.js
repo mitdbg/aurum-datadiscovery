@@ -26,7 +26,6 @@ class Search extends React.Component {
   }
 
   handleChange(e){
-    debugger;
     const query = e.target.value;
     this.setState({ userQuery: query });
     makeRequest(query, this.handleResponse);

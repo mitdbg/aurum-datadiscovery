@@ -36,7 +36,9 @@ class App extends React.Component {
           updateResult={this.updateResult}
         />
         <div id="middle">
-          <Results />
+          <Results
+            result={this.state.result}
+          />
           <div className="right">
             <Graph />
             <Pandas />
