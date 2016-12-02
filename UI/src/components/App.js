@@ -9,15 +9,20 @@ class App extends React.Component {
     super();
 
     this.updateQuery = this.updateQuery.bind(this);
+    this.updateResult = this.updateResult.bind(this);
     // Initial State
     this.state = {
       query: '',
-      results: {}
+      result: {}
     };
   }
 
   updateQuery(query) {
     this.setState({ query });
+  }
+
+  updateResult(result) {
+    this.setState( { result });
   }
 
 
@@ -26,7 +31,9 @@ class App extends React.Component {
       <div className="aurum">
         <Search
           query={this.state.query}
+          result={this.state.result}
           updateQuery={this.updateQuery}
+          updateResult={this.updateResult}
         />
         <div id="middle">
           <Results />

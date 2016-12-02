@@ -5,25 +5,31 @@ class Search extends React.Component {
   constructor() {
     super();
     this.handleChange = this.handleChange.bind(this);
-    this.updateResults = this.updateResults.bind(this);
+    this.handleResponse = this.handleResponse.bind(this);
 
     this.state = {
+      // userQuery is what the user typed in. This query might be invalid.
       userQuery: ''
+
+      // results are handled at the App level.
     };
   }
 
 
 
-  updateResults(results) {
+  handleResponse(response) {
+    const json = JSON.parse(response.responseText);
+
     this.props.updateQuery(this.state.userQuery);
-    const json = JSON.parse(results.responseText);
+    this.props.updateResult(json);
 
   }
 
   handleChange(e){
+    debugger;
     const query = e.target.value;
     this.setState({ userQuery: query });
-    makeRequest(query, this.updateResults);
+    makeRequest(query, this.handleResponse);
   }
 
   render() {
@@ -44,7 +50,9 @@ class Search extends React.Component {
 
 Search.propTypes = {
   query: React.PropTypes.string.isRequired,
-  updateQuery: React.PropTypes.func.isRequired
+  result: React.PropTypes.object.isRequired,
+  updateQuery: React.PropTypes.func.isRequired,
+  updateResult: React.PropTypes.func.isRequired
 }
 
 
