@@ -56,7 +56,7 @@ CORS(app)
 def query(query):
     try:
         res = eval(query, {"__builtins__": None}, safe_dict)
-        res = jsonify(res.return_dictionary())
+        res = jsonify(res.__dict__())
 
         return res
     except Exception as e:
