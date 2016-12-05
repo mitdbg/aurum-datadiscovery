@@ -13,7 +13,8 @@ class App extends React.Component {
     // Initial State
     this.state = {
       query: '',
-      result: {}
+      sources: {},
+      edges: [],
     };
   }
 
@@ -22,7 +23,10 @@ class App extends React.Component {
   }
 
   updateResult(result) {
-    this.setState( { result });
+    var sources = result['sources'];
+    var edges = result['edges'];
+    this.setState( { sources });
+    this.setState( { edges });
   }
 
 
@@ -31,13 +35,15 @@ class App extends React.Component {
       <div className="aurum">
         <Search
           query={this.state.query}
-          result={this.state.result}
+          sources={this.state.sources}
+          edges={this.state.edges}
           updateQuery={this.updateQuery}
           updateResult={this.updateResult}
         />
         <div id="middle">
           <Results
-            result={this.state.result}
+            sources={this.state.sources}
+            edges={this.state.edges}
           />
           <div className="right">
             <Graph />

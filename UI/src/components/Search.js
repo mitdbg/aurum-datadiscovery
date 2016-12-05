@@ -49,7 +49,8 @@ class Search extends React.Component {
 
 Search.propTypes = {
   query: React.PropTypes.string.isRequired,
-  result: React.PropTypes.object.isRequired,
+  edges: React.PropTypes.array.isRequired,
+  sources: React.PropTypes.object.isRequired,
   updateQuery: React.PropTypes.func.isRequired,
   updateResult: React.PropTypes.func.isRequired
 }
