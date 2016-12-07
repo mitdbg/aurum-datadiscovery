@@ -69,7 +69,7 @@ def query(query):
 def convert(input):
     try:
         res = api._general_to_drs(input)
-        res = jsonify({'data': res.data})
+        res = jsonify(res.__dict__())
     except Exception as e:
         res = "error: " + str(e)
     return res
