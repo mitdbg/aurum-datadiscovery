@@ -8,10 +8,7 @@ class Search extends React.Component {
     this.handleResponse = this.handleResponse.bind(this);
 
     this.state = {
-      // userQuery is what the user typed in. This query might be invalid.
       userQuery: ''
-
-      // results are handled at the App level.
     };
   }
 
