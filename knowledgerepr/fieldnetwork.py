@@ -9,6 +9,7 @@ from api.apiutils import OP
 from api.apiutils import Hit
 from api.apiutils import Relation
 from api.apiutils import compute_field_id
+from api.annotation import MRS
 
 
 def build_hit(sn, fn):
@@ -192,6 +193,18 @@ class FieldNetwork:
             return OP.TABLE
         if relation == Relation.SCHEMA_SIM:
             return OP.SCHEMA_SIM
+        if relation == Relation.MEANS_SAME:
+            return OP.MEANS_SAME
+        if relation == Relation.MEANS_DIFF:
+            return OP.MEANS_DIFF
+        if relation == Relation.SUBCLASS:
+            return OP.SUBCLASS
+        if relation == Relation.SUPERCLASS:
+            return OP.SUPERCLASS
+        if relation == Relation.MEMBER:
+            return OP.MEMBER
+        if relation == Relation.CONTAINER:
+            return OP.CONTAINER
 
     def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
         if isinstance(hit, Hit):
@@ -206,6 +219,22 @@ class FieldNetwork:
                 score = v[relation]['score']
                 (db_name, source_name, field_name, data_type) = self.__id_names[k]
                 data.append(Hit(k, db_name, source_name, field_name, score))
+        op = self.get_op_from_relation(relation)
+        o_drs = DRS(data, Operation(op, params=[hit]))
+        return o_drs
+
+    def md_neighbors_id(self, hit: Hit, md_neighbors: MRS, relation: Relation) -> DRS:
+        if isinstance(hit, Hit):
+            nid = str(hit.nid)
+        if isinstance(hit, str):
+            nid = hit
+        nid = str(nid)
+        data = []
+        score = 1.0 # TODO: return more meaningful score results
+        for hit in md_neighbors:
+            k = hit.target if hit.target != nid else hit.source
+            (db_name, source_name, field_name, data_type) = self.__id_names[k]
+            data.append(Hit(k, db_name, source_name, field_name, score))
         op = self.get_op_from_relation(relation)
         o_drs = DRS(data, Operation(op, params=[hit]))
         return o_drs

@@ -186,9 +186,16 @@ class Algebra:
             self._general_to_field_drs(i_drs)
 
         # Check neighbors
-        for h in i_drs:
-            hits_drs = self._network.neighbors_id(h, relation)
-            o_drs = o_drs.absorb(hits_drs)
+        if not relation.from_metadata():
+            for h in i_drs:
+                hits_drs = self._network.neighbors_id(h, relation)
+                o_drs = o_drs.absorb(hits_drs)
+        else:
+            md_relation = self._relation_to_mdrelation(relation)
+            for h in i_drs:
+                neighbors = self.md_search(h, md_relation)
+                hits_drs = self._network.md_neighbors_id(h, neighbors, relation)
+                o_drs = o_drs.absorb(hits_drs)
         return o_drs
 
     """
@@ -464,6 +471,20 @@ class Algebra:
             MDRelation.IS_CONTAINER_OF: ("member", False)
         }
         return ref_table[md_relation]
+
+    def _relation_to_mdrelation(self, relation):
+        if relation == Relation.MEANS_SAME:
+            return MDRelation.MEANS_SAME_AS
+        if relation == Relation.MEANS_DIFF:
+            return MDRelation.MEANS_DIFF_FROM
+        if relation == Relation.SUBCLASS:
+            return MDRelation.IS_SUBCLASS_OF
+        if relation == Relation.SUPERCLASS:
+            return MDRelation.IS_SUPERCLASS_OF
+        if relation == Relation.MEMBER:
+            return MDRelation.IS_MEMBER_OF
+        if relation == Relation.CONTAINER:
+            return MDRelation.IS_CONTAINER_OF
 
     def _assert_same_mode(self, a: DRS, b: DRS) -> None:
         error_text = ("Input parameters are not in the same mode ",
