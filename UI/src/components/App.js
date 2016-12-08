@@ -10,13 +10,46 @@ class App extends React.Component {
 
     this.updateQuery = this.updateQuery.bind(this);
     this.updateResult = this.updateResult.bind(this);
+    this.addSelection = this.addSelection.bind(this);
     // Initial State
     this.state = {
-      query: '',
+      query: '', // the current query
       sources: {},
       edges: [],
+      selection: {}
     };
   }
+
+  // This data structure is a bit more complicated.
+  // Needs additional setting and getting
+  addSelection(selected) {
+    // get the tableName/Key
+    const tableName = selected['source_name']
+    const nid = selected['nid']
+
+    const selection = {...this.state.selection};
+
+    // insert the table if necessary
+    if(selection[tableName] === undefined) {
+      selection[tableName] = {};
+    }
+
+    // insert the field
+    selection[tableName][nid] = selected;
+
+    this.setState({ selection });
+  }
+
+  removeSelection(nid) {
+    const selection = {...this.state.selection};
+    delete selection[nid];
+    this.setState({ selection }) ;
+  }
+
+  clearSelection(){
+    this.setState({selection : {}})
+  }
+
 
   updateQuery(query) {
     this.setState({ query });
@@ -44,6 +77,8 @@ class App extends React.Component {
           <Results
             sources={this.state.sources}
             edges={this.state.edges}
+            selectHit={this.state.selected}
+            addSelection={this.addSelection}
           />
           <div className="right">
             <Graph />

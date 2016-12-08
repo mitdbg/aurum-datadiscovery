@@ -3,9 +3,6 @@ import FieldSource from './FieldSource';
 
 class Source extends React.Component {
 
-  handleClick(e) {
-
-  }
 
   render() {
    return (
@@ -16,7 +13,12 @@ class Source extends React.Component {
       </div>
       {Object
           .keys(this.props.details.field_res)
-          .map(key => <FieldSource details={this.props.details.field_res[key]}/>)
+          .map(key =>
+            <FieldSource
+              details={this.props.details.field_res[key]}
+              addSelection={this.props.addSelection}
+            />
+          )
         }
     </div>
     )
@@ -26,6 +28,7 @@ class Source extends React.Component {
 
 Source.propTypes = {
   details: React.PropTypes.string.isRequired,
+  addSelection: React.PropTypes.func.isRequired,
 }
 
 

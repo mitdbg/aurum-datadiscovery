@@ -2,17 +2,18 @@ import React from 'react';
 import Source from './Source';
 
 class Results extends React.Component {
-  constructor() {
-    super();
-  }
-
 
   render() {
     return (
       <div id="left">
         {Object
           .keys(this.props.sources)
-          .map(key => <Source details={this.props.sources[key]}/>)}
+          .map(
+            key =>
+            <Source
+              details={this.props.sources[key]}
+              addSelection={this.props.addSelection}
+            />)}
       </div>
       )
     }
@@ -21,6 +22,7 @@ class Results extends React.Component {
 Results.propTypes = {
   edges: React.PropTypes.array.isRequired,
   sources: React.PropTypes.object.isRequired,
+  addSelection: React.PropTypes.func.isRequired,
 }
 
 export default Results
