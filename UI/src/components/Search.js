@@ -13,13 +13,20 @@ class Search extends React.Component {
   }
 
 
+  componentWillMount() {
+    // If the query is passed in the url on the first load
+    // this will catch it
+    const query = location.pathname.slice(1, location.pathname.length);
+    var e = {}
+    e['target'] = {}
+    e['target']['value'] = query
+    this.handleChange( e );
+  }
 
   handleResponse(response) {
     const json = JSON.parse(response.responseText);
-
     this.props.updateQuery(this.state.userQuery);
     this.props.updateResult(json);
-
   }
 
   handleChange(e){

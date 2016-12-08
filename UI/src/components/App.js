@@ -20,6 +20,8 @@ class App extends React.Component {
     };
   }
 
+
+
   // This data structure is a bit more complicated.
   // Needs additional setting and getting
   addSelection(selected) {
@@ -53,6 +55,7 @@ class App extends React.Component {
 
   updateQuery(query) {
     this.setState({ query });
+    this.context.router.transitionTo(`/${query}`);
   }
 
   updateResult(result) {
@@ -93,8 +96,8 @@ class App extends React.Component {
   }
 }
 
-App.propTypes = {
-  params: React.PropTypes.object.isRequired
+App.contextTypes = {
+  router: React.PropTypes.object
 }
 
 export default App;
