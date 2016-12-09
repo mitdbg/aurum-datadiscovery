@@ -27,7 +27,7 @@ class Source extends React.Component {
 
 
 Source.propTypes = {
-  details: React.PropTypes.string.isRequired,
+  details: React.PropTypes.object.isRequired,
   addSelection: React.PropTypes.func.isRequired,
 }
 

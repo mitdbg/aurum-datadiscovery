@@ -20,7 +20,7 @@ class FieldSource extends React.Component {
 
 
 FieldSource.propTypes = {
-  details: React.PropTypes.string.isRequired,
+  details: React.PropTypes.object.isRequired,
   addSelection: React.PropTypes.func.isRequired,
 }
 
