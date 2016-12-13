@@ -15,6 +15,7 @@ class Source extends React.Component {
           .keys(this.props.details.field_res)
           .map(key =>
             <FieldSource
+              key={key}
               details={this.props.details.field_res[key]}
               addSelection={this.props.addSelection}
             />

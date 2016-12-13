@@ -11,6 +11,7 @@ class Results extends React.Component {
           .map(
             key =>
             <Source
+              key={key}
               details={this.props.sources[key]}
               addSelection={this.props.addSelection}
             />)}
