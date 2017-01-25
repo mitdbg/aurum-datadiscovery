@@ -366,7 +366,7 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
                         # min overlap for precision
                         actual_overlap = compute_overlap(ref_x_left, ref_x_right, candidate_x_left, candidate_x_right)
-                        if actual_overlap >= 0.5:
+                        if actual_overlap >= 0.3:
                             connect(candidate_nid, ref_nid, 1, inddep=True)
                     """
                     if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
@@ -578,7 +578,7 @@ def build_pkfk_relation(network):
         n_card = network.get_cardinality_of(n)
         if n == '2314808454' or n == '1504465753':
             debug = True
-        if n_card > 0.9:  # Early check if this is a candidate
+        if n_card > 0.7:  # Early check if this is a candidate
             neighborhood = get_neighborhood(n)
             for ne in neighborhood:
                 if ne is not n:
@@ -589,9 +589,9 @@ def build_pkfk_relation(network):
                         highest_card = n_card
                     else:
                         highest_card = ne_card
-                    if ne_card < 0.5:
-                        network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
-                        total_pkfk_relations += 1
+                    #if ne_card < 0.5:
+                    network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
+                    total_pkfk_relations += 1
                     #print(str(n) + " -> " + str(ne))
     print("Total number PKFK: {0}".format(str(total_pkfk_relations)))
 
