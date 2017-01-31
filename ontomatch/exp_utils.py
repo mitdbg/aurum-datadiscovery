@@ -53,7 +53,7 @@ def generate_table_vectors(path_to_serialized_model):
     return table_vectors
 
 
-def compute_sv_coherency(sv):
+def compute_internal_cohesion(sv):
     semantic_sim_array = []
     for a, b in itertools.combinations(sv, 2):
         sem_sim = glove_api.semantic_distance(a, b)
@@ -62,6 +62,42 @@ def compute_sv_coherency(sv):
     if len(semantic_sim_array) > 1:  # if not empty slice
         coh = np.mean(semantic_sim_array)
     return coh
+
+
+def compute_internal_cohesion_elementwise(x, sv):
+    semantic_sim_array = []
+    for el in sv:
+        sem_sim = glove_api.semantic_distance(x, el)
+        semantic_sim_array.append(sem_sim)
+    coh = 0
+    if len(semantic_sim_array) > 1:
+        coh = np.mean(semantic_sim_array)
+    return coh
+
+
+def compute_sem_distance_with(x, sv):
+    semantic_sim_array = []
+    for el in sv:
+        sem_sim = glove_api.semantic_distance(x, el)
+        semantic_sim_array.append(sem_sim)
+    ssim = 0
+    if len(semantic_sim_array) > 1:
+        ssim = np.mean(semantic_sim_array)
+    return ssim
+
+
+def compute_semantic_similarity(sv1, sv2):
+    products = 0
+    accum = 0
+    for x in sv1:
+        products += 1
+        internal_cohesion = compute_internal_cohesion_elementwise(x, sv1)
+        distance = compute_sem_distance_with(x, sv2)
+        denominator = 2 * max(internal_cohesion, distance)
+        value = internal_cohesion + distance / denominator
+        accum += value
+    ss = accum / products
+    return ss
 
 
 def compute_semantic_similarity_cross_average(sv1, sv2):
@@ -161,6 +197,18 @@ def compute_semantic_similarity_table(table, semantic_vectors):
     return results
 
 
+def compute_new_ss(table, semantic_vectors):
+    sv1 = semantic_vectors[table]
+
+    res = dict()
+
+    for k, v in semantic_vectors.items():
+        if sv1 != k:
+            ss = compute_semantic_similarity(sv1, v)
+            #print(str(k) + " -> " + str(ss))
+            res[k] = ss
+    return res
+
 if __name__ == "__main__":
 
     """
@@ -183,16 +231,17 @@ if __name__ == "__main__":
 
     semantic_vectors = load_signatures("data/massdata")
 
+    """
     tables_coh = []
 
     for t, vecs in semantic_vectors.items():
-        coh = compute_sv_coherency(vecs)
+        coh = compute_internal_cohesion(vecs)
         tables_coh.append((coh, t))
 
     tables_coh = sorted(tables_coh, reverse=True)
 
-    #for coh, t in tables_coh:
-    #    print(str(t) + " -> " + str(coh))
+    for coh, t in tables_coh:
+        print(str(t) + " -> " + str(coh))
 
     res = compute_semantic_similarity_table("Cambridge Home Page Featured Story_mfs6-yu9a.csv", semantic_vectors)
 
@@ -225,6 +274,19 @@ if __name__ == "__main__":
     print("Max")
     for i in range(len(oca)):
         print(oma[i])
+    """
+
+    # New metrics
+    table = "Cambridge Home Page Featured Story_mfs6-yu9a.csv"
+    table_sim = compute_new_ss(table, semantic_vectors)
+
+    table_sim = sorted(table_sim.items(), key=operator.itemgetter(1), reverse=True)
+    for k, v in table_sim:
+        print(str(k) + " -> " + str(v))
+
+
+
+
 
 
 
