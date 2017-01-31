@@ -54,10 +54,17 @@ def load_model(path_to_vocab):
 
 if __name__ == "__main__":
     print("glove model")
-    load_model()
+    load_model("../glove/glove.6B.100d.txt")
 
-    print(str(semantic_distance("dog", "animal")))
-    print(str(semantic_distance("cat", "animal")))
-    print(str(semantic_distance("warehouse", "address")))
-    print(str(semantic_distance("building", "name")))
+    print(str(semantic_distance(get_embedding_for_word("dog"), get_embedding_for_word("animal"))))
+    print(str(semantic_distance(get_embedding_for_word("cat"), get_embedding_for_word("animal"))))
+    print(str(semantic_distance(get_embedding_for_word("warehouse"), get_embedding_for_word("address"))))
+    print(str(semantic_distance(get_embedding_for_word("building"), get_embedding_for_word("name"))))
 
+    while True:
+        i = input("introduce two words separated by space to get similarity. EXIT to exit")
+        tokens = i.split(' ')
+        if tokens[0] == "EXIT":
+            print("bye!")
+            break
+        print("ss: " + str(semantic_distance(get_embedding_for_word(tokens[0]), get_embedding_for_word(tokens[1]))))

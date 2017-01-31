@@ -7,8 +7,6 @@ import itertools
 import operator
 
 
-np.seterr(all='raise')
-
 def store_signatures(signatures, path):
     f = open(path + '/semantic_vectors.pkl', 'wb')
     pickle.dump(signatures, f)
@@ -42,10 +40,12 @@ def generate_table_vectors(path_to_serialized_model):
     for table_name, cols in read_table_columns(path_to_serialized_model):
         semantic_vectors = []
         for c in cols:
+            c = c.replace('_', ' ')
             tokens = c.split(' ')
             for token in tokens:
+                token = token.lower()
                 if token not in stopwords.words('english'):
-                    vec = glove_api.get_embedding_for_word(token.lower())
+                    vec = glove_api.get_embedding_for_word(token)
                     if vec is not None:
                         semantic_vectors.append(vec)
         print("Table: " + str(table_name) + " has: " + str(len(semantic_vectors)))
@@ -125,6 +125,27 @@ def compute_semantic_similarity_min_average(sv1, sv2):
     return gs
 
 
+def compute_semantic_similarity_median(sv1, sv2):
+    global_sim = []
+    for v1 in sv1:
+        local_sim = []
+        for v2 in sv2:
+            sem_sim = glove_api.semantic_distance(v1, v2)
+            local_sim.append(sem_sim)
+        ls = 0
+        if len(local_sim) > 1:
+            ls = np.median(local_sim)
+        elif len(local_sim) == 1:
+            ls = local_sim[0]
+        global_sim.append(ls)
+    gs = 0
+    if len(global_sim) > 1:
+        gs = np.median(global_sim)
+    elif len(global_sim) == 1:
+        gs = global_sim[0]
+    return gs
+
+
 def compute_semantic_similarity_table(table, semantic_vectors):
     sv1 = semantic_vectors[table]
 
@@ -133,30 +154,34 @@ def compute_semantic_similarity_table(table, semantic_vectors):
     for k, v in semantic_vectors.items():
         if sv1 != k:
             avg_sim = compute_semantic_similarity_cross_average(sv1, v)
+            median_sim = compute_semantic_similarity_median(sv1, v)
             max_sim = compute_semantic_similarity_max_average(sv1, v)
             min_sim = compute_semantic_similarity_min_average(sv1, v)
-            results[k] = (avg_sim, max_sim, min_sim)
+            results[k] = (avg_sim, max_sim, min_sim, median_sim)
     return results
 
 
 if __name__ == "__main__":
 
-    path_to_serialized_model = "../models/dwh3/"
-
     """
+    path_to_serialized_model = "../models/massdata/"
+
     # Load glove model
     print("Loading glove model...")
     glove_api.load_model("../glove/glove.6B.100d.txt")
     print("Loading glove model...OK")
 
+    # For the rest of operations, raise all errors
+    np.seterr(all='raise')
+
     table_vectors = generate_table_vectors(path_to_serialized_model)
 
     print("Storing semantic vectors...")
-    store_signatures(table_vectors, ".")
+    store_signatures(table_vectors, "data/massdata")
     print("Storing semantic vectors...OK")
     """
 
-    semantic_vectors = load_signatures(".")
+    semantic_vectors = load_signatures("data/massdata")
 
     tables_coh = []
 
@@ -169,24 +194,37 @@ if __name__ == "__main__":
     #for coh, t in tables_coh:
     #    print(str(t) + " -> " + str(coh))
 
-    res = compute_semantic_similarity_table("Hr_org_unit.csv", semantic_vectors)
+    res = compute_semantic_similarity_table("Cambridge Home Page Featured Story_mfs6-yu9a.csv", semantic_vectors)
 
     only_cross_average = []
     only_max_average = []
     only_min_average = []
+    only_median_average = []
 
     for k, v in res.items():
         print(str(k) + " - " + str(v))
         only_cross_average.append((v[0], k))
         only_max_average.append((v[1], k))
         only_min_average.append((v[2], k))
+        only_median_average.append((v[3], k))
 
     oca = sorted(only_cross_average, reverse=True)
     omx = sorted(only_max_average, reverse=True)
     omi = sorted(only_min_average, reverse=True)
+    oma = sorted(only_median_average, reverse=True)
 
+    print("Average")
     for i in range(len(oca)):
         print(oca[i])
+
+    print("")
+    print("")
+    print("")
+    print("")
+
+    print("Max")
+    for i in range(len(oca)):
+        print(oma[i])
 
 
 
