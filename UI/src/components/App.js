@@ -16,7 +16,10 @@ class App extends React.Component {
       query: '', // the current query
       sources: {},
       edges: [],
-      selection: {}
+      selection: {},
+
+      // graph: {nodes:[], edges:[]}
+      graph: {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]}
     };
   }
 
@@ -84,7 +87,9 @@ class App extends React.Component {
             addSelection={this.addSelection}
           />
           <div className="right">
-            <Graph />
+            <Graph
+              graph={this.state.graph}
+            />
             <Pandas />
           </div>
         </div>
