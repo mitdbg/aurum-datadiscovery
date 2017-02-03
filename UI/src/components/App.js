@@ -98,6 +98,7 @@ class App extends React.Component {
           <div className="right">
             <Graph
               graph={this.state.graph}
+              testNodes={ [{nid:"n4", eid:"e2", label:"Bob"}, {nid:"n5", eid:"e3", label:"Markey"}] }
             />
             <Pandas />
           </div>
