@@ -1,7 +1,8 @@
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr import fieldnetwork
 from knowledgerepr import networkbuilder
-from knowledgerepr.networkbuilder import FieldNetwork
+from knowledgerepr.fieldnetwork import FieldNetwork
+from inputoutput import inputoutput as io
 
 import sys
 import time
@@ -24,7 +25,7 @@ def main(output_path=None):
 
     # Schema_sim relation
     start_schema_sim = time.time()
-    networkbuilder.build_schema_sim_relation(network)
+    schema_sim_index = networkbuilder.build_schema_sim_relation(network)
     end_schema_sim = time.time()
     print("Total schema-sim: {0}".format(str(end_schema_sim - start_schema_sim)))
     print("!!2 " + str(end_schema_sim - start_schema_sim))
@@ -49,8 +50,6 @@ def main(output_path=None):
     end_text_sig_sim = time.time()
     print("Total text-sig-sim: {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
     print("!!4 " + str(end_text_sig_sim - start_text_sig_sim))
-
-
     """
 
     # Content_sim text relation (minhash-based)
@@ -61,11 +60,10 @@ def main(output_path=None):
     print("Time to extract minhash signatures from store: {0}".format(str(et - st)))
     print("!!3 " + str(et - st))
 
-    networkbuilder.build_content_sim_mh_text(network, mh_signatures)
+    content_sim_index = networkbuilder.build_content_sim_mh_text(network, mh_signatures)
     end_text_sig_sim = time.time()
     print("Total text-sig-sim (minhash): {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
     print("!!4 " + str(end_text_sig_sim - start_text_sig_sim))
-
 
     # Content_sim num relation
     start_num_sig_sim = time.time()
@@ -84,17 +82,6 @@ def main(output_path=None):
     print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
     print("!!6 " + str(end_pkfk - start_pkfk))
 
-    #topk = 100
-    #degree = network.fields_degree(topk)
-    #for node, val in degree:
-    #    print("N - " + str(node) + " degree: " + str(val))
-
-    #import networkx as nx
-    #from matplotlib.pyplot import show
-    #nx.write_gml(network._get_underlying_repr(), "gexfTEST.gml")
-    #nx.draw(network._get_underlying_repr())
-    #show()
-
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
     print("!!7 " + str(end_all - start_all))
@@ -103,6 +90,12 @@ def main(output_path=None):
     if output_path is not None:
         path = output_path
     fieldnetwork.serialize_network(network, path)
+
+    # Serialize indexes
+    path_schsim = path + "/schema_sim_index.pkl"
+    io.serialize_object(schema_sim_index, path_schsim)
+    path_cntsim = path + "/content_sim_index.pkl"
+    io.serialize_object(schema_sim_index, path_cntsim)
 
     print("DONE!")
 
