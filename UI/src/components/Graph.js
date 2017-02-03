@@ -1,5 +1,6 @@
 import React from 'react';
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import SigmaMod from './SigmaMod';
 
 class Graph extends React.Component {
   render() {
@@ -7,8 +8,9 @@ class Graph extends React.Component {
    return (
     <div id="graph">
       <Sigma graph={this.props.graph} settings={{drawEdges:true}}>
-         <RelativeSize initialSize={15}/>
-         <RandomizeNodePositions/>
+          <SigmaMod label="Shoots"/>
+          <RelativeSize initialSize={15}/>
+          <RandomizeNodePositions/>
       </Sigma>
     </div>
     )

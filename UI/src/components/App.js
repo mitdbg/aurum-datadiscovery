@@ -11,6 +11,7 @@ class App extends React.Component {
     this.updateQuery = this.updateQuery.bind(this);
     this.updateResult = this.updateResult.bind(this);
     this.addSelection = this.addSelection.bind(this);
+    this.updateGraph = this.updateGraph.bind(this);
     // Initial State
     this.state = {
       query: '', // the current query
@@ -21,6 +22,14 @@ class App extends React.Component {
       // graph: {nodes:[], edges:[]}
       graph: {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]}
     };
+  }
+
+
+  // updates the graph state, which  propegates to Graph.js Sigma.props.graph
+  // a testing method
+  updateGraph(){
+    const graph = {nodes:[{id:"n4", label:"Bob"}, {id:"n5", label:"Markey"}, {id:"n6", label:"Bunny"}], edges:[{id:"e2",source:"n4",target:"n5",label:"BOO"}]};
+    this.setState({ graph });
   }
 
 
