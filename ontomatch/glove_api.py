@@ -3,6 +3,7 @@ import numpy as np
 w = None
 vocab = None
 ivocab = None
+vector_feature_size = 0
 
 
 def get_embedding_for_word(word):
@@ -15,6 +16,11 @@ def get_embedding_for_word(word):
 def semantic_distance(v1, v2):
     sim = np.dot(v1, v2.T)
     return sim
+
+
+def get_lang_model_feature_size():
+    global vector_feature_size
+    return vector_feature_size
 
 
 def load_vocab(vocabfile):
@@ -31,6 +37,8 @@ def load_vocab(vocabfile):
     ivocab = {idx: w for idx, w in enumerate(words)}
 
     vector_dim = len(vectors[ivocab[0]])
+    global vector_feature_size
+    vector_feature_size = vector_dim
     W = np.zeros((vocab_size, vector_dim))
     for word, v in vectors.items():
         if word == '<unk>':

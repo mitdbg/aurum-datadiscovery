@@ -20,8 +20,10 @@ def load_signatures(path):
     return semantic_vectors
 
 
-def read_table_columns(path_to_serialized_model):
-    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+def read_table_columns(path_to_serialized_model, network=False):
+    # If the network is not provided, then we use the path to deserialize from disk
+    if not network:
+        network = fieldnetwork.deserialize_network(path_to_serialized_model)
     source_ids = network._get_underlying_repr_table_to_ids()
     col_info = network._get_underlying_repr_id_to_field_info()
     cols = []
@@ -34,10 +36,10 @@ def read_table_columns(path_to_serialized_model):
         cols.clear()
 
 
-def generate_table_vectors(path_to_serialized_model):
+def generate_table_vectors(path_to_serialized_model, network=False):
     table_vectors = dict()
 
-    for table_name, cols in read_table_columns(path_to_serialized_model):
+    for table_name, cols in read_table_columns(path_to_serialized_model, network=network):
         semantic_vectors = []
         for c in cols:
             c = c.replace('_', ' ')
