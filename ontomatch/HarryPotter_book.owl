@@ -1,0 +1,459 @@
+<?xml version="1.0"?>
+
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+
+
+<rdf:RDF xmlns="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#"
+     xml:base="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasFriend -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasFriend">
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#knows"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasHelped -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasHelped">
+        <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#knows"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#isPetOf -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#isPetOf">
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#knows -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#knows"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Cat -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Cat">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Creature -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Creature"/>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#DrumstrangStud -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#DrumstrangStud">
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor">
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Halfblood -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Halfblood">
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Muggle"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent">
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:allValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Creature"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:onClass rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Creature"/>
+                <owl:maxQualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">1</owl:maxQualifiedCardinality>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Student"/>
+        <rdfs:subClassOf>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor"/>
+                    <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Human -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Human">
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Muggle -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Muggle">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Human"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet">
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#isPetOf"/>
+                <owl:allValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#isPetOf"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Creature"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Student"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood"/>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin"/>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Student -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Student">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Human"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pet"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Weasley -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Weasley"/>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#crookshanks -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#crookshanks">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Cat"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#dracoMalfoy -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#dracoMalfoy">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+        <rdf:type>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+            </owl:Restriction>
+        </rdf:type>
+        <knows rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#harryPotter"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#errol -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#errol">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#harryPotter -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#harryPotter">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Halfblood"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+        <rdf:type>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl"/>
+            </owl:Restriction>
+        </rdf:type>
+        <hasPet rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hedwig"/>
+        <hasHelped rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hermione"/>
+        <knows rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hermione"/>
+        <hasFriend rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hermione"/>
+        <hasFriend rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#ronWeasley"/>
+        <knows rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#tomRiddle"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hedwig -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hedwig">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Owl"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hermione -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hermione">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Muggle"/>
+        <rdf:type>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Cat"/>
+            </owl:Restriction>
+        </rdf:type>
+        <hasPet rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#crookshanks"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#nevilleLongbottom -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#nevilleLongbottom">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+        <rdf:type>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+            </owl:Restriction>
+        </rdf:type>
+        <knows rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#harryPotter"/>
+        <hasPet rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#trevor"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#ronWeasley -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#ronWeasley">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Gryffindor"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#HogStudent"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Pureblood"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Weasley"/>
+        <rdf:type>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hasPet"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat"/>
+            </owl:Restriction>
+        </rdf:type>
+        <hasPet rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#scrabber"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#scrabber -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#scrabber">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Rat"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#tomRiddle -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#tomRiddle">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Slytherin"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#trevor -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#trevor">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Toad"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#viktorKrum -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#viktorKrum">
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#DrumstrangStud"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#Wizard"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#errol"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#hedwig"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#harryPotter"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#nevilleLongbottom"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#nevilleLongbottom"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#ronWeasley"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#nevilleLongbottom"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/vinu/ontologies/2014/2/untitled-ontology-55#tomRiddle"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.4.2) http://owlapi.sourceforge.net -->
+
