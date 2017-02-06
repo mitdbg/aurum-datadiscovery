@@ -20,8 +20,6 @@ class Graph extends React.Component {
                 </SigmaMod>
               )
         }
-        <RelativeSize initialSize={15}/>
-        <RandomizeNodePositions/>
       </Sigma>
     </div>
     )
