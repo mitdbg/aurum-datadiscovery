@@ -7,7 +7,7 @@ class SigmaNode extends React.Component {
 
     // This is what puts nodes on the graph
     props.sigma.graph.addNode(
-        {id:props.node.nid, label:props.node.label}
+        {id:props.nid, label:props.nid}
       )
 
   }
@@ -28,7 +28,8 @@ class SigmaNode extends React.Component {
 }
 
 SigmaNode.propTypes = {
-  node: React.PropTypes.object.isRequired
+  nid: React.PropTypes.string.isRequired,
+  hits: React.PropTypes.object.isRequired
 }
 
 export default SigmaNode

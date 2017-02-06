@@ -16,17 +16,19 @@ class Graph extends React.Component {
         minNodeSize:10,
         enableHovering:true}}>
         {
-          // cycle through nodes
-          Object.keys(this.props.graphNodes).map(
+          // cycle through that are passed as selected items
+          Object.keys(this.props.selection).map(
               key=>
                 <SigmaNode
                   key={key}
-                  node={this.props.graphNodes[key]}>
+                  nid={key}
+                  hits={this.props.selection[key]}>
                   <RelativeSize initialSize={15}/>
                  <RandomizeNodePositions/>
                 </SigmaNode>
               )
         }
+
         {
           // cycle through edges
           Object.keys(this.props.graphEdges).map(
@@ -47,7 +49,7 @@ class Graph extends React.Component {
 }
 
 Graph.propTypes = {
-  graphNodes: React.PropTypes.array.isRequired,
+  selection: React.PropTypes.object.isRequired,
   graphEdges: React.PropTypes.array.isRequired
 }
 
