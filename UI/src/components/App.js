@@ -11,33 +11,33 @@ class App extends React.Component {
     this.updateQuery = this.updateQuery.bind(this);
     this.updateResult = this.updateResult.bind(this);
     this.addSelection = this.addSelection.bind(this);
-    this.updateGraph = this.updateGraph.bind(this);
+    this.updateGraphNodes = this.updateGraphNodes.bind(this);
     // Initial State
     this.state = {
       query: '', // the current query
-      sources: {},
-      edges: [],
-      selection: {},
+      sources: {}, // the HITs returned from the query
+      edges: [], // Aurum edges returned from the query. NOT used for the graph viz.
+      selection: {}, // the HITs that the user selected
 
-      // graph: {nodes:[], edges:[]}
-      graph: {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]},
-      nodes: [{nid:"n1", eid:"e2", label:"Bob"}, {nid:"n5", eid:"e3", label:"Markey"}]
+      // This is what will actually display on the graph
+      // graphNodes are selected HITs. graphEdges are not yet defined.
+      graphNodes: [{nid:"n1", label:"Bob"}, {nid:"n2", label:"Markey"}],
+      graphEdges: [{eid: "e1", source:"n1", target:"n2", label:"e1"}]
     };
   }
 
 
   // updates the graph state, which  propegates to Graph.js Sigma.props.graph
   // a testing method
-  updateGraph(){
-    const nodes = [
-        {nid:"n1", eid:"e2", label:"Bob"},
-        {nid:"n2", eid:"e3", label:"Markey"},
-        {nid:"n3", eid:"e4", label:"Fizz"},
-        {nid:"n4", eid:"e5", label:"Buzz"},
+  updateGraphNodes(){
+    const graphNodes = [
+        {nid:"n1", label:"Bob"},
+        {nid:"n2", label:"Markey"},
+        {nid:"n3", label:"Fizz"},
+        {nid:"n4", label:"Buzz"},
       ];
-    this.setState({ nodes });
+    this.setState({ graphNodes });
   }
-
 
 
   // This data structure is a bit more complicated.
@@ -103,8 +103,8 @@ class App extends React.Component {
           />
           <div className="right">
             <Graph
-              graph={this.state.graph}
-              nodes={this.state.nodes}
+              graphNodes={this.state.graphNodes}
+              graphEdges={this.state.graphEdges}
             />
             <Pandas />
           </div>

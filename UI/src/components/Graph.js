@@ -1,6 +1,7 @@
 import React from 'react';
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
-import SigmaMod from './SigmaMod';
+import SigmaNode from './SigmaNode';
+import SigmaEdge from './SigmaEdge';
 
 class Graph extends React.Component {
 
@@ -8,18 +9,37 @@ class Graph extends React.Component {
 
    return (
     <div id="graph">
-      <Sigma settings={{drawEdges:true}}>
+      <Sigma settings={{
+        // define sigma.js display settings here
+        // https://github.com/jacomyal/sigma.js/wiki/Settings
+        drawEdges:true,
+        minNodeSize:10,
+        enableHovering:true}}>
         {
-          Object.keys(this.props.nodes).map(
+          // cycle through nodes
+          Object.keys(this.props.graphNodes).map(
               key=>
-                <SigmaMod
+                <SigmaNode
                   key={key}
-                  details={this.props.nodes[key]}>
+                  node={this.props.graphNodes[key]}>
                   <RelativeSize initialSize={15}/>
                  <RandomizeNodePositions/>
-                </SigmaMod>
+                </SigmaNode>
               )
         }
+        {
+          // cycle through edges
+          Object.keys(this.props.graphEdges).map(
+              key=>
+                <SigmaEdge
+                  key={key}
+                  edge={this.props.graphEdges[key]}>
+                  <RelativeSize initialSize={15}/>
+                  <RandomizeNodePositions/>
+                </SigmaEdge>
+              )
+        }
+
       </Sigma>
     </div>
     )
@@ -27,8 +47,8 @@ class Graph extends React.Component {
 }
 
 Graph.propTypes = {
-  graph: React.PropTypes.object.isRequired,
-  nodes:React.PropTypes.array.isRequired
+  graphNodes: React.PropTypes.array.isRequired,
+  graphEdges: React.PropTypes.array.isRequired
 }
 
 export default Graph
