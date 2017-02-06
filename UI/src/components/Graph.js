@@ -8,20 +8,20 @@ class Graph extends React.Component {
 
    return (
     <div id="graph">
-      <Sigma graph={this.props.graph} settings={{drawEdges:true}}>
-          {
-            Object.keys(this.props.testNodes).map(
-                key=>
-                  <SigmaMod
-                    key={key}
-                    details={this.props.testNodes[key]}
-                  />
-                )
-          }
-
-
-          <RelativeSize initialSize={15}/>
-          <RandomizeNodePositions/>
+      <Sigma settings={{drawEdges:true}}>
+        {
+          Object.keys(this.props.nodes).map(
+              key=>
+                <SigmaMod
+                  key={key}
+                  details={this.props.nodes[key]}>
+                  <RelativeSize initialSize={15}/>
+                 <RandomizeNodePositions/>
+                </SigmaMod>
+              )
+        }
+        <RelativeSize initialSize={15}/>
+        <RandomizeNodePositions/>
       </Sigma>
     </div>
     )
@@ -29,7 +29,8 @@ class Graph extends React.Component {
 }
 
 Graph.propTypes = {
-  graph: React.PropTypes.object.isRequired
+  graph: React.PropTypes.object.isRequired,
+  nodes:React.PropTypes.array.isRequired
 }
 
 export default Graph

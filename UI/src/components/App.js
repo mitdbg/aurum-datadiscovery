@@ -20,7 +20,8 @@ class App extends React.Component {
       selection: {},
 
       // graph: {nodes:[], edges:[]}
-      graph: {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]}
+      graph: {nodes:[{id:"n1", label:"Alice"}, {id:"n2", label:"Rabbit"}], edges:[{id:"e1",source:"n1",target:"n2",label:"SEES"}]},
+      nodes: [{nid:"n1", eid:"e2", label:"Bob"}, {nid:"n5", eid:"e3", label:"Markey"}]
     };
   }
 
@@ -28,8 +29,13 @@ class App extends React.Component {
   // updates the graph state, which  propegates to Graph.js Sigma.props.graph
   // a testing method
   updateGraph(){
-    const graph = {nodes:[{id:"n4", label:"Bob"}, {id:"n5", label:"Markey"}, {id:"n6", label:"Bunny"}], edges:[{id:"e2",source:"n4",target:"n5",label:"BOO"}]};
-    this.setState({ graph });
+    const nodes = [
+        {nid:"n1", eid:"e2", label:"Bob"},
+        {nid:"n2", eid:"e3", label:"Markey"},
+        {nid:"n3", eid:"e4", label:"Fizz"},
+        {nid:"n4", eid:"e5", label:"Buzz"},
+      ];
+    this.setState({ nodes });
   }
 
 
@@ -98,7 +104,7 @@ class App extends React.Component {
           <div className="right">
             <Graph
               graph={this.state.graph}
-              testNodes={ [{nid:"n4", eid:"e2", label:"Bob"}, {nid:"n5", eid:"e3", label:"Markey"}] }
+              nodes={this.state.nodes}
             />
             <Pandas />
           </div>
