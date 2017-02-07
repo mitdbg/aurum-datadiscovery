@@ -1,6 +1,8 @@
 import nltk
 import re
+from nltk.corpus import stopwords
 
+english = stopwords.words('english')
 
 def pos_tag_text(text):
     tagged = nltk.tag.pos_tag(text.split())
@@ -33,6 +35,12 @@ def tokenize_property(prop):
     snake = snake.replace('_', ' ')
     snake = snake.replace('-', ' ')
     tokens = snake.split(' ')
+    return tokens
+
+
+def curate_tokens(tokens):
+    tokens = [w.lower() for w in tokens if len(w) > 1 and w not in english]
+    tokens = list(set(tokens))
     return tokens
 
 if __name__ == "__main__":
