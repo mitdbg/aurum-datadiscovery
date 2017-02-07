@@ -59,10 +59,13 @@ class SSAPI:
     def _get_kr_classes_vectors(self):
         class_vectors = dict()
         for kr in self.kr_handlers:
-            for class_name in kr.classes():
-                bow = kr.bow_repr_of(class_name)  # Get bag of words representation
-                sem_vectors = SS.get_semantic_vectors_for(bow)  # transform bow into sem vectors
-                class_vectors[class_name] = sem_vectors
+            for class_name in kr.classes_id():
+                success, bow = kr.bow_repr_of(class_name, class_id=True)  # Get bag of words representation
+                if success:
+                    sem_vectors = SS.get_semantic_vectors_for(bow)  # transform bow into sem vectors
+                    class_vectors[class_name] = sem_vectors
+                else:
+                    print(bow)
         return class_vectors
 
     def find_coarse_grain_hooks(self):

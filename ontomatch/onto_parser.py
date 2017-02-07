@@ -50,35 +50,49 @@ class OntoHandler:
 
     def classes(self):
         """
-        Iterate over classes
+        Return list of classes
         :param o:
         :return:
         """
         return [x.bestLabel() for x in self.o.classes]
 
-    def parents_of_class(self, class_name):
+    def classes_id(self):
+        """
+        Return list of IDs
+        :return:
+        """
+        return [x.id for x in self.o.classes]
+
+    def parents_of_class(self, class_name, class_id=False):
         """
         Parents of given class
         :param class_name:
         :return:
         """
+        if class_id:
+            return self.o.getClass(id=class_name).parents()
         return self.o.getClass(match=class_name)[0].parents()
 
-    def children_of_class(self, class_name):
+    def children_of_class(self, class_name, class_id=False):
         """
         Children of given class
         :param class_name:
         :return:
         """
+        if class_id:
+            return self.o.getClass(id=class_name).children()
         return self.o.getClass(match=class_name)[0].children()
 
-    def properties_all_of(self, class_name):
+    def properties_all_of(self, class_name, class_id=False):
         """
         All properties associated to the given class (both datatype and object)
         :param class_name:
         :return:
         """
-        c = self.o.getClass(match=class_name)[0]
+        if class_id:
+            c = self.o.getClass(id=class_name)
+        else:
+            c = self.o.getClass(match=class_name)[0]
         properties = self.o.getInferredPropertiesForClass(c)
         props = []
         for k, v in properties.items():
@@ -86,14 +100,17 @@ class OntoHandler:
                 props.append(el)
         return props
 
-    def instances_of(self, class_name):
+    def instances_of(self, class_name, class_id=False):
         """
         When data is available, retrieve all data for the given class
         :param c:
         :param p:
         :return:
         """
-        c = self.o.getClass(match=class_name)[0]
+        if class_id:
+            c = self.o.getClass(id=class_name)
+        else:
+            c = self.o.getClass(match=class_name)[0]
         clean_data = []
         data = c.instances()
         for d in data:
@@ -102,14 +119,17 @@ class OntoHandler:
             clean_data.append(d)
         return clean_data
 
-    def relations_of(self, class_name):
+    def relations_of(self, class_name, class_id=False):
         """
         Return for the given class all properties that refere to other classes, i.e., they are relations
         :param c:
         :return:
         """
-        c = self.o.getClass(match=class_name)[0]
-        property_for_class = self.o.getInferredPropertiesForClass(c)
+        if class_id:
+            c = self.o.getClass(id=class_name)
+        else:
+            c = self.o.getClass(match=class_name)[0]
+        property_for_class = self.o.getInferredPropertiesForClass(c)[:1]
         properties = []
         for dic in property_for_class:
             for k, v in dic.items():
@@ -123,23 +143,28 @@ class OntoHandler:
                 relations.append((label, descr))
         return relations
 
-    def bow_repr_of(self, class_name):
+    def bow_repr_of(self, class_name, class_id=False):
         """
         Retrieve a bag of words (bow) representation of the given class
         :param c:
         :return: (boolean, (class_name, bow)) if a bow can be built, or (boolean, str:reason) if not
         """
-        c = self.o.getClass(match=class_name)
+        if class_id:
+            c = self.o.getClass(id=class_name)
+        else:
+            c = self.o.getClass(match=class_name)[0]
+            if c is not None:
+                c = c[0]
         if c is None:
             return False, "Class does not exist"  # means there's no
-        c = c[0]
+
         label = c.bestLabel()
         descr = c.bestDescription()
         # Get class name, description -> bow, properties -> bow
         pnouns = nlp.get_proper_nouns(descr)
         nouns = nlp.get_nouns(descr)
         bow_descr = pnouns + nouns
-        props = self.relations_of(class_name)
+        props = self.relations_of(class_name, class_id=class_id)
         bow_properties = []
         for prop_label, prop_descr, in props:
             tokens = nlp.tokenize_property(prop_label)
@@ -155,6 +180,8 @@ if __name__ == '__main__':
     owl_file = 'efo.owl'
     #owl_file = 'efo.owl'
     o = OntoHandler()
+
+    o.o.printClassTree()
 
     """
     s = time.time()
@@ -174,8 +201,9 @@ if __name__ == '__main__':
     print("Load: " + str(e - s))
 
     print("classes")
-    for c in o.classes():
+    for c in o.classes_id():
         print("Gonna get bow for: " + str(c))
-        bow = o.bow_repr_of(c)
-        print(bow)
-        print(o.children_of_class(c))
+        s, bow = o.bow_repr_of(c, class_id=True)
+        if s:
+            if len(bow[1]) > 0:
+                print(bow)
