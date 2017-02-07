@@ -220,9 +220,21 @@ public class Main {
 
     configureMetricsReporting(pc);
     
+    // config logs
+    configLog();
+    
     Main m = new Main();
     m.startProfiler(pc);
     
+  }
+  
+  private static void configLog() {
+	  final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari");
+	  if (!(logger instanceof ch.qos.logback.classic.Logger)) {
+		  return;
+	  }
+	  ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger)logger;
+	  logbackLogger.setLevel(ch.qos.logback.classic.Level.WARN);
   }
   
   static private void configureMetricsReporting(ProfilerConfig pc){

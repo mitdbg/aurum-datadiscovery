@@ -1,6 +1,5 @@
 /**
- * @author Sibo Wang
- * @author Raul (edits)
+ * @author Raul
  *
  */
 
@@ -13,10 +12,15 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
@@ -45,10 +49,95 @@ public class DBConnector extends Connector {
 	private TableInfo tbInfo;
 	private long currentOffset = 0;
 	
+	// Cache for connection pools
+	private static Map<String, Connection> connectionPools = new HashMap<>();
+	
+	public static Connection getOrCreateConnector(String dbName, DBType dbType, String connIP, String port,
+			String connectPath, String filename, String username, String password) {
+		
+		// Definition of a conn identifier is here
+		String connIdentifier = dbName + connIP + port;
+		
+		if (connectionPools.containsKey(connIdentifier)) {
+			return connectionPools.get(connIdentifier);
+		}
+		
+		String cPath = null;
+		
+		try {
+			if(dbType == DBType.MYSQL) {
+				Class.forName("com.mysql.jdbc.Driver");
+				cPath = "jdbc:mysql://" + connIP + ":" + port + "/" + connectPath;
+			}
+			else if(dbType == DBType.POSTGRESQL) {
+				Class.forName("org.postgresql.Driver");
+				cPath = "jdbc:postgresql://" + connIP + ":" + port + "/" + connectPath;
+			}
+			else if(dbType == DBType.ORACLE) {
+				Class.forName ("oracle.jdbc.driver.OracleDriver");
+				cPath = "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)"
+						+ "(HOST="+connIP+")(PORT="+port+")))"
+						+ "(CONNECT_DATA=(SID="+connectPath+")))";
+			}
+		}
+		catch(ClassNotFoundException cnfe) {
+			cnfe.printStackTrace();
+			System.out.println(cnfe.getMessage());
+		}
+		
+		// If no existing pool to handle this db, then we create a new one
+		HikariConfig config = new HikariConfig();
+		config.setJdbcUrl(cPath);
+		config.setUsername(username);
+		config.setPassword(password);
+		config.addDataSourceProperty("cachePrepStmts", "true");
+		config.addDataSourceProperty("prepStmtCacheSize", "250");
+		config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+		HikariDataSource ds = new HikariDataSource(config);
+		
+		Connection connection = null;
+		try {
+			connection = ds.getConnection();
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		connectionPools.put(connIdentifier, connection);
+		
+		return connection;
+	}
+	
 	public DBConnector() {
 		this.tbInfo = new TableInfo();
 	}
 	
+	public DBConnector(Connection conn, String dbName, DBType dbType, String connIP, String port,
+			String connectPath, String filename, String username, String password) {
+		this.conn = conn;
+		this.dbName = dbName;
+		this.db = dbType;
+		this.connIP = connIP;
+		this.port = port;
+		this.connectPath = connectPath;
+		this.sourceName = filename;
+		this.username =username;
+		this.password = password;
+		this.tbInfo = new TableInfo();
+		
+		// Initialize tbInfo
+		List<Attribute> attrs = null;
+		try {
+			attrs = this.getAttributes();
+		} 
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.tbInfo.setTableAttributes(attrs);
+	}
+	
+	@Deprecated
 	public DBConnector(String dbName, DBType dbType, String connIP, String port,
 			String connectPath, String filename, String username, String password) throws IOException{
 		this.dbName = dbName;
@@ -153,13 +242,7 @@ public class DBConnector extends Connector {
 
 	@Override
 	void destroyConnector() {
-		try {
-			conn.close();
-		} 
-		catch (SQLException e) {
-			log.log(Level.SEVERE, "Cannot close the connection to the database");
-			e.printStackTrace();
-		}
+		// ...
 	}
 
 	@Override
@@ -252,11 +335,12 @@ public class DBConnector extends Connector {
 	}
 
 	public void close() {
-		try {
-			conn.close();
-		} 
-		catch (SQLException e) {
-			e.printStackTrace();
-		}
+		// We have a pooled connection now so no need for this...
+//		try {
+//			conn.close();
+//		} 
+//		catch (SQLException e) {
+//			e.printStackTrace();
+//		}
 	}
 }
