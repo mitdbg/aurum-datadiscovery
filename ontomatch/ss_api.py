@@ -6,6 +6,8 @@ from ontomatch import ss_utils as SS
 from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from ontomatch import glove_api
 from collections import defaultdict
+from ontomatch.onto_parser import OntoHandler
+import pickle
 
 # Have a list of accepted formats in the ontology parser
 
@@ -15,8 +17,9 @@ class SSAPI:
     def __init__(self, network, store_client):
         self.network = network
         self.store_client = store_client
-        self.srql = API(network)
+        self.srql = API(self.network, self.store_client)
         self.krs = []
+        self.kr_handlers = []
 
         # SS indexes
         self.num_vectors_tables = 0  # Total number of semantic vectors for tables
@@ -26,25 +29,41 @@ class SSAPI:
         vector_feature_dim = glove_api.get_lang_model_feature_size()
         self.ss_lsh_idx = LSHRandomProjectionsIndex(vector_feature_dim)
 
-    def add_krs(self, krs):
+    def add_krs(self, kr_name_paths, parsed=True):
         """
         Register the given KR for processing. Validate accepted format, etc
-        :param krs: the list of (path_to_kr, format)
+        # TODO: make this more usable
+        :param krs: the list of (kr_name, kr_path)
         :return:
         """
+        for kr_name, kr_path in kr_name_paths:
+            self.krs.append((kr_name, kr_path))
+            o = OntoHandler()
+            if parsed:  # the ontology was preprocessed
+                o.load_ontology("cache_onto/" + kr_name + ".pkl")
+            else:
+                o.parse_ontology(kr_path)
+                o.store_ontology("cache_onto/" + kr_name + ".pkl")
+            self.kr_handlers.append(o)
+
+    def find_coarse_grain_hooks_n2(self):
+        table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
+        class_ss = self._get_kr_classes_vectors()
+        sim = dict()
+        for class_name, class_vectors in class_ss.items():
+            for table_name, table_vectors in table_ss.items():
+                sim = SS.compute_semantic_similarity(class_vectors, table_vectors)
+                print(str(table_name) + " -> " + str(class_name) + " : " + str(sim))
         return
 
-    def parse_krs(self, analyze=False):
-        """
-        Parse registered KRs with the corresponding parser and optionally analyze to retrieve statistics
-        :return:
-        """
-
-        # As part of parsing, we index data as necessary SS and also content. Also attr/property name?
-
-        # TODO: Isnt' here where we do some magic with the internal structure of those guys? what is one good IR?
-
-        return
+    def _get_kr_classes_vectors(self):
+        class_vectors = dict()
+        for kr in self.kr_handlers:
+            for class_name in kr.classes():
+                bow = kr.bow_repr_of(class_name)  # Get bag of words representation
+                sem_vectors = SS.get_semantic_vectors_for(bow)  # transform bow into sem vectors
+                class_vectors[class_name] = sem_vectors
+        return class_vectors
 
     def find_coarse_grain_hooks(self):
         """
@@ -69,7 +88,7 @@ class SSAPI:
             self.sskey_to_vkeys[ss_key] = vkeys  # for each signature, keep the list of vector keys it contains
             ss_key += 1
 
-        # Get ss for each class in C
+        # Get ss for each class in Cgg
         # TODO:
 
         # Iterate smaller index (with fewer vectors) and retrieve candidates for coarse-grain hooks
@@ -146,15 +165,45 @@ class SSAPI:
         return
 
 
-def main(path_to_serialized_model):
+def test(path_to_serialized_model):
+    # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo/efo.pkl")], parsed=True)
+
+    om.find_coarse_grain_hooks_n2()
+
+    return om
+
+
+def main(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
     store_client = StoreHandler()
 
     om = SSAPI(network, store_client)
 
+    om.add_krs([("efo", "cache_onto/efo/efo.pkl")], parsed=True)
+
     return om
 
 if __name__ == "__main__":
+
+    test("../models/chemical/")
+    exit()
+
     print("SSAPI")
 
     path_to_model = ""

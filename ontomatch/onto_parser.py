@@ -152,19 +152,23 @@ class OntoHandler:
 
 if __name__ == '__main__':
 
-    owl_file = 'HarryPotter_book.owl'
+    owl_file = 'efo.owl'
     #owl_file = 'efo.owl'
-
-    s = time.time()
     o = OntoHandler()
-    #o.parse_ontology(owl_file)
+
+    """
+    s = time.time()
+    o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
-    #o.store_ontology("test.test")
+    o.store_ontology("cache_onto/efo.pkl")
+
+    exit()
+    """
 
     s = time.time()
-    file = "test.test"
+    file = "cache_onto/efo.pkl"
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
@@ -174,3 +178,4 @@ if __name__ == '__main__':
         print("Gonna get bow for: " + str(c))
         bow = o.bow_repr_of(c)
         print(bow)
+        print(o.children_of_class(c))

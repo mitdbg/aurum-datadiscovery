@@ -55,6 +55,14 @@ def generate_table_vectors(path_to_serialized_model, network=False):
     return table_vectors
 
 
+def get_semantic_vectors_for(tokens):
+    s_vectors = []
+    for t in tokens:
+        vec = glove_api.get_embedding_for_word(t)
+        s_vectors.append(vec)
+    return s_vectors
+
+
 def compute_internal_cohesion(sv):
     semantic_sim_array = []
     for a, b in itertools.combinations(sv, 2):
@@ -213,8 +221,7 @@ def compute_new_ss(table, semantic_vectors):
 
 if __name__ == "__main__":
 
-    """
-    path_to_serialized_model = "../models/massdata/"
+    path_to_serialized_model = "../models/chemical/"
 
     # Load glove model
     print("Loading glove model...")
@@ -227,11 +234,10 @@ if __name__ == "__main__":
     table_vectors = generate_table_vectors(path_to_serialized_model)
 
     print("Storing semantic vectors...")
-    store_signatures(table_vectors, "data/massdata")
+    store_signatures(table_vectors, "data/chemical/")
     print("Storing semantic vectors...OK")
-    """
 
-    semantic_vectors = load_signatures("data/massdata")
+    semantic_vectors = load_signatures("data/chemical")
 
     """
     tables_coh = []
@@ -279,7 +285,7 @@ if __name__ == "__main__":
     """
 
     # New metrics
-    table = "Cambridge Home Page Featured Story_mfs6-yu9a.csv"
+    table = "assays"
     table_sim = compute_new_ss(table, semantic_vectors)
 
     table_sim = sorted(table_sim.items(), key=operator.itemgetter(1), reverse=True)
