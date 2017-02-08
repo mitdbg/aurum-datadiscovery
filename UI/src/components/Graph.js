@@ -4,17 +4,30 @@ import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
 class Graph extends React.Component {
+  constructor() {
+    super();
+
+    this.state = {
+      sigmaSettings: {
+      minNodeSize:10,
+      enableHovering:true,
+      defaultNodeColor:'#bababa',
+      labelSize:'proportional',
+      // labelAlignment:'bottom',
+
+      // onHover attributes
+      borderSize:2,
+      defaultNodeBorderColor:'#000000',
+
+      }
+    };
+  }
 
   render() {
 
    return (
     <div id="graph">
-      <Sigma settings={{
-        // define sigma.js display settings here
-        // https://github.com/jacomyal/sigma.js/wiki/Settings
-        drawEdges:true,
-        minNodeSize:10,
-        enableHovering:true}}>
+      <Sigma settings={this.state.sigmaSettings}>
         {
           // cycle through that are passed as selected items
           Object.keys(this.props.selection).map(

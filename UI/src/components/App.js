@@ -103,7 +103,7 @@ class App extends React.Component {
             selectHit={this.state.selected}
             addSelection={this.addSelection}
           />
-          <div className="right">
+          <div id="right">
             <Graph
               graphEdges={this.state.graphEdges}
               selection={this.state.selection}
@@ -112,7 +112,6 @@ class App extends React.Component {
           </div>
         </div>
         <footer>
-          footer
         </footer>
       </div>
       )

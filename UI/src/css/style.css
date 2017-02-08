@@ -226,14 +226,16 @@ header {
   height: 42px;
   top: 0;
   width: 100%;
-  background-color: #808080;
+  background-color: #f7f7f7;
+  border-bottom: 1px solid #d3d3d3;
   padding: 5px 5px 5px 5px;
   position: fixed;
 }
 footer {
   height: 42px;
   width: 100%;
-  background-color: #808080;
+  background-color: #f7f7f7;
+  border-top: 1px solid #d3d3d3;
   position: fixed;
   bottom: 0;
 }
@@ -247,10 +249,15 @@ footer {
 #left {
   float: left;
   height: 100%;
-  background-color: #e6e6fa;
+  background-color: #fff;
   min-width: 200px;
-  width: 40%;
+  width: 25%;
   overflow: scroll;
+  border-right: 1.5px solid #8a8b8c;
+}
+#right {
+  height: 100%;
+  background-color: #fff;
 }
 #graph {
   width: 100%;
@@ -259,17 +266,27 @@ footer {
   min-height: 150px;
 }
 #pandas {
+  border-top: 1.5px solid #8a8b8c;
   width: 100%;
   height: 100%;
-  background-color: #d2b48c;
+  background-color: #fff;
 }
 #search-field {
   width: 25%;
-  border: 1px solid #808080;
+  border: 1px solid #d3d3d3;
   border-radius: 4px;
   margin-left: 10px;
   padding: 5px 10px 5px 10px;
-  font-size: 0.7em;
+  margin-top: 2px;
+  font-size: 0.9em;
+}
+#result-description {
+  min-height: 1em;
+  text-align: center;
+  font-weight: bold;
+  padding: 5px 5px 5px 5px;
+  border-bottom: 1.5px solid #8a8b8c;
+  background-color: #fff;
 }
 #result-hide-add {
   position: absolute;
@@ -284,12 +301,9 @@ footer {
   margin-top: 0.5em;
   bottom-border: 1px solid;
 }
-.field {
-  cursor: pointer;
-}
 .source {
   font-weight: bold;
-  cursor: pointer;
+  padding: 5px 4px 5px 2px;
 }
 .title:nth-child(odd):not(:first-child) {
   background-color: #fff;
@@ -297,6 +311,15 @@ footer {
 .name {
   text-align: left;
 }
+.title {
+  border-bottom: 0.5px solid #8a8b8c;
+}
+.field {
+  cursor: pointer;
+  padding: 2px 5px 2px 8px;
+  border-bottom: 1px solid #ccced1;
+}
 .score {
   float: right;
+  border-bottom: 0px;
 }
