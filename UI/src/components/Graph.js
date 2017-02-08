@@ -1,5 +1,5 @@
 import React from 'react';
-import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, SigmaEnableWebGL, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -27,7 +27,11 @@ class Graph extends React.Component {
 
    return (
     <div id="graph">
-      <Sigma settings={this.state.sigmaSettings}>
+      <Sigma
+        settings={this.state.sigmaSettings}
+        renderer="webgl"
+        style={ {maxWidth:"inherit", height:"100%"} }
+        >
         {
           // cycle through that are passed as selected items
           Object.keys(this.props.selection).map(
