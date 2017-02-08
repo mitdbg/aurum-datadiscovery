@@ -63,6 +63,45 @@ class OntoHandler:
         """
         return [x.id for x in self.o.classes]
 
+    def name_of_class(self, class_id):
+        """
+        Returns name of a class given its id
+        :param class_id:
+        :return:
+        """
+        c = self.o.getClass(id=class_id)
+        name = c.bestLabel()
+        return name
+
+    def id_of_class(self, class_name):
+        """
+        Returns class id given its name, or -1 if no class named that way
+        :param class_name:
+        :return:
+        """
+        c = self.o.getClass(match=class_name)[0]
+        if len(c) > 0:
+            cid = c.id
+            return cid
+        else:
+            return -1
+
+    def class_levels_count(self):
+        """
+        Return the number of levels in the class hierarchy. This is equivalent to nodes in a tree.
+        :return:
+        """
+        # TODO:
+        return
+
+    def class_hierarchy_iterator(self, class_id=False):
+        """
+        Returns lists of classes that are at the same level of the hierarhcy, i.e., node in a tree
+        :return:
+        """
+        # TODO; if class_id is given then it retursn lists of classes ids, if not, then class names
+        return
+
     def parents_of_class(self, class_name, class_id=False):
         """
         Parents of given class
@@ -177,11 +216,9 @@ class OntoHandler:
 
 if __name__ == '__main__':
 
-    owl_file = 'efo.owl'
+    owl_file = 'schemaorg.rdfa'
     #owl_file = 'efo.owl'
     o = OntoHandler()
-
-    o.o.printClassTree()
 
     """
     s = time.time()
@@ -189,21 +226,29 @@ if __name__ == '__main__':
     e = time.time()
     print("Parse: " + str(e - s))
 
-    o.store_ontology("cache_onto/efo.pkl")
+    o.store_ontology("cache_onto/schemaorg.pkl")
 
     exit()
     """
 
+
+
     s = time.time()
-    file = "cache_onto/efo.pkl"
+    file = "cache_onto/schemaorg.pkl"
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
 
     print("classes")
     for c in o.classes_id():
+        name = o.name_of_class(c)
+        print(name)
+        data = o.instances_of(c, class_id=True)
+        print(data)
+        """
         print("Gonna get bow for: " + str(c))
         s, bow = o.bow_repr_of(c, class_id=True)
         if s:
             if len(bow[1]) > 0:
                 print(bow)
+        """
