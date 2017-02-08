@@ -240,18 +240,18 @@ if __name__ == '__main__':
 
     o = OntoHandler()
 
+    """
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
     #o.store_ontology("cache_onto/schemaorg.pkl")
-    #o.store_ontology("cache_onto/efo.pkl")
+    o.store_ontology("cache_onto/efo.pkl")
     #o.store_ontology("cache_onto/hp.pkl")
 
     exit()
-
-
+    """
 
     s = time.time()
     file = "cache_onto/efo.pkl"
@@ -259,6 +259,7 @@ if __name__ == '__main__':
     e = time.time()
     print("Load: " + str(e - s))
 
+    """
     o.o.printClassTree()
 
     print("classes")
@@ -267,13 +268,16 @@ if __name__ == '__main__':
         print(name)
         data = o.instances_of(c, class_id=True)
         print(data)
+    """
 
     #print("-------------------------")
     #print(o.o.toplayer)
 
 
+    """
     print("-------------------------")
     print(o.class_hierarchy_iterator())
+    """
     print(o.class_levels_count())
 
     print("-------------------------")
