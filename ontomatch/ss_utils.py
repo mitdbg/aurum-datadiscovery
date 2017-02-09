@@ -41,15 +41,18 @@ def generate_table_vectors(path_to_serialized_model, network=False):
 
     for table_name, cols in read_table_columns(path_to_serialized_model, network=network):
         semantic_vectors = []
+        seen_tokens = []
         for c in cols:
             c = c.replace('_', ' ')
             tokens = c.split(' ')
             for token in tokens:
                 token = token.lower()
                 if token not in stopwords.words('english'):
-                    vec = glove_api.get_embedding_for_word(token)
-                    if vec is not None:
-                        semantic_vectors.append(vec)
+                    if token not in seen_tokens:
+                        seen_tokens.append(token)
+                        vec = glove_api.get_embedding_for_word(token)
+                        if vec is not None:
+                            semantic_vectors.append(vec)
         print("Table: " + str(table_name) + " has: " + str(len(semantic_vectors)))
         table_vectors[table_name] = semantic_vectors
     return table_vectors
@@ -104,7 +107,10 @@ def compute_semantic_similarity(sv1, sv2):
         internal_cohesion = compute_internal_cohesion_elementwise(x, sv1)
         distance = compute_sem_distance_with(x, sv2)
         denominator = 2 * max(internal_cohesion, distance)
-        value = internal_cohesion + distance / denominator
+        if (internal_cohesion + distance) < 0:
+            value = 0
+        else:
+            value = internal_cohesion + distance / denominator
         accum += value
     ss = accum / products
     return ss
@@ -213,7 +219,9 @@ def compute_new_ss(table, semantic_vectors):
     res = dict()
 
     for k, v in semantic_vectors.items():
-        if sv1 != k:
+        if table != k:
+            if k == "molecule_hierarchy":
+                a = 1
             ss = compute_semantic_similarity(sv1, v)
             #print(str(k) + " -> " + str(ss))
             res[k] = ss
@@ -223,6 +231,7 @@ if __name__ == "__main__":
 
     path_to_serialized_model = "../models/chemical/"
 
+    """
     # Load glove model
     print("Loading glove model...")
     glove_api.load_model("../glove/glove.6B.100d.txt")
@@ -236,6 +245,7 @@ if __name__ == "__main__":
     print("Storing semantic vectors...")
     store_signatures(table_vectors, "data/chemical/")
     print("Storing semantic vectors...OK")
+    """
 
     semantic_vectors = load_signatures("data/chemical")
 
@@ -285,7 +295,7 @@ if __name__ == "__main__":
     """
 
     # New metrics
-    table = "assays"
+    table = "parameter_type"
     table_sim = compute_new_ss(table, semantic_vectors)
 
     table_sim = sorted(table_sim.items(), key=operator.itemgetter(1), reverse=True)
