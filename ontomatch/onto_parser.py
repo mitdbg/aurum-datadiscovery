@@ -6,7 +6,7 @@ import rdflib
 from dataanalysis import nlp_utils as nlp
 
 # We are serializing highly nested structures here...
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(100000)
 
 
 class OntoHandler:
@@ -237,75 +237,46 @@ class OntoHandler:
 
 if __name__ == '__main__':
 
-    #owl_file = 'schemaorg.rdfa'
-    owl_file = 'efo.owl'
-    #owl_file = 'HarryPotter_book.owl'
 
+    owl_file = 'dbpedia_2016-04.owl'
+    #owl_file = 'efo.owl'
     o = OntoHandler()
 
-    """
+
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
-    #o.store_ontology("cache_onto/schemaorg.pkl")
-    o.store_ontology("cache_onto/efo.pkl")
-    #o.store_ontology("cache_onto/hp.pkl")
+
+    o.store_ontology("cache_onto/dbpedia.pkl")
 
     exit()
-    """
+
 
     s = time.time()
     file = "cache_onto/efo.pkl"
+
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
 
     """
-    o.o.printClassTree()
-
     print("classes")
     for c in o.classes_id():
         name = o.name_of_class(c)
         print(name)
         data = o.instances_of(c, class_id=True)
-        print(data)
-    """
 
-    #print("-------------------------")
-    #print(o.o.toplayer)
-
-    """
-    for c in o.classes_id():
-        data = o.instances_of(c, class_id=True)
-        if data:
-            print(o.name_of_class(c))
+        if len(data) > 0:
             print(data)
-    """
-    """
-    for c in o.classes_id():
-        print(c)
-        print(o.name_of_class(c))
-    """
 
+        print("Gonna get bow for: " + str(c))
+        s, bow = o.bow_repr_of(c, class_id=True)
+        if s:
+            if len(bow[1]) > 0:
+                print(bow)
     """
-    print("-------------------------")
-    print(o.class_hierarchy_iterator())
-    """
-    """
-    print(o.class_levels_count())
-    print("-------------------------")
-    """
-
-    for level in o.class_hierarchy_iterator(class_id=False):
-        print(level)
-
-
-    """
-    print("Gonna get bow for: " + str(c))
-    s, bow = o.bow_repr_of(c, class_id=True)
-    if s:
-        if len(bow[1]) > 0:
-            print(bow)
-    """
+    stats = o.o.stats()
+    for name, value in stats:
+        print(str(name) + " -> " + str(value))

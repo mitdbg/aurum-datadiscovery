@@ -34,6 +34,28 @@ class StoreHandler:
     def close(self):
         print("TODO")
 
+    def get_path_of(self, nid):
+        """
+        Retrieves path to access the data source that contains nid
+        :param nid: the id of the data source to locate
+        :return: string with the path (filesystem path or db connector, etc)
+        """
+        body = {"query": {"match": {"id": str(nid)}}}
+        res = client.search(index='profile', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source.path'
+                                         ]
+                            )
+        hits = res['hits']['hits']
+        if len(hits) > 0:
+            # TODO: handle some error here, nids should be unique
+            print("ERROR: nid not unique when querying for path?")
+        hit = hits[0]
+        path = hit['_source']['path']
+        return path
+
     def get_all_fields(self):
         """
         Reads all fields, described as (id, source_name, field_name) from the store.
