@@ -104,14 +104,12 @@ class OntoHandler:
             levels.extend(self.__get_class_levels_hierarchy(sub))
         return levels
 
-
     def class_levels_count(self):
         """
         Return the number of levels in the class hierarchy. This is equivalent to nodes in a tree.
         :return:
         """
         return len(self.class_hierarchy)
-
 
     def class_hierarchy_iterator(self, class_id=False):
         """
@@ -122,6 +120,13 @@ class OntoHandler:
             return self.class_hierarchy
         else:
             return [[self.name_of_class(c) for c in level] for level in self.class_hierarchy]
+
+    def get_classes_signatures(self):
+        """
+        Return a minhash signature of the class-names per class hierarchy level
+        :return:
+        """
+        return
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -159,6 +164,15 @@ class OntoHandler:
             for el in v:
                 props.append(el)
         return props
+
+    def get_class_data_signatures(self):
+        signatures = []
+        for cid in self.classes_id():
+            data = self.instances_of(cid, class_id=True)
+            sig = None  # TODO: get signature for an array of data, f(data)
+            class_name = self.name_of_class(cid)
+            signatures.append((class_name, sig))
+        return signatures
 
     def instances_of(self, class_name, class_id=False):
         """

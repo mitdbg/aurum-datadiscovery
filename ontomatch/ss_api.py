@@ -56,10 +56,10 @@ class SSAPI:
         Find matching for each of the different possible categories
         :return: list of matchings
         """
-        # [class] -> content
+        # L1: [class] -> attr.content
         kr_class_signatures = []
         for kr_handler in self.kr_handlers:
-            kr_class_signatures = kr_handler.get_classes_signatures()
+            kr_class_signatures += kr_handler.get_classes_signatures()
 
         l1_matchings = []
         for name, mh_sig in kr_class_signatures:
@@ -69,11 +69,33 @@ class SSAPI:
             res = self.content_sim_index.query(mh_obj)
             for r_nid in res:
                 # TODO: retrieve a name for nid
-                matching = (name, r_nid)
+                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
+                matching = (name, (db_name, source_name, field_name))
                 l1_matchings.append(matching)
 
+        # L2: [class.data] -> attr.content
+        kr_classdata_signatures = []
+        for kr_handler in self.kr_handlers:
+            kr_classdata_signatures += kr_handler.get_class_data_signatures()
+
+        l2_matchings = []
+        for name, mh_sig in kr_classdata_signatures:
+            mh_obj = MinHash(num_perm=512)
+            mh_array = np.asarray(mh_sig, dtype=int)
+            mh_obj.hashvalues = mh_array
+            res = self.content_sim_index.query(mh_obj)
+            for r_nid in res:
+                # TODO: retrieve a name for nid
+                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
+                matching = (name, (db_name, source_name, field_name))
+                l2_matchings.append(matching)
+
+        # L3: [class.context] -> relation
+        l3_matchings = self.find_coarse_grain_hooks_n2()
+        # TODO: do something with the matchings
 
     def find_coarse_grain_hooks_n2(self):
+        matchings = []
         table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
         class_ss = self._get_kr_classes_vectors()
         sim = dict()
@@ -81,7 +103,10 @@ class SSAPI:
             for table_name, table_vectors in table_ss.items():
                 sim = SS.compute_semantic_similarity(class_vectors, table_vectors)
                 print(str(table_name) + " -> " + str(class_name) + " : " + str(sim))
-        return
+                if sim > 0.5:
+                    match = (class_name, table_name)
+                    matchings.append(match)
+        return matchings
 
     def _get_kr_classes_vectors(self):
         class_vectors = dict()
