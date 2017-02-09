@@ -7,6 +7,9 @@ from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from ontomatch import glove_api
 from collections import defaultdict
 from ontomatch.onto_parser import OntoHandler
+from inputoutput import inputoutput as io
+from datasketch import MinHash, MinHashLSH
+import numpy as np
 import pickle
 
 # Have a list of accepted formats in the ontology parser
@@ -14,9 +17,11 @@ import pickle
 
 class SSAPI:
 
-    def __init__(self, network, store_client):
+    def __init__(self, network, store_client, schema_sim_index, content_sim_index):
         self.network = network
         self.store_client = store_client
+        self.schema_sim_index = schema_sim_index
+        self.content_sim_index = content_sim_index
         self.srql = API(self.network, self.store_client)
         self.krs = []
         self.kr_handlers = []
@@ -45,6 +50,28 @@ class SSAPI:
                 o.parse_ontology(kr_path)
                 o.store_ontology("cache_onto/" + kr_name + ".pkl")
             self.kr_handlers.append(o)
+
+    def find_matching(self):
+        """
+        Find matching for each of the different possible categories
+        :return: list of matchings
+        """
+        # [class] -> content
+        kr_class_signatures = []
+        for kr_handler in self.kr_handlers:
+            kr_class_signatures = kr_handler.get_classes_signatures()
+
+        l1_matchings = []
+        for name, mh_sig in kr_class_signatures:
+            mh_obj = MinHash(num_perm=512)
+            mh_array = np.asarray(mh_sig, dtype=int)
+            mh_obj.hashvalues = mh_array
+            res = self.content_sim_index.query(mh_obj)
+            for r_nid in res:
+                # TODO: retrieve a name for nid
+                matching = (name, r_nid)
+                l1_matchings.append(matching)
+
 
     def find_coarse_grain_hooks_n2(self):
         table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
@@ -196,7 +223,11 @@ def main(path_to_serialized_model):
     # Create client
     store_client = StoreHandler()
 
-    om = SSAPI(network, store_client)
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
     om.add_krs([("efo", "cache_onto/efo/efo.pkl")], parsed=True)
 

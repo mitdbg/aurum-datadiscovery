@@ -95,7 +95,7 @@ def main(output_path=None):
     path_schsim = path + "/schema_sim_index.pkl"
     io.serialize_object(schema_sim_index, path_schsim)
     path_cntsim = path + "/content_sim_index.pkl"
-    io.serialize_object(schema_sim_index, path_cntsim)
+    io.serialize_object(content_sim_index, path_cntsim)
 
     print("DONE!")
 
