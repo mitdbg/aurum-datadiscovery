@@ -1,5 +1,5 @@
 import React from 'react';
-import {Sigma, SigmaEnableWebGL, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
