@@ -91,7 +91,7 @@ class OntoHandler:
 
     def __get_class_levels_hierarchy(self, element=None):
         if not element:
-            levels = [self.o.toplayer]
+            levels = [[top.id for top in self.o.toplayer]]
             for x in self.o.toplayer:
                 levels.extend(self.__get_class_levels_hierarchy(x))
             return levels
@@ -99,7 +99,7 @@ class OntoHandler:
         if not element.children():
             return []
 
-        levels = [element.children()]
+        levels = [[child.id for child in element.children()]]
         for sub in element.children():
             levels.extend(self.__get_class_levels_hierarchy(sub))
         return levels
@@ -118,7 +118,10 @@ class OntoHandler:
         Returns lists of classes that are at the same level of the hierarhcy, i.e., node in a tree
         :return:
         """
-        return self.class_hierarchy
+        if class_id:
+            return self.class_hierarchy
+        else:
+            return [[self.name_of_class(c) for c in level] for level in self.class_hierarchy]
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -273,16 +276,30 @@ if __name__ == '__main__':
     #print("-------------------------")
     #print(o.o.toplayer)
 
+    """
+    for c in o.classes_id():
+        data = o.instances_of(c, class_id=True)
+        if data:
+            print(o.name_of_class(c))
+            print(data)
+    """
+    """
+    for c in o.classes_id():
+        print(c)
+        print(o.name_of_class(c))
+    """
 
     """
     print("-------------------------")
     print(o.class_hierarchy_iterator())
     """
+    """
     print(o.class_levels_count())
-
     print("-------------------------")
-    for c in o.class_hierarchy_iterator():
-        print(c)
+    """
+
+    for level in o.class_hierarchy_iterator(class_id=False):
+        print(level)
 
 
     """
