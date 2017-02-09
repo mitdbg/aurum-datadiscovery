@@ -15,6 +15,7 @@ class OntoHandler:
         self.ontology_name = None
         self.o = None
         self.objectProperties = []
+        self.class_hierarchy = []
 
     def parse_ontology(self, file):
         """
@@ -26,6 +27,7 @@ class OntoHandler:
         ont = ontospy.Ontospy(file)
         self.o = ont
         self.objectProperties = self.o.objectProperties  # cache this
+        self.class_hierarchy = self.__get_class_levels_hierarchy() # preprocess this
 
     def store_ontology(self, path):
         """
@@ -47,6 +49,7 @@ class OntoHandler:
         f = open(path, 'rb')
         self.o = pickle.load(f)
         self.objectProperties = self.o.objectProperties
+        self.class_hierarchy = self.__get_class_levels_hierarchy() # preprocess this
 
     def classes(self):
         """
@@ -86,21 +89,39 @@ class OntoHandler:
         else:
             return -1
 
+    def __get_class_levels_hierarchy(self, element=None):
+        if not element:
+            levels = [[top.id for top in self.o.toplayer]]
+            for x in self.o.toplayer:
+                levels.extend(self.__get_class_levels_hierarchy(x))
+            return levels
+
+        if not element.children():
+            return []
+
+        levels = [[child.id for child in element.children()]]
+        for sub in element.children():
+            levels.extend(self.__get_class_levels_hierarchy(sub))
+        return levels
+
+
     def class_levels_count(self):
         """
         Return the number of levels in the class hierarchy. This is equivalent to nodes in a tree.
         :return:
         """
-        # TODO:
-        return
+        return len(self.class_hierarchy)
+
 
     def class_hierarchy_iterator(self, class_id=False):
         """
         Returns lists of classes that are at the same level of the hierarhcy, i.e., node in a tree
         :return:
         """
-        # TODO; if class_id is given then it retursn lists of classes ids, if not, then class names
-        return
+        if class_id:
+            return self.class_hierarchy
+        else:
+            return [[self.name_of_class(c) for c in level] for level in self.class_hierarchy]
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -216,6 +237,7 @@ class OntoHandler:
 
 if __name__ == '__main__':
 
+
     owl_file = 'dbpedia_2016-04.owl'
     #owl_file = 'efo.owl'
     o = OntoHandler()
@@ -226,15 +248,15 @@ if __name__ == '__main__':
     e = time.time()
     print("Parse: " + str(e - s))
 
+
     o.store_ontology("cache_onto/dbpedia.pkl")
 
     exit()
 
 
-
-
     s = time.time()
-    file = "cache_onto/go.pkl"
+    file = "cache_onto/efo.pkl"
+
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
@@ -245,6 +267,7 @@ if __name__ == '__main__':
         name = o.name_of_class(c)
         print(name)
         data = o.instances_of(c, class_id=True)
+
         if len(data) > 0:
             print(data)
 
