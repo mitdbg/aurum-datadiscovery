@@ -5,6 +5,48 @@ import numpy as np
 import pickle
 import itertools
 import operator
+import javarandom
+
+
+# minhash variables
+k = 512
+mersenne_prime = 536870911
+rnd_seed = 1
+rnd = javarandom.Random(rnd_seed)
+random_seeds = []
+a = np.int64()
+for i in range(k):
+    randoms = [rnd.nextLong(), rnd.nextLong()]
+    random_seeds.append(randoms)
+
+
+def minhash(str_values):
+
+    def java_long(number):
+        return (number + 2**63) % 2**64 - 2**63
+
+    def remainder(a, b):
+        return a - (b * int(a/b))
+
+    def hash_this(value):
+        h = mersenne_prime
+        length = len(value)
+        for i in range(length):
+            h = 31 * h + ord(value[i])
+        return h
+
+    mh = [9223372036854775807 for i in range(k)]
+
+    for v in str_values:
+        raw_hash = hash_this(v)
+        for i in range(k):
+            first_part = java_long(random_seeds[i][0] * raw_hash)
+            second_part = java_long(random_seeds[i][1])
+            nomodule = java_long(first_part + second_part)
+            h = java_long(remainder(nomodule, mersenne_prime))
+            if h < mh[i]:
+                mh[i] = h
+    return mh
 
 
 def store_signatures(signatures, path):
@@ -246,6 +288,18 @@ if __name__ == "__main__":
     store_signatures(table_vectors, "data/chemical/")
     print("Storing semantic vectors...OK")
     """
+
+    values = ["test", "test1", "torpedo", "raiz", "agua", "water"]
+
+    print("MP: " + str(mersenne_prime))
+    for el in random_seeds:
+        print("SEED0: " + str(el[0]))
+        print("SEED1: " + str(el[1]))
+
+    mh = minhash(values)
+    print(mh)
+    exit()
+
 
     semantic_vectors = load_signatures("data/chemical")
 

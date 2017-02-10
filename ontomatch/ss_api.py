@@ -51,6 +51,19 @@ class SSAPI:
                 o.store_ontology("cache_onto/" + kr_name + ".pkl")
             self.kr_handlers.append(o)
 
+    def __compare_content_signatures(self, signatures):
+        positive_matches = []
+        for name, mh_sig in signatures:
+            mh_obj = MinHash(num_perm=512)
+            mh_array = np.asarray(mh_sig, dtype=int)
+            mh_obj.hashvalues = mh_array
+            res = self.content_sim_index.query(mh_obj)
+            for r_nid in res:
+                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
+                matching = (name, (db_name, source_name, field_name))
+                positive_matches.append(matching)
+        return positive_matches
+
     def find_matching(self):
         """
         Find matching for each of the different possible categories
@@ -61,34 +74,14 @@ class SSAPI:
         for kr_handler in self.kr_handlers:
             kr_class_signatures += kr_handler.get_classes_signatures()
 
-        l1_matchings = []
-        for name, mh_sig in kr_class_signatures:
-            mh_obj = MinHash(num_perm=512)
-            mh_array = np.asarray(mh_sig, dtype=int)
-            mh_obj.hashvalues = mh_array
-            res = self.content_sim_index.query(mh_obj)
-            for r_nid in res:
-                # TODO: retrieve a name for nid
-                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
-                matching = (name, (db_name, source_name, field_name))
-                l1_matchings.append(matching)
+        l1_matchings = self.__compare_content_signatures(kr_class_signatures)
 
         # L2: [class.data] -> attr.content
         kr_classdata_signatures = []
         for kr_handler in self.kr_handlers:
             kr_classdata_signatures += kr_handler.get_class_data_signatures()
 
-        l2_matchings = []
-        for name, mh_sig in kr_classdata_signatures:
-            mh_obj = MinHash(num_perm=512)
-            mh_array = np.asarray(mh_sig, dtype=int)
-            mh_obj.hashvalues = mh_array
-            res = self.content_sim_index.query(mh_obj)
-            for r_nid in res:
-                # TODO: retrieve a name for nid
-                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
-                matching = (name, (db_name, source_name, field_name))
-                l2_matchings.append(matching)
+        l2_matchings = self.__compare_content_signatures(kr_classdata_signatures)
 
         # L3: [class.context] -> relation
         l3_matchings = self.find_coarse_grain_hooks_n2()

@@ -4,6 +4,8 @@ import pickle
 import sys
 import rdflib
 from dataanalysis import nlp_utils as nlp
+from ontomatch.ss_utils import minhash
+
 
 # We are serializing highly nested structures here...
 sys.setrecursionlimit(100000)
@@ -27,7 +29,7 @@ class OntoHandler:
         ont = ontospy.Ontospy(file)
         self.o = ont
         self.objectProperties = self.o.objectProperties  # cache this
-        self.class_hierarchy = self.__get_class_levels_hierarchy() # preprocess this
+        self.class_hierarchy = self.__get_class_levels_hierarchy()  # preprocess this
 
     def store_ontology(self, path):
         """
@@ -119,14 +121,20 @@ class OntoHandler:
         if class_id:
             return self.class_hierarchy
         else:
-            return [[self.name_of_class(c) for c in level] for level in self.class_hierarchy]
+            # (level_id, [classes in that level])
+            return [(level, [self.name_of_class(c) for c in level]) for level in self.class_hierarchy]
 
     def get_classes_signatures(self):
         """
         Return a minhash signature of the class-names per class hierarchy level
         :return:
         """
-        return
+        class_hierarchy_signatures = []
+        for level_name, ch in self.class_hierarchy_iterator():
+            mh = minhash(ch)
+            chs = (level_name, mh)
+            class_hierarchy_signatures.append(chs)
+        return class_hierarchy_signatures
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -169,7 +177,7 @@ class OntoHandler:
         signatures = []
         for cid in self.classes_id():
             data = self.instances_of(cid, class_id=True)
-            sig = None  # TODO: get signature for an array of data, f(data)
+            sig = minhash(data)
             class_name = self.name_of_class(cid)
             signatures.append((class_name, sig))
         return signatures
