@@ -6,6 +6,7 @@ import SigmaEdge from './SigmaEdge';
 class Graph extends React.Component {
   constructor() {
     super();
+    this.displayNodeDetails = this.displayNodeDetails.bind(this);
 
     this.state = {
       sigmaSettings: {
@@ -13,7 +14,7 @@ class Graph extends React.Component {
       enableHovering:true,
       defaultNodeColor:'#bababa',
       labelSize:'proportional',
-      // labelAlignment:'bottom',
+      drawLabels: true,
 
       // onHover attributes
       borderSize:2,
@@ -23,6 +24,15 @@ class Graph extends React.Component {
     };
   }
 
+  displayNodeDetails(eventData){
+    // get the position of the click, to draw a box there later
+    const x = eventData.captor.clientX;
+    const y = eventData.captor.clientY;
+
+    var node = eventData.node;
+    console.log(node);
+  }
+
   render() {
 
    return (
@@ -30,7 +40,8 @@ class Graph extends React.Component {
       <Sigma
         settings={this.state.sigmaSettings}
         renderer="webgl"
-        style={ {maxWidth:"inherit", height:"100%"} }
+        style={ {maxWidth:"inherit", height:"100%"}}
+        onClickNode={e => console.log(e.data)}
         >
         {
           // cycle through that are passed as selected items
@@ -39,9 +50,10 @@ class Graph extends React.Component {
                 <SigmaNode
                   key={key}
                   nid={key}
-                  hits={this.props.selection[key]}>
+                  hits={this.props.selection[key]}
+                  >
                   <RelativeSize initialSize={15}/>
-                 <RandomizeNodePositions/>
+                  <RandomizeNodePositions/>
                 </SigmaNode>
               )
         }
