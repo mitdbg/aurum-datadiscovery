@@ -5,8 +5,7 @@ import numpy as np
 import pickle
 import itertools
 import operator
-import javarandom
-
+from ontomatch import javarandom
 
 # minhash variables
 k = 512
@@ -122,8 +121,9 @@ def compute_internal_cohesion(sv):
 def compute_internal_cohesion_elementwise(x, sv):
     semantic_sim_array = []
     for el in sv:
-        sem_sim = glove_api.semantic_distance(x, el)
-        semantic_sim_array.append(sem_sim)
+        if x is not None and el is not None:
+            sem_sim = glove_api.semantic_distance(x, el)
+            semantic_sim_array.append(sem_sim)
     coh = 0
     if len(semantic_sim_array) > 1:
         coh = np.mean(semantic_sim_array)
@@ -133,8 +133,9 @@ def compute_internal_cohesion_elementwise(x, sv):
 def compute_sem_distance_with(x, sv):
     semantic_sim_array = []
     for el in sv:
-        sem_sim = glove_api.semantic_distance(x, el)
-        semantic_sim_array.append(sem_sim)
+        if x is not None and el is not None:
+            sem_sim = glove_api.semantic_distance(x, el)
+            semantic_sim_array.append(sem_sim)
     ssim = 0
     if len(semantic_sim_array) > 1:
         ssim = np.mean(semantic_sim_array)
@@ -152,7 +153,10 @@ def compute_semantic_similarity(sv1, sv2):
         if (internal_cohesion + distance) < 0:
             value = 0
         else:
-            value = internal_cohesion + distance / denominator
+            if denominator > 0:
+                value = internal_cohesion + distance / denominator
+            else:
+                value = 0
         accum += value
     ss = accum / products
     return ss

@@ -75,9 +75,9 @@ def lsa_dimensionality_reduction(tfidf):
 
 class LSHRandomProjectionsIndex:
 
-    def __init__(self, num_features):
+    def __init__(self, num_features, projection_count=30):
         self.num_features = num_features
-        self.rbp = RandomBinaryProjections('default', 30)
+        self.rbp = RandomBinaryProjections('default', projection_count)
         self.text_engine = Engine(num_features, lshashes=[self.rbp], distance=CosineDistance())
 
     def index(self, vector, key):

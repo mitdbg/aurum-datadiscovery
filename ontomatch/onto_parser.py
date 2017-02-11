@@ -51,7 +51,7 @@ class OntoHandler:
         f = open(path, 'rb')
         self.o = pickle.load(f)
         self.objectProperties = self.o.objectProperties
-        self.class_hierarchy = self.__get_class_levels_hierarchy() # preprocess this
+        self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
 
     def classes(self):
         """
@@ -59,7 +59,7 @@ class OntoHandler:
         :param o:
         :return:
         """
-        return [x.bestLabel() for x in self.o.classes]
+        return [x.bestLabel().title() for x in self.o.classes]
 
     def classes_id(self):
         """
@@ -75,7 +75,7 @@ class OntoHandler:
         :return:
         """
         c = self.o.getClass(id=class_id)
-        name = c.bestLabel()
+        name = c.bestLabel().title()  # title to avoid rdflib types
         return name
 
     def id_of_class(self, class_name):
@@ -122,7 +122,13 @@ class OntoHandler:
             return self.class_hierarchy
         else:
             # (level_id, [classes in that level])
-            return [(level, [self.name_of_class(c) for c in level]) for level in self.class_hierarchy]
+            class_levels = []
+            for i in range(len(self.class_hierarchy)):
+                level = self.class_hierarchy[i]
+                if len(level) > 5:
+                    class_levels.append((i, [self.name_of_class(c) for c in level]))
+
+        return class_levels
 
     def get_classes_signatures(self):
         """
@@ -130,7 +136,8 @@ class OntoHandler:
         :return:
         """
         class_hierarchy_signatures = []
-        for level_name, ch in self.class_hierarchy_iterator():
+        class_hierarchies = self.class_hierarchy_iterator()
+        for level_name, ch in class_hierarchies:
             mh = minhash(ch)
             chs = (level_name, mh)
             class_hierarchy_signatures.append(chs)
@@ -260,28 +267,33 @@ class OntoHandler:
 if __name__ == '__main__':
 
 
-    owl_file = 'dbpedia_2016-04.owl'
+    owl_file = '/Users/ra-mit/data/uniprot/uniprotcore.owl'
     #owl_file = 'efo.owl'
     o = OntoHandler()
 
-
+    """
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
 
-    o.store_ontology("cache_onto/dbpedia.pkl")
+    o.store_ontology("cache_onto/uniprotcore.pkl")
 
     exit()
-
+    """
 
     s = time.time()
-    file = "cache_onto/efo.pkl"
+    file = "cache_onto/uniprotcore.pkl"
 
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
+
+    class_levels = o.class_hierarchy_iterator()
+
+    for cl in class_levels:
+        print(cl)
 
     """
     print("classes")
@@ -299,6 +311,7 @@ if __name__ == '__main__':
             if len(bow[1]) > 0:
                 print(bow)
     """
-    stats = o.o.stats()
-    for name, value in stats:
-        print(str(name) + " -> " + str(value))
+
+    #stats = o.o.stats()
+    #for name, value in stats:
+    #    print(str(name) + " -> " + str(value))
