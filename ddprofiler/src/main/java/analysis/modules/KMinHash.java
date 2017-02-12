@@ -53,6 +53,10 @@ public class KMinHash implements TextualDataConsumer {
 	@Override
 	public boolean feedTextData(List<String> records) {
 		for (String r : records) {
+			r = r.replace("_", " ");
+			r = r.replace("-", " ");
+			String[] tokens = r.split(" ");
+			r = r.toLowerCase();
 			long rawHash = hash(r);
 			for (int i = 0; i < K; i++) {
 				// h = (a * x) + b

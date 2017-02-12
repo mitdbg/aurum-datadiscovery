@@ -267,21 +267,21 @@ class OntoHandler:
 if __name__ == '__main__':
 
 
-    owl_file = '/Users/ra-mit/data/uniprot/uniprotcore.owl'
-    #owl_file = 'efo.owl'
+    #owl_file = '/Users/ra-mit/data/uniprot/uniprotcore.owl'
+    owl_file = 'efo.owl'
     o = OntoHandler()
 
-    """
+
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
 
-    o.store_ontology("cache_onto/uniprotcore.pkl")
+    o.store_ontology("cache_onto/efo.pkl")
 
     exit()
-    """
+
 
     s = time.time()
     file = "cache_onto/uniprotcore.pkl"

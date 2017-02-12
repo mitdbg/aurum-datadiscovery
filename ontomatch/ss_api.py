@@ -96,6 +96,8 @@ class SSAPI:
         for match in l2_matchings:
             print(match)
 
+        exit()
+
         # L3: [class.context] -> relation
         print("Finding L3 matchings...")
         l3_matchings = self.find_coarse_grain_hooks_n2()
@@ -106,14 +108,103 @@ class SSAPI:
 
         # L4: [Relation names] -> [Class names]
         print("Finding L4 matchings...")
-        l4_matchings = self.find_relation_class_matchings()
+        l4_matchings = self.find_relation_class_name_matchings()
         print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
 
         for match in l4_matchings:
             print(match)
 
+    def find_relation_class_attr_name_matching(self):
+        # Retrieve relation names
+        st = time.time()
+        names = []
+        seen_fields = []
+        for (_, _, field_name, _) in self.network.iterate_values():
+            if field_name not in seen_fields:
+                seen_fields.append(field_name)  # seen already
+                field_name = field_name.replace('-', ' ')
+                field_name = field_name.replace('_', ' ')
+                field_name = field_name.lower()
+                m = MinHash(num_perm=64)
+                for token in field_name.split():
+                    m.update(token.encode('utf8'))
+                names.append(('attribute', field_name, m))
+
+        num_attributes_inserted = len(names)
+
+        # Retrieve class names
+        for kr_handler in self.kr_handlers:
+            all_classes = kr_handler.classes()
+            for cl in all_classes:
+                cl = cl.replace('-', ' ')
+                cl = cl.replace('_', ' ')
+                cl = cl.lower()
+                m = MinHash(num_perm=64)
+                for token in cl.split():
+                    m.update(token.encode('utf8'))
+                names.append(('class', cl, m))
+
+        # Index all the minhashes
+        lsh_index = MinHashLSH(threshold=0.1, num_perm=64)
+
+        for idx in range(len(names)):
+            lsh_index.insert(idx, names[idx][2])
+
+        matchings = []
+        for idx in range(0, num_attributes_inserted):  # Compare only with classes
+            N = lsh_index.query(names[idx][2])
+            for n in N:
+                kind_q = names[idx][0]
+                kind_n = names[n][0]
+                if kind_n != kind_q:
+                    match = names[idx][1], names[n][1]
+                    matchings.append(match)
+        return matchings
+
     def find_relation_class_name_sem_matchings(self):
-        return
+        # Retrieve relation names
+        st = time.time()
+        names = []
+        seen_sources = []
+        for (_, source_name, _, _) in self.network.iterate_values():
+            if source_name not in seen_sources:
+                seen_sources.append(source_name)  # seen already
+                source_name = source_name.replace('-', ' ')
+                source_name = source_name.replace('_', ' ')
+                source_name = source_name.lower()
+                svs = []
+                for token in source_name.split():
+                    sv = glove_api.get_embedding_for_word(token)
+                    svs.append(sv)
+                names.append(('relation', source_name, svs))
+
+        num_relations_inserted = len(names)
+
+        # Retrieve class names
+        for kr_handler in self.kr_handlers:
+            all_classes = kr_handler.classes()
+            for cl in all_classes:
+                cl = cl.replace('-', ' ')
+                cl = cl.replace('_', ' ')
+                cl = cl.lower()
+                svs = []
+                for token in cl.split():
+                    sv = glove_api.get_embedding_for_word(token)
+                    svs.append(sv)
+                names.append(('class', cl, svs))
+
+        matchings = []
+        for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
+            for idx_class in range(num_relations_inserted, len(names)):
+                svs_rel = names[idx_rel][2]
+                svs_cla = names[idx_class][2]
+                semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+                if semantic_sim > 0.5:
+                    match = names[idx_rel][1], names[idx_class][1]
+                    matchings.append(match)
+        et = time.time()
+        print("Time to relation-class (sem): " + str(et - st))
+        return matchings
 
     def find_relation_class_name_matchings(self):
         # Retrieve relation names
@@ -160,6 +251,8 @@ class SSAPI:
                 if kind_n != kind_q:
                     match = names[idx][1], names[n][1]
                     matchings.append(match)
+        et = time.time()
+        print("Time to relation-class (name): " + str(et-st))
         return matchings
 
     def __find_relation_class_matchings(self):
@@ -402,7 +495,7 @@ def test(path_to_serialized_model):
     # Load glove model
     print("Loading language model...")
     path_to_glove_model = "../glove/glove.6B.100d.txt"
-    #glove_api.load_model(path_to_glove_model)
+    glove_api.load_model(path_to_glove_model)
     print("Loading language model...OK")
 
     # Retrieve indexes
@@ -418,8 +511,7 @@ def test(path_to_serialized_model):
 
     #om.find_matchings()
     #l3_matchings = om.find_coarse_grain_hooks_n2()
-    l3_matchings = om.find_relation_class_name_matchings()
-    # TODO: do something with the matchings
+    l3_matchings = om.find_relation_class_name_sem_matchings()
 
     print("Found num matchings: " + str(len(l3_matchings)))
 

@@ -143,6 +143,18 @@ def compute_sem_distance_with(x, sv):
 
 
 def compute_semantic_similarity(sv1, sv2):
+    accum = []
+    for a, b in itertools.product(sv1, sv2):
+        if a is not None and b is not None:
+            sim = glove_api.semantic_distance(a, b)
+            accum.append(sim)
+    sim = 0
+    if len(accum) > 0:
+        sim = np.mean(accum)
+    return sim
+
+
+def __compute_semantic_similarity(sv1, sv2):
     products = 0
     accum = 0
     for x in sv1:
