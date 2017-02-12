@@ -14,8 +14,19 @@ from nltk.corpus import stopwords
 import pickle
 import time
 from dataanalysis import dataanalysis as da
+from enum import Enum
 
 # Have a list of accepted formats in the ontology parser
+
+
+class MatchingType(Enum):
+    L1_CLASSNAME_ATTRVALUE = 0
+    L2_CLASSVALUE_ATTRVALUE = 1
+    L3_CLASSCTX_RELATIONCTX = 2
+    L4_CLASSNAME_RELATIONNAME_SYN = 3
+    L42_CLASSNAME_RELATIONNAME_SEM = 4
+    L5_CLASSNAME_ATTRNAME_SYN = 5
+    L52_CLASSNAME_ATTRNAME_SEM = 6
 
 
 class SSAPI:
@@ -72,7 +83,9 @@ class SSAPI:
         Find matching for each of the different possible categories
         :return: list of matchings
         """
+        all_matchings = dict()
         # L1: [class] -> attr.content
+        st = time.time()
         print("Finding L1 matchings...")
         kr_class_signatures = []
         for kr_handler in self.kr_handlers:
@@ -80,39 +93,135 @@ class SSAPI:
 
         l1_matchings = self.__compare_content_signatures(kr_class_signatures)
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
+        et = time.time()
+        print("Took: " + str(et-st))
+        all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
-        for match in l1_matchings:
-            print(match)
+        #for match in l1_matchings:
+        #    print(match)
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
+        st = time.time()
         kr_classdata_signatures = []
         for kr_handler in self.kr_handlers:
             kr_classdata_signatures += kr_handler.get_class_data_signatures()
 
         l2_matchings = self.__compare_content_signatures(kr_classdata_signatures)
         print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE] = l2_matchings
 
-        for match in l2_matchings:
-            print(match)
-
-        exit()
+        #for match in l2_matchings:
+        #    print(match)
 
         # L3: [class.context] -> relation
         print("Finding L3 matchings...")
+        st = time.time()
         l3_matchings = self.find_coarse_grain_hooks_n2()
         print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L3_CLASSCTX_RELATIONCTX] = l3_matchings
 
-        for match in l3_matchings:
-            print(match)
+        #for match in l3_matchings:
+        #    print(match)
 
-        # L4: [Relation names] -> [Class names]
+        # L4: [Relation names] -> [Class names] (syntax)
         print("Finding L4 matchings...")
+        st = time.time()
         l4_matchings = self.find_relation_class_name_matchings()
         print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
 
-        for match in l4_matchings:
-            print(match)
+        #for match in l4_matchings:
+        #    print(match)
+
+        # L4.2: [Relation names] -> [Class names] (semantic)
+        print("Finding L42 matchings...")
+        st = time.time()
+        l42_matchings = self.find_relation_class_name_sem_matchings()
+        print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
+
+        #for match in l42_matchings:
+        #    print(match)
+
+        # L5: [Attribute names] -> [Class names] (syntax)
+        print("Finding L5 matchings...")
+        st = time.time()
+        l5_matchings = self.find_relation_class_attr_name_matching()
+        print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+
+        #for match in l5_matchings:
+        #    print(match)
+
+        # L52: [Attribute names] -> [Class names] (semantic)
+        print("Finding L52 matchings...")
+        st = time.time()
+        l52_matchings = self.find_relation_class_attr_name_sem_matchings()
+        print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
+
+        #for match in l52_matchings:
+        #    print(match)
+
+        return all_matchings
+
+    def find_relation_class_attr_name_sem_matchings(self):
+        # Retrieve relation names
+        st = time.time()
+        names = []
+        seen_fields = []
+        for (_, _, field_name, _) in self.network.iterate_values():
+            if field_name not in seen_fields:
+                seen_fields.append(field_name)  # seen already
+                field_name = field_name.replace('-', ' ')
+                field_name = field_name.replace('_', ' ')
+                field_name = field_name.lower()
+                svs = []
+                for token in field_name.split():
+                    sv = glove_api.get_embedding_for_word(token)
+                    svs.append(sv)
+                names.append(('attribute', field_name, svs))
+
+        num_attributes_inserted = len(names)
+
+        # Retrieve class names
+        for kr_handler in self.kr_handlers:
+            all_classes = kr_handler.classes()
+            for cl in all_classes:
+                cl = cl.replace('-', ' ')
+                cl = cl.replace('_', ' ')
+                cl = cl.lower()
+                svs = []
+                for token in cl.split():
+                    sv = glove_api.get_embedding_for_word(token)
+                    svs.append(sv)
+                names.append(('class', cl, svs))
+
+        matchings = []
+        for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
+            for idx_class in range(num_attributes_inserted, len(names)):
+                svs_rel = names[idx_rel][2]
+                svs_cla = names[idx_class][2]
+                semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+                if semantic_sim > 0.5:
+                    match = names[idx_rel][1], names[idx_class][1]
+                    matchings.append(match)
+        et = time.time()
+        print("Time to relation-class (sem): " + str(et - st))
+        return matchings
 
     def find_relation_class_attr_name_matching(self):
         # Retrieve relation names
@@ -507,16 +616,13 @@ def test(path_to_serialized_model):
     # Load parsed ontology
     om.add_krs([("uniprotcore", "cache_onto/uniprotcore.pkl")], parsed=True)
 
-    #om.find_coarse_grain_hooks_n2()
+    matchings = om.find_matchings()
 
-    #om.find_matchings()
-    #l3_matchings = om.find_coarse_grain_hooks_n2()
-    l3_matchings = om.find_relation_class_name_sem_matchings()
-
-    print("Found num matchings: " + str(len(l3_matchings)))
-
-    for match in l3_matchings:
-        print(match)
+    total_matchings = 0
+    for k, v in matchings.items():
+        total_matchings += len(v)
+        print(str(k) + ": " + str(len(v)))
+    print("total matchings: " + str(total_matchings))
 
     return om
 
