@@ -1,4 +1,5 @@
 import React from 'react';
+import { makeConvert } from '../ajax'
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -7,30 +8,44 @@ class Graph extends React.Component {
   constructor() {
     super();
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
+    this.handleSourceResponse = this.handleSourceResponse.bind(this);
 
     this.state = {
+      source: '',
+      columns: [],
+
       sigmaSettings: {
-      minNodeSize:10,
-      enableHovering:true,
-      defaultNodeColor:'#bababa',
-      labelSize:'proportional',
-      drawLabels: true,
+        minNodeSize:10,
+        enableHovering:true,
+        defaultNodeColor:'#bababa',
+        labelSize:'proportional',
+        drawLabels: true,
 
-      // onHover attributes
-      borderSize:2,
-      defaultNodeBorderColor:'#000000',
-
-      }
+        // onHover attributes
+        borderSize:2,
+        defaultNodeBorderColor:'#000000',
+        }
     };
   }
 
+  handleSourceResponse(response) {
+    const json = JSON.parse(response.responseText);
+    const columns = json.sources[this.state.source].field_res;
+
+    this.setState( {columns });
+
+
+  }
+
+  // read the graph object. call the api with the id, and then use another
+  // callback to process the data.
   displayNodeDetails(eventData){
     // get the position of the click, to draw a box there later
-    const x = eventData.captor.clientX;
-    const y = eventData.captor.clientY;
+    const node = eventData.data.node;
+    const source = node.id;
+    this.setState({ source }); // name of the table that was selected
 
-    var node = eventData.node;
-    console.log(node);
+    makeConvert(this.state.source, this.handleSourceResponse);
   }
 
   render() {
@@ -41,7 +56,7 @@ class Graph extends React.Component {
         settings={this.state.sigmaSettings}
         renderer="webgl"
         style={ {maxWidth:"inherit", height:"100%"}}
-        onClickNode={e => console.log(e.data)}
+        onClickNode={e => this.displayNodeDetails(e)}
         >
         {
           // cycle through that are passed as selected items
