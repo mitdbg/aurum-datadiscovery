@@ -56,13 +56,15 @@ public class KMinHash implements TextualDataConsumer {
 			r = r.replace("_", " ");
 			r = r.replace("-", " ");
 			String[] tokens = r.split(" ");
-			r = r.toLowerCase();
-			long rawHash = hash(r);
-			for (int i = 0; i < K; i++) {
-				// h = (a * x) + b
-				long hash = (rndSeeds[i][0] * rawHash + rndSeeds[i][1]) % MERSENNE_PRIME;
-				if(hash < minhash[i]) {
-					minhash[i] = hash;
+			for(String token: tokens) {
+				token = token.toLowerCase();
+				long rawHash = hash(token);
+				for (int i = 0; i < K; i++) {
+					// h = (a * x) + b
+					long hash = (rndSeeds[i][0] * rawHash + rndSeeds[i][1]) % MERSENNE_PRIME;
+					if(hash < minhash[i]) {
+						minhash[i] = hash;
+					}
 				}
 			}
 		}

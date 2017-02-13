@@ -6,6 +6,8 @@ import pickle
 import itertools
 import operator
 from ontomatch import javarandom
+from dataanalysis import nlp_utils as nlp
+from nltk.corpus import stopwords
 
 # minhash variables
 k = 512
@@ -37,18 +39,20 @@ def minhash(str_values):
     mh = [9223372036854775807 for i in range(k)]
 
     for v in str_values:
+        v = nlp.camelcase_to_snakecase(v)
         v = v.replace('_', ' ')
         v = v.replace('-', ' ')
         v = v.lower()
         for token in v.split(' '):
-            raw_hash = hash_this(token)
-            for i in range(k):
-                first_part = java_long(random_seeds[i][0] * raw_hash)
-                second_part = java_long(random_seeds[i][1])
-                nomodule = java_long(first_part + second_part)
-                h = java_long(remainder(nomodule, mersenne_prime))
-                if h < mh[i]:
-                    mh[i] = h
+            if token not in stopwords.words('english'):
+                raw_hash = hash_this(token)
+                for i in range(k):
+                    first_part = java_long(random_seeds[i][0] * raw_hash)
+                    second_part = java_long(random_seeds[i][1])
+                    nomodule = java_long(first_part + second_part)
+                    h = java_long(remainder(nomodule, mersenne_prime))
+                    if h < mh[i]:
+                        mh[i] = h
     return mh
 
 
@@ -72,19 +76,20 @@ def read_table_columns(path_to_serialized_model, network=False):
     source_ids = network._get_underlying_repr_table_to_ids()
     col_info = network._get_underlying_repr_id_to_field_info()
     cols = []
+    # for table_name, field_ids in ...
     for k, v in source_ids.items():
+        db_name = None
         for el in v:
             (db_name, sn_name, fn_name, data_type) = col_info[el]
             cols.append(fn_name)
-            print(str(fn_name))
-        yield (k, cols)
+        yield (db_name, k, cols)
         cols.clear()
 
 
 def generate_table_vectors(path_to_serialized_model, network=False):
     table_vectors = dict()
 
-    for table_name, cols in read_table_columns(path_to_serialized_model, network=network):
+    for db_name, table_name, cols in read_table_columns(path_to_serialized_model, network=network):
         semantic_vectors = []
         seen_tokens = []
         for c in cols:
@@ -99,7 +104,7 @@ def generate_table_vectors(path_to_serialized_model, network=False):
                         if vec is not None:
                             semantic_vectors.append(vec)
         print("Table: " + str(table_name) + " has: " + str(len(semantic_vectors)))
-        table_vectors[table_name] = semantic_vectors
+        table_vectors[(db_name, table_name)] = semantic_vectors
     return table_vectors
 
 

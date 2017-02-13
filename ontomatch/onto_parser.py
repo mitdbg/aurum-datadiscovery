@@ -271,7 +271,7 @@ if __name__ == '__main__':
     owl_file = 'efo.owl'
     o = OntoHandler()
 
-
+    """
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
@@ -281,18 +281,17 @@ if __name__ == '__main__':
     o.store_ontology("cache_onto/efo.pkl")
 
     exit()
-
+    """
 
     s = time.time()
-    file = "cache_onto/uniprotcore.pkl"
+    file = "cache_onto/dbpedia.pkl"
 
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
 
-    class_levels = o.class_hierarchy_iterator()
-
-    for cl in class_levels:
+    for cl in o.classes():
+        cl = nlp.camelcase_to_snakecase(cl)
         print(cl)
 
     """

@@ -11,7 +11,7 @@ from inputoutput import inputoutput as io
 from datasketch import MinHash, MinHashLSH
 import numpy as np
 from nltk.corpus import stopwords
-import pickle
+from dataanalysis import nlp_utils as nlp
 import time
 from dataanalysis import dataanalysis as da
 from enum import Enum
@@ -74,7 +74,8 @@ class SSAPI:
             res = self.content_sim_index.query(mh_obj)
             for r_nid in res:
                 (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
-                matching = (name, (db_name, source_name, field_name))
+                # matching from db attr to name
+                matching = ((db_name, source_name, field_name), name)
                 positive_matches.append(matching)
         return positive_matches
 
@@ -97,19 +98,18 @@ class SSAPI:
         print("Took: " + str(et-st))
         all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
-        exit()
-
         #for match in l1_matchings:
         #    print(match)
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
         st = time.time()
-        kr_classdata_signatures = []
-        for kr_handler in self.kr_handlers:
-            kr_classdata_signatures += kr_handler.get_class_data_signatures()
+        #kr_classdata_signatures = []
+        #for kr_handler in self.kr_handlers:
+        #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
 
-        l2_matchings = self.__compare_content_signatures(kr_classdata_signatures)
+        l2_matchings = []
+        #l2_matchings = self.__compare_content_signatures(kr_classdata_signatures)
         print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -183,20 +183,25 @@ class SSAPI:
 
     def find_relation_class_attr_name_sem_matchings(self):
         # Retrieve relation names
+
+        self.find_relation_class_name_sem_matchings()
         st = time.time()
         names = []
         seen_fields = []
-        for (_, _, field_name, _) in self.network.iterate_values():
+        for (db_name, source_name, field_name, _) in self.network.iterate_values():
             if field_name not in seen_fields:
                 seen_fields.append(field_name)  # seen already
+                field_name = nlp.camelcase_to_snakecase(field_name)
                 field_name = field_name.replace('-', ' ')
                 field_name = field_name.replace('_', ' ')
                 field_name = field_name.lower()
                 svs = []
                 for token in field_name.split():
-                    sv = glove_api.get_embedding_for_word(token)
-                    svs.append(sv)
-                names.append(('attribute', field_name, svs))
+                    if token not in stopwords.words('english'):
+                        sv = glove_api.get_embedding_for_word(token)
+                        if sv is not None:
+                            svs.append(sv)
+                names.append(('attribute', (db_name, source_name, field_name), svs))
 
         num_attributes_inserted = len(names)
 
@@ -204,13 +209,16 @@ class SSAPI:
         for kr_handler in self.kr_handlers:
             all_classes = kr_handler.classes()
             for cl in all_classes:
+                cl = nlp.camelcase_to_snakecase(cl)
                 cl = cl.replace('-', ' ')
                 cl = cl.replace('_', ' ')
                 cl = cl.lower()
                 svs = []
                 for token in cl.split():
-                    sv = glove_api.get_embedding_for_word(token)
-                    svs.append(sv)
+                    if token not in stopwords.words('english'):
+                        sv = glove_api.get_embedding_for_word(token)
+                        if sv is not None:
+                            svs.append(sv)
                 names.append(('class', cl, svs))
 
         matchings = []
@@ -219,8 +227,10 @@ class SSAPI:
                 svs_rel = names[idx_rel][2]
                 svs_cla = names[idx_class][2]
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
-                if semantic_sim > 0.5:
-                    match = names[idx_rel][1], names[idx_class][1]
+                if semantic_sim > 0.8:
+                    # match.format db_name, source_name, field_name -> class_name
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
+                    #match = names[idx_rel][1], names[idx_class][1]
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -231,16 +241,18 @@ class SSAPI:
         st = time.time()
         names = []
         seen_fields = []
-        for (_, _, field_name, _) in self.network.iterate_values():
+        for (db_name, source_name, field_name, _) in self.network.iterate_values():
             if field_name not in seen_fields:
                 seen_fields.append(field_name)  # seen already
+                field_name = nlp.camelcase_to_snakecase(field_name)
                 field_name = field_name.replace('-', ' ')
                 field_name = field_name.replace('_', ' ')
                 field_name = field_name.lower()
                 m = MinHash(num_perm=64)
                 for token in field_name.split():
-                    m.update(token.encode('utf8'))
-                names.append(('attribute', field_name, m))
+                    if token not in stopwords.words('english'):
+                        m.update(token.encode('utf8'))
+                names.append(('attribute', (db_name, source_name, field_name), m))
 
         num_attributes_inserted = len(names)
 
@@ -248,16 +260,18 @@ class SSAPI:
         for kr_handler in self.kr_handlers:
             all_classes = kr_handler.classes()
             for cl in all_classes:
+                cl = nlp.camelcase_to_snakecase(cl)
                 cl = cl.replace('-', ' ')
                 cl = cl.replace('_', ' ')
                 cl = cl.lower()
                 m = MinHash(num_perm=64)
                 for token in cl.split():
-                    m.update(token.encode('utf8'))
+                    if token not in stopwords.words('english'):
+                        m.update(token.encode('utf8'))
                 names.append(('class', cl, m))
 
         # Index all the minhashes
-        lsh_index = MinHashLSH(threshold=0.1, num_perm=64)
+        lsh_index = MinHashLSH(threshold=0.3, num_perm=64)
 
         for idx in range(len(names)):
             lsh_index.insert(idx, names[idx][2])
@@ -269,7 +283,9 @@ class SSAPI:
                 kind_q = names[idx][0]
                 kind_n = names[n][0]
                 if kind_n != kind_q:
-                    match = names[idx][1], names[n][1]
+                    # match.format db_name, source_name, field_name -> class_name
+                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), names[n][1])
+                    #match = names[idx][1], names[n][1]
                     matchings.append(match)
         return matchings
 
@@ -278,7 +294,7 @@ class SSAPI:
         st = time.time()
         names = []
         seen_sources = []
-        for (_, source_name, _, _) in self.network.iterate_values():
+        for (db_name, source_name, _, _) in self.network.iterate_values():
             if source_name not in seen_sources:
                 seen_sources.append(source_name)  # seen already
                 source_name = source_name.replace('-', ' ')
@@ -286,9 +302,11 @@ class SSAPI:
                 source_name = source_name.lower()
                 svs = []
                 for token in source_name.split():
-                    sv = glove_api.get_embedding_for_word(token)
-                    svs.append(sv)
-                names.append(('relation', source_name, svs))
+                    if token not in stopwords.words('english'):
+                        sv = glove_api.get_embedding_for_word(token)
+                        if sv is not None:
+                            svs.append(sv)
+                names.append(('relation', (db_name, source_name), svs))
 
         num_relations_inserted = len(names)
 
@@ -296,13 +314,16 @@ class SSAPI:
         for kr_handler in self.kr_handlers:
             all_classes = kr_handler.classes()
             for cl in all_classes:
+                cl = nlp.camelcase_to_snakecase(cl)
                 cl = cl.replace('-', ' ')
                 cl = cl.replace('_', ' ')
                 cl = cl.lower()
                 svs = []
                 for token in cl.split():
-                    sv = glove_api.get_embedding_for_word(token)
-                    svs.append(sv)
+                    if token not in stopwords.words('english'):
+                        sv = glove_api.get_embedding_for_word(token)
+                        if sv is not None:
+                            svs.append(sv)
                 names.append(('class', cl, svs))
 
         matchings = []
@@ -312,7 +333,8 @@ class SSAPI:
                 svs_cla = names[idx_class][2]
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
                 if semantic_sim > 0.5:
-                    match = names[idx_rel][1], names[idx_class][1]
+                    # match.format is db_name, source_name, field_name -> class_name
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -323,16 +345,18 @@ class SSAPI:
         st = time.time()
         names = []
         seen_sources = []
-        for (_, source_name, _, _) in self.network.iterate_values():
+        for (db_name, source_name, _, _) in self.network.iterate_values():
             if source_name not in seen_sources:
                 seen_sources.append(source_name)  # seen already
+                source_name = nlp.camelcase_to_snakecase(source_name)
                 source_name = source_name.replace('-', ' ')
                 source_name = source_name.replace('_', ' ')
                 source_name = source_name.lower()
                 m = MinHash(num_perm=32)
                 for token in source_name.split():
-                    m.update(token.encode('utf8'))
-                names.append(('relation', source_name, m))
+                    if token not in stopwords.words('english'):
+                        m.update(token.encode('utf8'))
+                names.append(('relation', (db_name, source_name), m))
 
         num_relations_inserted = len(names)
 
@@ -340,16 +364,18 @@ class SSAPI:
         for kr_handler in self.kr_handlers:
             all_classes = kr_handler.classes()
             for cl in all_classes:
+                cl = nlp.camelcase_to_snakecase(cl)
                 cl = cl.replace('-', ' ')
                 cl = cl.replace('_', ' ')
                 cl = cl.lower()
                 m = MinHash(num_perm=32)
                 for token in cl.split():
-                    m.update(token.encode('utf8'))
+                    if token not in stopwords.words('english'):
+                        m.update(token.encode('utf8'))
                 names.append(('class', cl, m))
 
         # Index all the minhashes
-        lsh_index = MinHashLSH(threshold=0.1, num_perm=32)
+        lsh_index = MinHashLSH(threshold=0.3, num_perm=32)
 
         for idx in range(len(names)):
             lsh_index.insert(idx, names[idx][2])
@@ -361,7 +387,9 @@ class SSAPI:
                 kind_q = names[idx][0]
                 kind_n = names[n][0]
                 if kind_n != kind_q:
-                    match = names[idx][1], names[n][1]
+                    # match.format is db_name, source_name, field_name -> class_name
+                    #match = names[idx][1], names[n][1]
+                    match = ((names[idx][1][0], names[idx][1][1], "_"), names[n][1])
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (name): " + str(et-st))
@@ -461,16 +489,17 @@ class SSAPI:
         matchings = []
         table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
         class_ss = self._get_kr_classes_vectors()
-        sim = dict()
         total = len(class_ss.items())
         idx = 0
         for class_name, class_vectors in class_ss.items():
             print("Checking: " + str(idx) + "/" + str(total) + " : " + str(class_name))
-            for table_name, table_vectors in table_ss.items():
+            # for (dbname, table_name), table_vectors in ...
+            for db_table, table_vectors in table_ss.items():
+                db_name, table_name = db_table
                 sim = SS.compute_semantic_similarity(class_vectors, table_vectors)
                 print(str(table_name) + " -> " + str(class_name) + " : " + str(sim))
                 if sim > 0.85:
-                    match = (class_name, table_name)
+                    match = ((db_name, table_name, "_"), class_name)
                     matchings.append(match)
         return matchings
 
@@ -491,7 +520,8 @@ class SSAPI:
                             if token not in stopwords.words('english'):
                                 seen_tokens.append(token)
                                 sem_vector = glove_api.get_embedding_for_word(token)
-                                sem_vectors.append(sem_vector)
+                                if sem_vector is not None:
+                                    sem_vectors.append(sem_vector)
                     if len(sem_vectors) > 0:  # otherwise just no context generated for this class
                         class_vectors[kr.name_of_class(class_name)] = sem_vectors
                 else:
@@ -617,7 +647,7 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     matchings = om.find_matchings()
 
@@ -626,6 +656,11 @@ def test(path_to_serialized_model):
         total_matchings += len(v)
         print(str(k) + ": " + str(len(v)))
     print("total matchings: " + str(total_matchings))
+    print("####")
+    for m, v in matchings.items():
+        print(m)
+        for el in v:
+            print(el)
 
     return om
 
@@ -642,13 +677,13 @@ def main(path_to_serialized_model):
 
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     return om
 
 if __name__ == "__main__":
 
-    test("../models/chembl21/")
+    test("../models/massdata/")
     exit()
 
     print("SSAPI")
