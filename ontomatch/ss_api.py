@@ -97,6 +97,8 @@ class SSAPI:
         print("Took: " + str(et-st))
         all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
+        exit()
+
         #for match in l1_matchings:
         #    print(match)
 
@@ -119,7 +121,8 @@ class SSAPI:
         # L3: [class.context] -> relation
         print("Finding L3 matchings...")
         st = time.time()
-        l3_matchings = self.find_coarse_grain_hooks_n2()
+        #l3_matchings = self.find_coarse_grain_hooks_n2()
+        l3_matchings = []
         print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -614,7 +617,7 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("uniprotcore", "cache_onto/uniprotcore.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
 
     matchings = om.find_matchings()
 
@@ -639,7 +642,7 @@ def main(path_to_serialized_model):
 
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
-    om.add_krs([("efo", "cache_onto/efo/uniprotcore.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
 
     return om
 

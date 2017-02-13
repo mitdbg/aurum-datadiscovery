@@ -37,14 +37,18 @@ def minhash(str_values):
     mh = [9223372036854775807 for i in range(k)]
 
     for v in str_values:
-        raw_hash = hash_this(v)
-        for i in range(k):
-            first_part = java_long(random_seeds[i][0] * raw_hash)
-            second_part = java_long(random_seeds[i][1])
-            nomodule = java_long(first_part + second_part)
-            h = java_long(remainder(nomodule, mersenne_prime))
-            if h < mh[i]:
-                mh[i] = h
+        v = v.replace('_', ' ')
+        v = v.replace('-', ' ')
+        v = v.lower()
+        for token in v.split(' '):
+            raw_hash = hash_this(token)
+            for i in range(k):
+                first_part = java_long(random_seeds[i][0] * raw_hash)
+                second_part = java_long(random_seeds[i][1])
+                nomodule = java_long(first_part + second_part)
+                h = java_long(remainder(nomodule, mersenne_prime))
+                if h < mh[i]:
+                    mh[i] = h
     return mh
 
 
