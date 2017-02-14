@@ -681,7 +681,61 @@ def main(path_to_serialized_model):
 
     return om
 
+
+def test_find_semantic_sim():
+    # Load onto
+    om = SSAPI(None, None, None, None)
+    # Load parsed ontology
+    om.add_krs([("dbpedia", "cache_onto/schemaorg.pkl")], parsed=True)
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    print("Loading ontology classes...")
+    names = []
+    # Load classes
+    for kr_handler in om.kr_handlers:
+        all_classes = kr_handler.classes()
+        for cl in all_classes:
+            cl = nlp.camelcase_to_snakecase(cl)
+            cl = cl.replace('-', ' ')
+            cl = cl.replace('_', ' ')
+            cl = cl.lower()
+            svs = []
+            for token in cl.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        svs.append(sv)
+            names.append(('class', cl, svs))
+    print("Loading ontology classes...OK")
+
+    while True:
+        # Get words
+        i = input("introduce two words separated by space to get similarity. EXIT to exit")
+        tokens = i.split(' ')
+        if tokens[0] == "EXIT":
+            print("bye!")
+            break
+        svs = []
+        for t in tokens:
+            sv = glove_api.get_embedding_for_word(t)
+            if sv is not None:
+                svs.append(sv)
+            else:
+                print("No vec for : " + str(t))
+        for _, cl, vecs in names:
+            sim = SS.compute_semantic_similarity(svs, vecs)
+            if sim > 0.4:
+                print(str(cl) + " -> " + str(sim))
+
 if __name__ == "__main__":
+
+    test_find_semantic_sim()
+    exit()
 
     test("../models/massdata/")
     exit()

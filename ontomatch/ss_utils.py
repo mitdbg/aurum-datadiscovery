@@ -56,6 +56,17 @@ def minhash(str_values):
     return mh
 
 
+class SemanticSig:
+
+    def __init__(self, relations):
+        self.relations = relations
+        self.idf = dict()
+
+    def compute_attr_idf(self):
+        return
+
+
+
 def store_signatures(signatures, path):
     f = open(path + '/semantic_vectors.pkl', 'wb')
     pickle.dump(signatures, f)
