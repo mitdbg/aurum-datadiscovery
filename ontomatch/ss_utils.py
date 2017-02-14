@@ -56,15 +56,50 @@ def minhash(str_values):
     return mh
 
 
-class SemanticSig:
+def extract_cohesive_groups(table_name, attrs):
 
-    def __init__(self, relations):
-        self.relations = relations
-        self.idf = dict()
+    def maybe_add_new_set(groups, current):
+        # Right now, just filter duplicate sets
+        # TODO: should we filter subsumed sets to keep only the largest ones?
+        score, current_set = current
+        for score, set_attrs in groups:
+            if len(current_set) == len(set_attrs) and len(current_set - set_attrs) == 0:
+                return  # if repeated, then just return without adding
+            len_a = len(current_set)
+            len_b = len(set_attrs)
+            if len_a > len_b:
+                if len(set_attrs - current_set) == 0:
+                    return
+            else:
+                if len((current_set - set_attrs)) == 0:
+                    return
+        groups.append(current)  # otherwise add and finish
 
-    def compute_attr_idf(self):
-        return
-
+    groups = []
+    tokens = set()
+    ctb = nlp.curate_string(table_name)
+    tokens |= set(ctb.split(' '))
+    for attr in attrs:
+        cattr = nlp.curate_string(attr)
+        tokens |= set(cattr.split(' '))
+    tokens = [t for t in tokens if t not in stopwords.words('english') and len(t) > 1]
+    for anchor in tokens:
+        current = (0.5, set())  # keeps (score, []) cohesiveness score and list of attrs that honor it
+        for t in tokens:
+            if anchor == t:  # not interested in self-comparison
+                continue
+            anchor_v = glove_api.get_embedding_for_word(anchor)
+            t_v = glove_api.get_embedding_for_word(t)
+            if anchor_v is not None and t_v is not None:
+                ss = glove_api.semantic_distance(anchor_v, t_v)
+                if ss > current[0]:
+                    new_set = current[1]
+                    new_set.add(anchor)
+                    new_set.add(t)
+                    current = (ss, new_set)
+        if len(current[1]) > 0:
+            maybe_add_new_set(groups, current)
+    return groups
 
 
 def store_signatures(signatures, path):
@@ -305,9 +340,40 @@ def compute_new_ss(table, semantic_vectors):
             res[k] = ss
     return res
 
+
+def test(path_to_serialized_model):
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    total_tables = 0
+    avg_attrs_per_table = 0
+    avg_groups_per_table = 0
+    for db, t, attrs in read_table_columns(path_to_serialized_model):
+        total_tables += 1
+        groups = extract_cohesive_groups(t, attrs)
+        avg_attrs_per_table += len(attrs)
+        avg_groups_per_table += len(groups)
+        print("Table: " + str(t))
+        print("num groups: " + str(len(groups)))
+        for score, tokens in groups:
+            print("Score: " + str(score))
+            print(tokens)
+            print("#####")
+    avg_attrs_per_table = avg_attrs_per_table / total_tables
+    avg_groups_per_table = avg_groups_per_table / total_tables
+    print("Avg attr per table: " + str(avg_attrs_per_table))
+    print("Avg group per table: " + str(avg_groups_per_table))
+
 if __name__ == "__main__":
 
-    path_to_serialized_model = "../models/chemical/"
+    path_to_serialized_model = "../models/massdata/"
+
+    test(path_to_serialized_model)
+    exit()
+
 
     """
     # Load glove model

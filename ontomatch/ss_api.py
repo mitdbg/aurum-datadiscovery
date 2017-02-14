@@ -734,8 +734,8 @@ def test_find_semantic_sim():
 
 if __name__ == "__main__":
 
-    test_find_semantic_sim()
-    exit()
+    #test_find_semantic_sim()
+    #exit()
 
     test("../models/massdata/")
     exit()
