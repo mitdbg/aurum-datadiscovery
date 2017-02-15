@@ -39,7 +39,7 @@ class SSAPI:
         self.content_sim_index = content_sim_index
         self.srql = API(self.network, self.store_client)
         self.krs = []
-        self.kr_handlers = []
+        self.kr_handlers = dict()
 
         # SS indexes
         self.num_vectors_tables = 0  # Total number of semantic vectors for tables
@@ -64,11 +64,11 @@ class SSAPI:
             else:
                 o.parse_ontology(kr_path)
                 o.store_ontology("cache_onto/" + kr_name + ".pkl")
-            self.kr_handlers.append(o)
+            self.kr_handlers[kr_name] = o
 
-    def __compare_content_signatures(self, signatures):
+    def __compare_content_signatures(self, kr_name, signatures):
         positive_matches = []
-        for name, mh_sig in signatures:
+        for class_name, mh_sig in signatures:
             mh_obj = MinHash(num_perm=512)
             mh_array = np.asarray(mh_sig, dtype=int)
             mh_obj.hashvalues = mh_array
@@ -76,7 +76,7 @@ class SSAPI:
             for r_nid in res:
                 (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
                 # matching from db attr to name
-                matching = ((db_name, source_name, field_name), name)
+                matching = ((db_name, source_name, field_name), (kr_name, class_name))
                 positive_matches.append(matching)
         return positive_matches
 
@@ -90,10 +90,11 @@ class SSAPI:
         st = time.time()
         print("Finding L1 matchings...")
         kr_class_signatures = []
-        for kr_handler in self.kr_handlers:
+        l1_matchings = []
+        for kr_name, kr_handler in self.kr_handlers.items():
             kr_class_signatures += kr_handler.get_classes_signatures()
+            l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
-        l1_matchings = self.__compare_content_signatures(kr_class_signatures)
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
         et = time.time()
         print("Took: " + str(et-st))
@@ -105,12 +106,11 @@ class SSAPI:
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
         st = time.time()
-        #kr_classdata_signatures = []
-        #for kr_handler in self.kr_handlers:
-        #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
-
+        kr_classdata_signatures = []
         l2_matchings = []
-        #l2_matchings = self.__compare_content_signatures(kr_classdata_signatures)
+        #for kr_name, kr_handler in self.kr_handlers.items():
+        #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
+        #    l2_matchings = self.__compare_content_signatures(kr_name, kr_classdata_signatures)
         print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -192,7 +192,92 @@ class SSAPI:
         # for match in l52_matchings:
         #    print(match)
 
-        return all_matchings
+        total_matchings_pre_combined = 0
+        for values in all_matchings.values():
+            total_matchings_pre_combined += len(values)
+        print("ALL: " + str(total_matchings_pre_combined))
+        combined_matchings = self._combine_matchings(all_matchings)
+        print("COM: " + str(len(combined_matchings)))
+
+        return combined_matchings
+
+    def _combine_matchings(self, all_matchings):
+        # TODO: divide running score, based on whether content was available or not (is it really necessary?)
+
+        # L1 creates its own matchings
+        l1_matchings = all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE]
+
+        # L2, L5, L52 and L6 create another set of matchings
+        l2_matchings = all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE]
+        l5_matchings = all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN]
+        l52_matchings = all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM]
+        l6_matchings = all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG]
+
+        l_combined = dict()
+        for schema, kr in l1_matchings:
+            db_name, src_name, attr_name = schema
+            kr_name, cla_name = kr
+            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L1_CLASSVALUE_ATTRVALUE]]
+
+        for schema, kr in l2_matchings:
+            db_name, src_name, attr_name = schema
+            kr_name, cla_name = kr
+            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L2_CLASSNAME_ATTRNAME_SYN)
+            else:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L2_CLASSVALUE_ATTRVALUE]]
+
+        for schema, kr in l5_matchings:
+            db_name, src_name, attr_name = schema
+            kr_name, cla_name = kr
+            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L5_CLASSNAME_ATTRNAME_SYN)
+            else:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L5_CLASSNAME_ATTRNAME_SYN]]
+
+        for schema, kr in l52_matchings:
+            db_name, src_name, attr_name = schema
+            kr_name, cla_name = kr
+            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L52_CLASSNAME_ATTRNAME_SEM)
+            else:
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L52_CLASSNAME_ATTRNAME_SEM]]
+
+        for schema, kr in l6_matchings:
+            db_name, src_name, attr_name = schema
+            kr_name, cla_name = kr
+            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
+                # TODO: only append in the matching types are something except L1?
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L6_CLASSNAME_RELATION_SEMSIG)
+
+        """
+        for key, matching_types in l_combined.items():
+            matching, types = matching_types
+            running_score = 0
+            supported_by_basic_signals = False
+            if MatchingType.L2_CLASSVALUE_ATTRVALUE in types:
+                running_score += 1
+                supported_by_basic_signals = True
+            if MatchingType.L5_CLASSNAME_ATTRNAME_SYN in types:
+                running_score += 1
+                supported_by_basic_signals = True
+            elif MatchingType.L52_CLASSNAME_ATTRNAME_SEM in types:
+                running_score += 1
+                supported_by_basic_signals = True
+            if MatchingType.L6_CLASSNAME_RELATION_SEMSIG in types:
+                if supported_by_basic_signals:
+                    running_score += 1
+            combined_matchings.append((matching, running_score))
+        """
+
+        # L4 and L42 have their own matching too
+        l4_matchings = all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN]
+        combined_matchings = []
+        for key, values in l_combined.items():
+            for v in values:
+                combined_matchings.append(v)
+
+        return combined_matchings, l4_matchings
 
     def find_sem_coh_matchings(self):
         matchings = []
@@ -204,7 +289,7 @@ class SSAPI:
 
         names = []
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_name, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = nlp.camelcase_to_snakecase(cl)
@@ -217,7 +302,7 @@ class SSAPI:
                         sv = glove_api.get_embedding_for_word(token)
                         if sv is not None:
                             svs.append(sv)
-                names.append(('class', cl, svs))
+                names.append(('class', (kr_name, cl), svs))
         for db_table_info, groups in table_groups.items():
             db_name, table_name = db_table_info
             class_seen = []  # to filter out already seen classes
@@ -227,11 +312,12 @@ class SSAPI:
                     sv = glove_api.get_embedding_for_word(t)
                     if sv is not None:
                         g_svs.append(sv)
-                for _, class_name, class_svs in names:
+                for _, class_info, class_svs in names:
+                    kr_name, class_name = class_info
                     sim = SS.compute_semantic_similarity(class_svs, g_svs)
                     if sim > g_score and class_name not in class_seen:
                         class_seen.append(class_name)
-                        match = ((db_name, table_name, "_"), class_name)
+                        match = ((db_name, table_name, "_"), (kr_name, class_name))
                         matchings.append(match)
         return matchings
 
@@ -260,7 +346,7 @@ class SSAPI:
         num_attributes_inserted = len(names)
 
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_name, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = nlp.camelcase_to_snakecase(cl)
@@ -273,7 +359,7 @@ class SSAPI:
                         sv = glove_api.get_embedding_for_word(token)
                         if sv is not None:
                             svs.append(sv)
-                names.append(('class', cl, svs))
+                names.append(('class', (kr_name, cl), svs))
 
         matchings = []
         for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
@@ -283,8 +369,7 @@ class SSAPI:
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
                 if semantic_sim > 0.8:
                     # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
-                    #match = names[idx_rel][1], names[idx_class][1]
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), (names[idx_class][0], names[idx_class][1]))
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -311,7 +396,7 @@ class SSAPI:
         num_attributes_inserted = len(names)
 
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_name, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = nlp.camelcase_to_snakecase(cl)
@@ -322,7 +407,7 @@ class SSAPI:
                 for token in cl.split():
                     if token not in stopwords.words('english'):
                         m.update(token.encode('utf8'))
-                names.append(('class', cl, m))
+                names.append(('class', (kr_name, cl), m))
 
         # Index all the minhashes
         lsh_index = MinHashLSH(threshold=0.3, num_perm=64)
@@ -338,8 +423,7 @@ class SSAPI:
                 kind_n = names[n][0]
                 if kind_n != kind_q:
                     # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), names[n][1])
-                    #match = names[idx][1], names[n][1]
+                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), (names[n][0], names[n][1]))
                     matchings.append(match)
         return matchings
 
@@ -365,7 +449,7 @@ class SSAPI:
         num_relations_inserted = len(names)
 
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_name, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = nlp.camelcase_to_snakecase(cl)
@@ -378,7 +462,7 @@ class SSAPI:
                         sv = glove_api.get_embedding_for_word(token)
                         if sv is not None:
                             svs.append(sv)
-                names.append(('class', cl, svs))
+                names.append(('class', (kr_name, cl), svs))
 
         matchings = []
         for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
@@ -388,7 +472,7 @@ class SSAPI:
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
                 if semantic_sim > 0.5:
                     # match.format is db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), (names[idx_class][0], names[idx_class][1]))
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -415,7 +499,7 @@ class SSAPI:
         num_relations_inserted = len(names)
 
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_name, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = nlp.camelcase_to_snakecase(cl)
@@ -426,7 +510,7 @@ class SSAPI:
                 for token in cl.split():
                     if token not in stopwords.words('english'):
                         m.update(token.encode('utf8'))
-                names.append(('class', cl, m))
+                names.append(('class', (kr_name, cl), m))
 
         # Index all the minhashes
         lsh_index = MinHashLSH(threshold=0.3, num_perm=32)
@@ -442,8 +526,7 @@ class SSAPI:
                 kind_n = names[n][0]
                 if kind_n != kind_q:
                     # match.format is db_name, source_name, field_name -> class_name
-                    #match = names[idx][1], names[n][1]
-                    match = ((names[idx][1][0], names[idx][1][1], "_"), names[n][1])
+                    match = ((names[idx][1][0], names[idx][1][1], "_"), (names[n][0], names[n][1]))
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (name): " + str(et-st))
@@ -465,7 +548,7 @@ class SSAPI:
                 names.append(('relation', source_name))
 
         # Retrieve class names
-        for kr_handler in self.kr_handlers:
+        for kr_item, kr_handler in self.kr_handlers.items():
             all_classes = kr_handler.classes()
             for cl in all_classes:
                 cl = cl.replace('-', ' ')
@@ -559,7 +642,7 @@ class SSAPI:
 
     def _get_kr_classes_vectors(self):
         class_vectors = dict()
-        for kr in self.kr_handlers:
+        for kr_name, kr in self.kr_handlers.items():
             for class_name in kr.classes_id():
                 success, ret = kr.bow_repr_of(class_name, class_id=True)  # Get bag of words representation
                 if success:
@@ -703,8 +786,8 @@ def test(path_to_serialized_model):
     # Load parsed ontology
     om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
-    #matchings = om.find_matchings()
-    matchings = om.find_sem_coh_matchings()
+    matchings = om.find_matchings()
+    #matchings = om.find_sem_coh_matchings()
 
     for m in matchings:
         print(m)
@@ -756,7 +839,7 @@ def test_find_semantic_sim():
     print("Loading ontology classes...")
     names = []
     # Load classes
-    for kr_handler in om.kr_handlers:
+    for kr_name, kr_handler in om.kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)

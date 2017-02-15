@@ -59,8 +59,7 @@ def minhash(str_values):
 def extract_cohesive_groups(table_name, attrs):
 
     def maybe_add_new_set(groups, current):
-        # Right now, just filter duplicate sets
-        # TODO: should we filter subsumed sets to keep only the largest ones?
+        # Right now, filter duplicate sets, and subsumed sets as well
         score, current_set = current
         for score, set_attrs in groups:
             if len(current_set) == len(set_attrs) and len(current_set - set_attrs) == 0:
@@ -84,7 +83,7 @@ def extract_cohesive_groups(table_name, attrs):
         tokens |= set(cattr.split(' '))
     tokens = [t for t in tokens if t not in stopwords.words('english') and len(t) > 1]
     for anchor in tokens:
-        current = (0.5, set())  # keeps (score, []) cohesiveness score and list of attrs that honor it
+        current = (0.7, set())  # keeps (score, []) cohesiveness score and list of attrs that honor it
         for t in tokens:
             if anchor == t:  # not interested in self-comparison
                 continue
