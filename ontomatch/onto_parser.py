@@ -8,7 +8,7 @@ from ontomatch.ss_utils import minhash
 
 
 # We are serializing highly nested structures here...
-sys.setrecursionlimit(100000)
+sys.setrecursionlimit(50000)
 
 
 class OntoHandler:
@@ -268,20 +268,20 @@ if __name__ == '__main__':
 
 
     #owl_file = '/Users/ra-mit/data/uniprot/uniprotcore.owl'
-    owl_file = 'efo.owl'
+    owl_file = 'opencyc.owl'
     o = OntoHandler()
 
-    """
+
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
 
-    o.store_ontology("cache_onto/efo.pkl")
+    o.store_ontology("cache_onto/opencyc.pkl")
 
     exit()
-    """
+
 
     s = time.time()
     file = "cache_onto/dbpedia.pkl"

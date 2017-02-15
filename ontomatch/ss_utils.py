@@ -158,7 +158,8 @@ def get_semantic_vectors_for(tokens):
     s_vectors = []
     for t in tokens:
         vec = glove_api.get_embedding_for_word(t)
-        s_vectors.append(vec)
+        if vec is not None:
+            s_vectors.append(vec)
     return s_vectors
 
 

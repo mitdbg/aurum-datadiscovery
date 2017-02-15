@@ -27,6 +27,7 @@ class MatchingType(Enum):
     L42_CLASSNAME_RELATIONNAME_SEM = 4
     L5_CLASSNAME_ATTRNAME_SYN = 5
     L52_CLASSNAME_ATTRNAME_SEM = 6
+    L6_CLASSNAME_RELATION_SEMSIG = 7
 
 
 class SSAPI:
@@ -179,7 +180,60 @@ class SSAPI:
         #for match in l52_matchings:
         #    print(match)
 
+        # L6: [Relations] -> [Class names] (semantic groups)
+        print("Finding L6 matchings...")
+        st = time.time()
+        l6_matchings = self.find_sem_coh_matchings()
+        print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
+
+        # for match in l52_matchings:
+        #    print(match)
+
         return all_matchings
+
+    def find_sem_coh_matchings(self):
+        matchings = []
+        # Get all relations with groups
+        table_groups = dict()
+        for db, t, attrs in SS.read_table_columns(None, network=self.network):
+            groups = SS.extract_cohesive_groups(t, attrs)
+            table_groups[(db, t)] = groups
+
+        names = []
+        # Retrieve class names
+        for kr_handler in self.kr_handlers:
+            all_classes = kr_handler.classes()
+            for cl in all_classes:
+                cl = nlp.camelcase_to_snakecase(cl)
+                cl = cl.replace('-', ' ')
+                cl = cl.replace('_', ' ')
+                cl = cl.lower()
+                svs = []
+                for token in cl.split():
+                    if token not in stopwords.words('english'):
+                        sv = glove_api.get_embedding_for_word(token)
+                        if sv is not None:
+                            svs.append(sv)
+                names.append(('class', cl, svs))
+        for db_table_info, groups in table_groups.items():
+            db_name, table_name = db_table_info
+            class_seen = []  # to filter out already seen classes
+            for g_score, g_tokens in groups:
+                g_svs = []
+                for t in g_tokens:
+                    sv = glove_api.get_embedding_for_word(t)
+                    if sv is not None:
+                        g_svs.append(sv)
+                for _, class_name, class_svs in names:
+                    sim = SS.compute_semantic_similarity(class_svs, g_svs)
+                    if sim > g_score and class_name not in class_seen:
+                        class_seen.append(class_name)
+                        match = ((db_name, table_name, "_"), class_name)
+                        matchings.append(match)
+        return matchings
 
     def find_relation_class_attr_name_sem_matchings(self):
         # Retrieve relation names
@@ -649,7 +703,12 @@ def test(path_to_serialized_model):
     # Load parsed ontology
     om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
-    matchings = om.find_matchings()
+    #matchings = om.find_matchings()
+    matchings = om.find_sem_coh_matchings()
+
+    for m in matchings:
+        print(m)
+    exit()
 
     total_matchings = 0
     for k, v in matchings.items():
