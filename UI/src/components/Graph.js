@@ -35,8 +35,9 @@ class Graph extends React.Component {
 
   clearAndDrawNewLabels(){
     clearLabels();
+    const selectedColumns = this.props.selection[this.state.source];
     drawInfoBox(
-      this.state.source, ['columns'], this.state.clickX, this.state.clickY);
+      this.state.source, selectedColumns, this.state.clickX, this.state.clickY);
   }
 
   // set state for columns after server api response

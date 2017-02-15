@@ -22,7 +22,8 @@ export function drawInfoBox(sourceName, columns, x, y){
   const boxX = x - boxWidth/2;
   const boxY = y + boxMarginTop;
 
-  const lineHeight = 14; // number of pixels in a row
+  const sourceLineHeight = 14; // number of pixels in a row
+  const fieldLineHeight = 12; // number of pixels in a row
 
   var yOffset = 0; // how far offset the cursor should be
 
@@ -34,9 +35,9 @@ export function drawInfoBox(sourceName, columns, x, y){
   labelCanvas.strokeStyle = 'black';
   labelCanvas.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
-  // table name
+  // draw table name
   labelCanvas.fillStyle = 'black';
-  labelCanvas.font = 14 + 'px sans-serif';
+  labelCanvas.font = sourceLineHeight + 'px sans-serif';
   labelCanvas.textBaseline = 'top';
   labelCanvas.textAlign = 'center';
   const lines = getLines(labelCanvas, sourceName, boxWidth - 2*boxPaddingLeft)
@@ -44,13 +45,13 @@ export function drawInfoBox(sourceName, columns, x, y){
   // iterate through lines
   for (var i = 0; i < lines.length; i++) {
     const line = lines[i]
-    yOffset = i * lineHeight;
+    yOffset = i * sourceLineHeight;
     labelCanvas.fillText(line, boxX + boxWidth/2, boxY + boxPaddingTop + yOffset);
   }
 
   // move the yOffset to below the last line
   // and add an X px margin
-  yOffset += lineHeight + 9;
+  yOffset += sourceLineHeight + 9;
   console.log(yOffset);
 
   // draw a line at the y offset (under the last bit of source text)
@@ -59,13 +60,28 @@ export function drawInfoBox(sourceName, columns, x, y){
   labelCanvas.lineTo(boxX + boxWidth, boxY + yOffset);
   labelCanvas.stroke();
 
+  // move yOffset down again
+  yOffset += 2;
+
   // draw columns
+  labelCanvas.fillStyle = 'black';
+  labelCanvas.font = fieldLineHeight + 'px sans-serif';
+  labelCanvas.textBaseline = 'top';
+  labelCanvas.textAlign = 'left';
+
+  for (var k in columns){
+
+    // for-in guard that react yells about if it's not here
+    if (!Object.prototype.hasOwnProperty.call(columns, k)) {
+      break;
+    }
+    const columnName = columns[k]['field_name'];
+    labelCanvas.fillText(columnName, boxX + boxPaddingLeft, boxY + boxPaddingTop + yOffset);
+    yOffset += sourceLineHeight;
+  }
+  console.log('foo');
 
 
-
-
-
-  // columns
 
 }
 
