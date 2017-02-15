@@ -35,7 +35,6 @@ export function drawInfoBox(sourceName, columns, x, y){
   labelCanvas.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
   // table name
-  // var text = ctx.measureText(sourceName);
   labelCanvas.fillStyle = 'black';
   labelCanvas.font = 14 + 'px sans-serif';
   labelCanvas.textBaseline = 'top';
@@ -49,7 +48,18 @@ export function drawInfoBox(sourceName, columns, x, y){
     labelCanvas.fillText(line, boxX + boxWidth/2, boxY + boxPaddingTop + yOffset);
   }
 
-  // draw a line under the last text
+  // move the yOffset to below the last line
+  // and add an X px margin
+  yOffset += lineHeight + 9;
+  console.log(yOffset);
+
+  // draw a line at the y offset (under the last bit of source text)
+  labelCanvas.beginPath();
+  labelCanvas.moveTo(boxX, boxY + yOffset);
+  labelCanvas.lineTo(boxX + boxWidth, boxY + yOffset);
+  labelCanvas.stroke();
+
+  // draw columns
 
 
 
