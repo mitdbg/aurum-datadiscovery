@@ -1,5 +1,6 @@
 import React from 'react';
 import { makeConvert } from '../ajax'
+import { clearLabels, drawInfoBox} from '../hax'
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -9,10 +10,13 @@ class Graph extends React.Component {
     super();
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
     this.handleSourceResponse = this.handleSourceResponse.bind(this);
+    this.clearAndDrawNewLabels = this.clearAndDrawNewLabels.bind(this);
 
     this.state = {
       source: '',
       columns: [],
+      clickX: 0,
+      clickY: 0,
 
       sigmaSettings: {
         minNodeSize:10,
@@ -24,17 +28,24 @@ class Graph extends React.Component {
         // onHover attributes
         borderSize:2,
         defaultNodeBorderColor:'#000000',
+
         }
     };
   }
 
+  clearAndDrawNewLabels(){
+    clearLabels();
+    drawInfoBox(
+      this.state.source, ['columns'], this.state.clickX, this.state.clickY);
+  }
+
+  // set state for columns after server api response
   handleSourceResponse(response) {
     const json = JSON.parse(response.responseText);
     const columns = json.sources[this.state.source].field_res;
 
-    this.setState( {columns });
-
-
+    this.setState( { columns });
+    this.clearAndDrawNewLabels();
   }
 
   // read the graph object. call the api with the id, and then use another
@@ -42,8 +53,16 @@ class Graph extends React.Component {
   displayNodeDetails(eventData){
     // get the position of the click, to draw a box there later
     const node = eventData.data.node;
+
+    // name of the table that was selected
     const source = node.id;
-    this.setState({ source }); // name of the table that was selected
+    this.setState({ source });
+
+    // x and y coordinates of the click
+    const clickX = node['cam0:x'];
+    const clickY = node['cam0:y'];
+    this.setState( {clickX })
+    this.setState( {clickY })
 
     makeConvert(this.state.source, this.handleSourceResponse);
   }
