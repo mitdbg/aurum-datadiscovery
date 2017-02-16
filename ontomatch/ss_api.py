@@ -196,7 +196,7 @@ class SSAPI:
         for values in all_matchings.values():
             total_matchings_pre_combined += len(values)
         print("ALL: " + str(total_matchings_pre_combined))
-        combined_matchings = self._combine_matchings(all_matchings)
+        combined_matchings, l4_matchings = self._combine_matchings(all_matchings)
         print("COM: " + str(len(combined_matchings)))
 
         return combined_matchings
@@ -217,7 +217,7 @@ class SSAPI:
         for schema, kr in l1_matchings:
             db_name, src_name, attr_name = schema
             kr_name, cla_name = kr
-            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L1_CLASSVALUE_ATTRVALUE]]
+            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L1_CLASSVALUE_ATTRVALUE])
 
         for schema, kr in l2_matchings:
             db_name, src_name, attr_name = schema
@@ -225,7 +225,7 @@ class SSAPI:
             if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
                 l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L2_CLASSNAME_ATTRNAME_SYN)
             else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L2_CLASSVALUE_ATTRVALUE]]
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L2_CLASSVALUE_ATTRVALUE])
 
         for schema, kr in l5_matchings:
             db_name, src_name, attr_name = schema
@@ -233,7 +233,7 @@ class SSAPI:
             if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
                 l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L5_CLASSNAME_ATTRNAME_SYN)
             else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L5_CLASSNAME_ATTRNAME_SYN]]
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L5_CLASSNAME_ATTRNAME_SYN])
 
         for schema, kr in l52_matchings:
             db_name, src_name, attr_name = schema
@@ -241,7 +241,7 @@ class SSAPI:
             if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
                 l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L52_CLASSNAME_ATTRNAME_SEM)
             else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = [(schema, kr), [MatchingType.L52_CLASSNAME_ATTRNAME_SEM]]
+                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L52_CLASSNAME_ATTRNAME_SEM])
 
         for schema, kr in l6_matchings:
             db_name, src_name, attr_name = schema
@@ -274,8 +274,12 @@ class SSAPI:
         l4_matchings = all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN]
         combined_matchings = []
         for key, values in l_combined.items():
-            for v in values:
-                combined_matchings.append(v)
+            matching = values[0]
+            matching_types = values[1]
+            #for el in values:
+            #    matching = el[0]
+            #    matching_types = el[1]
+            combined_matchings.append((matching, matching_types))
 
         return combined_matchings, l4_matchings
 
@@ -329,6 +333,7 @@ class SSAPI:
         names = []
         seen_fields = []
         for (db_name, source_name, field_name, _) in self.network.iterate_values():
+            orig_field_name = field_name
             if field_name not in seen_fields:
                 seen_fields.append(field_name)  # seen already
                 field_name = nlp.camelcase_to_snakecase(field_name)
@@ -341,7 +346,7 @@ class SSAPI:
                         sv = glove_api.get_embedding_for_word(token)
                         if sv is not None:
                             svs.append(sv)
-                names.append(('attribute', (db_name, source_name, field_name), svs))
+                names.append(('attribute', (db_name, source_name, orig_field_name), svs))
 
         num_attributes_inserted = len(names)
 
@@ -369,7 +374,7 @@ class SSAPI:
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
                 if semantic_sim > 0.8:
                     # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), (names[idx_class][0], names[idx_class][1]))
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -381,6 +386,7 @@ class SSAPI:
         names = []
         seen_fields = []
         for (db_name, source_name, field_name, _) in self.network.iterate_values():
+            orig_field_name = field_name
             if field_name not in seen_fields:
                 seen_fields.append(field_name)  # seen already
                 field_name = nlp.camelcase_to_snakecase(field_name)
@@ -391,7 +397,7 @@ class SSAPI:
                 for token in field_name.split():
                     if token not in stopwords.words('english'):
                         m.update(token.encode('utf8'))
-                names.append(('attribute', (db_name, source_name, field_name), m))
+                names.append(('attribute', (db_name, source_name, orig_field_name), m))
 
         num_attributes_inserted = len(names)
 
@@ -423,7 +429,7 @@ class SSAPI:
                 kind_n = names[n][0]
                 if kind_n != kind_q:
                     # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), (names[n][0], names[n][1]))
+                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), names[n][1])
                     matchings.append(match)
         return matchings
 
@@ -472,7 +478,7 @@ class SSAPI:
                 semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
                 if semantic_sim > 0.5:
                     # match.format is db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), (names[idx_class][0], names[idx_class][1]))
+                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (sem): " + str(et - st))
@@ -526,7 +532,7 @@ class SSAPI:
                 kind_n = names[n][0]
                 if kind_n != kind_q:
                     # match.format is db_name, source_name, field_name -> class_name
-                    match = ((names[idx][1][0], names[idx][1][1], "_"), (names[n][0], names[n][1]))
+                    match = ((names[idx][1][0], names[idx][1][1], "_"), names[n][1])
                     matchings.append(match)
         et = time.time()
         print("Time to relation-class (name): " + str(et-st))
