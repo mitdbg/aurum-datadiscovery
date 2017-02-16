@@ -24,7 +24,7 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   box.padding.top = 3;
   box.padding.bottom = 5;
 
-  box.width = 250;
+  box.width = 225;
   box.height = null;
 
   box.x = x - box.width/2;
@@ -55,7 +55,7 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   line.marginBottom = 2;
   line.y = source.lines.length * (source.lineHeight + source.lineSpace) + source.marginBottom + source.y
 
-  // column selected
+  // columns selected
   var field = {}
   field.lineHeight = 12;
   field.fillStyle = 'black'
@@ -64,6 +64,7 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   field.selected = selectedColumns;
   field.y = line.y + line.marginBottom;
 
+  // columns not selected
   var fieldUnselected = {}
   fieldUnselected.lineHeight = 12;
   fieldUnselected.fillStyle = 'black'
@@ -74,9 +75,26 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
 
   box.height = fieldUnselected.y - box.y + fieldUnselected.lineHeight + fieldUnselected.lineSpace;
 
+  // triangle menu
+  var triangle = {};
+  triangle.width = 6
+
+  triangle.left = {};
+  triangle.left.x = box.x + box.width/2 + 5;
+  triangle.left.y = box.y + 5;
+
+  triangle.right = {};
+  triangle.right.x = box.x + box.width/2 + triangle.width + 5;
+  triangle.right.y = triangle.right.y
+
+  triangle.bottom = {}
+  triangle.bottom.x = box.x + box.width/2 + triangle.width/2 + 5
+  triangle.bottom.y = box.y + 5 + 5;
+
 
   drawRectangleBackground(canvas, box);
   drawRectangleBorder(canvas, box);
+  drawTriangle(canvas, box, triangle);
 
   drawSource(canvas, box, source);
   drawLine(canvas, box, line);
@@ -138,6 +156,15 @@ function drawNumUnselectedFields(canvas, box, fieldUnselected) {
   canvas.fillText(text, box.x + box.padding.left, fieldUnselected.y)
 }
 
+function drawTriangle(canvas, box, triangle) {
+  canvas.fillStyle = '#000'
+  canvas.beginPath();
+  canvas.moveTo(triangle.left.x, triangle.left.y);
+  canvas.lineTo(triangle.right.x, triangle.right.y);
+  canvas.lineTo(triangle.bottom.x, triangle.bottom.y);
+  canvas.fill();
+}
+
 // draw a border around the label
 function drawRectangleBorder(canvas, box, offset){
   canvas.strokeStyle = 'black';
@@ -146,9 +173,11 @@ function drawRectangleBorder(canvas, box, offset){
 
 // draw a background for the label
 function drawRectangleBackground(canvas, box) {
-  canvas.fillStyle = '#e5e5e5';
+  canvas.fillStyle = '#f2f2f2';
   canvas.fillRect(box.x, box.y, box.width, box.height);
 }
+
+
 
 
 function getLines(canvas, text, maxWidth){
