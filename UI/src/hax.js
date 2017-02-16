@@ -30,6 +30,7 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   box.x = x - box.width/2;
   box.y = y + box.margin.top;
 
+
   // table name
   var source = {}
   source.lineHeight = 14;
@@ -38,6 +39,14 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   source.lineSpace = 0;
   source.marginBottom = 9;
   source.name = sourceName;
+
+  // set canvass variables before getLines
+  canvas.fillStyle = source.fillStyle;
+  canvas.font = source.lineHeight + 'px sans-serif';
+  canvas.textBaseline = 'top';
+  canvas.textAlign = source.textAlign;
+
+  // getLines
   source.lines = getLines(canvas, source.name, box.width - box.padding.left - box.padding.right)
   source.y = box.padding.top + box.y;
 
@@ -142,7 +151,8 @@ function drawRectangleBackground(canvas, box) {
 }
 
 
-function getLines(canvas, text, maxWidth) {
+function getLines(canvas, text, maxWidth){
+
     var characters = text.split('');
     var lines = [];
     var currentLine = characters[0];
