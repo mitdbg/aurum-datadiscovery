@@ -11,85 +11,131 @@ export function clearLabels(){
 }
 
 export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
-  const labelCanvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
-  const boxWidth = 250;
-  const boxHeight = 200;
-  const boxMarginTop = 15;
+  const canvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
 
-  const boxPaddingLeft = 3;
-  const boxPaddingTop = 3;
+  var box = {}
 
-  const boxX = x - boxWidth/2;
-  const boxY = y + boxMarginTop;
+  box.margin = {}
+  box.margin.top = 15;
 
-  const sourceLineHeight = 14; // number of pixels in a row
-  const fieldLineHeight = 12; // number of pixels in a row
+  box.padding = {}
+  box.padding.left = 3;
+  box.padding.right = 3;
+  box.padding.top = 3;
+  box.padding.bottom = 5;
 
-  var yOffset = 0; // how far offset the cursor should be
+  box.width = 250;
+  box.height = null;
 
-  // draw table name
-  labelCanvas.fillStyle = 'black';
-  labelCanvas.font = sourceLineHeight + 'px sans-serif';
-  labelCanvas.textBaseline = 'top';
-  labelCanvas.textAlign = 'center';
-  const lines = getLines(labelCanvas, sourceName, boxWidth - 2*boxPaddingLeft)
+  box.x = x - box.width/2;
+  box.y = y + box.margin.top;
+
+  // table
+  var source = {}
+  source.lineHeight = 14;
+  source.fillStyle = 'black';
+  source.textAlign = 'center';
+  source.name = sourceName;
+
+  // column
+  var field = {}
+  field.lineHeight = 12;
+  field.fillStyle = 'black'
+  field.textAlign = 'left';
+  field.selected = selectedColumns;
+  field.numUnselected = Object.keys(allColumns).length - Object.keys(field.selected).length
+
+  // offset variable, which needs to die
+  var offset = {}
+  offset.y = 0;
+
+  offset = drawSource(canvas, box, offset, source);
+
+  offset = drawLine(canvas, box, offset)
+
+  offset = drawSelectedFields(canvas, box, offset, field);
+
+  offset = drawNumUnselectedColumns(canvas, box, offset, field);
+
+  // drawRectangleBackground(canvas, box, offset);
+  drawRectangleBorder(canvas, box, offset);
+
+}
+
+// draw the table name
+function drawSource(canvas, box, offset, source) {
+  canvas.fillStyle = source.fillStyle;
+  canvas.font = source.lineHeight + 'px sans-serif';
+  canvas.textBaseline = 'top';
+  canvas.textAlign = source.textAlign;
+  const lines = getLines(canvas, source.name, box.width - 2*box.padding.left)
 
   // iterate through lines
   for (var i = 0; i < lines.length; i++) {
     const line = lines[i]
-    yOffset = i * sourceLineHeight;
-    labelCanvas.fillText(line, boxX + boxWidth/2, boxY + boxPaddingTop + yOffset);
+    offset.y = i * source.lineHeight;
+    canvas.fillText(line, box.x + box.width/2, box.y + box.padding.top + offset.y);
   }
 
-  // move the yOffset to below the last line
-  // and add an X px margin
-  yOffset += sourceLineHeight + 9;
-  // console.log(yOffset);
+  offset.y += source.lineHeight + 9;
+  return offset
+}
 
-  // draw a line at the y offset (under the last bit of source text)
-  labelCanvas.beginPath();
-  labelCanvas.moveTo(boxX, boxY + yOffset);
-  labelCanvas.lineTo(boxX + boxWidth, boxY + yOffset);
-  labelCanvas.stroke();
+// draw a horizontal line
+function drawLine(canvas, box, offset) {
+  canvas.beginPath();
+  canvas.moveTo(box.x, box.y + offset.y);
+  canvas.lineTo(box.x + box.width, box.y + offset.y);
+  canvas.stroke();
+  offset.y += 2;
 
-  // move yOffset down again
-  yOffset += 2;
+  return offset;
+}
 
-  // draw columns
-  labelCanvas.fillStyle = 'black';
-  labelCanvas.font = fieldLineHeight + 'px sans-serif';
-  labelCanvas.textBaseline = 'top';
-  labelCanvas.textAlign = 'left';
+// draw the columns that were selected
+function drawSelectedFields(canvas, box, offset, field){
+  canvas.fillStyle = field.fillStyle;
+  canvas.font = field.lineHeight + 'px sans-serif';
+  canvas.textBaseline = 'top';
+  canvas.textAlign = field.textAlign;
 
-  for (var k in selectedColumns){
+  for (var k in field.selected){
 
     // for-in guard that react yells about if it's not here
-    if (!Object.prototype.hasOwnProperty.call(selectedColumns, k)) {
+    if (!Object.prototype.hasOwnProperty.call(field.selected, k)) {
       break;
     }
-    const columnName = selectedColumns[k]['field_name'];
-    labelCanvas.fillText(columnName, boxX + boxPaddingLeft, boxY + boxPaddingTop + yOffset);
-    yOffset += sourceLineHeight;
+    const columnName = field.selected[k]['field_name'];
+    canvas.fillText(columnName, box.x + box.padding.left, box.y + box.padding.top + offset.y);
+    offset.y += field.lineHeight + 2;
   }
 
-  // number of remaining columns to be displayed
-  const colRemainNum = Object.keys(allColumns).length - Object.keys(selectedColumns).length
-  const text = colRemainNum + ' more fields...'
-  labelCanvas.fillStyle = 'gray';
-  labelCanvas.fillText(text, boxX + boxPaddingLeft, boxY + boxPaddingTop + yOffset)
-  yOffset += sourceLineHeight + boxPaddingTop
-
-  // background rectangle
-  // labelCanvas.fillStyle = '#e5e5e5';
-  // labelCanvas.fillRect(boxX, boxY, boxWidth, yOffset);
-
-  // draw a rectangle around the box
-  labelCanvas.strokeStyle = 'black';
-  labelCanvas.strokeRect(boxX, boxY, boxWidth, yOffset);
-
-
-
+  return offset;
 }
+
+// draw count of remaining columns that were not selected
+function drawNumUnselectedColumns(canvas, box, offset, field) {
+
+  const text = field.numUnselected + ' more fields...'
+  canvas.fillStyle = 'gray';
+  canvas.fillText(text, box.x + box.padding.left, box.y + box.padding.top + offset.y)
+  offset.y += field.lineHeight + box.padding.top
+
+  return offset;
+}
+
+// draw a border around the label
+function drawRectangleBorder(canvas, box, offset){
+  canvas.strokeStyle = 'black';
+  canvas.strokeRect(box.x, box.y, box.width, offset.y);
+}
+
+// draw a background for the label
+function drawRectangleBackground(canvas, box, offset) {
+  canvas.fillStyle = '#e5e5e5';
+  canvas.fillRect(box.x, box.y, box.width, offset.y);
+}
+
 
 function getLines(canvas, text, maxWidth) {
     var characters = text.split('');
