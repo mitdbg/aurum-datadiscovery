@@ -30,20 +30,29 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   box.x = x - box.width/2;
   box.y = y + box.margin.top;
 
-  // table
+  // table name
   var source = {}
   source.lineHeight = 14;
   source.fillStyle = 'black';
   source.textAlign = 'center';
+  source.lineSpace = 0;
+  source.marginBottom = 9;
   source.name = sourceName;
+
+  // line
+  var line = {}
+  line.marginBottom = 2;
 
   // column
   var field = {}
   field.lineHeight = 12;
   field.fillStyle = 'black'
   field.textAlign = 'left';
+  field.lineSpace = 2;
   field.selected = selectedColumns;
   field.numUnselected = Object.keys(allColumns).length - Object.keys(field.selected).length
+
+
 
   // offset variable, which needs to die
   var offset = {}
@@ -51,9 +60,22 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
 
   offset = drawSource(canvas, box, offset, source);
 
-  offset = drawLine(canvas, box, offset)
+  var numLines = getLines(canvas, source.name, box.width - box.padding.left - box.padding.right).length
+  box.height = numLines * (source.lineHeight + source.lineSpace) + source.marginBottom;
+
+  console.log(offset.y)
+  console.log(box.height)
+
+  offset = drawLine(canvas, box, offset, line)
+  box.height = numLines * (source.lineHeight + source.lineSpace) + source.marginBottom + box.padding.top;
+  console.log(offset.y)
+  console.log(box.height)
 
   offset = drawSelectedFields(canvas, box, offset, field);
+  // box.height = numLines * (source.lineHeight + source.lineSpace) + source.marginBottom + box.padding.top + ;
+  // console.log(offset.y)
+  // console.log(box.height)
+
 
   offset = drawNumUnselectedColumns(canvas, box, offset, field);
 
@@ -68,26 +90,26 @@ function drawSource(canvas, box, offset, source) {
   canvas.font = source.lineHeight + 'px sans-serif';
   canvas.textBaseline = 'top';
   canvas.textAlign = source.textAlign;
-  const lines = getLines(canvas, source.name, box.width - 2*box.padding.left)
+  const lines = getLines(canvas, source.name, box.width - box.padding.left - box.padding.right)
 
   // iterate through lines
   for (var i = 0; i < lines.length; i++) {
     const line = lines[i]
-    offset.y = i * source.lineHeight;
+    offset.y = offset.y * source.lineHeight;
     canvas.fillText(line, box.x + box.width/2, box.y + box.padding.top + offset.y);
   }
 
-  offset.y += source.lineHeight + 9;
+  offset.y += source.lineHeight + source.marginBottom;
   return offset
 }
 
 // draw a horizontal line
-function drawLine(canvas, box, offset) {
+function drawLine(canvas, box, offset, line) {
   canvas.beginPath();
   canvas.moveTo(box.x, box.y + offset.y);
   canvas.lineTo(box.x + box.width, box.y + offset.y);
   canvas.stroke();
-  offset.y += 2;
+  offset.y += line.marginBottom;
 
   return offset;
 }
@@ -107,7 +129,7 @@ function drawSelectedFields(canvas, box, offset, field){
     }
     const columnName = field.selected[k]['field_name'];
     canvas.fillText(columnName, box.x + box.padding.left, box.y + box.padding.top + offset.y);
-    offset.y += field.lineHeight + 2;
+    offset.y += field.lineHeight;
   }
 
   return offset;
@@ -131,9 +153,9 @@ function drawRectangleBorder(canvas, box, offset){
 }
 
 // draw a background for the label
-function drawRectangleBackground(canvas, box, offset) {
+function drawRectangleBackground(canvas, box) {
   canvas.fillStyle = '#e5e5e5';
-  canvas.fillRect(box.x, box.y, box.width, offset.y);
+  canvas.fillRect(box.x, box.y, box.width, box.y + box.height);
 }
 
 
