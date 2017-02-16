@@ -10,7 +10,7 @@ export function clearLabels(){
 
 }
 
-export function drawInfoBox(sourceName, columns, x, y){
+export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   const labelCanvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
   const boxWidth = 250;
   const boxHeight = 200;
@@ -26,14 +26,6 @@ export function drawInfoBox(sourceName, columns, x, y){
   const fieldLineHeight = 12; // number of pixels in a row
 
   var yOffset = 0; // how far offset the cursor should be
-
-  // background rectangle
-  labelCanvas.fillStyle = '#e5e5e5';
-  labelCanvas.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-  // stroke around the rectangle
-  labelCanvas.strokeStyle = 'black';
-  labelCanvas.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
   // draw table name
   labelCanvas.fillStyle = 'black';
@@ -52,7 +44,7 @@ export function drawInfoBox(sourceName, columns, x, y){
   // move the yOffset to below the last line
   // and add an X px margin
   yOffset += sourceLineHeight + 9;
-  console.log(yOffset);
+  // console.log(yOffset);
 
   // draw a line at the y offset (under the last bit of source text)
   labelCanvas.beginPath();
@@ -69,17 +61,31 @@ export function drawInfoBox(sourceName, columns, x, y){
   labelCanvas.textBaseline = 'top';
   labelCanvas.textAlign = 'left';
 
-  for (var k in columns){
+  for (var k in selectedColumns){
 
     // for-in guard that react yells about if it's not here
-    if (!Object.prototype.hasOwnProperty.call(columns, k)) {
+    if (!Object.prototype.hasOwnProperty.call(selectedColumns, k)) {
       break;
     }
-    const columnName = columns[k]['field_name'];
+    const columnName = selectedColumns[k]['field_name'];
     labelCanvas.fillText(columnName, boxX + boxPaddingLeft, boxY + boxPaddingTop + yOffset);
     yOffset += sourceLineHeight;
   }
-  console.log('foo');
+
+  // number of remaining columns to be displayed
+  const colRemainNum = Object.keys(allColumns).length - Object.keys(selectedColumns).length
+  const text = colRemainNum + ' more fields...'
+  labelCanvas.fillStyle = 'gray';
+  labelCanvas.fillText(text, boxX + boxPaddingLeft, boxY + boxPaddingTop + yOffset)
+  yOffset += sourceLineHeight + boxPaddingTop
+
+  // background rectangle
+  // labelCanvas.fillStyle = '#e5e5e5';
+  // labelCanvas.fillRect(boxX, boxY, boxWidth, yOffset);
+
+  // draw a rectangle around the box
+  labelCanvas.strokeStyle = 'black';
+  labelCanvas.strokeRect(boxX, boxY, boxWidth, yOffset);
 
 
 
