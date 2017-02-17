@@ -434,7 +434,7 @@ class SSAPI:
                 names.append(('class', (kr_name, cl), m))
 
         # Index all the minhashes
-        lsh_index = MinHashLSH(threshold=0.3, num_perm=64)
+        lsh_index = MinHashLSH(threshold=0.6, num_perm=64)
 
         for idx in range(len(names)):
             lsh_index.insert(idx, names[idx][2])
