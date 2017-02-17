@@ -268,9 +268,11 @@ if __name__ == '__main__':
 
 
     #owl_file = '/Users/ra-mit/data/uniprot/uniprotcore.owl'
-    owl_file = 'opencyc.owl'
+    #owl_file = 'opencyc.owl'
+    #owl_file = 'efo.owl'
+    """
+    owl_file = "/home/jian/EKG/dbpedia_2016-04.owl"
     o = OntoHandler()
-
 
     s = time.time()
     o.parse_ontology(owl_file)
@@ -278,10 +280,12 @@ if __name__ == '__main__':
     print("Parse: " + str(e - s))
 
 
-    o.store_ontology("cache_onto/opencyc.pkl")
+    #o.store_ontology("cache_onto/opencyc.pkl")
+    #exit()
 
+    o.store_ontology("cache_onto/dbpedia.pkl")
     exit()
-
+    """
 
     s = time.time()
     file = "cache_onto/dbpedia.pkl"

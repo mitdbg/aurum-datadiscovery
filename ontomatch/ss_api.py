@@ -385,6 +385,7 @@ class SSAPI:
         st = time.time()
         names = []
         seen_fields = []
+
         for (db_name, source_name, field_name, _) in self.network.iterate_values():
             orig_field_name = field_name
             if field_name not in seen_fields:
@@ -885,7 +886,8 @@ if __name__ == "__main__":
     #test_find_semantic_sim()
     #exit()
 
-    test("../models/massdata/")
+    #test("../models/massdata/")
+    test("/home/jian/EKG/aurum-datadiscovery/models_test/massdata/")
     exit()
 
     print("SSAPI")
@@ -909,4 +911,3 @@ if __name__ == "__main__":
     om = main(path_to_model)
 
     # do things with om now, for example, for testing
-
