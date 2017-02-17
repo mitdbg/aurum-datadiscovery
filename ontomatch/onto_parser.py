@@ -18,6 +18,7 @@ class OntoHandler:
         self.o = None
         self.objectProperties = []
         self.class_hierarchy = []
+        self.class_hierarchy_signatures = []
 
     def parse_ontology(self, file):
         """
@@ -30,6 +31,7 @@ class OntoHandler:
         self.o = ont
         self.objectProperties = self.o.objectProperties  # cache this
         self.class_hierarchy = self.__get_class_levels_hierarchy()  # preprocess this
+        self.class_hierarchy_signatures = self.compute_classes_signatures()
 
     def store_ontology(self, path):
         """
@@ -40,6 +42,8 @@ class OntoHandler:
         """
         f = open(path, 'wb')
         pickle.dump(self.o, f)
+        pickle.dump(self.class_hierarchy, f)
+        pickle.dump(self.class_hierarchy_signatures, f)
         f.close()
 
     def load_ontology(self, path):
@@ -50,8 +54,11 @@ class OntoHandler:
         """
         f = open(path, 'rb')
         self.o = pickle.load(f)
+        self.class_hierarchy = pickle.load(f)
+        self.class_hierarchy_signatures = pickle.load(f)
         self.objectProperties = self.o.objectProperties
-        self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
+        f.close()
+        #self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
 
     def classes(self):
         """
@@ -93,7 +100,8 @@ class OntoHandler:
 
     def __get_class_levels_hierarchy(self, element=None):
         if not element:
-            levels = [[top.id for top in self.o.toplayer]]
+            levels = [(self.ontology_name, [(top.id, top.bestLabel().title())
+                                            for top in self.o.toplayer])]  # name of top-level level is onto name
             for x in self.o.toplayer:
                 levels.extend(self.__get_class_levels_hierarchy(x))
             return levels
@@ -101,7 +109,8 @@ class OntoHandler:
         if not element.children():
             return []
 
-        levels = [[child.id for child in element.children()]]
+        levels = [(element.bestLabel().title(), [(child.id, child.bestLabel().title())
+                                                 for child in element.children()])]  # name of parent
         for sub in element.children():
             levels.extend(self.__get_class_levels_hierarchy(sub))
         return levels
@@ -113,35 +122,46 @@ class OntoHandler:
         """
         return len(self.class_hierarchy)
 
-    def class_hierarchy_iterator(self, class_id=False):
+    def class_hierarchy_iterator(self):
         """
         Returns lists of classes that are at the same level of the hierarhcy, i.e., node in a tree
         :return:
         """
-        if class_id:
-            return self.class_hierarchy
-        else:
-            # (level_id, [classes in that level])
-            class_levels = []
-            for i in range(len(self.class_hierarchy)):
-                level = self.class_hierarchy[i]
-                if len(level) > 5:
-                    class_levels.append((i, [self.name_of_class(c) for c in level]))
+        for level in self.class_hierarchy:
+            name = level[0]  # str with the name of the level (parent name)
+            classes = level[1]  # [(id, class_name)]
+            yield name, classes
 
-        return class_levels
-
-    def get_classes_signatures(self):
+    def compute_classes_signatures(self):
         """
         Return a minhash signature of the class-names per class hierarchy level
         :return:
         """
+        st = time.time()
+        mh_time = 0
         class_hierarchy_signatures = []
-        class_hierarchies = self.class_hierarchy_iterator()
-        for level_name, ch in class_hierarchies:
+        for level_name, list_classes in self.class_hierarchy_iterator():
+            if len(list_classes) < 10:
+                continue  # filter out short classes
+            ch = [el[1] for el in list_classes]
+            smh = time.time()
             mh = minhash(ch)
+            emh = time.time()
+            mh_time += (emh - smh)
             chs = (level_name, mh)
             class_hierarchy_signatures.append(chs)
+        et = time.time()
+        total_time = et - st
+        print("Total time signatures: " + str(total_time))
+        print("Total time mh: " + str(mh_time))
+        print("Ratio: " + str(mh_time/total_time))
         return class_hierarchy_signatures
+
+    def get_classes_signatures(self, filter=None):
+        if filter is None:
+            return self.class_hierarchy_signatures
+        else:
+            return [el for el in self.class_hierarchy_signatures]
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -272,6 +292,9 @@ if __name__ == '__main__':
     #owl_file = 'efo.owl'
     """
     owl_file = "/home/jian/EKG/dbpedia_2016-04.owl"
+    owl_file = 'dbpedia_2016-04.owl'
+    owl_file = "efo.owl"
+
     o = OntoHandler()
 
     s = time.time()
@@ -279,6 +302,14 @@ if __name__ == '__main__':
     e = time.time()
     print("Parse: " + str(e - s))
 
+    o.store_ontology("cache_onto/efo.pkl")
+
+    o = OntoHandler()
+    o.load_ontology("cache_onto/efo.pkl")
+
+    for name, sig in o.class_hierarchy_signatures:
+        print(name)
+        print(sig)
 
     #o.store_ontology("cache_onto/opencyc.pkl")
     #exit()
@@ -293,6 +324,9 @@ if __name__ == '__main__':
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
+
+    for el in o.class_hierarchy_iterator():
+        print(el)
 
     for cl in o.classes():
         cl = nlp.camelcase_to_snakecase(cl)

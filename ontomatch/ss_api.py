@@ -15,6 +15,7 @@ from dataanalysis import nlp_utils as nlp
 import time
 from dataanalysis import dataanalysis as da
 from enum import Enum
+from modelstore import elasticstore as store
 
 # Have a list of accepted formats in the ontology parser
 
@@ -74,11 +75,36 @@ class SSAPI:
             mh_obj.hashvalues = mh_array
             res = self.content_sim_index.query(mh_obj)
             for r_nid in res:
-                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])
+                (nid, db_name, source_name, field_name) = self.network.get_info_for([r_nid])[0]
                 # matching from db attr to name
                 matching = ((db_name, source_name, field_name), (kr_name, class_name))
                 positive_matches.append(matching)
         return positive_matches
+
+    def __build_content_sim(self, threshold):
+        # Build a content similarity index
+        # Content_sim text relation (minhash-based)
+        start_text_sig_sim = time.time()
+        st = time.time()
+        mh_signatures = self.store_client.get_all_mh_text_signatures()
+        et = time.time()
+        print("Time to extract minhash signatures from store: {0}".format(str(et - st)))
+        print("!!3 " + str(et - st))
+
+        content_index = MinHashLSH(threshold=threshold, num_perm=512)
+        mh_sig_obj = []
+        # Create minhash objects and index
+        for nid, mh_sig in mh_signatures:
+            mh_obj = MinHash(num_perm=512)
+            mh_array = np.asarray(mh_sig, dtype=int)
+            mh_obj.hashvalues = mh_array
+            content_index.insert(nid, mh_obj)
+            mh_sig_obj.append((nid, mh_obj))
+        end_text_sig_sim = time.time()
+        print("Total text-sig-sim (minhash): {0}".format(str(end_text_sig_sim - start_text_sig_sim)))
+        print("!!4 " + str(end_text_sig_sim - start_text_sig_sim))
+
+        self.content_sim_index = content_index
 
     def find_matchings(self):
         """
@@ -86,13 +112,17 @@ class SSAPI:
         :return: list of matchings
         """
         all_matchings = dict()
+
+        # Build content sim
+        self.__build_content_sim(0.6)
+
         # L1: [class] -> attr.content
         st = time.time()
         print("Finding L1 matchings...")
         kr_class_signatures = []
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures += kr_handler.get_classes_signatures()
+            kr_class_signatures += kr_handler.get_clhashasses_signatures(filter=5)
             l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
@@ -100,8 +130,10 @@ class SSAPI:
         print("Took: " + str(et-st))
         all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
-        #for match in l1_matchings:
-        #    print(match)
+        for match in l1_matchings:
+            print(match)
+
+        exit()
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
@@ -198,6 +230,10 @@ class SSAPI:
         print("ALL: " + str(total_matchings_pre_combined))
         combined_matchings, l4_matchings = self._combine_matchings(all_matchings)
         print("COM: " + str(len(combined_matchings)))
+
+        print("l6 matchings")
+        for m in l6_matchings:
+            print(m)
 
         return combined_matchings
 
@@ -791,7 +827,7 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
 
     matchings = om.find_matchings()
     #matchings = om.find_sem_coh_matchings()
@@ -888,6 +924,7 @@ if __name__ == "__main__":
 
     #test("../models/massdata/")
     test("/home/jian/EKG/aurum-datadiscovery/models_test/massdata/")
+    #test("../models/chembl21/")
     exit()
 
     print("SSAPI")
