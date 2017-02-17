@@ -77,19 +77,23 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
 
   // triangle menu
   var triangle = {};
-  triangle.width = 6
+  triangle.fillStyle = '#b2b2b2';
+  triangle.width = 17;
+  triangle.height = 10;
+  triangle.marginLeft = 5;
+  triangle.marginTop = (line.y - source.y)/2 - triangle.height;
 
   triangle.left = {};
-  triangle.left.x = box.x + box.width/2 + 5;
-  triangle.left.y = box.y + 5;
+  triangle.left.x = box.x + box.width + triangle.marginLeft;
+  triangle.left.y = box.y + triangle.marginTop;
 
   triangle.right = {};
-  triangle.right.x = box.x + box.width/2 + triangle.width + 5;
-  triangle.right.y = triangle.right.y
+  triangle.right.x = triangle.left.x + triangle.width;
+  triangle.right.y = triangle.left.y;
 
   triangle.bottom = {}
-  triangle.bottom.x = box.x + box.width/2 + triangle.width/2 + 5
-  triangle.bottom.y = box.y + 5 + 5;
+  triangle.bottom.x = triangle.left.x + triangle.width/2;
+  triangle.bottom.y = triangle.left.y + triangle.height;
 
 
   drawRectangleBackground(canvas, box);
@@ -157,7 +161,7 @@ function drawNumUnselectedFields(canvas, box, fieldUnselected) {
 }
 
 function drawTriangle(canvas, box, triangle) {
-  canvas.fillStyle = '#000'
+  canvas.fillStyle = triangle.fillStyle;
   canvas.beginPath();
   canvas.moveTo(triangle.left.x, triangle.left.y);
   canvas.lineTo(triangle.right.x, triangle.right.y);
