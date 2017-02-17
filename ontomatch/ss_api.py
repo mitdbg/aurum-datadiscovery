@@ -122,7 +122,7 @@ class SSAPI:
         kr_class_signatures = []
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures += kr_handler.get_clhashasses_signatures(filter=5)
+            kr_class_signatures += kr_handler.get_classes_signatures()
             l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
@@ -133,7 +133,7 @@ class SSAPI:
         for match in l1_matchings:
             print(match)
 
-        exit()
+
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
@@ -253,7 +253,7 @@ class SSAPI:
         for schema, kr in l1_matchings:
             db_name, src_name, attr_name = schema
             kr_name, cla_name = kr
-            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L1_CLASSVALUE_ATTRVALUE])
+            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L1_CLASSNAME_ATTRVALUE])
 
         for schema, kr in l2_matchings:
             db_name, src_name, attr_name = schema
@@ -286,26 +286,6 @@ class SSAPI:
                 # TODO: only append in the matching types are something except L1?
                 l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L6_CLASSNAME_RELATION_SEMSIG)
 
-        """
-        for key, matching_types in l_combined.items():
-            matching, types = matching_types
-            running_score = 0
-            supported_by_basic_signals = False
-            if MatchingType.L2_CLASSVALUE_ATTRVALUE in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            if MatchingType.L5_CLASSNAME_ATTRNAME_SYN in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            elif MatchingType.L52_CLASSNAME_ATTRNAME_SEM in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            if MatchingType.L6_CLASSNAME_RELATION_SEMSIG in types:
-                if supported_by_basic_signals:
-                    running_score += 1
-            combined_matchings.append((matching, running_score))
-        """
-
         # L4 and L42 have their own matching too
         l4_matchings = all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN]
         combined_matchings = []
@@ -316,6 +296,8 @@ class SSAPI:
             #    matching = el[0]
             #    matching_types = el[1]
             combined_matchings.append((matching, matching_types))
+
+        combined_matchings = sorted(combined_matchings, key=lambda x: len(x[1]), reverse=True)
 
         return combined_matchings, l4_matchings
 

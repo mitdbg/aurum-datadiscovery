@@ -306,9 +306,7 @@ if __name__ == '__main__':
         print(name)
         print(sig)
 
-
     exit()
-
 
     s = time.time()
     file = "cache_onto/dbpedia.pkl"
