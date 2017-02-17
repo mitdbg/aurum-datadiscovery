@@ -1,4 +1,4 @@
-// hacky little file that does things like clear the labels canvas
+// hacky little file that does things like clear the labels cxt
 
 export function clearLabels(){
   const labelCanvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
@@ -11,8 +11,23 @@ export function clearLabels(){
 }
 
 export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
-  const canvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
 
+  // get the sigma-mouse canvas
+  const mouseCanvas = document.getElementsByClassName('sigma-mouse')[0]
+
+  // clone it and modify
+  var newCanvas = mouseCanvas.cloneNode(true);
+  newCanvas.className = 'aurum-overlay';
+  newCanvas.id = 'aurum-overlay';
+  const cxt = newCanvas.getContext('2d');
+
+  // assume everything is retna for now, and scale accordingly
+  cxt.scale(2,2);
+
+  // put the clone on top of the mouse canvas
+  insertAfter(mouseCanvas, newCanvas);
+
+  // define elements to be drawn
   var box = {}
 
   box.margin = {}
@@ -40,14 +55,14 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   source.marginBottom = 9;
   source.name = sourceName;
 
-  // set canvass variables before getLines
-  canvas.fillStyle = source.fillStyle;
-  canvas.font = source.lineHeight + 'px sans-serif';
-  canvas.textBaseline = 'top';
-  canvas.textAlign = source.textAlign;
+  // set cxts variables before getLines
+  cxt.fillStyle = source.fillStyle;
+  cxt.font = source.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = source.textAlign;
 
   // getLines
-  source.lines = getLines(canvas, source.name, box.width - box.padding.left - box.padding.right)
+  source.lines = getLines(cxt, source.name, box.width - box.padding.left - box.padding.right)
   source.y = box.padding.top + box.y;
 
   // line
@@ -96,48 +111,51 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   triangle.bottom.y = triangle.left.y + triangle.height;
 
 
-  drawRectangleBackground(canvas, box);
-  drawRectangleBorder(canvas, box);
-  drawTriangle(canvas, box, triangle);
+  drawRectangleBackground(cxt, box);
+  drawRectangleBorder(cxt, box);
+  drawTriangle(cxt, box, triangle);
 
-  drawSource(canvas, box, source);
-  drawLine(canvas, box, line);
-  drawSelectedFields(canvas, box, field);
-  drawNumUnselectedFields(canvas, box, fieldUnselected);
+  drawSource(cxt, box, source);
+  drawLine(cxt, box, line);
+  drawSelectedFields(cxt, box, field);
+  drawNumUnselectedFields(cxt, box, fieldUnselected);
 
+  // add an event handler
+  newCanvas = document.getElementById('aurum-overlay')
+  newCanvas.addEventListener('click', (event)=>remove(event, newCanvas));
 
 }
 
 // draw the table name
-function drawSource(canvas, box, source) {
-  canvas.fillStyle = source.fillStyle;
-  canvas.font = source.lineHeight + 'px sans-serif';
-  canvas.textBaseline = 'top';
-  canvas.textAlign = source.textAlign;
+function drawSource(cxt, box, source) {
+  cxt.fillStyle = source.fillStyle;
+  cxt.font = source.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = source.textAlign;
 
   // iterate through lines
   var offset = 0;
   for (var i = 0; i < Object.keys(source.lines).length; i++) {
     const line = source.lines[i]
-    canvas.fillText(line, box.x + box.width/2, source.y + offset);
+    cxt.fillText(line, box.x + box.width/2, source.y + offset);
     offset += source.lineHeight + source.lineSpace;
   }
 }
 
 // draw a horizontal line
-function drawLine(canvas, box, line) {
-  canvas.beginPath();
-  canvas.moveTo(box.x, line.y);
-  canvas.lineTo(box.x + box.width, line.y);
-  canvas.stroke();
+function drawLine(cxt, box, line) {
+  cxt.beginPath();
+  cxt.moveTo(box.x, line.y);
+  cxt.lineTo(box.x + box.width, line.y);
+  cxt.stroke();
 }
 
 // draw the columns that were selected
-function drawSelectedFields(canvas, box, field){
-  canvas.fillStyle = field.fillStyle;
-  canvas.font = field.lineHeight + 'px sans-serif';
-  canvas.textBaseline = 'top';
-  canvas.textAlign = field.textAlign;
+function drawSelectedFields(cxt, box, field){
+  cxt.fillStyle = field.fillStyle;
+  cxt.font = field.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = field.textAlign;
 
   var offset = 0;
   for (var k in field.selected){
@@ -147,44 +165,52 @@ function drawSelectedFields(canvas, box, field){
       break;
     }
     const columnName = field.selected[k]['field_name'];
-    canvas.fillText(columnName, box.x + box.padding.left, field.y + offset);
+    cxt.fillText(columnName, box.x + box.padding.left, field.y + offset);
     offset += field.lineHeight + field.lineSpace;
   }
 
 }
 
 // draw count of remaining columns that were not selected
-function drawNumUnselectedFields(canvas, box, fieldUnselected) {
+function drawNumUnselectedFields(cxt, box, fieldUnselected) {
   const text = fieldUnselected.num + ' more fields...'
-  canvas.fillStyle = 'gray';
-  canvas.fillText(text, box.x + box.padding.left, fieldUnselected.y)
+  cxt.fillStyle = 'gray';
+  cxt.fillText(text, box.x + box.padding.left, fieldUnselected.y)
 }
 
-function drawTriangle(canvas, box, triangle) {
-  canvas.fillStyle = triangle.fillStyle;
-  canvas.beginPath();
-  canvas.moveTo(triangle.left.x, triangle.left.y);
-  canvas.lineTo(triangle.right.x, triangle.right.y);
-  canvas.lineTo(triangle.bottom.x, triangle.bottom.y);
-  canvas.fill();
+function drawTriangle(cxt, box, triangle) {
+  cxt.fillStyle = triangle.fillStyle;
+  cxt.beginPath();
+  cxt.moveTo(triangle.left.x, triangle.left.y);
+  cxt.lineTo(triangle.right.x, triangle.right.y);
+  cxt.lineTo(triangle.bottom.x, triangle.bottom.y);
+  cxt.fill();
+
 }
 
 // draw a border around the label
-function drawRectangleBorder(canvas, box, offset){
-  canvas.strokeStyle = 'black';
-  canvas.strokeRect(box.x, box.y, box.width, box.height);
+function drawRectangleBorder(cxt, box, offset){
+  cxt.strokeStyle = 'black';
+  cxt.strokeRect(box.x, box.y, box.width, box.height);
 }
 
 // draw a background for the label
-function drawRectangleBackground(canvas, box) {
-  canvas.fillStyle = '#f2f2f2';
-  canvas.fillRect(box.x, box.y, box.width, box.height);
+function drawRectangleBackground(cxt, box) {
+  cxt.fillStyle = '#f2f2f2';
+  cxt.fillRect(box.x, box.y, box.width, box.height);
 }
 
+function remove(event, canvas){
+  console.log('aurum UI event');
+  console.log(event);
+  canvas.parentNode.removeChild(canvas);
+}
 
+function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
 
-
-function getLines(canvas, text, maxWidth){
+function getLines(cxt, text, maxWidth){
 
     var characters = text.split('');
     var lines = [];
@@ -192,7 +218,7 @@ function getLines(canvas, text, maxWidth){
 
     for (var i = 1; i < characters.length; i++) {
         var char = characters[i];
-        var width = canvas.measureText(currentLine + char).width;
+        var width = cxt.measureText(currentLine + char).width;
         if (width < maxWidth) {
             currentLine += char;
         } else {
