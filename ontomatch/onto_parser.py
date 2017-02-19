@@ -30,6 +30,9 @@ class OntoHandler:
         ont = ontospy.Ontospy(file)
         self.o = ont
         self.objectProperties = self.o.objectProperties  # cache this
+        self.obtain_class_hierarchy_and_signatures()
+
+    def obtain_class_hierarchy_and_signatures(self):
         self.class_hierarchy = self.__get_class_levels_hierarchy()  # preprocess this
         self.class_hierarchy_signatures = self.compute_classes_signatures()
 
@@ -98,12 +101,26 @@ class OntoHandler:
         else:
             return -1
 
-    def __get_class_levels_hierarchy(self, element=None):
-        if not element:
+    def fake(self):
+        return self.__get_class_levels_hierarchy()
+
+    def __get_class_levels_hierarchy(self):
+
+        flatten = []
+
+        for c in self.o.classes:
+            if len(c.children()) > 0:
+                el = (c.bestLabel().title(), [(ch.id, ch.bestLabel().title()) for ch in c.children()])
+                flatten.append(el)
+        return flatten
+
+    def __get_class_levels_hierarchy2(self, element=None):
+        if not element:  # then levels is also None, create a list
             levels = [(self.ontology_name, [(top.id, top.bestLabel().title())
                                             for top in self.o.toplayer])]  # name of top-level level is onto name
             for x in self.o.toplayer:
-                levels.extend(self.__get_class_levels_hierarchy(x))
+                print(str(len(levels)))
+                levels.extend(self.__get_class_levels_hierarchy2(element=x))
             return levels
 
         if not element.children():
@@ -112,7 +129,7 @@ class OntoHandler:
         levels = [(element.bestLabel().title(), [(child.id, child.bestLabel().title())
                                                  for child in element.children()])]  # name of parent
         for sub in element.children():
-            levels.extend(self.__get_class_levels_hierarchy(sub))
+            levels.extend(self.__get_class_levels_hierarchy2(element=sub))
         return levels
 
     def class_levels_count(self):
@@ -291,7 +308,7 @@ if __name__ == '__main__':
     owl_file = "efo.owl"
     o = OntoHandler()
 
-
+    """
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
@@ -307,20 +324,45 @@ if __name__ == '__main__':
         print(sig)
 
     exit()
+    """
+
 
     s = time.time()
-    file = "cache_onto/dbpedia.pkl"
+    file = "cache_onto/efo.pkl"
 
     o.load_ontology(file)
     e = time.time()
     print("Load: " + str(e - s))
 
-    for el in o.class_hierarchy_iterator():
-        print(el)
-
-    for cl in o.classes():
-        cl = nlp.camelcase_to_snakecase(cl)
+    for cl in o.class_hierarchy:
         print(cl)
+
+    #print("computing signatures for class hierarchy...")
+    #s = time.time()
+    #ch = o.obtain_class_hierarchy_and_signatures()
+    #e = time.time()
+    #print("computing signatures for class hierarchy...OK")
+    #print("Time to create class hierarchy: " + str(e-s))
+
+    #print("storing it back...")
+    #o.store_ontology("cache_onto/efo.pkl")
+    #print("storing it back...OK")
+
+    #for el in ch:
+    #    print(el)
+
+    """
+    cl = o.o.toplayer[6].children()[1].children()[10].children()  # this is cell line
+    print(str(len(cl)))
+    for c in cl:
+        label = c.bestLabel().title()
+        print(label)
+    print(str(len(cl)))
+    """
+
+    #for cl in o.classes():
+    #    cl = nlp.camelcase_to_snakecase(cl)
+    #    print(cl)
 
     """
     print("classes")

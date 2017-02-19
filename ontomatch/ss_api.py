@@ -114,7 +114,7 @@ class SSAPI:
         all_matchings = dict()
 
         # Build content sim
-        self.__build_content_sim(0.6)
+        self.__build_content_sim(0.4)
 
         # L1: [class] -> attr.content
         st = time.time()
@@ -133,7 +133,7 @@ class SSAPI:
         for match in l1_matchings:
             print(match)
 
-
+        exit()
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
