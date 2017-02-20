@@ -19,6 +19,7 @@ class MatchingType(Enum):
     L5_CLASSNAME_ATTRNAME_SYN = 5
     L52_CLASSNAME_ATTRNAME_SEM = 6
     L6_CLASSNAME_RELATION_SEMSIG = 7
+    L7_CLASSNAME_ATTRNAME_FUZZY = 8
 
 
 def combine_matchings(all_matchings):
@@ -444,6 +445,20 @@ def find_sem_coh_matchings(self):
                     matchings.append(match)
     return matchings
 
+
+def find_hierarchy_content_fuzzy():
+
+    # access class names
+
+    # query elastic for fuzzy matches
+
+    # keep matches in structure
+
+    # consolidate from time to time
+
+    # return most promising matches
+
+    return
 
 if __name__ == "__main__":
     print("Matcher lib")

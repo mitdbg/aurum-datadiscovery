@@ -121,8 +121,6 @@ class SSAPI:
         for match in l1_matchings:
             print(match)
 
-        exit()
-
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
         st = time.time()
@@ -222,6 +220,15 @@ class SSAPI:
         print("l6 matchings")
         for m in l6_matchings:
             print(m)
+
+        # L7: [Attribute names] -> [class names] (content - fuzzy naming)
+        print("Finding L7 matchings...")
+        st = time.time()
+        l7_matchings = matcherlib.find_hierarchy_content_fuzzy()
+        print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
 
         return combined_matchings
 
