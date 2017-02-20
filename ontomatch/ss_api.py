@@ -224,7 +224,7 @@ class SSAPI:
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
         st = time.time()
-        l7_matchings = matcherlib.find_hierarchy_content_fuzzy()
+        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
         print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -498,10 +498,33 @@ def test_find_semantic_sim():
             if sim > 0.4:
                 print(str(cl) + " -> " + str(sim))
 
+def test_fuzzy(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    matchings = matcherlib.find_hierarchy_content_fuzzy(om.kr_handlers, store_client)
+
+    for m in matchings:
+        print(m)
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
     #exit()
+
+    test_fuzzy("../models/chembl21/")
+    exit()
 
     test("../models/chembl21/")
     exit()

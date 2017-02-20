@@ -8,6 +8,8 @@ from ontomatch import ss_utils as SS
 from datasketch import MinHash, MinHashLSH
 from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from dataanalysis import dataanalysis as da
+import operator
+import numpy as np
 
 
 class MatchingType(Enum):
@@ -445,20 +447,47 @@ def find_sem_coh_matchings(self):
                     matchings.append(match)
     return matchings
 
+cutoff_likely_match_threshold = 0.4
+min_relevance_score = 0.2
+scoring_threshold = 0.4
+min_classes = 50
 
-def find_hierarchy_content_fuzzy():
 
-    # access class names
-
-    # query elastic for fuzzy matches
-
-    # keep matches in structure
-
-    # consolidate from time to time
-
-    # return most promising matches
-
-    return
+def find_hierarchy_content_fuzzy(kr_handlers, store):
+    matchings = []
+    # access class names, per hierarchical level (this is one assumption that makes sense)
+    for kr_name, kr in kr_handlers.items():
+        ch = kr.class_hierarchy
+        for ch_name, ch_classes in ch:
+            if len(ch_classes) < min_classes:  # do this only for longer hierarchies
+                continue
+            # query elastic for fuzzy matches
+            matching_evidence = defaultdict(int)
+            for class_id, class_name in ch_classes:
+                matches = store.fuzzy_keyword_match(class_name)
+                keys_in_matches = set()
+                for m in matches:
+                    # record
+                    if m.score > min_relevance_score:
+                        key = (m.db_name, m.source_name, m.field_name)
+                        keys_in_matches.add(key)
+                for k in keys_in_matches:
+                    matching_evidence[k] += 1
+            num_classes = len(ch_classes)
+            num_potential_matches = len(matching_evidence.items())
+            cutoff_likely_match = float(num_potential_matches/num_classes)
+            if cutoff_likely_match > cutoff_likely_match_threshold:  # if passes cutoff threshold then
+                continue
+            sorted_matching_evidence = sorted(matching_evidence.items(), key=operator.itemgetter(1), reverse=True)
+            # a perfect match would score 1
+            for key, value in sorted_matching_evidence:
+                score = float(value/num_classes)
+                if score > scoring_threshold:
+                    match = (key, (kr_name, ch_name))
+                    matchings.append(match)
+                else:
+                    break  # orderd, so once one does not comply, no one else does...
+    return matchings
 
 if __name__ == "__main__":
     print("Matcher lib")
