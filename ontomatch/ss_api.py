@@ -102,7 +102,7 @@ class SSAPI:
         all_matchings = dict()
 
         # Build content sim
-        self.__build_content_sim(0.4)
+        self.__build_content_sim(0.6)
 
         # L1: [class] -> attr.content
         st = time.time()
@@ -207,19 +207,8 @@ class SSAPI:
         print("Took: " + str(et - st))
         all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
 
-        # for match in l52_matchings:
+        # for match in l6_matchings:
         #    print(match)
-
-        total_matchings_pre_combined = 0
-        for values in all_matchings.values():
-            total_matchings_pre_combined += len(values)
-        print("ALL: " + str(total_matchings_pre_combined))
-        combined_matchings, l4_matchings = matcherlib.combine_matchings(all_matchings)
-        print("COM: " + str(len(combined_matchings)))
-
-        print("l6 matchings")
-        for m in l6_matchings:
-            print(m)
 
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
@@ -229,6 +218,20 @@ class SSAPI:
         et = time.time()
         print("Took: " + str(et - st))
         all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
+
+        # for match in l7_matchings:
+        #    print(match)
+
+        total_matchings_pre_combined = 0
+        for values in all_matchings.values():
+            total_matchings_pre_combined += len(values)
+        print("ALL_matchings: " + str(total_matchings_pre_combined))
+        combined_matchings, l4_matchings = matcherlib.combine_matchings(all_matchings)
+        print("COMBINED_matchings: " + str(len(combined_matchings)))
+
+        print("l7 matchings")
+        for m in l7_matchings:
+            print(m)
 
         return combined_matchings
 
@@ -410,8 +413,13 @@ def test(path_to_serialized_model):
     # Load parsed ontology
     om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
 
+    print("Finding matchings...")
+    st = time.time()
     matchings = om.find_matchings()
     #matchings = om.find_sem_coh_matchings()
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et-st))
 
     for m in matchings:
         print(m)
@@ -523,8 +531,8 @@ if __name__ == "__main__":
     #test_find_semantic_sim()
     #exit()
 
-    test_fuzzy("../models/chembl21/")
-    exit()
+    #test_fuzzy("../models/chembl21/")
+    #exit()
 
     test("../models/chembl21/")
     exit()

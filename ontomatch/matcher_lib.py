@@ -35,6 +35,7 @@ def combine_matchings(all_matchings):
     l5_matchings = all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN]
     l52_matchings = all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM]
     l6_matchings = all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG]
+    l7_matchings = all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY]
 
     l_combined = dict()
     for schema, kr in l1_matchings:
@@ -42,6 +43,13 @@ def combine_matchings(all_matchings):
         kr_name, cla_name = kr
         l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = (
         (schema, kr), [MatchingType.L1_CLASSNAME_ATTRVALUE])
+
+    for schema, kr in l7_matchings:
+        db_name, src_name, attr_name = schema
+        kr_name, cla_name = kr
+        if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
+            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(
+                MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY)
 
     for schema, kr in l2_matchings:
         db_name, src_name, attr_name = schema
