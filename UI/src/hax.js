@@ -10,7 +10,7 @@ export function clearLabels(){
 
 }
 
-export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
+export function drawMainMenu(sourceName, selectedColumns, allColumns, x, y){
 
   // get the sigma-mouse canvas
   const mouseCanvas = document.getElementsByClassName('sigma-mouse')[0]
@@ -78,7 +78,7 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   // columns selected
   var field = {}
   field.lineHeight = 12;
-  field.fillStyle = 'black'
+  field.fillStyle = 'black';
   field.textAlign = 'left';
   field.lineSpace = 2;
   field.selected = selectedColumns;
@@ -115,21 +115,31 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   triangle.bottom.x = triangle.left.x + triangle.width/2;
   triangle.bottom.y = triangle.left.y + triangle.height;
 
-
+  cxt.fillStyle = '#f2f2f2';
   drawRectangleBackground(cxt, box);
+
+  cxt.strokeStyle = 'black';
   drawRectangleBorder(cxt, box);
+
+  cxt.fillStyle = triangle.fillStyle;
   drawTriangle(cxt, box, triangle);
 
+  cxt.fillStyle = source.fillStyle;
+  cxt.font = source.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = source.textAlign;
   drawSource(cxt, box, source);
+
   drawLine(cxt, box, line);
-  drawSelectedFields(cxt, box, field);
+
+  cxt.fillStyle = field.fillStyle;
+  cxt.font = field.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = field.textAlign;
+  drawNamedFields(cxt, box, field, false);
+
+  cxt.fillStyle = 'gray';
   drawNumUnselectedFields(cxt, box, fieldUnselected);
-
-  console.log('box: ');
-  console.log(box);
-
-  console.log('triangle:')
-  console.log(triangle);
 
   // add an event handler
   newCanvas = document.getElementById('aurum-overlay')
@@ -139,11 +149,6 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
 
 // draw the table name
 function drawSource(cxt, box, source) {
-  cxt.fillStyle = source.fillStyle;
-  cxt.font = source.lineHeight + 'px sans-serif';
-  cxt.textBaseline = 'top';
-  cxt.textAlign = source.textAlign;
-
   // iterate through lines
   var offset = 0;
   for (var i = 0; i < Object.keys(source.lines).length; i++) {
@@ -162,12 +167,7 @@ function drawLine(cxt, box, line) {
 }
 
 // draw the columns that were selected
-function drawSelectedFields(cxt, box, field){
-  cxt.fillStyle = field.fillStyle;
-  cxt.font = field.lineHeight + 'px sans-serif';
-  cxt.textBaseline = 'top';
-  cxt.textAlign = field.textAlign;
-
+function drawNamedFields(cxt, box, field, seperators){
   var offset = 0;
   for (var k in field.selected){
 
@@ -177,39 +177,92 @@ function drawSelectedFields(cxt, box, field){
     }
     const columnName = field.selected[k]['field_name'];
     cxt.fillText(columnName, box.x + box.padding.left, field.y + offset);
-    offset += field.lineHeight + field.lineSpace;
-  }
 
+    offset += field.lineHeight + field.lineSpace/2.0;
+
+    if(seperators){
+      var line = {}
+      line.marginBottom = 3;
+      line.y = field.y + offset;
+      drawLine(cxt, box, line);
+    }
+
+    offset += field.lineSpace/2.0;
+  }
 }
 
 // draw count of remaining columns that were not selected
 function drawNumUnselectedFields(cxt, box, fieldUnselected) {
   const text = fieldUnselected.num + ' more fields...'
-  cxt.fillStyle = 'gray';
   cxt.fillText(text, box.x + box.padding.left, fieldUnselected.y)
 }
 
 // draw a toggle menu triangle
 function drawTriangle(cxt, box, triangle) {
-  cxt.fillStyle = triangle.fillStyle;
   cxt.beginPath();
   cxt.moveTo(triangle.left.x, triangle.left.y);
   cxt.lineTo(triangle.right.x, triangle.right.y);
   cxt.lineTo(triangle.bottom.x, triangle.bottom.y);
   cxt.fill();
-
 }
 
 // draw a border around the label
-function drawRectangleBorder(cxt, box, offset){
-  cxt.strokeStyle = 'black';
+function drawRectangleBorder(cxt, box){
+
   cxt.strokeRect(box.x, box.y, box.width, box.height);
 }
 
 // draw a background for the label
 function drawRectangleBackground(cxt, box) {
-  cxt.fillStyle = '#f2f2f2';
   cxt.fillRect(box.x, box.y, box.width, box.height);
+}
+
+function drawSecondaryMenu(cxt, box, triangle){
+  var newBox = {}
+  newBox.margin = {}
+  newBox.margin.top = 5;
+  newBox.margin.left = triangle.marginLeft;
+
+  newBox.padding = {}
+  newBox.padding.left = 3;
+  newBox.padding.right = 3;
+  newBox.padding.top = 3;
+  newBox.padding.bottom = 5;
+
+  newBox.width = 150;
+  newBox.height = null;
+
+  newBox.x = box.x + box.width + newBox.margin.left;
+  newBox.y = triangle.bottom.y + newBox.margin.top;
+
+  // edge types that can be selected
+  var field = {}
+  field.lineHeight = 12;
+  field.fillStyle = 'black';
+  field.textAlign = 'left';
+  field.lineSpace = 7;
+  field.selected = {1: {'field_name': 'Find similar context'}, '2': {'field_name':'Find similar content'}, '3': {'field_name': 'Find PKFK'}}; // stupid format to satisfy existing field drawer
+  field.y = newBox.y + newBox.padding.top;
+
+  // recompute box height
+  newBox.height = Object.keys(field.selected).length * (field.lineHeight + field.lineSpace)-1;
+
+  // actually start drawing things
+
+  cxt.fillStyle = '#f2f2f2';
+  drawRectangleBackground(cxt, newBox);
+
+  cxt.strokeStyle = 'black';
+  cxt.lineWidth = .5;
+  drawRectangleBorder(cxt, newBox);
+
+  cxt.fillStyle = field.fillStyle;
+  cxt.font = field.lineHeight + 'px sans-serif';
+  cxt.textBaseline = 'top';
+  cxt.textAlign = field.textAlign;
+  drawNamedFields(cxt, newBox, field, true);
+
+
 }
 
 // change the mouse to a pointer if over a clickable element
@@ -233,6 +286,12 @@ function handleClick(event, box, triangle, canvas){
   const clickInTriangle = inTriangle(triangle, event.layerX, event.layerY);
   if(clickInTriangle){
     console.log('click in triangle');
+    drawSecondaryMenu(canvas.getContext('2d'), box, triangle);
+  }
+
+  // remove the canvas if not clicking the box or traingle
+  if(!clickInBox && !clickInTriangle){
+    canvas.parentNode.removeChild(canvas);
   }
 }
 
