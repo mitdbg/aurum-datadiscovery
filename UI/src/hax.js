@@ -125,10 +125,16 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   drawSelectedFields(cxt, box, field);
   drawNumUnselectedFields(cxt, box, fieldUnselected);
 
+  console.log('box: ');
+  console.log(box);
+
+  console.log('triangle:')
+  console.log(triangle);
+
   // add an event handler
   newCanvas = document.getElementById('aurum-overlay')
-  newCanvas.addEventListener('click', (event)=>remove(event, newCanvas));
-
+  newCanvas.addEventListener('click', (event)=>handleClick(event, box, triangle, newCanvas));
+  newCanvas.addEventListener('mousemove', (event)=>handleMousemove(event, box, triangle));
 }
 
 // draw the table name
@@ -183,6 +189,7 @@ function drawNumUnselectedFields(cxt, box, fieldUnselected) {
   cxt.fillText(text, box.x + box.padding.left, fieldUnselected.y)
 }
 
+// draw a toggle menu triangle
 function drawTriangle(cxt, box, triangle) {
   cxt.fillStyle = triangle.fillStyle;
   cxt.beginPath();
@@ -205,10 +212,56 @@ function drawRectangleBackground(cxt, box) {
   cxt.fillRect(box.x, box.y, box.width, box.height);
 }
 
-function remove(event, canvas){
-  console.log('aurum UI event');
-  console.log(event);
-  canvas.parentNode.removeChild(canvas);
+// change the mouse to a pointer if over a clickable element
+function handleMousemove(event, box, triangle){
+  const overBox = inBox(box, event.layerX, event.layerY);
+  const overTriangle = inTriangle(triangle, event.layerX, event.layerY);
+  if(overBox || overTriangle){
+    document.body.style.cursor = 'pointer';
+  } else{
+    document.body.style.cursor = 'default';
+  }
+}
+
+// handle clicks inside of the box or trianglew
+function handleClick(event, box, triangle, canvas){
+  const clickInBox = inBox(box, event.layerX, event.layerY);
+  if(clickInBox){
+    console.log('click in box');
+  }
+
+  const clickInTriangle = inTriangle(triangle, event.layerX, event.layerY);
+  if(clickInTriangle){
+    console.log('click in triangle');
+  }
+}
+
+// are x and y inside of the box?
+function inBox(box, x, y){
+  if((box.x <= x) && (x <= box.x+box.width) && (box.y <= x) && (box.y <= box.y+box.height)){
+    return true;
+  }
+  return false;
+}
+
+// are the x and y coordinates in a triangle?
+// compute the area of the triangle, and all triangles made by the combo
+// of the click coordiantes and two other verticies
+// see if the sum of the click triangles is the same as the triangle area
+function inTriangle(triangle, x, y){
+  const a = triangleArea(triangle.left.x, triangle.left.y, triangle.right.x, triangle.right.y, triangle.bottom.x, triangle.bottom.y)
+  const a1 = triangleArea(triangle.left.x, triangle.left.y, triangle.right.x, triangle.right.y, x, y)
+  const a2 = triangleArea(triangle.left.x, triangle.left.y, x, y, triangle.bottom.x, triangle.bottom.y)
+  const a3 = triangleArea(x, y, triangle.right.x, triangle.right.y, triangle.bottom.x, triangle.bottom.y)
+
+  if (a === a1+a2+a3){
+    return true;
+  }
+  return false;
+}
+
+function triangleArea(x1, y1, x2, y2, x3, y3){
+  return Math.abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
 }
 
 function insertAfter(referenceNode, newNode) {
