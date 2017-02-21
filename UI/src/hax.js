@@ -22,7 +22,12 @@ export function drawInfoBox(sourceName, selectedColumns, allColumns, x, y){
   const cxt = newCanvas.getContext('2d');
 
   // assume everything is retna for now, and scale accordingly
-  cxt.scale(2,2);
+  // In the future, it may be possible to get the transformation of the
+  // mouseCanvas 2d context, using cxt.currentTransform.
+  // Unofrtunately, this is not supported in most browsers yet.
+  // For now, we use the less sophisticated window.devicePixelRatio
+  const scale = window.devicePixelRatio;
+  cxt.scale(scale, scale);
 
   // put the clone on top of the mouse canvas
   insertAfter(mouseCanvas, newCanvas);
