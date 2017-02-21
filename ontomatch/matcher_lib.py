@@ -105,14 +105,14 @@ def combine_matchings(all_matchings):
     return combined_matchings, l4_matchings
 
 
-def find_relation_class_attr_name_sem_matchings(self):
+def find_relation_class_attr_name_sem_matchings(network, kr_handlers):
     # Retrieve relation names
 
-    self.find_relation_class_name_sem_matchings()
+    #self.find_relation_class_name_sem_matchings()
     st = time.time()
     names = []
     seen_fields = []
-    for (db_name, source_name, field_name, _) in self.network.iterate_values():
+    for (db_name, source_name, field_name, _) in network.iterate_values():
         orig_field_name = field_name
         if field_name not in seen_fields:
             seen_fields.append(field_name)  # seen already
@@ -131,7 +131,7 @@ def find_relation_class_attr_name_sem_matchings(self):
     num_attributes_inserted = len(names)
 
     # Retrieve class names
-    for kr_name, kr_handler in self.kr_handlers.items():
+    for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)
@@ -161,12 +161,12 @@ def find_relation_class_attr_name_sem_matchings(self):
     return matchings
 
 
-def find_relation_class_attr_name_matching(self):
+def find_relation_class_attr_name_matching(network, kr_handlers):
     # Retrieve relation names
     st = time.time()
     names = []
     seen_fields = []
-    for (db_name, source_name, field_name, _) in self.network.iterate_values():
+    for (db_name, source_name, field_name, _) in network.iterate_values():
         orig_field_name = field_name
         if field_name not in seen_fields:
             seen_fields.append(field_name)  # seen already
@@ -183,7 +183,7 @@ def find_relation_class_attr_name_matching(self):
     num_attributes_inserted = len(names)
 
     # Retrieve class names
-    for kr_name, kr_handler in self.kr_handlers.items():
+    for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)
@@ -215,12 +215,12 @@ def find_relation_class_attr_name_matching(self):
     return matchings
 
 
-def find_relation_class_name_sem_matchings(self):
+def find_relation_class_name_sem_matchings(network, kr_handlers):
     # Retrieve relation names
     st = time.time()
     names = []
     seen_sources = []
-    for (db_name, source_name, _, _) in self.network.iterate_values():
+    for (db_name, source_name, _, _) in network.iterate_values():
         if source_name not in seen_sources:
             seen_sources.append(source_name)  # seen already
             source_name = source_name.replace('-', ' ')
@@ -237,7 +237,7 @@ def find_relation_class_name_sem_matchings(self):
     num_relations_inserted = len(names)
 
     # Retrieve class names
-    for kr_name, kr_handler in self.kr_handlers.items():
+    for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)
@@ -267,12 +267,12 @@ def find_relation_class_name_sem_matchings(self):
     return matchings
 
 
-def find_relation_class_name_matchings(self):
+def find_relation_class_name_matchings(network, kr_handlers):
     # Retrieve relation names
     st = time.time()
     names = []
     seen_sources = []
-    for (db_name, source_name, _, _) in self.network.iterate_values():
+    for (db_name, source_name, _, _) in network.iterate_values():
         if source_name not in seen_sources:
             seen_sources.append(source_name)  # seen already
             source_name = nlp.camelcase_to_snakecase(source_name)
@@ -288,7 +288,7 @@ def find_relation_class_name_matchings(self):
     num_relations_inserted = len(names)
 
     # Retrieve class names
-    for kr_name, kr_handler in self.kr_handlers.items():
+    for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)
@@ -413,17 +413,17 @@ def __find_relation_class_matchings(self):
     return clean_matchings
 
 
-def find_sem_coh_matchings(self):
+def find_sem_coh_matchings(network, kr_handlers):
     matchings = []
     # Get all relations with groups
     table_groups = dict()
-    for db, t, attrs in SS.read_table_columns(None, network=self.network):
+    for db, t, attrs in SS.read_table_columns(None, network=network):
         groups = SS.extract_cohesive_groups(t, attrs)
         table_groups[(db, t)] = groups
 
     names = []
     # Retrieve class names
-    for kr_name, kr_handler in self.kr_handlers.items():
+    for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
             cl = nlp.camelcase_to_snakecase(cl)
