@@ -235,434 +235,6 @@ class SSAPI:
 
         return combined_matchings
 
-<<<<<<< HEAD
-    def _combine_matchings(self, all_matchings):
-        # TODO: divide running score, based on whether content was available or not (is it really necessary?)
-
-        # L1 creates its own matchings
-        l1_matchings = all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE]
-
-        # L2, L5, L52 and L6 create another set of matchings
-        l2_matchings = all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE]
-        l5_matchings = all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN]
-        l52_matchings = all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM]
-        l6_matchings = all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG]
-
-        l_combined = dict()
-        for schema, kr in l1_matchings:
-            db_name, src_name, attr_name = schema
-            kr_name, cla_name = kr
-            l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L1_CLASSVALUE_ATTRVALUE])
-
-        for schema, kr in l2_matchings:
-            db_name, src_name, attr_name = schema
-            kr_name, cla_name = kr
-            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L2_CLASSNAME_ATTRNAME_SYN)
-            else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L2_CLASSVALUE_ATTRVALUE])
-
-        for schema, kr in l5_matchings:
-            db_name, src_name, attr_name = schema
-            kr_name, cla_name = kr
-            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L5_CLASSNAME_ATTRNAME_SYN)
-            else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L5_CLASSNAME_ATTRNAME_SYN])
-
-        for schema, kr in l52_matchings:
-            db_name, src_name, attr_name = schema
-            kr_name, cla_name = kr
-            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L52_CLASSNAME_ATTRNAME_SEM)
-            else:
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)] = ((schema, kr), [MatchingType.L52_CLASSNAME_ATTRNAME_SEM])
-
-        for schema, kr in l6_matchings:
-            db_name, src_name, attr_name = schema
-            kr_name, cla_name = kr
-            if (db_name, src_name, attr_name, kr_name, cla_name) in l_combined:
-                # TODO: only append in the matching types are something except L1?
-                l_combined[(db_name, src_name, attr_name, kr_name, cla_name)][1].append(MatchingType.L6_CLASSNAME_RELATION_SEMSIG)
-
-        """
-        for key, matching_types in l_combined.items():
-            matching, types = matching_types
-            running_score = 0
-            supported_by_basic_signals = False
-            if MatchingType.L2_CLASSVALUE_ATTRVALUE in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            if MatchingType.L5_CLASSNAME_ATTRNAME_SYN in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            elif MatchingType.L52_CLASSNAME_ATTRNAME_SEM in types:
-                running_score += 1
-                supported_by_basic_signals = True
-            if MatchingType.L6_CLASSNAME_RELATION_SEMSIG in types:
-                if supported_by_basic_signals:
-                    running_score += 1
-            combined_matchings.append((matching, running_score))
-        """
-
-        # L4 and L42 have their own matching too
-        l4_matchings = all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN]
-        combined_matchings = []
-        for key, values in l_combined.items():
-            matching = values[0]
-            matching_types = values[1]
-            #for el in values:
-            #    matching = el[0]
-            #    matching_types = el[1]
-            combined_matchings.append((matching, matching_types))
-
-        return combined_matchings, l4_matchings
-
-    def find_sem_coh_matchings(self):
-        matchings = []
-        # Get all relations with groups
-        table_groups = dict()
-        for db, t, attrs in SS.read_table_columns(None, network=self.network):
-            groups = SS.extract_cohesive_groups(t, attrs)
-            table_groups[(db, t)] = groups
-
-        names = []
-        # Retrieve class names
-        for kr_name, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = nlp.camelcase_to_snakecase(cl)
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                svs = []
-                for token in cl.split():
-                    if token not in stopwords.words('english'):
-                        sv = glove_api.get_embedding_for_word(token)
-                        if sv is not None:
-                            svs.append(sv)
-                names.append(('class', (kr_name, cl), svs))
-        for db_table_info, groups in table_groups.items():
-            db_name, table_name = db_table_info
-            class_seen = []  # to filter out already seen classes
-            for g_score, g_tokens in groups:
-                g_svs = []
-                for t in g_tokens:
-                    sv = glove_api.get_embedding_for_word(t)
-                    if sv is not None:
-                        g_svs.append(sv)
-                for _, class_info, class_svs in names:
-                    kr_name, class_name = class_info
-                    sim = SS.compute_semantic_similarity(class_svs, g_svs)
-                    if sim > g_score and class_name not in class_seen:
-                        class_seen.append(class_name)
-                        match = ((db_name, table_name, "_"), (kr_name, class_name))
-                        matchings.append(match)
-        return matchings
-
-    def find_relation_class_attr_name_sem_matchings(self):
-        # Retrieve relation names
-
-        self.find_relation_class_name_sem_matchings()
-        st = time.time()
-        names = []
-        seen_fields = []
-        for (db_name, source_name, field_name, _) in self.network.iterate_values():
-            orig_field_name = field_name
-            if field_name not in seen_fields:
-                seen_fields.append(field_name)  # seen already
-                field_name = nlp.camelcase_to_snakecase(field_name)
-                field_name = field_name.replace('-', ' ')
-                field_name = field_name.replace('_', ' ')
-                field_name = field_name.lower()
-                svs = []
-                for token in field_name.split():
-                    if token not in stopwords.words('english'):
-                        sv = glove_api.get_embedding_for_word(token)
-                        if sv is not None:
-                            svs.append(sv)
-                names.append(('attribute', (db_name, source_name, orig_field_name), svs))
-
-        num_attributes_inserted = len(names)
-
-        # Retrieve class names
-        for kr_name, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = nlp.camelcase_to_snakecase(cl)
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                svs = []
-                for token in cl.split():
-                    if token not in stopwords.words('english'):
-                        sv = glove_api.get_embedding_for_word(token)
-                        if sv is not None:
-                            svs.append(sv)
-                names.append(('class', (kr_name, cl), svs))
-
-        matchings = []
-        for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
-            for idx_class in range(num_attributes_inserted, len(names)):
-                svs_rel = names[idx_rel][2]
-                svs_cla = names[idx_class][2]
-                semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
-                if semantic_sim > 0.8:
-                    # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
-                    matchings.append(match)
-        et = time.time()
-        print("Time to relation-class (sem): " + str(et - st))
-        return matchings
-
-    def find_relation_class_attr_name_matching(self):
-        # Retrieve relation names
-        st = time.time()
-        names = []
-        seen_fields = []
-
-        for (db_name, source_name, field_name, _) in self.network.iterate_values():
-            orig_field_name = field_name
-            if field_name not in seen_fields:
-                seen_fields.append(field_name)  # seen already
-                field_name = nlp.camelcase_to_snakecase(field_name)
-                field_name = field_name.replace('-', ' ')
-                field_name = field_name.replace('_', ' ')
-                field_name = field_name.lower()
-                m = MinHash(num_perm=64)
-                for token in field_name.split():
-                    if token not in stopwords.words('english'):
-                        m.update(token.encode('utf8'))
-                names.append(('attribute', (db_name, source_name, orig_field_name), m))
-
-        num_attributes_inserted = len(names)
-
-        # Retrieve class names
-        for kr_name, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = nlp.camelcase_to_snakecase(cl)
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                m = MinHash(num_perm=64)
-                for token in cl.split():
-                    if token not in stopwords.words('english'):
-                        m.update(token.encode('utf8'))
-                names.append(('class', (kr_name, cl), m))
-
-        # Index all the minhashes
-        lsh_index = MinHashLSH(threshold=0.3, num_perm=64)
-
-        for idx in range(len(names)):
-            lsh_index.insert(idx, names[idx][2])
-
-        matchings = []
-        for idx in range(0, num_attributes_inserted):  # Compare only with classes
-            N = lsh_index.query(names[idx][2])
-            for n in N:
-                kind_q = names[idx][0]
-                kind_n = names[n][0]
-                if kind_n != kind_q:
-                    # match.format db_name, source_name, field_name -> class_name
-                    match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), names[n][1])
-                    matchings.append(match)
-        return matchings
-
-    def find_relation_class_name_sem_matchings(self):
-        # Retrieve relation names
-        st = time.time()
-        names = []
-        seen_sources = []
-        for (db_name, source_name, _, _) in self.network.iterate_values():
-            if source_name not in seen_sources:
-                seen_sources.append(source_name)  # seen already
-                source_name = source_name.replace('-', ' ')
-                source_name = source_name.replace('_', ' ')
-                source_name = source_name.lower()
-                svs = []
-                for token in source_name.split():
-                    if token not in stopwords.words('english'):
-                        sv = glove_api.get_embedding_for_word(token)
-                        if sv is not None:
-                            svs.append(sv)
-                names.append(('relation', (db_name, source_name), svs))
-
-        num_relations_inserted = len(names)
-
-        # Retrieve class names
-        for kr_name, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = nlp.camelcase_to_snakecase(cl)
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                svs = []
-                for token in cl.split():
-                    if token not in stopwords.words('english'):
-                        sv = glove_api.get_embedding_for_word(token)
-                        if sv is not None:
-                            svs.append(sv)
-                names.append(('class', (kr_name, cl), svs))
-
-        matchings = []
-        for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
-            for idx_class in range(num_relations_inserted, len(names)):
-                svs_rel = names[idx_rel][2]
-                svs_cla = names[idx_class][2]
-                semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
-                if semantic_sim > 0.5:
-                    # match.format is db_name, source_name, field_name -> class_name
-                    match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
-                    matchings.append(match)
-        et = time.time()
-        print("Time to relation-class (sem): " + str(et - st))
-        return matchings
-
-    def find_relation_class_name_matchings(self):
-        # Retrieve relation names
-        st = time.time()
-        names = []
-        seen_sources = []
-        for (db_name, source_name, _, _) in self.network.iterate_values():
-            if source_name not in seen_sources:
-                seen_sources.append(source_name)  # seen already
-                source_name = nlp.camelcase_to_snakecase(source_name)
-                source_name = source_name.replace('-', ' ')
-                source_name = source_name.replace('_', ' ')
-                source_name = source_name.lower()
-                m = MinHash(num_perm=32)
-                for token in source_name.split():
-                    if token not in stopwords.words('english'):
-                        m.update(token.encode('utf8'))
-                names.append(('relation', (db_name, source_name), m))
-
-        num_relations_inserted = len(names)
-
-        # Retrieve class names
-        for kr_name, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = nlp.camelcase_to_snakecase(cl)
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                m = MinHash(num_perm=32)
-                for token in cl.split():
-                    if token not in stopwords.words('english'):
-                        m.update(token.encode('utf8'))
-                names.append(('class', (kr_name, cl), m))
-
-        # Index all the minhashes
-        lsh_index = MinHashLSH(threshold=0.3, num_perm=32)
-
-        for idx in range(len(names)):
-            lsh_index.insert(idx, names[idx][2])
-
-        matchings = []
-        for idx in range(0, num_relations_inserted):  # Compare only with classes
-            N = lsh_index.query(names[idx][2])
-            for n in N:
-                kind_q = names[idx][0]
-                kind_n = names[n][0]
-                if kind_n != kind_q:
-                    # match.format is db_name, source_name, field_name -> class_name
-                    match = ((names[idx][1][0], names[idx][1][1], "_"), names[n][1])
-                    matchings.append(match)
-        et = time.time()
-        print("Time to relation-class (name): " + str(et-st))
-        return matchings
-
-    def __find_relation_class_matchings(self):
-        # Retrieve relation names
-        st = time.time()
-        docs = []
-        names = []
-        seen_sources = []
-        for (_, source_name, _, _) in self.network.iterate_values():
-            if source_name not in seen_sources:
-                seen_sources.append(source_name)  # seen already
-                source_name = source_name.replace('-', ' ')
-                source_name = source_name.replace('_', ' ')
-                source_name = source_name.lower()
-                docs.append(source_name)
-                names.append(('relation', source_name))
-
-        # Retrieve class names
-        for kr_item, kr_handler in self.kr_handlers.items():
-            all_classes = kr_handler.classes()
-            for cl in all_classes:
-                cl = cl.replace('-', ' ')
-                cl = cl.replace('_', ' ')
-                cl = cl.lower()
-                docs.append(cl)
-                names.append(('class', cl))
-
-        tfidf = da.get_tfidf_docs(docs)
-        et = time.time()
-        print("Time to create docs and TF-IDF: ")
-        print("Create docs and TF-IDF: {0}".format(str(et - st)))
-
-        num_features = tfidf.shape[1]
-        new_index_engine = LSHRandomProjectionsIndex(num_features, projection_count=7)
-
-        # N2 method
-        """
-        clean_matchings = []
-        for i in range(len(docs)):
-            for j in range(len(docs)):
-                sparse_row = tfidf.getrow(i)
-                dense_row = sparse_row.todense()
-                array_i = dense_row.A[0]
-
-                sparse_row = tfidf.getrow(j)
-                dense_row = sparse_row.todense()
-                array_j = dense_row.A[0]
-
-                sim = np.dot(array_i, array_j.T)
-                if sim > 0.5:
-                    if names[i][0] != names[j][0]:
-                        match = names[i][1], names[j][1]
-                        clean_matchings.append(match)
-        return clean_matchings
-        """
-
-        # Index vectors in engine
-        st = time.time()
-
-        for idx in range(len(docs)):
-            sparse_row = tfidf.getrow(idx)
-            dense_row = sparse_row.todense()
-            array = dense_row.A[0]
-            new_index_engine.index(array, idx)
-        et = time.time()
-        print("Total index text: " + str((et - st)))
-
-        # Now query for similar ones:
-        raw_matchings = defaultdict(list)
-        for idx in range(len(docs)):
-            sparse_row = tfidf.getrow(idx)
-            dense_row = sparse_row.todense()
-            array = dense_row.A[0]
-            N = new_index_engine.query(array)
-            if len(N) > 1:
-                for n in N:
-                    (data, key, value) = n
-                    raw_matchings[idx].append(key)
-        et = time.time()
-        print("Find raw matches: {0}".format(str(et - st)))
-
-        # Filter matches so that only relation-class ones appear
-        clean_matchings = []
-        for key, values in raw_matchings.items():
-            key_kind = names[key][0]
-            for v in values:
-                v_kind = names[v][0]
-                if v_kind != key_kind:
-                    match = (names[key][1], names[v][1])
-                    clean_matchings.append(match)
-        return clean_matchings
 
     def find_coarse_grain_hooks_n2(self):
         matchings = []
@@ -726,11 +298,46 @@ class SSAPI:
         # YES -> create a link (objectProperty name) between the elements in the schema
 
         # NOTES:
-        # matchings always point from an element int he schema to a class in an ontology
+        # matchings always point from an element in the schema to a class in an ontology
         # for this function to work efficiently, probably one wants to create a map from onto class to schema element
         # note that the links are between elements of the schema (no ontologies involved here)
 
-        return
+        # build the mapping onto class -> schema
+        mapping_ontoclass_to_schema = dict()
+        
+        for matching, matching_types in matchings:
+            schema, kr = matching
+            kr_name, cla_name = kr
+            
+            o = self.kr_handlers[kr_name]
+            onto_class = o.getClass(match=cla_name)[0]
+            if onto_class in mapping_ontoclass_to_schema:
+                mapping_ontoclass_to_schema[onto_class].append(schema)
+            else:
+                mapping_ontoclass_to_schema[onto_class] = [schema]
+
+            
+        links = []
+        # find all links
+        for matching, matching_types in matchings:
+            schema_A, kr = matching
+            kr_name, cla_name = kr
+
+            o = self.kr_handlers[kr_name]
+            
+            # find is_a links using hierarchy of ancestors and descendants
+            onto_class_A = o.getClass(match=cla_name)
+            for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
+                if onto_class_B in mapping_ontoclass_to_schema:
+                    schemas = mapping_ontoclass_to_schema[onto_class_B]
+                    for schema_B in schemas:
+                        if schema_B != schema_A:
+                            links.append((schema_A, "is_a", schema_B))
+            
+            # find property links
+
+                
+        return links
 
     def find_coarse_grain_hooks(self):
         # FIXME: deprecated?
@@ -840,7 +447,8 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     print("Finding matchings...")
     st = time.time()
