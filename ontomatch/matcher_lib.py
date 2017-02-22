@@ -230,8 +230,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
             for token in source_name.split():
                 if token not in stopwords.words('english'):
                     sv = glove_api.get_embedding_for_word(token)
-                    if sv is not None:
-                        svs.append(sv)
+                    #if sv is not None:
+                    svs.append(sv)  # append even None, to apply penalization later
             names.append(('relation', (db_name, source_name), svs))
 
     num_relations_inserted = len(names)
@@ -248,8 +248,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
             for token in cl.split():
                 if token not in stopwords.words('english'):
                     sv = glove_api.get_embedding_for_word(token)
-                    if sv is not None:
-                        svs.append(sv)
+                    #if sv is not None:
+                    svs.append(sv)  # append even None, to apply penalization later
             names.append(('class', (kr_name, cl), svs))
 
     matchings = []
@@ -257,7 +257,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                                          penalize_unknown_word=True, add_exact_matches=False)
             if semantic_sim > 0.5:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])

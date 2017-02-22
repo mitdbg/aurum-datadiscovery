@@ -305,26 +305,29 @@ if __name__ == '__main__':
 
 
     owl_file = 'dbpedia_2016-04.owl'
-    owl_file = "efo.owl"
+    owl_file = "ext.owl"
     o = OntoHandler()
 
-    """
+
     s = time.time()
     o.parse_ontology(owl_file)
     e = time.time()
     print("Parse: " + str(e - s))
 
-    o.store_ontology("cache_onto/efo.pkl")
+    o.store_ontology("cache_onto/uberon.pkl")
 
     o = OntoHandler()
-    o.load_ontology("cache_onto/efo.pkl")
+    o.load_ontology("cache_onto/uberon.pkl")
 
-    for name, sig in o.class_hierarchy_signatures:
-        print(name)
-        print(sig)
+    for cl in o.class_hierarchy:
+        print(cl)
+
+    #for name, sig in o.class_hierarchy_signatures:
+    #    print(name)
+    #    print(sig)
 
     exit()
-    """
+
 
 
     s = time.time()
