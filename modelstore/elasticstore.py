@@ -137,15 +137,6 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
-    def peek_values(self, field, num_values):
-        """
-        Reads sample values for the given field
-        :param field: The field from which to read values
-        :param num_values: The number of values to read
-        :return: A list with the sample values read for field
-        """
-        print("TODO")
-
     def search_keywords(self, keywords, elasticfieldname, max_hits=15):
         """
         Performs a search query on elastic_field_name to match the provided keywords
@@ -177,6 +168,40 @@ class StoreHandler:
             index = "profile"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"sourceName": keywords}}}
+        res = client.search(index=index, body=query_body,
+                            filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+        for el in res['hits']['hits']:
+            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+                       el['_source']['columnName'], el['_score'])
+            yield data
+
+    def fuzzy_keyword_match(self, keywords, max_hits=15):
+        """
+        Performs a search query on elastic_field_name to match the provided keywords
+        :param keywords: the list of keyword to match
+        :param max_hits: maximum number of returned objects
+        :return: the list of documents that contain the keywords
+        """
+        filter_path = ['hits.hits._source.id',
+                       'hits.hits._score',
+                       'hits.total',
+                       'hits.hits._source.dbName',
+                       'hits.hits._source.sourceName',
+                       'hits.hits._source.columnName']
+        index = "text"
+        query_body = {
+            "from": 0, "size": max_hits,
+                "query": {
+                    "match": {
+                        "text": {
+                            "query": keywords,
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                }
+            }
         res = client.search(index=index, body=query_body,
                             filter_path=filter_path)
         if res['hits']['total'] == 0:
@@ -671,98 +696,3 @@ class StoreHandler:
 
 if __name__ == "__main__":
     print("Elastic Store")
-
-    """
-        def get_all_text_fields(self):
-            query_body = {
-                "query": {"bool": {"filter": [{"term": {"dataType": "T"}}]}}}
-            res = client.search(index='profile', body=query_body, scroll="10m",
-                                filter_path=['_scroll_id',
-                                             'hits.hits._id',
-                                             'hits.total',
-                                             'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName',
-                                             'hits.hits._source.totalValues',
-                                             'hits.hits._source.uniqueValues']
-                                )
-            scroll_id = res['_scroll_id']
-            remaining = res['hits']['total']
-            while remaining > 0:
-                hits = res['hits']['hits']
-                for h in hits:
-                    id_source_and_file_name = (h['_id'], h['_source']['sourceName'], h['_source']['columnName'],
-                                               h['_source']['totalValues'], h['_source']['uniqueValues'])
-                    yield id_source_and_file_name
-                    remaining -= 1
-                res = client.scroll(scroll="3m", scroll_id=scroll_id,
-                                    filter_path=['_scroll_id',
-                                                 'hits.hits._id',
-                                                 'hits.hits._source.sourceName',
-                                                 'hits.hits._source.columnName',
-                                                 'hits.hits._source.totalValues',
-                                                 'hits.hits._source.uniqueValues']
-                                    )
-                scroll_id = res['_scroll_id']  # update the scroll_id
-            client.clear_scroll(scroll_id=scroll_id)
-
-        def get_fields_text_index(self):
-            '''
-            Reads all fields, described as (id, source_name, field_name) from the store (text index).
-            :return: a list of all fields with the form (id, source_name, field_name)
-            '''
-            body = {"query": {"match_all": {}}}
-            res = client.search(index='text', body=body, scroll="10m",
-                                filter_path=['_scroll_id',
-                                             'hits.hits._id',
-                                             'hits.total',
-                                             'hits.hits._source.id',
-                                             'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName']
-                                )
-            scroll_id = res['_scroll_id']
-            remaining = res['hits']['total']
-            while remaining > 0:
-                hits = res['hits']['hits']
-                for h in hits:
-                    rawid_id_source_and_file_name = (h['_id'], h['_source']['id'],
-                                                     h['_source']['sourceName'], h['_source']['columnName'])
-                    yield rawid_id_source_and_file_name
-                    remaining -= 1
-                res = client.scroll(scroll="3m", scroll_id=scroll_id,
-                                    filter_path=['_scroll_id',
-                                                 'hits.hits._id',
-                                                 'hits.hits._source.id',
-                                                 'hits.hits._source.sourceName',
-                                                 'hits.hits._source.columnName']
-                                    )
-                scroll_id = res['_scroll_id']  # update the scroll_id
-            client.clear_scroll(scroll_id=scroll_id)
-
-
-        def get_all_fields_of_source(self, source_name):
-            body = {"query": {"match": {"sourceName": source_name}}}
-            res = client.search(index='profile', body=body, scroll="10m",
-                                filter_path=['_scroll_id',
-                                             'hits.hits._id',
-                                             'hits.total',
-                                             'hits.hits._source.sourceName',
-                                             'hits.hits._source.columnName']
-                                )
-            scroll_id = res['_scroll_id']
-            remaining = res['hits']['total']
-            while remaining > 0:
-                hits = res['hits']['hits']
-                for h in hits:
-                    hit = Hit(h['_id'], h['_source']['sourceName'],
-                              h['_source']['columnName'], -1)
-                    yield hit
-                    remaining -= 1
-                res = client.scroll(scroll="3m", scroll_id=scroll_id,
-                                    filter_path=['_scroll_id',
-                                                 'hits.hits._id',
-                                                 'hits.hits._source.sourceName',
-                                                 'hits.hits._source.columnName']
-                                    )
-                scroll_id = res['_scroll_id']  # update the scroll_id
-            client.clear_scroll(scroll_id=scroll_id)
-        """

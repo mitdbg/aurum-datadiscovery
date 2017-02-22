@@ -13,22 +13,10 @@ import numpy as np
 from nltk.corpus import stopwords
 from dataanalysis import nlp_utils as nlp
 import time
-from dataanalysis import dataanalysis as da
-from enum import Enum
-from modelstore import elasticstore as store
+from ontomatch import matcher_lib as matcherlib
+from ontomatch.matcher_lib import MatchingType
 
 # Have a list of accepted formats in the ontology parser
-
-
-class MatchingType(Enum):
-    L1_CLASSNAME_ATTRVALUE = 0
-    L2_CLASSVALUE_ATTRVALUE = 1
-    L3_CLASSCTX_RELATIONCTX = 2
-    L4_CLASSNAME_RELATIONNAME_SYN = 3
-    L42_CLASSNAME_RELATIONNAME_SEM = 4
-    L5_CLASSNAME_ATTRNAME_SYN = 5
-    L52_CLASSNAME_ATTRNAME_SEM = 6
-    L6_CLASSNAME_RELATION_SEMSIG = 7
 
 
 class SSAPI:
@@ -122,7 +110,7 @@ class SSAPI:
         kr_class_signatures = []
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures += kr_handler.get_clhashasses_signatures(filter=5)
+            kr_class_signatures += kr_handler.get_classes_signatures()
             l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
@@ -132,8 +120,6 @@ class SSAPI:
 
         for match in l1_matchings:
             print(match)
-
-        exit()
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
@@ -167,7 +153,7 @@ class SSAPI:
         # L4: [Relation names] -> [Class names] (syntax)
         print("Finding L4 matchings...")
         st = time.time()
-        l4_matchings = self.find_relation_class_name_matchings()
+        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers)
         print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -179,7 +165,7 @@ class SSAPI:
         # L4.2: [Relation names] -> [Class names] (semantic)
         print("Finding L42 matchings...")
         st = time.time()
-        l42_matchings = self.find_relation_class_name_sem_matchings()
+        l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers)
         print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -191,7 +177,7 @@ class SSAPI:
         # L5: [Attribute names] -> [Class names] (syntax)
         print("Finding L5 matchings...")
         st = time.time()
-        l5_matchings = self.find_relation_class_attr_name_matching()
+        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers)
         print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -203,7 +189,7 @@ class SSAPI:
         # L52: [Attribute names] -> [Class names] (semantic)
         print("Finding L52 matchings...")
         st = time.time()
-        l52_matchings = self.find_relation_class_attr_name_sem_matchings()
+        l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers)
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -215,28 +201,41 @@ class SSAPI:
         # L6: [Relations] -> [Class names] (semantic groups)
         print("Finding L6 matchings...")
         st = time.time()
-        l6_matchings = self.find_sem_coh_matchings()
+        l6_matchings = matcherlib.find_sem_coh_matchings(self.network, self.kr_handlers)
         print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
         all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
 
-        # for match in l52_matchings:
+        # for match in l6_matchings:
+        #    print(match)
+
+        # L7: [Attribute names] -> [class names] (content - fuzzy naming)
+        print("Finding L7 matchings...")
+        st = time.time()
+        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
+
+        # for match in l7_matchings:
         #    print(match)
 
         total_matchings_pre_combined = 0
         for values in all_matchings.values():
             total_matchings_pre_combined += len(values)
-        print("ALL: " + str(total_matchings_pre_combined))
-        combined_matchings, l4_matchings = self._combine_matchings(all_matchings)
-        print("COM: " + str(len(combined_matchings)))
+        print("ALL_matchings: " + str(total_matchings_pre_combined))
+        combined_matchings, l4_matchings = matcherlib.combine_matchings(all_matchings)
+        print("COMBINED_matchings: " + str(len(combined_matchings)))
 
-        print("l6 matchings")
-        for m in l6_matchings:
+        print("l7 matchings")
+        for m in l7_matchings:
             print(m)
 
         return combined_matchings
 
+<<<<<<< HEAD
     def _combine_matchings(self, all_matchings):
         # TODO: divide running score, based on whether content was available or not (is it really necessary?)
 
@@ -708,7 +707,33 @@ class SSAPI:
                     print(ret)
         return class_vectors
 
+    def find_links(self, matchings):
+        """
+        Given existings matchings and parsed KRs, find existing links in the data
+        :return: a list of found links. Each element in the list is a tuple with 3 components:
+        ((el1), relation_name, (el2))
+        Each element (el1 and el2) are a locator of the attribute/relation involved in the link
+        """
+
+        # There are two kinds of links we discover, those between attributes, and those between relations
+
+        # Iterate over matchings
+        # For each matching, take ontology class (2nd element of the tuple), and take its hierarchy in the ontology
+
+        # is any other element in the ontology involved in a matching?
+        # YES -> create a link (is_a) between the elements in the schema (reverse mapping the onto class)
+        # is any other element in the properties involved in a matching? (object property in OWL)
+        # YES -> create a link (objectProperty name) between the elements in the schema
+
+        # NOTES:
+        # matchings always point from an element int he schema to a class in an ontology
+        # for this function to work efficiently, probably one wants to create a map from onto class to schema element
+        # note that the links are between elements of the schema (no ontologies involved here)
+
+        return
+
     def find_coarse_grain_hooks(self):
+        # FIXME: deprecated?
         """
         Given the model and the parsed KRs, find coarse grain hooks and register them
         :return:
@@ -749,6 +774,7 @@ class SSAPI:
         return
 
     def _lsh_index_vector(self, vector, key):
+        # FIXME: deprecated?
         """
         Index the vector with the associated key
         :param vector:
@@ -758,6 +784,7 @@ class SSAPI:
         self.ss_lsh_idx.index(vector, key)
 
     def _lsh_query(self, vector):
+        # FIXME: deprecated?
         """
         Query the LSH index
         :param vector:
@@ -765,20 +792,6 @@ class SSAPI:
         """
         n = self.ss_lsh_idx.query(vector)
         return n
-
-    def find_mappings(self):
-        """
-        Given found coarse grain hooks, perform an in-depth analysis to find mappings
-        :return:
-        """
-        return
-
-    def find_links(self):
-        """
-        Given existings mappings and parsed KRs, find existing links in the data
-        :return:
-        """
-        return
 
     def write_semantics(self):
         """
@@ -829,8 +842,13 @@ def test(path_to_serialized_model):
     # Load parsed ontology
     om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
 
+    print("Finding matchings...")
+    st = time.time()
     matchings = om.find_matchings()
     #matchings = om.find_sem_coh_matchings()
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et-st))
 
     for m in matchings:
         print(m)
@@ -917,6 +935,26 @@ def test_find_semantic_sim():
             if sim > 0.4:
                 print(str(cl) + " -> " + str(sim))
 
+def test_fuzzy(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    matchings = matcherlib.find_hierarchy_content_fuzzy(om.kr_handlers, store_client)
+
+    for m in matchings:
+        print(m)
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
@@ -924,6 +962,10 @@ if __name__ == "__main__":
 
     #test("../models/massdata/")
     test("/home/jian/EKG/aurum-datadiscovery/models_test/massdata/")
+    #test("../models/chembl21/")
+    #test_fuzzy("../models/chembl21/")
+    #exit()
+
     #test("../models/chembl21/")
     exit()
 
