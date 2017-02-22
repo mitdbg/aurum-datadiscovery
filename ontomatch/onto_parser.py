@@ -301,89 +301,17 @@ class OntoHandler:
         return True, ret
 
 
+def parse_ontology(input_ontology_path, output_parsed_ontology_path):
+    s = time.time()
+    o = OntoHandler()
+    o.parse_ontology(input_ontology_path)
+    o.store_ontology(output_parsed_ontology_path)
+    e = time.time()
+    print("Parse ontology took: " + str(e - s))
+
 if __name__ == '__main__':
 
+    input = "ext.owl"
+    output = "cache_onto/uberon.pkl"
 
-    owl_file = 'dbpedia_2016-04.owl'
-    owl_file = "ext.owl"
-    o = OntoHandler()
-
-
-    s = time.time()
-    o.parse_ontology(owl_file)
-    e = time.time()
-    print("Parse: " + str(e - s))
-
-    o.store_ontology("cache_onto/uberon.pkl")
-
-    o = OntoHandler()
-    o.load_ontology("cache_onto/uberon.pkl")
-
-    for cl in o.class_hierarchy:
-        print(cl)
-
-    #for name, sig in o.class_hierarchy_signatures:
-    #    print(name)
-    #    print(sig)
-
-    exit()
-
-
-
-    s = time.time()
-    file = "cache_onto/efo.pkl"
-
-    o.load_ontology(file)
-    e = time.time()
-    print("Load: " + str(e - s))
-
-    for cl in o.class_hierarchy:
-        print(cl)
-
-    #print("computing signatures for class hierarchy...")
-    #s = time.time()
-    #ch = o.obtain_class_hierarchy_and_signatures()
-    #e = time.time()
-    #print("computing signatures for class hierarchy...OK")
-    #print("Time to create class hierarchy: " + str(e-s))
-
-    #print("storing it back...")
-    #o.store_ontology("cache_onto/efo.pkl")
-    #print("storing it back...OK")
-
-    #for el in ch:
-    #    print(el)
-
-    """
-    cl = o.o.toplayer[6].children()[1].children()[10].children()  # this is cell line
-    print(str(len(cl)))
-    for c in cl:
-        label = c.bestLabel().title()
-        print(label)
-    print(str(len(cl)))
-    """
-
-    #for cl in o.classes():
-    #    cl = nlp.camelcase_to_snakecase(cl)
-    #    print(cl)
-
-    """
-    print("classes")
-    for c in o.classes_id():
-        name = o.name_of_class(c)
-        print(name)
-        data = o.instances_of(c, class_id=True)
-
-        if len(data) > 0:
-            print(data)
-
-        print("Gonna get bow for: " + str(c))
-        s, bow = o.bow_repr_of(c, class_id=True)
-        if s:
-            if len(bow[1]) > 0:
-                print(bow)
-    """
-
-    #stats = o.o.stats()
-    #for name, value in stats:
-    #    print(str(name) + " -> " + str(value))
+    parse_ontology(input, output)

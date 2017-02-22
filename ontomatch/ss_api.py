@@ -459,6 +459,37 @@ def test(path_to_serialized_model):
     return om
 
 
+def generate_matchings(input_model_path, input_ontology_name_path, output_file):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(input_model_path)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(input_model_path + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(input_model_path + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    for onto_name, onto_parsed_path in input_ontology_name_path:
+        # Load parsed ontology
+        om.add_krs([(onto_name, onto_parsed_path)], parsed=True)
+
+    matchings = om.find_matchings()
+
+    with open(output_file, 'w') as f:
+        for m in matchings:
+            f.write(str(m) + '\n')
+
+    print("Done!")
+
+
 def test_4_n_42(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
@@ -623,6 +654,7 @@ def test_fuzzy(path_to_serialized_model):
 
     for m in matchings:
         print(m)
+
 
 if __name__ == "__main__":
 
