@@ -110,7 +110,7 @@ class SSAPI:
         kr_class_signatures = []
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures += kr_handler.get_classes_signatures()
+            kr_class_signatures = kr_handler.get_classes_signatures()
             l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
@@ -118,8 +118,8 @@ class SSAPI:
         print("Took: " + str(et-st))
         all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
-        for match in l1_matchings:
-            print(match)
+        #for match in l1_matchings:
+        #    print(match)
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
@@ -412,6 +412,9 @@ def test(path_to_serialized_model):
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
     om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
 
     print("Finding matchings...")
     st = time.time()
@@ -445,6 +448,12 @@ def main(path_to_serialized_model):
     # Create client
     store_client = StoreHandler()
 
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
     # Retrieve indexes
     schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
     content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
@@ -452,6 +461,12 @@ def main(path_to_serialized_model):
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
     om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+
+    matchings = om.find_matchings()
+
+    print("Found: " + str(len(matchings)))
+    for m in matchings:
+        print(m)
 
     return om
 
@@ -506,6 +521,7 @@ def test_find_semantic_sim():
             if sim > 0.4:
                 print(str(cl) + " -> " + str(sim))
 
+
 def test_fuzzy(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
@@ -534,7 +550,7 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    test("../models/chembl21/")
+    test("../models/chembl22/")
     exit()
 
     print("SSAPI")
