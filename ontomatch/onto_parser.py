@@ -200,30 +200,6 @@ class OntoHandler:
             return self.o.getClass(id=class_name).children()
         return self.o.getClass(match=class_name)[0].children()
 
-    def ancestors_of_class(self, c):
-        """
-        Ancestors of given class
-        """
-        return list(self.__get_ancestors_of_class(c))
-
-    def descendants_of_class(self, c):
-        """
-        Descendants of given class
-        """
-        return list(self.__get_descendants_of_class(c))
-
-    def __get_ancestors_of_class(self, c):
-        ancestors = set(c.parents())
-        for parent in c.parents():
-            ancestors |= self.__get_ancestors_of_class(parent)
-        return ancestors
-
-    def __get_descendants_of_class(self, c):
-        descendants = set(c.children())
-        for child in c.children():
-            descendants |= self.__get_descendants_of_class(child)
-        return descendants
-
     def properties_all_of(self, class_name, class_id=False):
         """
         All properties associated to the given class (both datatype and object)
@@ -234,22 +210,12 @@ class OntoHandler:
             c = self.o.getClass(id=class_name)
         else:
             c = self.o.getClass(match=class_name)[0]
-        return get_properties_all_of(c)
-    
-    def get_properties_all_of(self, c):
         properties = self.o.getInferredPropertiesForClass(c)
-        props = []
-        for hierarchy_props in properties:
-            for p in hierarchy_props.values():
-                props.extend(p)
-        return props
-        """
         props = []
         for k, v in properties.items():
             for el in v:
                 props.append(el)
         return props
-        """
 
     def get_class_data_signatures(self):
         signatures = []
@@ -349,63 +315,3 @@ if __name__ == '__main__':
     output = "cache_onto/uberon.pkl"
 
     parse_ontology(input, output)
-
-
-"""
-if __name__ == '__main__':
-
-
-    owl_file = "/home/jian/EKG/dbpedia_2016-04.owl"
-
-    o = OntoHandler()
-
-    s = time.time()
-    file = "cache_onto/dbpedia.pkl"
-
-    o.load_ontology(file)
-    e = time.time()
-    print("Load: " + str(e - s))
-
-    for c in o.o.classes:
-        ancestors = o.ancestors_of_class(c)
-        descendants = o.descendants_of_class(c)
-        print(c.bestLabel().title())
-        print("Ancestors: " + str(len(ancestors)))
-        for ans in ancestors:
-            print("\t" + ans.bestLabel().title())
-        print("Descendants: " + str(len(descendants)))
-        for des in descendants:
-            print("\t" + des.bestLabel().title())
-    print("-----------------------------------------------")
-    for c in o.o.classes:
-        print(c)
-    
-    for op in o.o.objectProperties:
-        print(op)
-        print(op.ranges)
-
-    print("-----------------------------------------------")
-    for op in o.o.annotationProperties:
-        print(op)
-
-    print("-----------------------------------------------")
-    for op in o.o.datatypeProperties:
-        print(op)
-
-    exit()
-
-    for c in o.o.classes:
-        print("-----------------------------------------------")
-        print(c.bestLabel().title())
-        ancestors = o.ancestors_of_class(c)
-        print("Ancestors: " + str(len(ancestors)))
-        for ans in ancestors:
-            print("\t" + ans.bestLabel().title())
-        properties = o.get_properties_all_of(c)
-        for prop in properties:
-            print(prop)
-        properties = o.get_properties_all_of(c)
-        for prop in properties:
-            print(prop)
-"""
- 
