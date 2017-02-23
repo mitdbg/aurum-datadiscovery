@@ -93,7 +93,7 @@ public class DBConnector extends Connector {
 		config.addDataSourceProperty("cachePrepStmts", "true");
 		config.addDataSourceProperty("prepStmtCacheSize", "250");
 		config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-
+		config.addDataSourceProperty("maximumPoolSize", "1");
 		HikariDataSource ds = new HikariDataSource(config);
 		
 		Connection connection = null;
@@ -259,6 +259,7 @@ public class DBConnector extends Connector {
 			Attribute attr = new Attribute(name, type, size);
 			attrs.addElement(attr);
 		}
+		resultSet.close();
 		tbInfo.setTableAttributes(attrs);
 		return attrs;
 	}
@@ -336,11 +337,12 @@ public class DBConnector extends Connector {
 
 	public void close() {
 		// We have a pooled connection now so no need for this...
-//		try {
-//			conn.close();
-//		} 
-//		catch (SQLException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			theRS.close();
+			theStatement.close();
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }
