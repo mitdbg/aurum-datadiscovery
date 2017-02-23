@@ -393,7 +393,10 @@ if __name__ == '__main__':
             print("\t" + des.bestLabel().title())
     print("-----------------------------------------------")
     """
+    for c in o.o.classes:
+        print(c)
     
+    """
     for op in o.o.objectProperties:
         print(op)
         print(op.ranges)
@@ -405,6 +408,7 @@ if __name__ == '__main__':
     print("-----------------------------------------------")
     for op in o.o.datatypeProperties:
         print(op)
+    """
 
     exit()
 

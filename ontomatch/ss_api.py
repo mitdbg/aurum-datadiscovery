@@ -310,7 +310,8 @@ class SSAPI:
             kr_name, cla_name = kr
             
             o = self.kr_handlers[kr_name]
-            onto_class = o.getClass(match=cla_name)[0]
+            print(cla_name)
+            onto_class = o.o.getClass(match=cla_name)[0]
             if onto_class in mapping_ontoclass_to_schema:
                 map_ontoclass_to_schema[onto_class].append(schema)
             else:
@@ -323,6 +324,8 @@ class SSAPI:
                 set_object_properties.add(p)
             
         links = []
+
+        print("finding all links...")
         # find all links
         for matching, matching_types in matchings:
             schema_A, kr = matching
@@ -330,7 +333,7 @@ class SSAPI:
 
             o = self.kr_handlers[kr_name]
             
-            onto_class_A = o.getClass(match=cla_name)
+            onto_class_A = o.o.getClass(match=cla_name)
             # find is_a links using hierarchy of ancestors and descendants
             for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
                 if onto_class_B in mapping_ontoclass_to_schema:
@@ -473,6 +476,10 @@ def test(path_to_serialized_model):
 
     for m in matchings:
         print(m)
+
+    links = om.find_links(matchings)
+    print(links)
+
     exit()
 
     total_matchings = 0
@@ -485,6 +492,7 @@ def test(path_to_serialized_model):
         print(m)
         for el in v:
             print(el)
+
 
     return om
 
