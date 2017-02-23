@@ -1,5 +1,17 @@
 // hacky little file that does things like clear the labels cxt
 
+var clickables = [];
+
+class Clickable {
+  constructor(x1, y1, x2, y2, onClick){
+    this.x1 = x1;
+    this.x2 = x2;
+    this.y1 = y1;
+    this.y2 = y2;
+    this.onClick = onClick;
+  }
+}
+
 export function clearLabels(){
   const labelCanvas = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
   // get the full height and width of the window
@@ -178,15 +190,20 @@ function drawNamedFields(cxt, box, field, seperators){
     const columnName = field.selected[k]['field_name'];
     cxt.fillText(columnName, box.x + box.padding.left, field.y + offset);
 
-    offset += field.lineHeight + field.lineSpace/2.0;
+    // add to the clickables list
+    var fieldObj = new Clickable(box.x, field.y+offset, box.x + box.width, field.y + offset + field.lineHeight, null)
+    clickables.push(fieldObj);
+    // console.log(clickables);
 
+    // add in a seperator line, if applicable
+    // 1/2 offset happens before and another after line drawing
+    offset += field.lineHeight + field.lineSpace/2.0;
     if(seperators){
       var line = {}
       line.marginBottom = 3;
       line.y = field.y + offset;
       drawLine(cxt, box, line);
     }
-
     offset += field.lineSpace/2.0;
   }
 }
@@ -195,6 +212,11 @@ function drawNamedFields(cxt, box, field, seperators){
 function drawNumUnselectedFields(cxt, box, fieldUnselected) {
   const text = fieldUnselected.num + ' more fields...'
   cxt.fillText(text, box.x + box.padding.left, fieldUnselected.y)
+
+  // add clickables object
+  var unselectedField = new Clickable(box.x, fieldUnselected.y, box.x+box.width, fieldUnselected.y + fieldUnselected.lineHeight+fieldUnselected.lineSpace, null)
+  clickables.push(unselectedField);
+  // console.log(clickables)
 }
 
 // draw a toggle menu triangle
@@ -243,6 +265,7 @@ function drawSecondaryMenu(cxt, box, triangle){
   field.lineSpace = 7;
   field.selected = {1: {'field_name': 'Find similar context'}, '2': {'field_name':'Find similar content'}, '3': {'field_name': 'Find PKFK'}}; // stupid format to satisfy existing field drawer
   field.y = newBox.y + newBox.padding.top;
+  field.onClick = function(){console.log('named field click')};
 
   // recompute box height
   newBox.height = Object.keys(field.selected).length * (field.lineHeight + field.lineSpace)-1;
@@ -261,8 +284,6 @@ function drawSecondaryMenu(cxt, box, triangle){
   cxt.textBaseline = 'top';
   cxt.textAlign = field.textAlign;
   drawNamedFields(cxt, newBox, field, true);
-
-
 }
 
 // change the mouse to a pointer if over a clickable element
@@ -274,6 +295,7 @@ function handleMousemove(event, box, triangle){
   } else{
     document.body.style.cursor = 'default';
   }
+  console.log(event.layerX, event.layerY);
 }
 
 // handle clicks inside of the box or trianglew
