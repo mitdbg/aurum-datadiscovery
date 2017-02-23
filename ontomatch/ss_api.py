@@ -214,12 +214,12 @@ class SSAPI:
         # for match in l6_matchings:
         #    print(match)
 
-        #l7_matchings = []
+        l7_matchings = []
         #"""
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
         st = time.time()
-        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        #l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
         print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -664,8 +664,8 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    test_4_n_42("../models/chembl22/")
-    exit()
+    #test_4_n_42("../models/chembl22/")
+    #exit()
 
     test("../models/chembl22/")
     exit()
