@@ -13,14 +13,18 @@ import java.util.Properties;
 
 public class DBUtils {
 
-  public static List<String> getTablesFromDatabase(Connection conn) {
+  public static List<String> getTablesFromDatabase(Connection conn, String dbschema) {
     List<String> tables = new ArrayList<>();
     String types[] = new String[] {"TABLE", "VIEW"};
 
     DatabaseMetaData md;
     try {
       md = conn.getMetaData();
-      ResultSet rs = md.getTables(null, null, "%", types);
+      ResultSet rs;
+      if ("".equals(dbschema) ||"default".equals(dbschema))
+    	  rs = md.getTables(null, null, "%", types);
+      else 
+    	  rs = md.getTables(null, dbschema, "%", types);
       while (rs.next()) {
         String tn = rs.getString(3);
         tables.add(tn);
