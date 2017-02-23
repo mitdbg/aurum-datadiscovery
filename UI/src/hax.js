@@ -191,9 +191,10 @@ function drawNamedFields(cxt, box, field, seperators){
     cxt.fillText(columnName, box.x + box.padding.left, field.y + offset);
 
     // add to the clickables list
-    var fieldObj = new Clickable(box.x, field.y+offset, box.x + box.width, field.y + offset + field.lineHeight, null)
+    const onClickFun = ()=>console.log(columnName);
+    var fieldObj = new Clickable(box.x, field.y+offset, box.x + box.width, field.y + offset + field.lineHeight, onClickFun)
     clickables.push(fieldObj);
-    // console.log(clickables);
+    console.log(clickables);
 
     // add in a seperator line, if applicable
     // 1/2 offset happens before and another after line drawing
@@ -214,7 +215,8 @@ function drawNumUnselectedFields(cxt, box, fieldUnselected) {
   cxt.fillText(text, box.x + box.padding.left, fieldUnselected.y)
 
   // add clickables object
-  var unselectedField = new Clickable(box.x, fieldUnselected.y, box.x+box.width, fieldUnselected.y + fieldUnselected.lineHeight+fieldUnselected.lineSpace, null)
+  const onClickFun = ()=>console.log(text);
+  var unselectedField = new Clickable(box.x, fieldUnselected.y, box.x+box.width, fieldUnselected.y + fieldUnselected.lineHeight+fieldUnselected.lineSpace, onClickFun)
   clickables.push(unselectedField);
   // console.log(clickables)
 }
@@ -288,9 +290,10 @@ function drawSecondaryMenu(cxt, box, triangle){
 
 // change the mouse to a pointer if over a clickable element
 function handleMousemove(event, box, triangle){
-  const overBox = inBox(box, event.layerX, event.layerY);
   const overTriangle = inTriangle(triangle, event.layerX, event.layerY);
-  if(overBox || overTriangle){
+  const overClickable = inClickable(event.layerX, event.layerY)
+
+  if(overTriangle || overClickable){
     document.body.style.cursor = 'pointer';
   } else{
     document.body.style.cursor = 'default';
@@ -300,27 +303,29 @@ function handleMousemove(event, box, triangle){
 
 // handle clicks inside of the box or trianglew
 function handleClick(event, box, triangle, canvas){
-  const clickInBox = inBox(box, event.layerX, event.layerY);
-  if(clickInBox){
-    console.log('click in box');
-  }
 
   const clickInTriangle = inTriangle(triangle, event.layerX, event.layerY);
+  const clickable = inClickable(event.layerX, event.layerY);
+
   if(clickInTriangle){
     console.log('click in triangle');
     drawSecondaryMenu(canvas.getContext('2d'), box, triangle);
-  }
-
-  // remove the canvas if not clicking the box or traingle
-  if(!clickInBox && !clickInTriangle){
+  } else if (clickable !== false){
+    clickable.onClick()
+  } else{
+    // remove the canvas if not clicking in a clickable or traingle
     canvas.parentNode.removeChild(canvas);
   }
 }
 
-// are x and y inside of the box?
-function inBox(box, x, y){
-  if((box.x <= x) && (x <= box.x+box.width) && (box.y <= x) && (box.y <= box.y+box.height)){
-    return true;
+// are x and y inside of a clickable area?
+// if so, return the clickable area
+function inClickable(x, y){
+  for (var i = 0; i < clickables.length; i++) {
+    const c = clickables[i];
+    if((c.x1 <= x) && (x <= c.x2) && (c.y1 <= y) && (y <= c.y2)){
+      return c;
+    }
   }
   return false;
 }
