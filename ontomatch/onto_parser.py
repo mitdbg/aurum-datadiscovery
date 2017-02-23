@@ -238,11 +238,11 @@ class OntoHandler:
     
     def get_properties_all_of(self, c):
         properties = self.o.getInferredPropertiesForClass(c)
-        props = set()
+        props = []
         for hierarchy_props in properties:
             for p in hierarchy_props.values():
-                props |= set(p)
-        return list(props)
+                props.extend(p)
+        return props
         """
         props = []
         for k, v in properties.items():
@@ -393,6 +393,21 @@ if __name__ == '__main__':
             print("\t" + des.bestLabel().title())
     print("-----------------------------------------------")
     """
+    
+    for op in o.o.objectProperties:
+        print(op)
+        print(op.ranges)
+
+    print("-----------------------------------------------")
+    for op in o.o.annotationProperties:
+        print(op)
+
+    print("-----------------------------------------------")
+    for op in o.o.datatypeProperties:
+        print(op)
+
+    exit()
+
     for c in o.o.classes:
         print("-----------------------------------------------")
         print(c.bestLabel().title())

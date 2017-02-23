@@ -303,7 +303,7 @@ class SSAPI:
         # note that the links are between elements of the schema (no ontologies involved here)
 
         # build the mapping onto class -> schema
-        mapping_ontoclass_to_schema = dict()
+        map_ontoclass_to_schema = dict()
         
         for matching, matching_types in matchings:
             schema, kr = matching
@@ -312,10 +312,15 @@ class SSAPI:
             o = self.kr_handlers[kr_name]
             onto_class = o.getClass(match=cla_name)[0]
             if onto_class in mapping_ontoclass_to_schema:
-                mapping_ontoclass_to_schema[onto_class].append(schema)
+                map_ontoclass_to_schema[onto_class].append(schema)
             else:
-                mapping_ontoclass_to_schema[onto_class] = [schema]
+                map_ontoclass_to_schema[onto_class] = [schema]
 
+        # build a set of object properties pointing to at least one class
+        set_object_properties = set()
+        for p in o.o.objectProperties:
+            if p.ranges:
+                set_object_properties.add(p)
             
         links = []
         # find all links
@@ -325,8 +330,8 @@ class SSAPI:
 
             o = self.kr_handlers[kr_name]
             
-            # find is_a links using hierarchy of ancestors and descendants
             onto_class_A = o.getClass(match=cla_name)
+            # find is_a links using hierarchy of ancestors and descendants
             for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
                 if onto_class_B in mapping_ontoclass_to_schema:
                     schemas = mapping_ontoclass_to_schema[onto_class_B]
@@ -334,8 +339,16 @@ class SSAPI:
                         if schema_B != schema_A:
                             links.append((schema_A, "is_a", schema_B))
             
+            
             # find property links
-
+            properties = o.get_properties_all_of(onto_class_A)
+            for p in properties:
+                if p in set_object_properties:
+                    for onto_class_B in p.ranges:
+                        schemas = mapping_ontoclass_to_schema[onto_class_B]
+                        for schema_B in schemas:
+                            if schema_B != schema_A:
+                                links.append((schema_A, p.bestLabel(), schema_B))
                 
         return links
 
