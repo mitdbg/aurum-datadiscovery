@@ -250,7 +250,6 @@ class SSAPI:
 
         return combined_matchings
 
-
     def find_coarse_grain_hooks_n2(self):
         matchings = []
         table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
@@ -313,7 +312,7 @@ class SSAPI:
         # YES -> create a link (objectProperty name) between the elements in the schema
 
         # NOTES:
-        # matchings always point from an element in the schema to a class in an ontology
+        # matchings always point from an element int he schema to a class in an ontology
         # for this function to work efficiently, probably one wants to create a map from onto class to schema element
         # note that the links are between elements of the schema (no ontologies involved here)
 
@@ -372,8 +371,6 @@ class SSAPI:
                     for schema_B in schemas:
                         if schema_B != schema_A:
                             links.append((schema_A, "is_a", schema_B))
-            
-            
             # find property links
             properties = o.get_properties_all_of(onto_class_A)
             for p in properties:
@@ -495,10 +492,9 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
 
     print("Finding matchings...")
@@ -528,7 +524,6 @@ def test(path_to_serialized_model):
         print(m)
         for el in v:
             print(el)
-
 
     return om
 
@@ -735,16 +730,13 @@ if __name__ == "__main__":
     #test_find_semantic_sim()
     #exit()
 
-    #test("../models/massdata/")
-    test("/home/jian/EKG/aurum-datadiscovery/models_test/massdata/")
-    #test("../models/chembl21/")
     #test_fuzzy("../models/chembl21/")
     #exit()
 
     #test_4_n_42("../models/chembl22/")
     #exit()
 
-    #test("../models/chembl22/")
+    test("../models/chembl22/")
     exit()
 
     print("SSAPI")
@@ -768,3 +760,4 @@ if __name__ == "__main__":
     om = main(path_to_model)
 
     # do things with om now, for example, for testing
+
