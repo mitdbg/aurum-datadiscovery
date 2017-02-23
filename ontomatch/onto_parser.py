@@ -345,10 +345,28 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
+    """
     input = "ext.owl"
     output = "cache_onto/uberon.pkl"
+    """
+    input = "/home/jian/EKG/dbpedia_2016-04.owl"
+    output = "cache_onto/dbpedia.pkl"
 
-    parse_ontology(input, output)
+    #parse_ontology(input, output)
+
+    o = OntoHandler()
+    o.load_ontology(output)
+    print("-------------- Class -------------")
+    for c in o.o.classes:
+        print(c)
+        print(c.bestLabel().title())
+
+    """
+    print("-------------- Object Property -------------")
+    for p in o.o.objectProperties:
+        print(p)
+    """
+
 
 
 """
