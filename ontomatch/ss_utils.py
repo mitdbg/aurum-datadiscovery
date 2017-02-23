@@ -197,11 +197,15 @@ def compute_sem_distance_with(x, sv):
     return ssim
 
 
-def compute_semantic_similarity(sv1, sv2):
+def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True):
     accum = []
     for a, b in itertools.product(sv1, sv2):
         if a is not None and b is not None:
-            sim = glove_api.semantic_distance(a, b)
+            if not (a == b).all() or add_exact_matches:  # otherwise this just does not add up
+                sim = glove_api.semantic_distance(a, b)
+                accum.append(sim)
+        elif penalize_unknown_word:  # if one is None and penalize is True, then sim = 0
+            sim = 0
             accum.append(sim)
     sim = 0
     if len(accum) > 0:

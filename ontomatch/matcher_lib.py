@@ -134,6 +134,7 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers):
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            original_cl_name = cl
             cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
@@ -144,7 +145,7 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers):
                     sv = glove_api.get_embedding_for_word(token)
                     if sv is not None:
                         svs.append(sv)
-            names.append(('class', (kr_name, cl), svs))
+            names.append(('class', (kr_name, original_cl_name), svs))
 
     matchings = []
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
@@ -186,6 +187,7 @@ def find_relation_class_attr_name_matching(network, kr_handlers):
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            original_cl_name = cl
             cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
@@ -194,7 +196,7 @@ def find_relation_class_attr_name_matching(network, kr_handlers):
             for token in cl.split():
                 if token not in stopwords.words('english'):
                     m.update(token.encode('utf8'))
-            names.append(('class', (kr_name, cl), m))
+            names.append(('class', (kr_name, original_cl_name), m))
 
     # Index all the minhashes
     lsh_index = MinHashLSH(threshold=0.6, num_perm=64)
@@ -221,6 +223,7 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
     names = []
     seen_sources = []
     for (db_name, source_name, _, _) in network.iterate_values():
+        original_source_name = source_name
         if source_name not in seen_sources:
             seen_sources.append(source_name)  # seen already
             source_name = source_name.replace('-', ' ')
@@ -230,9 +233,9 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
             for token in source_name.split():
                 if token not in stopwords.words('english'):
                     sv = glove_api.get_embedding_for_word(token)
-                    if sv is not None:
-                        svs.append(sv)
-            names.append(('relation', (db_name, source_name), svs))
+                    #if sv is not None:
+                    svs.append(sv)  # append even None, to apply penalization later
+            names.append(('relation', (db_name, original_source_name), svs))
 
     num_relations_inserted = len(names)
 
@@ -240,6 +243,7 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            original_cl_name = cl
             cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
@@ -248,16 +252,17 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
             for token in cl.split():
                 if token not in stopwords.words('english'):
                     sv = glove_api.get_embedding_for_word(token)
-                    if sv is not None:
-                        svs.append(sv)
-            names.append(('class', (kr_name, cl), svs))
+                    #if sv is not None:
+                    svs.append(sv)  # append even None, to apply penalization later
+            names.append(('class', (kr_name, original_cl_name), svs))
 
     matchings = []
     for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                                          penalize_unknown_word=True, add_exact_matches=False)
             if semantic_sim > 0.5:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
@@ -273,6 +278,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
     names = []
     seen_sources = []
     for (db_name, source_name, _, _) in network.iterate_values():
+        original_source_name = source_name
         if source_name not in seen_sources:
             seen_sources.append(source_name)  # seen already
             source_name = nlp.camelcase_to_snakecase(source_name)
@@ -283,7 +289,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
             for token in source_name.split():
                 if token not in stopwords.words('english'):
                     m.update(token.encode('utf8'))
-            names.append(('relation', (db_name, source_name), m))
+            names.append(('relation', (db_name, original_source_name), m))
 
     num_relations_inserted = len(names)
 
@@ -291,6 +297,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            original_cl_name = cl
             cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
@@ -299,7 +306,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
             for token in cl.split():
                 if token not in stopwords.words('english'):
                     m.update(token.encode('utf8'))
-            names.append(('class', (kr_name, cl), m))
+            names.append(('class', (kr_name, original_cl_name), m))
 
     # Index all the minhashes
     lsh_index = MinHashLSH(threshold=0.3, num_perm=32)
@@ -426,6 +433,7 @@ def find_sem_coh_matchings(network, kr_handlers):
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            original_cl_name = cl
             cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
@@ -436,7 +444,8 @@ def find_sem_coh_matchings(network, kr_handlers):
                     sv = glove_api.get_embedding_for_word(token)
                     if sv is not None:
                         svs.append(sv)
-            names.append(('class', (kr_name, cl), svs))
+            names.append(('class', (kr_name, original_cl_name), svs))
+
     for db_table_info, groups in table_groups.items():
         db_name, table_name = db_table_info
         class_seen = []  # to filter out already seen classes

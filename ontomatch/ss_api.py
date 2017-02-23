@@ -110,7 +110,7 @@ class SSAPI:
         kr_class_signatures = []
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures += kr_handler.get_classes_signatures()
+            kr_class_signatures = kr_handler.get_classes_signatures()
             l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
@@ -118,8 +118,8 @@ class SSAPI:
         print("Took: " + str(et-st))
         all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
 
-        for match in l1_matchings:
-            print(match)
+        #for match in l1_matchings:
+        #    print(match)
 
         # L2: [class.data] -> attr.content
         print("Finding L2 matchings...")
@@ -186,6 +186,8 @@ class SSAPI:
         #for match in l5_matchings:
         #    print(match)
 
+        #l52_matchings = []
+        #"""
         # L52: [Attribute names] -> [Class names] (semantic)
         print("Finding L52 matchings...")
         st = time.time()
@@ -193,10 +195,12 @@ class SSAPI:
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
+        #"""
         all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
 
         #for match in l52_matchings:
         #    print(match)
+
 
         # L6: [Relations] -> [Class names] (semantic groups)
         print("Finding L6 matchings...")
@@ -210,17 +214,20 @@ class SSAPI:
         # for match in l6_matchings:
         #    print(match)
 
+        l7_matchings = []
+        #"""
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
         st = time.time()
-        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        #l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
         print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
-        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
 
         # for match in l7_matchings:
         #    print(match)
+        #"""
+        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
 
         total_matchings_pre_combined = 0
         for values in all_matchings.values():
@@ -229,9 +236,19 @@ class SSAPI:
         combined_matchings, l4_matchings = matcherlib.combine_matchings(all_matchings)
         print("COMBINED_matchings: " + str(len(combined_matchings)))
 
-        print("l7 matchings")
-        for m in l7_matchings:
-            print(m)
+        with open('OUTPUT', 'w') as f:
+            for m in l4_matchings:
+                f.write(str(m) + '\n')
+            for m in l42_matchings:
+                f.write(str(m) + '\n')
+            for m in combined_matchings:
+                f.write(str(m) + '\n')
+
+        #for m in l4_matchings:
+        #    print(m)
+
+        #for m in l42_matchings:
+        #    print(m)
 
         return combined_matchings
 
@@ -463,8 +480,11 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
 
     print("Finding matchings...")
     st = time.time()
@@ -497,11 +517,113 @@ def test(path_to_serialized_model):
     return om
 
 
+def generate_matchings(input_model_path, input_ontology_name_path, output_file):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(input_model_path)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(input_model_path + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(input_model_path + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    for onto_name, onto_parsed_path in input_ontology_name_path:
+        # Load parsed ontology
+        om.add_krs([(onto_name, onto_parsed_path)], parsed=True)
+
+    matchings = om.find_matchings()
+
+    with open(output_file, 'w') as f:
+        for m in matchings:
+            f.write(str(m) + '\n')
+
+    print("Done!")
+
+
+def test_4_n_42(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    # om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+
+    print("Finding matchings...")
+    st = time.time()
+    # L4: [Relation names] -> [Class names] (syntax)
+    print("Finding L4 matchings...")
+    st = time.time()
+    l4_matchings = matcherlib.find_relation_class_name_matchings(om.network, om.kr_handlers)
+    print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    # for match in l4_matchings:
+    #    print(match)
+
+    # L4.2: [Relation names] -> [Class names] (semantic)
+    print("Finding L42 matchings...")
+    st = time.time()
+    l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers)
+    print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et - st))
+
+    with open('OUTPUT_442', 'w') as f:
+        f.write("L4" + '\n')
+        for m in l4_matchings:
+            f.write(str(m) + '\n')
+        f.write("L42" + '\n')
+        for m in l42_matchings:
+            f.write(str(m) + '\n')
+
+    #print("L4")
+    #for m in l4_matchings:
+    #    print(m)
+
+    #print("L42")
+    #for m in l42_matchings:
+    #    print(m)
+
+
 def main(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     # Create client
     store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
 
     # Retrieve indexes
     schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
@@ -510,6 +632,12 @@ def main(path_to_serialized_model):
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
     om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+
+    matchings = om.find_matchings()
+
+    print("Found: " + str(len(matchings)))
+    for m in matchings:
+        print(m)
 
     return om
 
@@ -564,6 +692,7 @@ def test_find_semantic_sim():
             if sim > 0.4:
                 print(str(cl) + " -> " + str(sim))
 
+
 def test_fuzzy(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
@@ -584,6 +713,7 @@ def test_fuzzy(path_to_serialized_model):
     for m in matchings:
         print(m)
 
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
@@ -595,7 +725,10 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    #test("../models/chembl21/")
+    #test_4_n_42("../models/chembl22/")
+    #exit()
+
+    #test("../models/chembl22/")
     exit()
 
     print("SSAPI")
