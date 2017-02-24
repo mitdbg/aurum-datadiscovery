@@ -187,11 +187,31 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   const newCanvas = cloneCanvasAndInsertAbove(mouseCanvas);
   const ctx = newCanvas.getContext('2d');
 
-  var coords = {x1: 20, y1:20, x2: 200, y2:20}
-  var border = {top: true, right: true, bottom:true, left: true}
-  const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit."
-  var mainMenu = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
+
+  // create the background box when nodes are clicked
+  var width = 225;
+  var margin = {top: 15};
+  var border = {top: true, right: true, bottom:true, left: true};
+  var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: y + margin.top + 20}; // y2 isn't clear yet.
+
+  var bkgrnd = new Box(false, null, ctx, 'orange', 'green', 1, null, null, null, coords, border, '', 12, null);
+  // bkgrnd.render();
+
+  // create the source title
+  width = bkgrnd.c.width - 5*2;
+  margin = {top: 5, right: 5, bottom: 5, left: 5}
+  border = {top: false, right: false, bottom: false, left:false};
+  coords = {x1: bkgrnd.c.x1 + margin.left, y1:bkgrnd.c.y1 + margin.top, x2: bkgrnd.c.x2 - margin.right, y2: bkgrnd.c.y2 + 20}; // again, y2 isn't clear yet
+  var mainMenu = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, source, 12, 'black')
   mainMenu.render();
+
+
+
+  // var coords = {x1: 20, y1:20, x2: 200, y2:20}
+  // var border = {top: true, right: true, bottom:true, left: true}
+  // const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit."
+  // var mainMenu = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
+  // mainMenu.render();
 
 
   coords = {x1: 130, y1: 130, x2: 160, y2: 130, x3: 145, y3: 160}
