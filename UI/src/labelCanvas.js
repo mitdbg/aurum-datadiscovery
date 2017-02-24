@@ -1,9 +1,9 @@
 class Shape {
-  constructor(clickable, onClick, ctx, fillStyle, strokeStyle, lineWidth){
+  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth){
     this.clickable = clickable; // boolean. Is this a clickable element?
     this.onClidk = onClick; // function to handle click events
     this.ctx = ctx; // HTML canvas context
-    this.fillStyle = fillStyle; // ctx for fill style. HTML color as string.
+    this.bkgFillStyle = bkgFillStyle; // ctx for fill style. HTML color as string.
     this.strokeStyle = strokeStyle; // ctx for stroke. HTML color as string.
     this.lineWidth = lineWidth; // ctx for lineWidth. number.
   }
@@ -18,14 +18,21 @@ class Shape {
 }
 
 class Box extends Shape {
-  constructor(clickable, onClick, ctx, fillStyle, strokeStyle, lineWidth, font, textAlign, coordinates, border, text) {
-    super(clickable, onClick, ctx, fillStyle, strokeStyle, lineWidth);
-    this.font = font; // ctx font as string. e.g. 12px sans-serif
+  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, fontStyle, fontWeight, textAlign, coordinates, border, text, textHeight, textColor) {
+    super(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth);
+    this.fontStyle = fontStyle; // font style as string. sans-serif
+    this.fontWeight = fontWeight; // weight as string. bold normal
     this.textAlign = textAlign; // ctx for text alignment. left right center;
     this.c = coordinates; // object with keys x1, y1, x2, y2 and number values.
     this.border = border; // object with keys top, left, right, bottom and values bool
     this.text = text; // string to be written
+    this.textHeight = textHeight; // integer. e.g. 12
+    this.textColor = textColor; // HTML color for ctx
 
+  }
+
+  get font(){
+    return this.fontWeight + ' ' + this.textHeight.toString() + 'px ' + this.fontStyle;
   }
 
   get width(){
@@ -36,13 +43,32 @@ class Box extends Shape {
     return Math.abs(this.c.y2 - this.c.y1);
   }
 
-  computeHeight(){
-    // get the number of lines and infer and set the height of the object
-    this.height = null;
+  get lines(){
+    // return an array of lines that fits the given width, as computed in get width()
+    const characters = this.text.split('');
+    var lines = [];
+    var currentLine = characters[0];
+
+    for (var i = 1; i < characters.length; i++) {
+        var char = characters[i];
+        var width = this.ctx.measureText(currentLine + char).width;
+        if (width < this.width) {
+            currentLine += char;
+        } else {
+            lines.push(currentLine);
+            currentLine = char;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
   }
 
-  get lines(){
-    // return an array of lines that fits the given width
+  _computeHeight(){
+    // get the number of lines and infer and set the height of the object
+    // this resets the y2 variable.
+    // 1.6 is just a ballpark that happens to work
+    // there's not much rhyme or reason to it. :/
+    this.c.y2 = this.lines.length * this.textHeight * 1.6;
   }
 
   inShape(x, y){
@@ -54,18 +80,33 @@ class Box extends Shape {
   }
 
   render(){
+    // recompute the y2 variable
+    this._computeHeight();
+
     // set canvas variables
-    this.ctx.fillStyle = this.fillStyle;
+    this.ctx.fillStyle = this.bkgFillStyle;
     this.ctx.strokeStyle = this.strokeStyle;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.font = this.font;
-    this.ctx.textAlign = this.textAlign
+
 
     // render background
-    // debugger;
     this.ctx.fillRect(this.c.x1, this.c.y1, this.width, this.height);
 
     // render text
+    this.ctx.fillStyle = this.textColor;
+    this.ctx.textAlign = this.textAlign
+
+    var offsetY = this.textHeight; // how much farther down should each line of text go?
+    var offsetX = 0; // deals with text align center
+    if (this.textAlign.toLowerCase() === 'center'){
+      offsetX += this.width/2
+    }
+    for (var i = 0; i < this.lines.length; i++) {
+      var l = this.lines[i];
+      this.ctx.fillText(l, this.c.x1 + offsetX, this.c.y1 + offsetY);
+      offsetY += this.textHeight;
+    }
 
     // render borders
     this.ctx.beginPath()
@@ -93,8 +134,8 @@ class Box extends Shape {
 }
 
 class Triangle extends Shape {
-  constructor(clickable, onClick, ctx, fillStyle, strokeStyle, lineWidth, coordinates) {
-    super(clickable, onClick, ctx, fillStyle, strokeStyle, lineWidth);
+  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, coordinates) {
+    super(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth);
     this.c = coordinates; // object with keys x1 y1 x2 y2, x3 y3 and number values
   }
 
@@ -122,7 +163,7 @@ class Triangle extends Shape {
   }
 
   render(){
-    this.ctx.fillStyle = this.fillStyle;
+    this.ctx.fillStyle = this.bkgFillStyle;
     this.ctx.strokeStyle = this.strokeStyle;
     this.ctx.lineWidth = this.lineWidth;
 
@@ -142,10 +183,12 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   const newCanvas = cloneCanvasAndInsertAbove(mouseCanvas);
   const ctx = newCanvas.getContext('2d');
 
-  // var coords = {x1: 0, y1:0, x2: 100, y2:200}
-  // var border = {top: true, right: true, bottom:true, left: true}
-  // var mainMenu = new Box(false, null, ctx, 'orange', 'green', 1, '12px sans-serif', 'center', coords, border, 'footext')
-  // mainMenu.render();
+  var coords = {x1: 20, y1:20, x2: 200, y2:20}
+  var border = {top: true, right: true, bottom:true, left: true}
+  const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit."
+  var mainMenu = new Box(false, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
+
+  mainMenu.render();
 
 }
 
