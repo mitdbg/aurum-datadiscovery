@@ -313,6 +313,10 @@ if __name__ == '__main__':
 
     input = "ext.owl"
     output = "cache_onto/uberon.pkl"
+    """
+    input = "/home/jian/EKG/dbpedia_2016-04.owl"
+    output = "cache_onto/dbpedia.pkl"
+    """
 
     #parse_ontology(input, output)
 
