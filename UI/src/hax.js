@@ -1,6 +1,7 @@
 // hacky little file that does things like clear the labels cxt
 
 var clickables = [];
+var selectedSource = '';
 
 class Clickable {
   constructor(x1, y1, x2, y2, onClick){
@@ -23,7 +24,8 @@ export function clearLabels(){
 }
 
 export function drawMainMenu(sourceName, selectedColumns, allColumns, x, y){
-
+  selectedSource = sourceName;
+  console.log(selectedSource);
   // get the sigma-mouse canvas
   const mouseCanvas = document.getElementsByClassName('sigma-mouse')[0]
 
@@ -191,10 +193,21 @@ function drawNamedFields(cxt, box, field, seperators){
     cxt.fillText(columnName, box.x + box.padding.left, field.y + offset);
 
     // add to the clickables list
-    const onClickFun = ()=>console.log(columnName);
+    const f = k; // make a copy of k, not just a pointer
+    const selected = field.selected[k];
+
+    var onClick = ''
+    var onClickFun;
+    if(selected['onClick']==='neighbor_search'){
+      onClick = 'neighbor_search(' + f.toString() + ',' + 'tablename)';
+      onClickFun = () =>{console.log(onClick)};
+    } else {
+      onClickFun = ()=>{console.log(columnName); console.log(f);};
+    }
+
+
     var fieldObj = new Clickable(box.x, field.y+offset, box.x + box.width, field.y + offset + field.lineHeight, onClickFun)
     clickables.push(fieldObj);
-    console.log(clickables);
 
     // add in a seperator line, if applicable
     // 1/2 offset happens before and another after line drawing
@@ -265,9 +278,8 @@ function drawSecondaryMenu(cxt, box, triangle){
   field.fillStyle = 'black';
   field.textAlign = 'left';
   field.lineSpace = 7;
-  field.selected = {1: {'field_name': 'Find similar context'}, '2': {'field_name':'Find similar content'}, '3': {'field_name': 'Find PKFK'}}; // stupid format to satisfy existing field drawer
+  field.selected = {'schema_sim': {'field_name': 'Find similar context', 'onClick':'neighbor_search'}, 'content_sim': {'field_name':'Find similar content', 'onClick':'neighbor_search'}, 'pkfk': {'field_name': 'Find PKFK', 'onClick':'neighbor_search'}}; // stupid format to satisfy existing field drawer
   field.y = newBox.y + newBox.padding.top;
-  field.onClick = function(){console.log('named field click')};
 
   // recompute box height
   newBox.height = Object.keys(field.selected).length * (field.lineHeight + field.lineSpace)-1;
@@ -298,7 +310,6 @@ function handleMousemove(event, box, triangle){
   } else{
     document.body.style.cursor = 'default';
   }
-  console.log(event.layerX, event.layerY);
 }
 
 // handle clicks inside of the box or trianglew
