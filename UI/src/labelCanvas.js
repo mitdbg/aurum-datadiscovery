@@ -1,3 +1,5 @@
+var shapes = [];
+
 class Shape {
   constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth){
     this.clickable = clickable; // boolean. Is this a clickable element?
@@ -6,6 +8,7 @@ class Shape {
     this.bkgFillStyle = bkgFillStyle; // ctx for fill style. HTML color as string.
     this.strokeStyle = strokeStyle; // ctx for stroke. HTML color as string.
     this.lineWidth = lineWidth; // ctx for lineWidth. number.
+    shapes.push(this)
   }
 
   render () {
@@ -140,7 +143,7 @@ class Triangle extends Shape {
   }
 
   inShape(x, y) {
-    // is the pr  :320ovided point in the shape? returns bool
+    // is the provided point in the shape? returns bool
 
     // compute the area of the shape
     const a = this._triangleArea(this.c.x1, this.c.y1, this.c.x2, this.c.y2, this.c.x3, this.c.y3);
@@ -168,13 +171,14 @@ class Triangle extends Shape {
     this.ctx.lineWidth = this.lineWidth;
 
     this.ctx.beginPath();
-    this.ctx.moveTo(this.x1, this.y1);
-    this.ctx.lineTo(this.x2, this.y2);
-    this.ctx.lineTo(this.x3, this.y3);
+    this.ctx.moveTo(this.c.x1, this.c.y1);
+    this.ctx.lineTo(this.c.x2, this.c.y2);
+    this.ctx.lineTo(this.c.x3, this.c.y3);
+    this.ctx.lineTo(this.c.x1, this.c.y1);
+    this.ctx.lineTo(this.c.x2, this.c.y1); // extra stroke to deal with pointed triangle vertex
+    this.ctx.stroke()
     this.ctx.fill();
   }
-
-
 }
 
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
@@ -186,9 +190,15 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   var coords = {x1: 20, y1:20, x2: 200, y2:20}
   var border = {top: true, right: true, bottom:true, left: true}
   const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit."
-  var mainMenu = new Box(false, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
-
+  var mainMenu = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
   mainMenu.render();
+
+
+  coords = {x1: 130, y1: 130, x2: 160, y2: 130, x3: 145, y3: 160}
+  var triangle = new Triangle(true, null, ctx, 'red', 'black', 4, coords);
+  triangle.render()
+
+  console.log(shapes);
 
 }
 
@@ -214,7 +224,21 @@ function cloneCanvasAndInsertAbove(oldCanvas){
   const scale = window.devicePixelRatio;
   ctx.scale(scale, scale);
   insertAfter(oldCanvas, newCanvas);
+  newCanvas.addEventListener('mousemove', (event)=>handleMousemove(event));
   return newCanvas;
+}
+
+function handleMousemove(event){
+  const x = event.layerX;
+  const y = event.layerY;
+  for (var i = 0; i < shapes.length; i++) {
+    if(shapes[i].clickable && shapes[i].inShape(x, y)){
+      // condition is entered, but cursor style not changed. Not sure why.
+      document.body.style.cursor = 'pointer';
+      break;
+    }
+  }
+  document.body.style.cursor = 'default';
 }
 
 function insertAfter(referenceNode, newNode) {
