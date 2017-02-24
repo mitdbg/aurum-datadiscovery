@@ -29,11 +29,11 @@ class Box extends Shape {
   }
 
   get width(){
-    return this.c.x1 - this.c.x2;
+    return Math.abs(this.c.x2 - this.c.x1);
   }
 
   get height(){
-    return this.c.y1 - this.c.y2;
+    return Math.abs(this.c.y2 - this.c.y1);
   }
 
   computeHeight(){
@@ -54,8 +54,16 @@ class Box extends Shape {
   }
 
   render(){
+    // set canvas variables
+    this.ctx.fillStyle = this.fillStyle;
+    this.ctx.strokeStyle = this.strokeStyle;
+    this.ctx.lineWidth = this.lineWidth;
+    this.ctx.font = this.font;
+    this.ctx.textAlign = this.textAlign
+
     // render background
-    this.ctx.strokeRect(this.c.x1, this.c.y1, this.width, this.height);
+    // debugger;
+    this.ctx.fillRect(this.c.x1, this.c.y1, this.width, this.height);
 
     // render text
 
@@ -63,21 +71,21 @@ class Box extends Shape {
     this.ctx.beginPath()
     if (this.border.top) {
       this.ctx.moveTo(this.c.x1, this.c.y1);
-      this.ctx.lineTo(this.c.x2, this.c.y2);
+      this.ctx.lineTo(this.c.x2, this.c.y1);
       this.ctx.stroke();}
 
     if (this.border.right) {
-      this.ctx.moveTo(this.c.x2, this.c.y2);
-      this.ctx.lineTo(this.c.x3, this.c.y3);
+      this.ctx.moveTo(this.c.x2, this.c.y1);
+      this.ctx.lineTo(this.c.x2, this.c.y2);
       this.ctx.stroke();}
 
     if (this.border.bottom) {
-      this.ctx.moveTo(this.c.x3, this.c.y3);
-      this.ctx.lineTo(this.c.x4, this.c.y4);
+      this.ctx.moveTo(this.c.x2, this.c.y2);
+      this.ctx.lineTo(this.c.x1, this.c.y2);
       this.ctx.stroke();}
 
     if (this.border.left) {
-      this.ctx.moveTo(this.c.x4, this.c.y4);
+      this.ctx.moveTo(this.c.x1, this.c.y2);
       this.ctx.lineTo(this.c.x1, this.c.y1);
       this.ctx.stroke();}
 
@@ -114,14 +122,31 @@ class Triangle extends Shape {
   }
 
   render(){
-    // render background
+    this.ctx.fillStyle = this.fillStyle;
+    this.ctx.strokeStyle = this.strokeStyle;
+    this.ctx.lineWidth = this.lineWidth;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x1, this.y1);
+    this.ctx.lineTo(this.x2, this.y2);
+    this.ctx.lineTo(this.x3, this.y3);
+    this.ctx.fill();
   }
 
 
 }
 
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
-  console.log('renderCanvas called');
+  // get the sigma-mouse canvas, clone and modify
+  const mouseCanvas = document.getElementsByClassName('sigma-mouse')[0]
+  const newCanvas = cloneCanvasAndInsertAbove(mouseCanvas);
+  const ctx = newCanvas.getContext('2d');
+
+  // var coords = {x1: 0, y1:0, x2: 100, y2:200}
+  // var border = {top: true, right: true, bottom:true, left: true}
+  // var mainMenu = new Box(false, null, ctx, 'orange', 'green', 1, '12px sans-serif', 'center', coords, border, 'footext')
+  // mainMenu.render();
+
 }
 
 export function removeCanvas(){
@@ -131,4 +156,24 @@ export function removeCanvas(){
   const height = document.documentElement.clientHeight;
 
   ctx.clearRect(0, 0, width, height)
+}
+
+/////// /////// ///////
+// helper functions //
+///// /////// ///////
+
+function cloneCanvasAndInsertAbove(oldCanvas){
+  const newCanvas = oldCanvas.cloneNode(true);
+  newCanvas.className = 'aurum-overlay';
+  newCanvas.id = 'aurum-overlay';
+
+  const ctx = newCanvas.getContext('2d');
+  const scale = window.devicePixelRatio;
+  ctx.scale(scale, scale);
+  insertAfter(oldCanvas, newCanvas);
+  return newCanvas;
+}
+
+function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
