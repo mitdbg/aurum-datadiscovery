@@ -538,12 +538,52 @@ def test_4_n_42(path_to_serialized_model):
     print("Finding matchings...OK")
     print("Took: " + str(et - st))
 
+    print("are l4 subsumed by l42?")
+    not_in_l42 = 0
+    not_subsumed = []
+    for m in l4_matchings:
+        if m not in l42_matchings:
+            not_in_l42 += 1
+            not_subsumed.append(m)
+    print("NOT-subsumed: " + str(not_in_l42))
+
+    # L5: [Attribute names] -> [Class names] (syntax)
+    print("Finding L5 matchings...")
+    st = time.time()
+    l5_matchings = matcherlib.find_relation_class_attr_name_matching(om.network, om.kr_handlers)
+    print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    # for match in l5_matchings:
+    #    print(match)
+
+    # l52_matchings = []
+    # """
+    # L52: [Attribute names] -> [Class names] (semantic)
+    print("Finding L52 matchings...")
+    st = time.time()
+    l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(om.network, om.kr_handlers)
+    print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+    # """
+
     with open('OUTPUT_442', 'w') as f:
         f.write("L4" + '\n')
         for m in l4_matchings:
             f.write(str(m) + '\n')
         f.write("L42" + '\n')
         for m in l42_matchings:
+            f.write(str(m) + '\n')
+        f.write("L5" + '\n')
+        for m in l5_matchings:
+            f.write(str(m) + '\n')
+        f.write("L52" + '\n')
+        for m in l52_matchings:
+            f.write(str(m) + '\n')
+        f.write("l4 not subsubmed by l42")
+        for m in not_in_l42:
             f.write(str(m) + '\n')
 
     #print("L4")
@@ -664,8 +704,8 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    #test_4_n_42("../models/chembl22/")
-    #exit()
+    test_4_n_42("../models/chembl22/")
+    exit()
 
     test("../models/chembl22/")
     exit()

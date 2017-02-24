@@ -314,4 +314,18 @@ if __name__ == '__main__':
     input = "ext.owl"
     output = "cache_onto/uberon.pkl"
 
-    parse_ontology(input, output)
+    #parse_ontology(input, output)
+
+    o = OntoHandler()
+
+    o.load_ontology("cache_onto/efo.pkl")
+
+    total = 0
+    nodesc = 0
+    for c in o.o.classes:
+        total += 1
+        descr = c.bestDescription()
+        if descr == "":
+            nodesc += 1
+    print(str(nodesc) + "/" + str(total) + " no descr")
+    # EFO output: 18604/19230 no descr

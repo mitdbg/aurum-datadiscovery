@@ -261,8 +261,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla,
-                                                          penalize_unknown_word=True, add_exact_matches=False)
+            #semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
+            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
             if semantic_sim > 0.5:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
