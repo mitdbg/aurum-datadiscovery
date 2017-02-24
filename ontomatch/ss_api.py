@@ -187,7 +187,6 @@ class SSAPI:
         #    print(match)
 
         #l52_matchings = []
-        #"""
         # L52: [Attribute names] -> [Class names] (semantic)
         print("Finding L52 matchings...")
         st = time.time()
@@ -195,7 +194,6 @@ class SSAPI:
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
-        #"""
         all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
 
         #for match in l52_matchings:
@@ -211,7 +209,7 @@ class SSAPI:
         print("Took: " + str(et - st))
         all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
 
-        # for match in l6_matchings:
+        #for match in l6_matchings:
         #    print(match)
 
         l7_matchings = []
@@ -224,7 +222,7 @@ class SSAPI:
         et = time.time()
         print("Took: " + str(et - st))
 
-        # for match in l7_matchings:
+        #for match in l7_matchings:
         #    print(match)
         #"""
         all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
@@ -318,7 +316,73 @@ class SSAPI:
         # for this function to work efficiently, probably one wants to create a map from onto class to schema element
         # note that the links are between elements of the schema (no ontologies involved here)
 
-        return
+        # build the mapping: (kr, class name) -> class
+        # build a set of object properties pointing to at least one class
+
+        #print(matchings)
+
+        map_ontoclass_name_to_class = dict()
+        set_object_properties = set()
+
+        for kr_name, o in self.kr_handlers.items():
+            for c in o.o.classes:
+                c_name = c.bestLabel().title()
+                map_ontoclass_name_to_class[(kr_name, c_name)] = c
+
+            for p in o.o.objectProperties:
+                if p.ranges:
+                    set_object_properties.add((kr_name, p))
+                
+
+        # build the mapping: (kr, class) -> schema
+        map_ontoclass_to_schema = dict()
+        
+        for matching, matching_types in matchings:
+            schema, kr = matching
+            kr_name, cla_name = kr
+            
+            o = self.kr_handlers[kr_name]
+            #print(cla_name)
+            #onto_class = o.o.getClass(match=cla_name)[0]
+            onto_class = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            #print(kr_name, cla_name)
+            #print(onto_class)
+            if onto_class in map_ontoclass_to_schema:
+                map_ontoclass_to_schema[onto_class].append(schema)
+            else:
+                map_ontoclass_to_schema[onto_class] = [schema]
+
+        links = []
+
+        print("finding all links...")
+        # find all links
+        for matching, matching_types in matchings:
+            schema_A, kr = matching
+            kr_name, cla_name = kr
+
+            o = self.kr_handlers[kr_name]
+            
+            #onto_class_A = o.o.getClass(match=cla_name)
+            onto_class_A = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            # find is_a links using hierarchy of ancestors and descendants
+            for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
+                if onto_class_B in map_ontoclass_to_schema:
+                    schemas = map_ontoclass_to_schema[onto_class_B]
+                    for schema_B in schemas:
+                        if schema_B != schema_A:
+                            links.append((schema_A, "is_a", schema_B))
+            # find property links
+            properties = o.get_properties_all_of(onto_class_A)
+            for p in properties:
+                if (kr_name, p) in set_object_properties:
+                    for onto_class_B in p.ranges:
+                        if onto_class_B in map_ontoclass_to_schema:
+                            schemas = map_ontoclass_to_schema[onto_class_B]
+                            for schema_B in schemas:
+                                if schema_B != schema_A:
+                                    links.append((schema_A, p, schema_B))
+                
+        return links
 
     def find_coarse_grain_hooks(self):
         # FIXME: deprecated?
@@ -443,6 +507,11 @@ def test(path_to_serialized_model):
 
     for m in matchings:
         print(m)
+
+    links = om.find_links(matchings)
+    for link in links:
+        print(link)
+
     exit()
 
     total_matchings = 0
