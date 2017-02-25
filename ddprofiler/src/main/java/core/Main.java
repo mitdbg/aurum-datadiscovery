@@ -220,9 +220,21 @@ public class Main {
 
     configureMetricsReporting(pc);
     
+    // config logs
+    configLog();
+    
     Main m = new Main();
     m.startProfiler(pc);
     
+  }
+  
+  private static void configLog() {
+	  final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("com.zaxxer.hikari");
+	  if (!(logger instanceof ch.qos.logback.classic.Logger)) {
+		  return;
+	  }
+	  ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger)logger;
+	  logbackLogger.setLevel(ch.qos.logback.classic.Level.WARN);
   }
   
   static private void configureMetricsReporting(ProfilerConfig pc){
@@ -261,12 +273,14 @@ public class Main {
     String dbname = dbp.getProperty("conn_path");
     String username = dbp.getProperty("user_name");
     String password = dbp.getProperty("password");
+    String dbschema = dbp.getProperty("dbschema");
 
     LOG.info("Conn to DB on: {}:{}/{}", ip, port, dbname);
 
     Connection dbConn = DBUtils.getDBConnection(dbType, ip, port, dbname, username, password);
 
-    List<String> tables = DBUtils.getTablesFromDatabase(dbConn);
+    List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
+    try{dbConn.close();} catch (SQLException e) {e.printStackTrace();}
     for (String str : tables) {
       LOG.info("Detected relational table: {}", str);
       TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, dbType, ip, port, dbname,

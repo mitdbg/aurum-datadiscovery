@@ -2,6 +2,7 @@ apply plugin: 'java'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'application'
 mainClassName = "core.Main"
 applicationDefaultJvmArgs = []
@@ -48,6 +49,8 @@ dependencies {
     compile 'com.oracle:ojdbc14:10.2.0.5'
     // metrics
     compile 'io.dropwizard.metrics:metrics-core:3.1.0'
+    // connection pool
+    compile 'com.zaxxer:HikariCP:2.6.0'
 
     testCompile 'junit:junit:4.11'
 }
