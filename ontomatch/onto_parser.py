@@ -104,6 +104,38 @@ class OntoHandler:
     def fake(self):
         return self.__get_class_levels_hierarchy()
 
+    def ancestors_of_class(self, c):
+        """
+        Ancestors of given class
+        """
+        return list(self.__get_ancestors_of_class(c))
+
+    def descendants_of_class(self, c):
+        """
+        Descendants of given class
+        """
+        return list(self.__get_descendants_of_class(c))
+
+    def __get_ancestors_of_class(self, c):
+        ancestors = set(c.parents())
+        for parent in c.parents():
+            ancestors |= self.__get_ancestors_of_class(parent)
+        return ancestors
+
+    def __get_descendants_of_class(self, c):
+        descendants = set(c.children())
+        for child in c.children():
+            descendants |= self.__get_descendants_of_class(child)
+        return descendants
+
+    def get_properties_all_of(self, c):
+        properties = self.o.getInferredPropertiesForClass(c)
+        props = []
+        for hierarchy_props in properties:
+            for p in hierarchy_props.values():
+                props.extend(p)
+        return props
+
     def __get_class_levels_hierarchy(self):
 
         flatten = []
@@ -210,12 +242,7 @@ class OntoHandler:
             c = self.o.getClass(id=class_name)
         else:
             c = self.o.getClass(match=class_name)[0]
-        properties = self.o.getInferredPropertiesForClass(c)
-        props = []
-        for k, v in properties.items():
-            for el in v:
-                props.append(el)
-        return props
+        return self.get_properties_all_of(c)
 
     def get_class_data_signatures(self):
         signatures = []
@@ -311,18 +338,16 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    input = "ext.owl"
-    output = "cache_onto/uberon.pkl"
-    """
-    input = "/home/jian/EKG/dbpedia_2016-04.owl"
+    input = "dbpedia_2016-04.owl"
     output = "cache_onto/dbpedia.pkl"
-    """
 
-    #parse_ontology(input, output)
+    parse_ontology(input, output)
+
+    exit()
 
     o = OntoHandler()
 
-    o.load_ontology("cache_onto/efo.pkl")
+    o.load_ontology("cache_onto/dbpedia.pkl")
 
     total = 0
     nodesc = 0

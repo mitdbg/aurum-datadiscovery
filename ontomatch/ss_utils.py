@@ -58,6 +58,86 @@ def minhash(str_values):
 
 def extract_cohesive_groups(table_name, attrs):
 
+    def does_it_keep_group_coherent(running_group, a, b, threshold):
+        if len(running_group) == 0:
+            return True
+        av = glove_api.get_embedding_for_word(a)
+        bv = glove_api.get_embedding_for_word(b)
+        for el in running_group:
+            elv = glove_api.get_embedding_for_word(el)
+            sim_a = glove_api.semantic_distance(elv, av)
+            if sim_a > threshold:
+                sim_b = glove_api.semantic_distance(elv, bv)
+                if sim_b > threshold:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+    threshold = 0.7
+    groups = []
+    tokens = set()
+    ctb = nlp.curate_string(table_name)
+    tokens |= set(ctb.split(' '))
+    for attr in attrs:
+        cattr = nlp.curate_string(attr)
+        tokens |= set(cattr.split(' '))
+    tokens = [t for t in tokens if t not in stopwords.words('english') and len(t) > 1]
+
+    running_groups = [set()]
+    for a, b in itertools.combinations(tokens, 2):
+        av = glove_api.get_embedding_for_word(a)
+        bv = glove_api.get_embedding_for_word(b)
+        if av is None or bv is None:
+            continue
+        sim = glove_api.semantic_distance(av, bv)
+        if sim > threshold:  # try to add to existing group
+            added_to_existing_group = False
+            for running_group in running_groups:
+                ans = does_it_keep_group_coherent(running_group, a, b, threshold)
+                if ans:  # Add to as many groups as necessary
+                    added_to_existing_group = True
+                    running_group.add(a)
+                    running_group.add(b)
+            if not added_to_existing_group:
+                running_group = set()
+                running_group.add(a)
+                running_group.add(b)
+                running_groups.append(running_group)
+
+    return [(threshold, group) for group in running_groups]
+    #return [(threshold, running_groups)]
+
+def extract_cohesive_groups1(table_name, attrs):
+
+    tokens = set()
+    ctb = nlp.curate_string(table_name)
+    tokens |= set(ctb.split(' '))
+    for attr in attrs:
+        cattr = nlp.curate_string(attr)
+        tokens |= set(cattr.split(' '))
+    #tokens = [t for t in tokens if t not in stopwords.words('english') and len(t) > 1]
+    token_vector = [(t, glove_api.get_embedding_for_word(t)) for t in tokens
+                    if t not in stopwords.words('english') and len(t) > 1
+                    and glove_api.get_embedding_for_word(t) is not None]
+
+    threshold = 0.5
+
+    group = set()
+    for a, b in itertools.combinations(token_vector, 2):
+        sim = glove_api.semantic_distance(a[1], b[1])
+        if sim > threshold:
+            group.add(a[0])
+            group.add(b[0])
+
+    #group2 = extract_cohesive_groups2(table_name, attrs)
+
+    return [(threshold, group)] #, group2
+
+
+def extract_cohesive_groups2(table_name, attrs):
+
     def maybe_add_new_set(groups, current):
         # Right now, filter duplicate sets, and subsumed sets as well
         score, current_set = current
@@ -83,7 +163,10 @@ def extract_cohesive_groups(table_name, attrs):
         tokens |= set(cattr.split(' '))
     tokens = [t for t in tokens if t not in stopwords.words('english') and len(t) > 1]
     for anchor in tokens:
-        current = (0.7, set())  # keeps (score, []) cohesiveness score and list of attrs that honor it
+
+        threshold = 0.7
+
+        current = (threshold, set())  # keeps (score, []) cohesiveness score and list of attrs that honor it
         for t in tokens:
             if anchor == t:  # not interested in self-comparison
                 continue
@@ -95,7 +178,8 @@ def extract_cohesive_groups(table_name, attrs):
                     new_set = current[1]
                     new_set.add(anchor)
                     new_set.add(t)
-                    current = (ss, new_set)
+                    #current = (ss, new_set)
+                    current = (threshold, new_set)
         if len(current[1]) > 0:
             maybe_add_new_set(groups, current)
     return groups
@@ -195,6 +279,16 @@ def compute_sem_distance_with(x, sv):
     if len(semantic_sim_array) > 1:
         ssim = np.mean(semantic_sim_array)
     return ssim
+
+
+def groupwise_semantic_sim(sv1, sv2, threshold):
+    to_ret = False  # the default is false
+    for a, b in itertools.product(sv1, sv2):
+        sim = glove_api.semantic_distance(a, b)
+        if sim < threshold:
+            return False  # return False and terminate as soon as one combination does not satisfy the threshold
+        to_ret = True  # if at least we iterate once, the default changes to True
+    return to_ret
 
 
 def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True):

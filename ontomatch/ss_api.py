@@ -15,6 +15,7 @@ from dataanalysis import nlp_utils as nlp
 import time
 from ontomatch import matcher_lib as matcherlib
 from ontomatch.matcher_lib import MatchingType
+import operator
 
 # Have a list of accepted formats in the ontology parser
 
@@ -99,7 +100,7 @@ class SSAPI:
         Find matching for each of the different possible categories
         :return: list of matchings
         """
-        all_matchings = dict()
+        all_matchings = defaultdict(list)
 
         # Build content sim
         self.__build_content_sim(0.6)
@@ -203,7 +204,7 @@ class SSAPI:
         # L6: [Relations] -> [Class names] (semantic groups)
         print("Finding L6 matchings...")
         st = time.time()
-        l6_matchings = matcherlib.find_sem_coh_matchings(self.network, self.kr_handlers)
+        l6_matchings, table_groups = matcherlib.find_sem_coh_matchings(self.network, self.kr_handlers)
         print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -217,7 +218,7 @@ class SSAPI:
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
         st = time.time()
-        #l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
         print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -231,22 +232,14 @@ class SSAPI:
         for values in all_matchings.values():
             total_matchings_pre_combined += len(values)
         print("ALL_matchings: " + str(total_matchings_pre_combined))
-        combined_matchings, l4_matchings = matcherlib.combine_matchings(all_matchings)
-        print("COMBINED_matchings: " + str(len(combined_matchings)))
+        combined_matchings = matcherlib.combine_matchings(all_matchings)
+        print("COMBINED_matchings: " + str(len(combined_matchings.items())))
 
         with open('OUTPUT', 'w') as f:
-            for m in l4_matchings:
-                f.write(str(m) + '\n')
-            for m in l42_matchings:
-                f.write(str(m) + '\n')
-            for m in combined_matchings:
-                f.write(str(m) + '\n')
-
-        #for m in l4_matchings:
-        #    print(m)
-
-        #for m in l42_matchings:
-        #    print(m)
+            for k, v in combined_matchings.items():
+                lines = v.print_serial()
+                for l in lines:
+                    f.write(l + '\n')
 
         return combined_matchings
 
@@ -500,30 +493,12 @@ def test(path_to_serialized_model):
     print("Finding matchings...")
     st = time.time()
     matchings = om.find_matchings()
-    #matchings = om.find_sem_coh_matchings()
     et = time.time()
     print("Finding matchings...OK")
     print("Took: " + str(et-st))
 
-    for m in matchings:
-        print(m)
-
-    links = om.find_links(matchings)
-    for link in links:
-        print(link)
-
-    exit()
-
-    total_matchings = 0
-    for k, v in matchings.items():
-        total_matchings += len(v)
-        print(str(k) + ": " + str(len(v)))
-    print("total matchings: " + str(total_matchings))
-    print("####")
-    for m, v in matchings.items():
-        print(m)
-        for el in v:
-            print(el)
+    for k, v in matchings:
+        print(v)
 
     return om
 
@@ -578,10 +553,27 @@ def test_4_n_42(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    # om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
+
+    # L6: [Relations] -> [Class names] (semantic groups)
+
+    print("Finding L6 matchings...")
+    st = time.time()
+    l6_matchings, sem_coh_groups = matcherlib.find_sem_coh_matchings(om.network, om.kr_handlers)
+    print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    for m in l6_matchings:
+        print(m)
+
+    for k, v in sem_coh_groups.items():
+        print(str(k) + " -> " + str(v))
+
+    exit()
 
     print("Finding matchings...")
     st = time.time()
@@ -592,6 +584,15 @@ def test_4_n_42(path_to_serialized_model):
     print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
     et = time.time()
     print("Took: " + str(et - st))
+
+    print("computing fanout")
+    fanout = defaultdict(int)
+    for m in l4_matchings:
+        sch, cla = m
+        fanout[sch] += 1
+    ordered = sorted(fanout.items(), key=operator.itemgetter(1), reverse=True)
+    for o in ordered:
+        print(o)
 
     # for match in l4_matchings:
     #    print(match)
@@ -616,6 +617,7 @@ def test_4_n_42(path_to_serialized_model):
             not_subsumed.append(m)
     print("NOT-subsumed: " + str(not_in_l42))
 
+    """
     # L5: [Attribute names] -> [Class names] (syntax)
     print("Finding L5 matchings...")
     st = time.time()
@@ -628,7 +630,7 @@ def test_4_n_42(path_to_serialized_model):
     #    print(match)
 
     # l52_matchings = []
-    # """
+
     # L52: [Attribute names] -> [Class names] (semantic)
     print("Finding L52 matchings...")
     st = time.time()
@@ -636,9 +638,10 @@ def test_4_n_42(path_to_serialized_model):
     print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
     et = time.time()
     print("Took: " + str(et - st))
-    # """
 
-    with open('OUTPUT_442', 'w') as f:
+    """
+
+    with open('OUTPUT_442_only', 'w') as f:
         f.write("L4" + '\n')
         for m in l4_matchings:
             f.write(str(m) + '\n')
@@ -646,14 +649,14 @@ def test_4_n_42(path_to_serialized_model):
         for m in l42_matchings:
             f.write(str(m) + '\n')
         f.write("L5" + '\n')
-        for m in l5_matchings:
-            f.write(str(m) + '\n')
-        f.write("L52" + '\n')
-        for m in l52_matchings:
-            f.write(str(m) + '\n')
-        f.write("l4 not subsubmed by l42")
-        for m in not_in_l42:
-            f.write(str(m) + '\n')
+        #for m in l5_matchings:
+        #    f.write(str(m) + '\n')
+        #f.write("L52" + '\n')
+        #for m in l52_matchings:
+        #    f.write(str(m) + '\n')
+        #f.write("l4 not subsubmed by l42")
+        #for m in not_subsumed:
+        #    f.write(str(m) + '\n')
 
     #print("L4")
     #for m in l4_matchings:
@@ -765,6 +768,32 @@ def test_fuzzy(path_to_serialized_model):
         print(m)
 
 
+def test_find_links(path_to_serialized_model, matchings):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+
+    links = om.find_links(matchings)
+    for link in links:
+        print(link)
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
@@ -773,10 +802,27 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    test_4_n_42("../models/chembl22/")
-    exit()
+    #test_4_n_42("../models/massdata/")
+    #exit()
 
-    test("../models/chembl22/")
+    #test("../models/chembl22/")
+    #exit()
+
+    matchings = []
+    with open("OUTPUT", 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            tokens = l.split("->")
+            sch = tokens[0]
+            cla = tokens[1]
+            sch_tokens = sch.split("%%%")
+            sch_tokens = [t.strip() for t in sch_tokens]
+            cla_tokens = cla.split("%%%")
+            cla_tokens = [t.strip() for t in cla_tokens]
+            matching_format = (((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
+            matchings.append(matching_format)
+
+    test_find_links("../models/chembl22/", matchings)
     exit()
 
     print("SSAPI")

@@ -9,7 +9,7 @@ from datasketch import MinHash, MinHashLSH
 from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from dataanalysis import dataanalysis as da
 import operator
-import numpy as np
+from collections import namedtuple
 
 
 class MatchingType(Enum):
@@ -24,7 +24,136 @@ class MatchingType(Enum):
     L7_CLASSNAME_ATTRNAME_FUZZY = 8
 
 
+class SimpleTrie:
+
+    def __init__(self):
+        self._leave = "_leave_"
+        self.root = dict()
+
+    def add_sequences(self, sequences):
+        for seq in sequences:
+            current_dict = self.root
+            for token in seq:
+                current_dict = current_dict.setdefault(token, {})  # another dict as default
+            current_dict[self._leave] = self._leave
+        return self.root
+
+    def longest_prefix(self):
+        return
+
+class Matching:
+
+    def __init__(self, db_name, source_name):
+        self.db_name = db_name
+        self.source_name = source_name
+        self.source_level_matchings = defaultdict(lambda: defaultdict(list))
+        self.attr_matchings = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
+    def add_relation_correspondence(self, kr_name, class_name, matching_type):
+        self.source_level_matchings[kr_name][class_name].append(matching_type)
+
+    def add_attribute_correspondence(self, attr_name, kr_name, class_name, matching_type):
+        self.attr_matchings[attr_name][kr_name][class_name].append(matching_type)
+
+    def __str__(self):
+        header = self.db_name + " - " + self.source_name
+        relation_matchings = list()
+        relation_matchings.append(header)
+        if len(self.source_level_matchings.items()) > 0:
+            for kr_name, values in self.source_level_matchings.items():
+                for class_name, matchings in values.items():
+                    line = kr_name + " - " + class_name + " : " + str(matchings)
+                    relation_matchings.append(line)
+        else:
+            line = "0 relation matchings"
+            relation_matchings.append(line)
+        if len(self.attr_matchings.items()) > 0:
+            for attr_name, values in self.attr_matchings.items():
+                for kr_name, classes in values.items():
+                    for class_name, matchings in classes.items():
+                        line = attr_name + " -> " + kr_name + " - " + class_name + " : " + str(matchings)
+                        relation_matchings.append(line)
+        string_repr = '\n'.join(relation_matchings)
+        return string_repr
+
+    def print_serial(self):
+        relation_matchings = []
+        for kr_name, values in self.source_level_matchings.items():
+            for class_name, matchings in values.items():
+                line = self.db_name + " %%% " + self.source_name + " %%% _ -> " + kr_name \
+                       + " %%% " + class_name + " %%% " + str(matchings)
+                relation_matchings.append(line)
+        for attr_name, values in self.attr_matchings.items():
+            for kr_name, classes in values.items():
+                for class_name, matchings in classes.items():
+                    line = self.db_name + " %%% " + self.source_name + " %%% " + attr_name \
+                           + " -> " + kr_name + " %%% " + class_name + " %%% " + str(matchings)
+                    relation_matchings.append(line)
+        #string_repr = '\n'.join(relation_matchings)
+        return relation_matchings
+
+
 def combine_matchings(all_matchings):
+
+    def process_attr_matching(building_matching_objects, m, matching_type):
+        sch, krn = m
+        db_name, source_name, field_name = sch
+        kr_name, class_name = krn
+        mobj = building_matching_objects.get((db_name, source_name), None)
+        if mobj is None:
+            mobj = Matching(db_name, source_name)
+        mobj.add_attribute_correspondence(field_name, kr_name, class_name, matching_type)
+        building_matching_objects[(db_name, source_name)] = mobj
+
+    def process_relation_matching(building_matching_objects, m, matching_type):
+        sch, krn = m
+        db_name, source_name, field_name = sch
+        kr_name, class_name = krn
+        mobj = building_matching_objects.get((db_name, source_name), None)
+        if mobj is None:
+            mobj = Matching(db_name, source_name)
+        mobj.add_relation_correspondence(kr_name, class_name, matching_type)
+        building_matching_objects[(db_name, source_name)] = mobj
+
+    l1_matchings = all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE]
+    l2_matchings = all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE]
+    l4_matchings = all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN]
+    l42_matchings = all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM]
+    l5_matchings = all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN]
+    l52_matchings = all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM]
+    l6_matchings = all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG]
+    l7_matchings = all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY]
+
+    building_matching_objects = defaultdict(None)  # (db_name, source_name) -> stuff
+
+    for m in l1_matchings:
+        process_attr_matching(building_matching_objects, m, MatchingType.L1_CLASSNAME_ATTRVALUE)
+
+    for m in l2_matchings:
+        process_attr_matching(building_matching_objects, m, MatchingType.L2_CLASSVALUE_ATTRVALUE)
+
+    for m in l4_matchings:
+        process_relation_matching(building_matching_objects, m, MatchingType.L4_CLASSNAME_RELATIONNAME_SYN)
+
+    for m in l42_matchings:
+        process_relation_matching(building_matching_objects, m, MatchingType.L42_CLASSNAME_RELATIONNAME_SEM)
+
+    for m in l5_matchings:
+        process_attr_matching(building_matching_objects, m, MatchingType.L5_CLASSNAME_ATTRNAME_SYN)
+
+    for m in l52_matchings:
+        process_attr_matching(building_matching_objects, m, MatchingType.L52_CLASSNAME_ATTRNAME_SEM)
+
+    for m in l6_matchings:
+        process_relation_matching(building_matching_objects, m, MatchingType.L6_CLASSNAME_RELATION_SEMSIG)
+
+    for m in l7_matchings:
+        process_attr_matching(building_matching_objects, m, MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY)
+
+    return building_matching_objects
+
+
+def combine_matchings2(all_matchings):
     # TODO: divide running score, based on whether content was available or not (is it really necessary?)
 
     # L1 creates its own matchings
@@ -261,8 +390,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            #semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
+            #semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
             if semantic_sim > 0.5:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
@@ -309,7 +438,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
             names.append(('class', (kr_name, original_cl_name), m))
 
     # Index all the minhashes
-    lsh_index = MinHashLSH(threshold=0.3, num_perm=32)
+    lsh_index = MinHashLSH(threshold=0.5, num_perm=32)
 
     for idx in range(len(names)):
         lsh_index.insert(idx, names[idx][2])
@@ -422,11 +551,12 @@ def __find_relation_class_matchings(self):
 
 def find_sem_coh_matchings(network, kr_handlers):
     matchings = []
+    matchings_special = []
     # Get all relations with groups
     table_groups = dict()
     for db, t, attrs in SS.read_table_columns(None, network=network):
         groups = SS.extract_cohesive_groups(t, attrs)
-        table_groups[(db, t)] = groups
+        table_groups[(db, t)] = groups  # (score, [set()])
 
     names = []
     # Retrieve class names
@@ -462,7 +592,16 @@ def find_sem_coh_matchings(network, kr_handlers):
                     class_seen.append(class_name)
                     match = ((db_name, table_name, "_"), (kr_name, class_name))
                     matchings.append(match)
-    return matchings
+                """
+                similar = SS.groupwise_semantic_sim(class_svs, g_svs, 0.7)
+                if similar:
+                    class_seen.append(class_name)
+                    match = ((db_name, table_name, "_"), (kr_name, class_name))
+                    matchings_special.append(match)
+                continue
+                """
+
+    return matchings, table_groups #, matchings_special
 
 cutoff_likely_match_threshold = 0.4
 min_relevance_score = 0.2
@@ -508,3 +647,13 @@ def find_hierarchy_content_fuzzy(kr_handlers, store):
 
 if __name__ == "__main__":
     print("Matcher lib")
+
+    st = SimpleTrie()
+
+    sequences = [["a", "b", "c", "d"], ["a", "b", "c", "v"], ["a", "b", "c"], ["a", "b", "c", "lk"]]
+
+    root = st.add_sequences(sequences)
+
+    print(root)
+
+
