@@ -141,8 +141,7 @@ class SSAPI:
         # L3: [class.context] -> relation
         print("Finding L3 matchings...")
         st = time.time()
-        #l3_matchings = self.find_coarse_grain_hooks_n2()
-        l3_matchings = []
+        l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
         print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -553,10 +552,21 @@ def test_4_n_42(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
+
+    # L3: [class.context] -> relation
+    print("Finding L3 matchings...")
+    st = time.time()
+    l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(om.network, om.kr_handlers)
+    print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    for m in l3_matchings:
+        print(m)
 
     # L6: [Relations] -> [Class names] (semantic groups)
 
@@ -802,8 +812,8 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    #test_4_n_42("../models/massdata/")
-    #exit()
+    test_4_n_42("../models/chembl22/")
+    exit()
 
     #test("../models/chembl22/")
     #exit()

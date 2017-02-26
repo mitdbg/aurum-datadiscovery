@@ -313,6 +313,10 @@ class OntoHandler:
 
         label = c.bestLabel()
         descr = c.bestDescription()
+
+        if descr is None or descr == "":
+            return False, 'no descr here'  # we won't harness enough context...
+
         # Get class name, description -> bow, properties -> bow
         pnouns = nlp.get_proper_nouns(descr)
         nouns = nlp.get_nouns(descr)
@@ -338,8 +342,8 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    input = "dbpedia_2016-04.owl"
-    output = "cache_onto/dbpedia.pkl"
+    input = "go.owl"
+    output = "cache_onto/go.pkl"
 
     parse_ontology(input, output)
 
@@ -347,7 +351,7 @@ if __name__ == '__main__':
 
     o = OntoHandler()
 
-    o.load_ontology("cache_onto/dbpedia.pkl")
+    o.load_ontology("cache_onto/efo.pkl")
 
     total = 0
     nodesc = 0

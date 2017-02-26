@@ -9,7 +9,6 @@ from datasketch import MinHash, MinHashLSH
 from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from dataanalysis import dataanalysis as da
 import operator
-from collections import namedtuple
 
 
 class MatchingType(Enum):
@@ -40,6 +39,7 @@ class SimpleTrie:
 
     def longest_prefix(self):
         return
+
 
 class Matching:
 
@@ -644,6 +644,64 @@ def find_hierarchy_content_fuzzy(kr_handlers, store):
                 else:
                     break  # orderd, so once one does not comply, no one else does...
     return matchings
+
+
+def find_relation_class_sem_coh_clss_context(network, kr_handlers):
+
+    matchings = []
+
+    # consider reusing this from previous execution...
+    table_groups = dict()
+    for db, t, attrs in SS.read_table_columns(None, network=network):
+        groups = SS.extract_cohesive_groups(t, attrs)
+        table_groups[(db, t)] = groups  # (score, [set()])
+
+    # get vectors for onto classes
+    class_ss = _get_kr_classes_vectors(kr_handlers)
+
+    for db_table_info, groups in table_groups.items():
+        db_name, table_name = db_table_info
+        class_seen = []  # to filter out already seen classes
+        for g_score, g_tokens in groups:
+            g_svs = []
+            for t in g_tokens:
+                sv = glove_api.get_embedding_for_word(t)
+                if sv is not None:
+                    g_svs.append(sv)
+
+            for class_info, class_svs in class_ss.items():
+                kr_name, class_name = class_info
+                sim = SS.compute_semantic_similarity(class_svs, g_svs)
+                if sim > g_score and class_name not in class_seen:
+                    class_seen.append(class_name)
+                    match = ((db_name, table_name, "_"), (kr_name, class_name))
+                    matchings.append(match)
+    return matchings
+
+
+def _get_kr_classes_vectors(kr_handlers):
+    class_vectors = dict()
+    for kr_name, kr in kr_handlers.items():
+        for class_name in kr.classes_id():
+            success, ret = kr.bow_repr_of(class_name, class_id=True)  # Get bag of words representation
+            if success:
+                label, bow = ret
+                seen_tokens = []  # filtering out already seen tokens
+                sem_vectors = []
+                for el in bow:
+                    el = el.replace('_', ' ')
+                    tokens = el.split(' ')
+                    for token in tokens:
+                        token = token.lower()
+                        if token not in stopwords.words('english'):
+                            seen_tokens.append(token)
+                            sem_vector = glove_api.get_embedding_for_word(token)
+                            if sem_vector is not None:
+                                sem_vectors.append(sem_vector)
+                if len(sem_vectors) > 0:  # otherwise just no context generated for this class
+                    class_vectors[(kr_name, kr.name_of_class(class_name))] = sem_vectors
+    return class_vectors
+
 
 if __name__ == "__main__":
     print("Matcher lib")
