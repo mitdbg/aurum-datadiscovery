@@ -344,7 +344,7 @@ class SSAPI:
             else:
                 map_ontoclass_to_schema[onto_class] = [schema]
 
-        links = []
+        links = set()
 
         print("finding all links...")
         # find all links
@@ -357,12 +357,13 @@ class SSAPI:
             #onto_class_A = o.o.getClass(match=cla_name)
             onto_class_A = map_ontoclass_name_to_class[(kr_name, cla_name)]
             # find is_a links using hierarchy of ancestors and descendants
-            for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
+            #for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
+            for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A): # asymmetric of is_a relationship
                 if onto_class_B in map_ontoclass_to_schema:
                     schemas = map_ontoclass_to_schema[onto_class_B]
                     for schema_B in schemas:
                         if schema_B != schema_A:
-                            links.append((schema_A, "is_a", schema_B))
+                            links.add((schema_A, "is_a", schema_B))
             # find property links
             properties = o.get_properties_all_of(onto_class_A)
             for p in properties:
@@ -372,9 +373,9 @@ class SSAPI:
                             schemas = map_ontoclass_to_schema[onto_class_B]
                             for schema_B in schemas:
                                 if schema_B != schema_A:
-                                    links.append((schema_A, p, schema_B))
+                                    links.add((schema_A, (p.bestLabel().title(), repr(p)), schema_B))
                 
-        return links
+        return list(links)
 
     def find_coarse_grain_hooks(self):
         # FIXME: deprecated?
@@ -484,10 +485,11 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     print("Finding matchings...")
     st = time.time()
@@ -796,9 +798,10 @@ def test_find_links(path_to_serialized_model, matchings):
 
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
 
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     links = om.find_links(matchings)
     for link in links:
@@ -818,6 +821,9 @@ if __name__ == "__main__":
     #test("../models/chembl22/")
     #exit()
 
+    #test("../models/massdata/")
+    #exit()
+
     matchings = []
     with open("OUTPUT", 'r') as f:
         lines = f.readlines()
@@ -832,7 +838,8 @@ if __name__ == "__main__":
             matching_format = (((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
             matchings.append(matching_format)
 
-    test_find_links("../models/chembl22/", matchings)
+    #test_find_links("../models/chembl22/", matchings)
+    test_find_links("../models/massdata/", matchings)
     exit()
 
     print("SSAPI")
