@@ -374,7 +374,7 @@ class SSAPI:
                             schemas = map_ontoclass_to_schema[onto_class_B]
                             for schema_B in schemas:
                                 if schema_B != schema_A:
-                                    links.add((schema_A, (p.bestLabel().title(), p.uri), schema_B))
+                                    links.add((schema_A, (p.bestLabel().title(), repr(p)), schema_B))
                 
         return list(links)
 
