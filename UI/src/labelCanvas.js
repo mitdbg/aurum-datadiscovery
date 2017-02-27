@@ -276,14 +276,6 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   console.log(shapes);
 }
 
-export function removeCanvas(){
-  const ctx = document.getElementsByClassName('sigma-labels')[0].getContext('2d');
-  // get the full height and width of the window
-  const width = document.documentElement.clientWidth;
-  const height = document.documentElement.clientHeight;
-
-  ctx.clearRect(0, 0, width, height)
-}
 
 /////// /////// ///////
 // helper functions //
@@ -306,12 +298,22 @@ function cloneCanvasAndInsertAbove(oldCanvas){
 function handleClick(event){
   const x = event.layerX;
   const y = event.layerY;
+  var clickInShape = false; // was the click inside of an existing shape?
   for (var i = shapes.length - 1; i >= 0; i--) {
     var shape = shapes[i];
+    if(shape.inShape(x, y)){
+      clickInShape = true;
+    }
+
     if(shape.clickable && shape.inShape(x, y)){
       shape.onClick();
+      clickInShape = true;
       break;
     }
+  }
+  if(clickInShape !== true){
+    const canvas = document.getElementById('aurum-overlay')
+    canvas.parentNode.removeChild(canvas)
   }
   document.body.style.cursor = 'default';
 }

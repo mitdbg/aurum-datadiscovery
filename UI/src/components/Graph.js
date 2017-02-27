@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeConvert } from '../ajax'
-import { removeCanvas, renderCanvas} from '../labelCanvas'
+import { renderCanvas} from '../labelCanvas'
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -34,7 +34,6 @@ class Graph extends React.Component {
   }
 
   clearAndDrawNewLabels(){
-    removeCanvas();
     const selectedColumns = this.props.selection[this.state.source];
     renderCanvas(
       this.state.source, selectedColumns, this.state.columns, this.state.clickX, this.state.clickY);
