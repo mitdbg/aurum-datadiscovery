@@ -71,7 +71,7 @@ class Box extends Shape {
     return lines;
   }
 
-  computeHeight(){
+  computeY2(){
     // get the number of lines and infer and set the height of the object
     // this resets the y2 variable.
     // 1.6 is just a ballpark that happens to work
@@ -89,8 +89,8 @@ class Box extends Shape {
 
   render(){
     // recompute the y2 variable
-    if(this.text !== null && this.text !=''){
-      this.computeHeight();
+    if(this.text !== null && this.text !== ''){
+      this.computeY2();
     }
 
     // set canvas variables
@@ -207,7 +207,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   var border = {top: true, right: true, bottom:true, left: true};
   var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: height + y + margin.top}; // y2 isn't clear yet.
 
-  var bkgrndBox = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black')
+  var bkgrndBox = new Box(false, null, ctx, '#f2f2f2', 'black', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black')
 
 
   // create the source title
@@ -215,22 +215,49 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   margin = {top: 5, right: 5, bottom: 5, left: 5}
   border = {top: false, right: false, bottom: false, left:false};
   coords = {x1: bkgrndBox.c.x1 + margin.left, y1:bkgrndBox.c.y1 + margin.top, x2: bkgrndBox.c.x2 - margin.right, y2: bkgrndBox.c.y2 + 20}; // again, y2 isn't clear yet
-  var sourceBox = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, source, 12, 'black')
-  sourceBox.computeHeight();
+  var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
+  sourceBox.computeY2(); // compute the y2 variable for this box, based on the text length
+
+  // create a box for each of the fields
+
+  var selectedBoxes = [];
+  for (var k in columnsSelected){
+    // for-in guard that react yells about if it's not here
+    if (!Object.prototype.hasOwnProperty.call(columnsSelected, k)) {
+      break;
+    }
+    var text = columnsSelected[k]['field_name'];
+    border = border = {top: true, right: false, bottom: false, left:false};
+    margin = {top: 5, right: 5, bottom: 5, left: 5}
+    coords = {x1: bkgrndBox.c.x1 + margin.left, y1:0, x2: bkgrndBox.c.x2 - margin.right, y2: 0}; // again, y2 isn't clear yet
+    var selectedBox = new Box(true, null, ctx, null, 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, text, 12, 'black');
+
+    if (selectedBoxes.length === 0){
+      selectedBox.c.y1 = sourceBox.c.y2 + margin.top
+    } else{
+      selectedBox.c.y1 = selectedBoxes[selectedBoxes.length-1].c.y2;
+    }
+
+    selectedBox.computeY2();
+    selectedBoxes.push(selectedBox);
+
+  }
+
+  // console.log(columnsSelected);
 
 
-  bkgrndBox.c.y2 = sourceBox.c.y2+5;
+  bkgrndBox.c.y2 = selectedBoxes[selectedBoxes.length-1].c.y2 + 5;
+
+
 
   bkgrndBox.render();
   sourceBox.render();
+  for (var i = 0; i < selectedBoxes.length; i++) {
+    selectedBoxes[i].render()
+  }
 
 
 
-  // var coords = {x1: 20, y1:20, x2: 200, y2:20}
-  // var border = {top: true, right: true, bottom:true, left: true}
-  // const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit."
-  // var mainMenu = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, text, 12, 'black')
-  // mainMenu.render();
 
 
   coords = {x1: 130, y1: 130, x2: 160, y2: 130, x3: 145, y3: 160}
@@ -274,6 +301,7 @@ function handleMousemove(event){
     if(shapes[i].clickable && shapes[i].inShape(x, y)){
       // condition is entered, but cursor style not changed. Not sure why.
       document.body.style.cursor = 'pointer';
+      console.log('cursor should be pointer');
       break;
     }
   }
