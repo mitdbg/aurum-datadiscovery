@@ -54,25 +54,29 @@ class Box extends Shape {
     var currentLine = characters[0];
 
     for (var i = 1; i < characters.length; i++) {
-        var char = characters[i];
-        var width = this.ctx.measureText(currentLine + char).width;
-        if (width < this.width) {
-            currentLine += char;
-        } else {
-            lines.push(currentLine);
-            currentLine = char;
-        }
+      var char = characters[i];
+      var width = this.ctx.measureText(currentLine + char).width;
+      if (width < this.width) {
+        currentLine += char;
+      } else {
+        lines.push(currentLine);
+        currentLine = char;
+      }
     }
-    lines.push(currentLine);
+
+    // make sure we don't return an arary [undefined]
+    if (currentLine !== undefined && currentLine !== null){
+      lines.push(currentLine);
+    }
     return lines;
   }
 
-  _computeHeight(){
+  computeHeight(){
     // get the number of lines and infer and set the height of the object
     // this resets the y2 variable.
     // 1.6 is just a ballpark that happens to work
     // there's not much rhyme or reason to it. :/
-    this.c.y2 = this.lines.length * this.textHeight * 1.6;
+    this.c.y2 = this.c.y1 + this.lines.length * this.textHeight * 1.5;
   }
 
   inShape(x, y){
@@ -85,7 +89,9 @@ class Box extends Shape {
 
   render(){
     // recompute the y2 variable
-    this._computeHeight();
+    if(this.text !== null && this.text !=''){
+      this.computeHeight();
+    }
 
     // set canvas variables
     this.ctx.fillStyle = this.bkgFillStyle;
@@ -196,20 +202,27 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
 
   // create the background box when nodes are clicked
   var width = 225;
+  var height = 200;
   var margin = {top: 15};
   var border = {top: true, right: true, bottom:true, left: true};
-  var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: y + margin.top + 20}; // y2 isn't clear yet.
+  var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: height + y + margin.top}; // y2 isn't clear yet.
 
-  var bkgrnd = new Box(false, null, ctx, 'orange', 'green', 1, null, null, null, coords, border, '', 12, null);
-  // bkgrnd.render();
+  var bkgrndBox = new Box(true, null, ctx, 'orange', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black')
+
 
   // create the source title
-  width = bkgrnd.c.width - 5*2;
+  width = bkgrndBox.c.width - 5*2;
   margin = {top: 5, right: 5, bottom: 5, left: 5}
   border = {top: false, right: false, bottom: false, left:false};
-  coords = {x1: bkgrnd.c.x1 + margin.left, y1:bkgrnd.c.y1 + margin.top, x2: bkgrnd.c.x2 - margin.right, y2: bkgrnd.c.y2 + 20}; // again, y2 isn't clear yet
-  var mainMenu = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, source, 12, 'black')
-  mainMenu.render();
+  coords = {x1: bkgrndBox.c.x1 + margin.left, y1:bkgrndBox.c.y1 + margin.top, x2: bkgrndBox.c.x2 - margin.right, y2: bkgrndBox.c.y2 + 20}; // again, y2 isn't clear yet
+  var sourceBox = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, source, 12, 'black')
+  sourceBox.computeHeight();
+
+
+  bkgrndBox.c.y2 = sourceBox.c.y2+5;
+
+  bkgrndBox.render();
+  sourceBox.render();
 
 
 
