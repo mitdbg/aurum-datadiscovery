@@ -21,12 +21,13 @@ class Shape {
 }
 
 class Box extends Shape {
-  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, fontStyle, fontWeight, textAlign, coordinates, border, text, textHeight, textColor) {
+  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, fontStyle, fontWeight, textAlign, coordinates, bkg, border, text, textHeight, textColor) {
     super(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth);
     this.fontStyle = fontStyle; // font style as string. sans-serif
     this.fontWeight = fontWeight; // weight as string. bold normal
     this.textAlign = textAlign; // ctx for text alignment. left right center;
     this.c = coordinates; // object with keys x1, y1, x2, y2 and number values.
+    this.bkg = bkg; // should background be drawn? bool.
     this.border = border; // object with keys top, left, right, bottom and values bool
     this.text = text; // string to be written
     this.textHeight = textHeight; // integer. e.g. 12
@@ -92,9 +93,10 @@ class Box extends Shape {
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.font = this.font;
 
-
     // render background
-    this.ctx.fillRect(this.c.x1, this.c.y1, this.width, this.height);
+    if (this.bkg){
+      this.ctx.fillRect(this.c.x1, this.c.y1, this.width, this.height);
+    }
 
     // render text
     this.ctx.fillStyle = this.textColor;
@@ -137,9 +139,10 @@ class Box extends Shape {
 }
 
 class Triangle extends Shape {
-  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, coordinates) {
+  constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth, coordinates, bkg) {
     super(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth);
     this.c = coordinates; // object with keys x1 y1 x2 y2, x3 y3 and number values
+    this.bkg = bkg; // should the background be drawn? bool.
   }
 
   inShape(x, y) {
@@ -177,7 +180,10 @@ class Triangle extends Shape {
     this.ctx.lineTo(this.c.x1, this.c.y1);
     this.ctx.lineTo(this.c.x2, this.c.y1); // extra stroke to deal with pointed triangle vertex
     this.ctx.stroke()
-    this.ctx.fill();
+
+    if (this.bkg){
+      this.ctx.fill();
+    }
   }
 }
 
@@ -202,7 +208,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   margin = {top: 5, right: 5, bottom: 5, left: 5}
   border = {top: false, right: false, bottom: false, left:false};
   coords = {x1: bkgrnd.c.x1 + margin.left, y1:bkgrnd.c.y1 + margin.top, x2: bkgrnd.c.x2 - margin.right, y2: bkgrnd.c.y2 + 20}; // again, y2 isn't clear yet
-  var mainMenu = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, border, source, 12, 'black')
+  var mainMenu = new Box(true, null, ctx, 'lightblue', 'green', 1, 'sans-serif', 'bold', 'center', coords, true, border, source, 12, 'black')
   mainMenu.render();
 
 
@@ -215,7 +221,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
 
 
   coords = {x1: 130, y1: 130, x2: 160, y2: 130, x3: 145, y3: 160}
-  var triangle = new Triangle(true, null, ctx, 'red', 'black', 4, coords);
+  var triangle = new Triangle(true, null, ctx, 'red', 'black', 4, coords, true);
   triangle.render()
 
   console.log(shapes);
