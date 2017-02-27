@@ -3,7 +3,7 @@ var shapes = [];
 class Shape {
   constructor(clickable, onClick, ctx, bkgFillStyle, strokeStyle, lineWidth){
     this.clickable = clickable; // boolean. Is this a clickable element?
-    this.onClidk = onClick; // function to handle click events
+    this.onClick = onClick; // function to handle click events
     this.ctx = ctx; // HTML canvas context
     this.bkgFillStyle = bkgFillStyle; // ctx for fill style. HTML color as string.
     this.strokeStyle = strokeStyle; // ctx for stroke. HTML color as string.
@@ -32,7 +32,6 @@ class Box extends Shape {
     this.text = text; // string to be written
     this.textHeight = textHeight; // integer. e.g. 12
     this.textColor = textColor; // HTML color for ctx
-
   }
 
   get font(){
@@ -140,7 +139,6 @@ class Box extends Shape {
       this.ctx.moveTo(this.c.x1, this.c.y2);
       this.ctx.lineTo(this.c.x1, this.c.y1);
       this.ctx.stroke();}
-
   }
 }
 
@@ -203,11 +201,23 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   // create the background box when nodes are clicked
   var width = 225;
   var height = 200;
-  var margin = {top: 15};
+  var margin = {top: 15, left: 5, right: 5};
   var border = {top: true, right: true, bottom:true, left: true};
   var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: height + y + margin.top}; // y2 isn't clear yet.
-
   var bkgrndBox = new Box(false, null, ctx, '#f2f2f2', 'black', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black')
+
+  // create the triangle
+  var triangleWidth = 17;
+  height = 10;
+  coords = {}
+  coords.x1 = x + width/2 + margin.left;
+  coords.y1 = y + margin.top;
+  coords.x2 = coords.x1 + triangleWidth;
+  coords.y2 = coords.y1;
+  coords.x3 = (coords.x1 + coords.x2)/2;
+  coords.y3 = coords.y1 + height;
+  var triangle = new Triangle(true, ()=>console.log('triangle clicked'), ctx, 'black', 'black', 0, coords, true);
+  triangle.render()
 
 
   // create the source title
@@ -218,8 +228,8 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
   sourceBox.computeY2(); // compute the y2 variable for this box, based on the text length
 
-  // create a box for each of the fields
 
+  // create a box for each of the fields
   var selectedBoxes = [];
   for (var k in columnsSelected){
     // for-in guard that react yells about if it's not here
@@ -240,14 +250,19 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
 
     selectedBox.computeY2();
     selectedBoxes.push(selectedBox);
-
   }
 
-  // console.log(columnsSelected);
+
+  // unselected fields remaining
+  const numUnselected = Object.keys(columnsAll).length - Object.keys(columnsSelected).length;
+  text = numUnselected.toString() + ' more fields...';
+  coords = {x1: bkgrndBox.c.x1 + margin.left, y1: selectedBoxes[selectedBoxes.length-1].c.y2, x2: bkgrndBox.c.x2-margin.right, y2: 0}
+  border = {'top': true, 'right': false, 'bottom': false, 'left': false}
+  var fieldsRemainingBox = new Box(false, null, ctx, 'black', 'gray', 1, 'sans-serif', 12, 'left', coords, false, border, text, 12, 'black');
+  fieldsRemainingBox.computeY2();
 
 
-  bkgrndBox.c.y2 = selectedBoxes[selectedBoxes.length-1].c.y2 + 5;
-
+  bkgrndBox.c.y2 = fieldsRemainingBox.c.y2 + 5;
 
 
   bkgrndBox.render();
@@ -255,17 +270,10 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   for (var i = 0; i < selectedBoxes.length; i++) {
     selectedBoxes[i].render()
   }
+  fieldsRemainingBox.render();
 
-
-
-
-
-  coords = {x1: 130, y1: 130, x2: 160, y2: 130, x3: 145, y3: 160}
-  var triangle = new Triangle(true, null, ctx, 'red', 'black', 4, coords, true);
-  triangle.render()
 
   console.log(shapes);
-
 }
 
 export function removeCanvas(){
@@ -291,7 +299,21 @@ function cloneCanvasAndInsertAbove(oldCanvas){
   ctx.scale(scale, scale);
   insertAfter(oldCanvas, newCanvas);
   newCanvas.addEventListener('mousemove', (event)=>handleMousemove(event));
+  newCanvas.addEventListener('click', (event)=>handleClick(event));
   return newCanvas;
+}
+
+function handleClick(event){
+  const x = event.layerX;
+  const y = event.layerY;
+  for (var i = shapes.length - 1; i >= 0; i--) {
+    var shape = shapes[i];
+    if(shape.clickable && shape.inShape(x, y)){
+      shape.onClick();
+      break;
+    }
+  }
+  document.body.style.cursor = 'default';
 }
 
 function handleMousemove(event){
