@@ -8,16 +8,21 @@ class Shape {
     this.bkgFillStyle = bkgFillStyle; // ctx for fill style. HTML color as string.
     this.strokeStyle = strokeStyle; // ctx for stroke. HTML color as string.
     this.lineWidth = lineWidth; // ctx for lineWidth. number.
+    this.dependentShapes = []
     shapes.push(this)
   }
 
   render () {
-    console.err('Shape.render() is an abstract method.')
+    console.err('Shape.render() is an abstract method.');
   }
 
-  inShape (x, y) {
-    console.err('Shape.inShape() is an abstractMethod.')
+  hide () {
+    console.err('Shape.hide() is an abstract method.');
   }
+  inShape (x, y) {
+    console.err('Shape.inShape() is an abstractMethod.');
+  }
+
 }
 
 class Box extends Shape {
@@ -140,6 +145,34 @@ class Box extends Shape {
       this.ctx.lineTo(this.c.x1, this.c.y1);
       this.ctx.stroke();}
   }
+
+  hide(){
+    this.ctx.fillStyle = 'white'
+    var x1 = this.c.x1;
+    var y1 = this.c.y1;
+    var width = this.width;
+    var height = this.height;
+
+    if(this.border.top){
+      y1 += -this.lineWidth;
+      height += this.lineWidth
+    }
+
+    if(this.border.right){
+      width += this.lineWidth;
+    }
+
+    if(this.border.bottom){
+      height += this.lineWidth;
+    }
+
+    if(this.border.left){
+      x1 += -this.lineWidth;
+      width += this.lineWidth;
+    }
+
+    this.ctx.fillRect(x1, y1, width, height);
+  }
 }
 
 class Triangle extends Shape {
@@ -191,6 +224,30 @@ class Triangle extends Shape {
   }
 }
 
+// show or hide the edge menu when clicked
+var showOrHideMenu = function (triangleClicked){
+  // set the toggle
+  triangleClicked.toggle = !triangleClicked.toggle;
+
+  if(triangleClicked.toggle === true){
+    console.log('triangle on!');
+    for (var i = 0; i < triangleClicked.dependentShapes.length; i++) {
+      var shape = triangleClicked.dependentShapes[i];
+      shape.render()
+      shape.clickable = true;
+    }
+  }
+  else{
+    console.log('triangle off!');
+    for (var i = 0; i < triangleClicked.dependentShapes.length; i++) {
+      var shape = triangleClicked.dependentShapes[i];
+      shape.hide()
+      shape.clickable = false;
+    }
+
+  }
+}
+
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   // get the sigma-mouse canvas, clone and modify
   const mouseCanvas = document.getElementsByClassName('sigma-mouse')[0]
@@ -216,7 +273,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   coords.y2 = coords.y1;
   coords.x3 = (coords.x1 + coords.x2)/2;
   coords.y3 = coords.y1 + height;
-  var triangle = new Triangle(true, ()=>console.log('triangle clicked'), ctx, 'black', 'black', 0, coords, true);
+  var triangle = new Triangle(true, showOrHideMenu, ctx, 'black', 'black', 0, coords, true);
   triangle.render()
 
 
@@ -262,7 +319,28 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   fieldsRemainingBox.computeY2();
 
 
+  // set background box y2 coordinate
   bkgrndBox.c.y2 = fieldsRemainingBox.c.y2 + 5;
+
+  // make, but don't render the second menu
+  border = {top: true, right:true, bottom: true, left: true}
+  coords = {x1: bkgrndBox.c.x2 + margin.right, y1: triangle.c.y3 + margin.bottom, x2: bkgrndBox.c.x2 + margin.right + 150, y2: 0}
+  var onClick = () =>{console.log('onClick edgeContext called ' + source)};
+  var edgeContext = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find similar context', 12, 'black');
+  edgeContext.computeY2();
+  triangle.dependentShapes.push(edgeContext);
+
+  coords = {x1: edgeContext.c.x1, x2: edgeContext.c.x2, y1: edgeContext.c.y2, y2:0}
+  onClick = () =>{console.log('onClick edgeContent called ' + source)};
+  var edgeContent = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find similar content', 12, 'black');
+  edgeContent.computeY2();
+  triangle.dependentShapes.push(edgeContent);
+
+  coords = {x1: edgeContent.c.x1, x2: edgeContent.c.x2, y1: edgeContent.c.y2, y2:0}
+  onClick = () =>{console.log('onClick edgePKFK called ' + source)};
+  var edgePKFK = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find PKFK', 12, 'black');
+  edgePKFK.computeY2();
+  triangle.dependentShapes.push(edgePKFK);
 
 
   bkgrndBox.render();
@@ -306,7 +384,7 @@ function handleClick(event){
     }
 
     if(shape.clickable && shape.inShape(x, y)){
-      shape.onClick();
+      shape.onClick(shape);
       clickInShape = true;
       break;
     }
