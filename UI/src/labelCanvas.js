@@ -278,7 +278,7 @@ function instantiateSourceBox(ctx, source, x1, y1, x2, y2){
   }
 
   const border = {top: false, right: false, bottom: false, left:false};
-  var coords = {x1: x1, y1:y1, x2:y2, y2:y2};
+  var coords = {x1: x1, y1:y1, x2:x2, y2:y2};
   var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
   return sourceBox;
 
