@@ -22,7 +22,6 @@ class Shape {
   inShape (x, y) {
     console.err('Shape.inShape() is an abstractMethod.');
   }
-
 }
 
 class Box extends Shape {
@@ -225,27 +224,64 @@ class Triangle extends Shape {
 }
 
 // show or hide the edge menu when clicked
-var showOrHideMenu = function (triangleClicked){
+// function to be passed to triangle's onClick
+var showOrHideMenu = function (shapeClicked){
   // set the toggle
-  triangleClicked.toggle = !triangleClicked.toggle;
+  shapeClicked.toggle = !shapeClicked.toggle;
 
-  if(triangleClicked.toggle === true){
+  if(shapeClicked.toggle === true){
     console.log('triangle on!');
-    for (var i = 0; i < triangleClicked.dependentShapes.length; i++) {
-      var shape = triangleClicked.dependentShapes[i];
+    for (var i = 0; i < shapeClicked.dependentShapes.length; i++) {
+      var shape = shapeClicked.dependentShapes[i];
       shape.render()
       shape.clickable = true;
     }
   }
   else{
     console.log('triangle off!');
-    for (var i = 0; i < triangleClicked.dependentShapes.length; i++) {
-      var shape = triangleClicked.dependentShapes[i];
+    for (var j = 0; j < shapeClicked.dependentShapes.length; j++) {
+      var shape = shapeClicked.dependentShapes[j];
       shape.hide()
       shape.clickable = false;
     }
 
   }
+}
+
+function instantiateBackgroundBox(ctx, x, y){
+  const width = 225;
+  const height = 200;
+  const margin = {top: 15, left: 5, right: 5};
+  const border = {top: true, right: true, bottom:true, left: true};
+  const coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: height + y + margin.top}; // y2 isn't clear yet.
+  var bkgrndBox = new Box(false, null, ctx, '#f2f2f2', 'black', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black');
+  return bkgrndBox;
+}
+
+function instantiateTriangle(ctx, x, y){
+  const width = 17;
+  const height = 10;
+  const coords = {}
+  coords.x1 = x;
+  coords.y1 = y;
+  coords.x2 = coords.x1 + width;
+  coords.y2 = coords.y1;
+  coords.x3 = (coords.x1 + coords.x2)/2;
+  coords.y3 = coords.y1 + height;
+  var triangle = new Triangle(true, showOrHideMenu, ctx, 'black', 'black', 0, coords, true);
+  return triangle;
+}
+
+function instantiateSourceBox(ctx, source, x1, y1, x2, y2){
+  if (!y2){ // y2 may not be passed, in which case it's updated later
+    y2 = 0;
+  }
+
+  const border = {top: false, right: false, bottom: false, left:false};
+  var coords = {x1: x1, y1:y1, x2:y2, y2:y2};
+  var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
+  return sourceBox;
+
 }
 
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
@@ -254,36 +290,24 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   const newCanvas = cloneCanvasAndInsertAbove(mouseCanvas);
   const ctx = newCanvas.getContext('2d');
 
+  // define variables for the background box
+  var bkgrndWidth = 225;
+  var bkgrndMargin = {top: 15, left: 5, right: 5};
 
   // create the background box when nodes are clicked
-  var width = 225;
-  var height = 200;
-  var margin = {top: 15, left: 5, right: 5};
-  var border = {top: true, right: true, bottom:true, left: true};
-  var coords = {x1: x - width/2, y1: y + margin.top, x2: x + width/2, y2: height + y + margin.top}; // y2 isn't clear yet.
-  var bkgrndBox = new Box(false, null, ctx, '#f2f2f2', 'black', 1, 'sans-serif', 'bold', 'center', coords, true, border, '', 12, 'black')
+  var bkgrndBox = instantiateBackgroundBox(ctx, x, y);
 
   // create the triangle
-  var triangleWidth = 17;
-  height = 10;
-  coords = {}
-  coords.x1 = x + width/2 + margin.left;
-  coords.y1 = y + margin.top;
-  coords.x2 = coords.x1 + triangleWidth;
-  coords.y2 = coords.y1;
-  coords.x3 = (coords.x1 + coords.x2)/2;
-  coords.y3 = coords.y1 + height;
-  var triangle = new Triangle(true, showOrHideMenu, ctx, 'black', 'black', 0, coords, true);
+  var triangle = instantiateTriangle(ctx, x + bkgrndWidth/2 + bkgrndMargin.left, y + bkgrndMargin.top);
   triangle.render()
 
-
   // create the source title
-  width = bkgrndBox.c.width - 5*2;
-  margin = {top: 5, right: 5, bottom: 5, left: 5}
-  border = {top: false, right: false, bottom: false, left:false};
-  coords = {x1: bkgrndBox.c.x1 + margin.left, y1:bkgrndBox.c.y1 + margin.top, x2: bkgrndBox.c.x2 - margin.right, y2: bkgrndBox.c.y2 + 20}; // again, y2 isn't clear yet
-  var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
-  sourceBox.computeY2(); // compute the y2 variable for this box, based on the text length
+  const sourceMargin = {top: 5, right: 5, bottom: 5, left: 5};
+  const x1_source = bkgrndBox.c.x1 + sourceMargin.left;
+  const x2_source = bkgrndBox.c.x2 - sourceMargin.right;
+  const y1_source = bkgrndBox.c.y1 + sourceMargin.top;
+  var sourceBox = instantiateSourceBox(ctx, source, x1_source, y1_source, x2_source, undefined);
+  sourceBox.computeY2();
 
 
   // create a box for each of the fields
@@ -294,9 +318,9 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
       break;
     }
     var text = columnsSelected[k]['field_name'];
-    border = border = {top: true, right: false, bottom: false, left:false};
-    margin = {top: 5, right: 5, bottom: 5, left: 5}
-    coords = {x1: bkgrndBox.c.x1 + margin.left, y1:0, x2: bkgrndBox.c.x2 - margin.right, y2: 0}; // again, y2 isn't clear yet
+    var border = border = {top: true, right: false, bottom: false, left:false};
+    var margin = {top: 5, right: 5, bottom: 5, left: 5}
+    var coords = {x1: bkgrndBox.c.x1 + margin.left, y1:0, x2: bkgrndBox.c.x2 - margin.right, y2: 0}; // again, y2 isn't clear yet
     var selectedBox = new Box(true, null, ctx, null, 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, text, 12, 'black');
 
     if (selectedBoxes.length === 0){
