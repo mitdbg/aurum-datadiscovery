@@ -281,7 +281,31 @@ function instantiateSourceBox(ctx, source, x1, y1, x2, y2){
   var coords = {x1: x1, y1:y1, x2:x2, y2:y2};
   var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
   return sourceBox;
+}
 
+function instantiateSelectedBoxes(ctx, columnsSelected, x1, y1, x2){
+  var selectedBoxes = [];
+  for (var k in columnsSelected){
+    // for-in guard that react yells about if it's not here
+    if (!Object.prototype.hasOwnProperty.call(columnsSelected, k)) {
+      break;
+    }
+    var text = columnsSelected[k]['field_name'];
+    var border = border = {top: true, right: false, bottom: false, left:false};
+    var margin = {top: 5, right: 5, bottom: 5, left: 5}
+    var coords = {x1: x1 + margin.left, y1:0, x2: x2, y2: 0}; // again, y2 isn't clear yet
+    var selectedBox = new Box(true, null, ctx, null, 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, text, 12, 'black');
+
+    if (selectedBoxes.length === 0){
+      selectedBox.c.y1 = y1 + margin.top
+    } else{
+      selectedBox.c.y1 = selectedBoxes[selectedBoxes.length-1].c.y2;
+    }
+
+    selectedBox.computeY2();
+    selectedBoxes.push(selectedBox);
+  }
+  return selectedBoxes;
 }
 
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
@@ -310,35 +334,18 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   sourceBox.computeY2();
 
 
-  // create a box for each of the fields
-  var selectedBoxes = [];
-  for (var k in columnsSelected){
-    // for-in guard that react yells about if it's not here
-    if (!Object.prototype.hasOwnProperty.call(columnsSelected, k)) {
-      break;
-    }
-    var text = columnsSelected[k]['field_name'];
-    var border = border = {top: true, right: false, bottom: false, left:false};
-    var margin = {top: 5, right: 5, bottom: 5, left: 5}
-    var coords = {x1: bkgrndBox.c.x1 + margin.left, y1:0, x2: bkgrndBox.c.x2 - margin.right, y2: 0}; // again, y2 isn't clear yet
-    var selectedBox = new Box(true, null, ctx, null, 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, text, 12, 'black');
-
-    if (selectedBoxes.length === 0){
-      selectedBox.c.y1 = sourceBox.c.y2 + margin.top
-    } else{
-      selectedBox.c.y1 = selectedBoxes[selectedBoxes.length-1].c.y2;
-    }
-
-    selectedBox.computeY2();
-    selectedBoxes.push(selectedBox);
-  }
+  // display columns that the user selected
+  const x1_selectedBoxes = bkgrndBox.c.x1 + sourceMargin.left;
+  const y1_selectedBoxes = sourceBox.c.y2 + sourceMargin.top;
+  const x2_selectedBoxes = bkgrndBox.c.x2 - sourceMargin.right;
+  var selectedBoxes = instantiateSelectedBoxes(ctx, columnsSelected, x1_selectedBoxes, y1_selectedBoxes, x2_selectedBoxes);
 
 
   // unselected fields remaining
   const numUnselected = Object.keys(columnsAll).length - Object.keys(columnsSelected).length;
-  text = numUnselected.toString() + ' more fields...';
-  coords = {x1: bkgrndBox.c.x1 + margin.left, y1: selectedBoxes[selectedBoxes.length-1].c.y2, x2: bkgrndBox.c.x2-margin.right, y2: 0}
-  border = {'top': true, 'right': false, 'bottom': false, 'left': false}
+  var text = numUnselected.toString() + ' more fields...';
+  var coords = {x1: bkgrndBox.c.x1 + sourceMargin.left, y1: selectedBoxes[selectedBoxes.length-1].c.y2, x2: bkgrndBox.c.x2-sourceMargin.right, y2: 0}
+  var border = {'top': true, 'right': false, 'bottom': false, 'left': false}
   var fieldsRemainingBox = new Box(false, null, ctx, 'black', 'gray', 1, 'sans-serif', 12, 'left', coords, false, border, text, 12, 'black');
   fieldsRemainingBox.computeY2();
 
@@ -348,7 +355,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
 
   // make, but don't render the second menu
   border = {top: true, right:true, bottom: true, left: true}
-  coords = {x1: bkgrndBox.c.x2 + margin.right, y1: triangle.c.y3 + margin.bottom, x2: bkgrndBox.c.x2 + margin.right + 150, y2: 0}
+  coords = {x1: bkgrndBox.c.x2 + sourceMargin.right, y1: triangle.c.y3 + sourceMargin.bottom, x2: bkgrndBox.c.x2 + sourceMargin.right + 150, y2: 0}
   var onClick = () =>{console.log('onClick edgeContext called ' + source)};
   var edgeContext = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find similar context', 12, 'black');
   edgeContext.computeY2();
