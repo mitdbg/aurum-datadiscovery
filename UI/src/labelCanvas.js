@@ -232,17 +232,17 @@ var showOrHideMenu = function (shapeClicked){
   if(shapeClicked.toggle === true){
     console.log('triangle on!');
     for (var i = 0; i < shapeClicked.dependentShapes.length; i++) {
-      var shape = shapeClicked.dependentShapes[i];
-      shape.render()
-      shape.clickable = true;
+      var shapesToShow = shapeClicked.dependentShapes[i];
+      shapesToShow.render()
+      shapesToShow.clickable = true;
     }
   }
   else{
     console.log('triangle off!');
     for (var j = 0; j < shapeClicked.dependentShapes.length; j++) {
-      var shape = shapeClicked.dependentShapes[j];
-      shape.hide()
-      shape.clickable = false;
+      var shapesToHide = shapeClicked.dependentShapes[j];
+      shapesToHide.hide()
+      shapesToHide.clickable = false;
     }
 
   }
@@ -281,6 +281,28 @@ function instantiateSourceBox(ctx, source, x1, y1, x2, y2){
   const coords = {x1: x1, y1:y1, x2:x2, y2:y2};
   var sourceBox = new Box(false, null, ctx, '#f2f2f2', 'green', 1, 'sans-serif', 'bold', 'center', coords, false, border, source, 12, 'black')
   return sourceBox;
+}
+
+function instantiateEdgeBoxes(ctx, x1, y1, x2){
+  const border = {top: true, right:true, bottom: true, left: true}
+  const edges = [
+          {text: 'Find similar content', algebra: 'content_sim'},
+          {text: 'Find similar context', algebra: 'schema_sim'},
+          {text: 'Find PKFK', algebra: 'pkfk'}];
+
+  var edgeBoxes = [];
+  for (var i = 0; i < edges.length; i++) {
+    var edge = edges[i];
+    var coords = {x1: x1, y1: y1, x2: x2, y2: 0};
+    const edgeType = edge.albebra;
+    var onClick = ()=>console.log('onclick ' + edgeType + ' called')
+    var edgeBox = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, edge['text'], 12, 'black');
+    edgeBox.computeY2();
+    y1 = edgeBox.c.y2;
+    edgeBoxes.push(edgeBox);
+  }
+
+  return edgeBoxes;
 }
 
 function instantiateSelectedBoxes(ctx, columnsSelected, x1, y1, x2){
@@ -370,25 +392,12 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   // set background box y2 coordinate
   bkgrndBox.c.y2 = fieldsRemainingBox.c.y2 + 5;
 
-  // make, but don't render the second menu
-  var border = {top: true, right:true, bottom: true, left: true}
-  var coords = {x1: bkgrndBox.c.x2 + sourceMargin.right, y1: triangle.c.y3 + sourceMargin.bottom, x2: bkgrndBox.c.x2 + sourceMargin.right + 150, y2: 0}
-  var onClick = () =>{console.log('onClick edgeContext called ' + source)};
-  var edgeContext = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find similar context', 12, 'black');
-  edgeContext.computeY2();
-  triangle.dependentShapes.push(edgeContext);
-
-  coords = {x1: edgeContext.c.x1, x2: edgeContext.c.x2, y1: edgeContext.c.y2, y2:0}
-  onClick = () =>{console.log('onClick edgeContent called ' + source)};
-  var edgeContent = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find similar content', 12, 'black');
-  edgeContent.computeY2();
-  triangle.dependentShapes.push(edgeContent);
-
-  coords = {x1: edgeContent.c.x1, x2: edgeContent.c.x2, y1: edgeContent.c.y2, y2:0}
-  onClick = () =>{console.log('onClick edgePKFK called ' + source)};
-  var edgePKFK = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, ' Find PKFK', 12, 'black');
-  edgePKFK.computeY2();
-  triangle.dependentShapes.push(edgePKFK);
+  // instantiate the edgeBoxes
+  const x1_edgeBox = bkgrndBox.c.x2 + sourceMargin.right;
+  const y1_edgeBox = triangle.c.y3 + sourceMargin.bottom;
+  const x2_edgeBox = bkgrndBox.c.x2 + sourceMargin.right + 150;
+  const edgeBoxes = instantiateEdgeBoxes(ctx, x1_edgeBox, y1_edgeBox, x2_edgeBox);
+  triangle.dependentShapes = triangle.dependentShapes.concat(edgeBoxes);
 
 
   bkgrndBox.render();
@@ -397,9 +406,6 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
     selectedBoxes[i].render()
   }
   fieldsRemainingBox.render();
-
-
-  console.log(shapes);
 }
 
 
