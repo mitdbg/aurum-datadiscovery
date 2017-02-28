@@ -223,6 +223,10 @@ class Triangle extends Shape {
   }
 }
 
+////////////////////////////////
+/////// passing functions //////
+////////////////////////////////
+
 // show or hide the edge menu when clicked
 // function to be passed to triangle's onClick
 var showOrHideMenu = function (shapeClicked){
@@ -247,6 +251,17 @@ var showOrHideMenu = function (shapeClicked){
 
   }
 }
+
+var requestEdge = function(edge, source){
+  console.log(edge);
+  console.log(source);
+  // call makeRequest
+}
+
+////////////////////////////////
+//// instantiation functions ///
+////////////////////////////////
+
 
 function instantiateBackgroundBox(ctx, x, y){
   const width = 225;
@@ -295,7 +310,11 @@ function instantiateEdgeBoxes(ctx, x1, y1, x2){
     var edge = edges[i];
     var coords = {x1: x1, y1: y1, x2: x2, y2: 0};
     const edgeType = edge.albebra;
-    var onClick = ()=>console.log('onclick ' + edgeType + ' called')
+
+    // need a way to pass this function
+    // currently, edgeType is undefined when the function is called.
+    var onClick = () => {requestEdge(edgeType, 'foo')};
+
     var edgeBox = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, edge['text'], 12, 'black');
     edgeBox.computeY2();
     y1 = edgeBox.c.y2;
@@ -342,6 +361,9 @@ function instantiateFieldsRemainingBoxes(ctx, num, x1, y1, x2, y2){
   return fieldsRemainingBox
 }
 
+////////////////////////////////
+////// rendering function //////
+////////////////////////////////
 
 export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   // get the sigma-mouse canvas, clone and modify
@@ -378,11 +400,6 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
 
   // unselected fields remaining
   const numUnselected = Object.keys(columnsAll).length - Object.keys(columnsSelected).length;
-  // var text = numUnselected.toString() + ' more fields...';
-  // var coords = {x1: bkgrndBox.c.x1 + sourceMargin.left, y1: selectedBoxes[selectedBoxes.length-1].c.y2, x2: bkgrndBox.c.x2-sourceMargin.right, y2: 0}
-
-  // var fieldsRemainingBox = new Box(false, null, ctx, 'black', 'gray', 1, 'sans-serif', 12, 'left', coords, false, border, text, 12, 'black');
-
   const x1_remaining = bkgrndBox.c.x1 + sourceMargin.left;
   const y1_remaining = selectedBoxes[selectedBoxes.length-1].c.y2;
   const x2_remaining = bkgrndBox.c.x2 - sourceMargin.right;

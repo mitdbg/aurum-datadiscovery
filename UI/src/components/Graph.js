@@ -1,6 +1,6 @@
 import React from 'react';
-import { makeConvert } from '../ajax'
-import { renderCanvas} from '../labelCanvas'
+import { makeRequest, makeConvert } from '../ajax'
+import { renderCanvas } from '../labelCanvas'
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -8,6 +8,7 @@ import SigmaEdge from './SigmaEdge';
 class Graph extends React.Component {
   constructor() {
     super();
+    window.makeRequest = makeRequest;
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
     this.handleSourceResponse = this.handleSourceResponse.bind(this);
     this.clearAndDrawNewLabels = this.clearAndDrawNewLabels.bind(this);
