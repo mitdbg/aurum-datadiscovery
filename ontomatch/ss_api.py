@@ -141,7 +141,8 @@ class SSAPI:
         # L3: [class.context] -> relation
         print("Finding L3 matchings...")
         st = time.time()
-        l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
+        #l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
+        l3_matchings = []
         print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -199,7 +200,6 @@ class SSAPI:
         #for match in l52_matchings:
         #    print(match)
 
-
         # L6: [Relations] -> [Class names] (semantic groups)
         print("Finding L6 matchings...")
         st = time.time()
@@ -212,7 +212,6 @@ class SSAPI:
         #for match in l6_matchings:
         #    print(match)
 
-        l7_matchings = []
         #"""
         # L7: [Attribute names] -> [class names] (content - fuzzy naming)
         print("Finding L7 matchings...")
@@ -225,6 +224,7 @@ class SSAPI:
         #for match in l7_matchings:
         #    print(match)
         #"""
+
         all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
 
         total_matchings_pre_combined = 0
@@ -233,12 +233,6 @@ class SSAPI:
         print("ALL_matchings: " + str(total_matchings_pre_combined))
         combined_matchings = matcherlib.combine_matchings(all_matchings)
         print("COMBINED_matchings: " + str(len(combined_matchings.items())))
-
-        with open('OUTPUT', 'w') as f:
-            for k, v in combined_matchings.items():
-                lines = v.print_serial()
-                for l in lines:
-                    f.write(l + '\n')
 
         return combined_matchings
 
@@ -466,7 +460,7 @@ class SSAPI:
         return
 
 
-def test(path_to_serialized_model):
+def test_e2e(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     # Create client
@@ -485,11 +479,12 @@ def test(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+
 
     print("Finding matchings...")
     st = time.time()
@@ -498,8 +493,45 @@ def test(path_to_serialized_model):
     print("Finding matchings...OK")
     print("Took: " + str(et-st))
 
-    for k, v in matchings:
-        print(v)
+    print("Writing MATCHINGS output to disk...")
+    with open('MATCHINGS_OUTPUT', 'w') as f:
+        for k, v in matchings.items():
+            lines = v.print_serial()
+            for l in lines:
+                f.write(l + '\n')
+    print("Writing MATCHINGS output to disk...OK")
+
+
+    matchings = []
+    with open("MATCHINGS_OUTPUT", 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            tokens = l.split("->")
+            sch = tokens[0]
+            cla = tokens[1]
+            sch_tokens = sch.split("%%%")
+            sch_tokens = [t.strip() for t in sch_tokens]
+            cla_tokens = cla.split("%%%")
+            cla_tokens = [t.strip() for t in cla_tokens]
+            matching_format = (
+            ((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
+            matchings.append(matching_format)
+
+    print("Finding links...")
+    st = time.time()
+    links = om.find_links(matchings)
+    et = time.time()
+    print("Finding links...OK")
+    print("Took: " + str((et-st)))
+
+    print("Writing LINKS output to disk...")
+    with open('LINKS_OUTPUT', 'w') as f:
+        for l in links:
+            f.write(str(l) + '\n')
+    print("Writing LINKS output to disk...OK")
+
+    for link in links:
+        print(link)
 
     return om
 
@@ -815,32 +847,14 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    test_4_n_42("../models/chembl22/")
-    exit()
-
-    #test("../models/chembl22/")
+    #test_4_n_42("../models/chembl22/")
     #exit()
+
+    test_e2e("../models/chembl22/")
+    exit()
 
     #test("../models/massdata/")
     #exit()
-
-    matchings = []
-    with open("OUTPUT", 'r') as f:
-        lines = f.readlines()
-        for l in lines:
-            tokens = l.split("->")
-            sch = tokens[0]
-            cla = tokens[1]
-            sch_tokens = sch.split("%%%")
-            sch_tokens = [t.strip() for t in sch_tokens]
-            cla_tokens = cla.split("%%%")
-            cla_tokens = [t.strip() for t in cla_tokens]
-            matching_format = (((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
-            matchings.append(matching_format)
-
-    #test_find_links("../models/chembl22/", matchings)
-    test_find_links("../models/massdata/", matchings)
-    exit()
 
     print("SSAPI")
 
