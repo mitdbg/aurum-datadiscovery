@@ -107,6 +107,8 @@ class App extends React.Component {
             <Graph
               graphEdges={this.state.graphEdges}
               selection={this.state.selection}
+              updateQuery={this.updateQuery}
+              updateResult={this.updateResult}
             />
             <Pandas />
           </div>

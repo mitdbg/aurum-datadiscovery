@@ -8,10 +8,12 @@ import SigmaEdge from './SigmaEdge';
 class Graph extends React.Component {
   constructor() {
     super();
-    window.makeRequest = makeRequest;
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
+    this.handleRequestResponse = this.handleRequestResponse.bind(this);
     this.handleSourceResponse = this.handleSourceResponse.bind(this);
     this.clearAndDrawNewLabels = this.clearAndDrawNewLabels.bind(this);
+    window.makeRequest = makeRequest;
+    window.handleRequestResponse = this.handleRequestResponse;
 
     this.state = {
       source: '',
@@ -38,6 +40,17 @@ class Graph extends React.Component {
     const selectedColumns = this.props.selection[this.state.source];
     renderCanvas(
       this.state.source, selectedColumns, this.state.columns, this.state.clickX, this.state.clickY);
+  }
+
+  handleRequestResponse(response) {
+    // little cheat to get the query from the URI
+    var url = decodeURI(response.responseURL);
+    var query = url.substr(url.lastIndexOf('/')+1);
+
+    const json = JSON.parse(response.responseText);
+
+    this.props.updateQuery(query);
+    this.props.updateResult(json);
   }
 
   // set state for columns after server api response
@@ -114,7 +127,9 @@ class Graph extends React.Component {
 
 Graph.propTypes = {
   selection: React.PropTypes.object.isRequired,
-  graphEdges: React.PropTypes.array.isRequired
+  graphEdges: React.PropTypes.array.isRequired,
+  updateQuery: React.PropTypes.func.isRequired,
+  updateResult: React.PropTypes.func.isRequired,
 }
 
 export default Graph

@@ -256,6 +256,7 @@ var requestEdge = function(edge, source){
   var query = 'neighbor_search("'+ source + '", ' + edge + ')'
   console.log(query);
   // call makeRequest
+  window.makeRequest(query, window.handleRequestResponse);
 }
 
 ////////////////////////////////
