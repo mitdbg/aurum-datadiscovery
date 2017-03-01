@@ -22,6 +22,8 @@ class App extends React.Component {
       // This is what will actually display on the graph
       selection: {}, // the table that the user selected (with HITs inside the obj)
       graphEdges: [], // no way to be populated in the UI yet
+      originNode: false, // node that new search results were reached from. null/false/undefined if the search results were reached from the search box
+
       // graphNodes: [{nid:"n1", label:"Bob"}, {nid:"n2", label:"Markey"}], // used for testing only
       // graphEdges: [{eid: "e1", source:"n1", target:"n2", label:"e1"}],
 
@@ -73,8 +75,9 @@ class App extends React.Component {
   }
 
 
-  updateQuery(query) {
+  updateQuery(query, originNode) {
     this.setState({ query });
+    this.setState({originNode})
     this.context.router.transitionTo(`/${query}`);
   }
 

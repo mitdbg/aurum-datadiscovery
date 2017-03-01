@@ -49,7 +49,7 @@ class Graph extends React.Component {
 
     const json = JSON.parse(response.responseText);
 
-    this.props.updateQuery(query);
+    this.props.updateQuery(query, this.state.source);
     this.props.updateResult(json);
     removeOverlay();
   }
