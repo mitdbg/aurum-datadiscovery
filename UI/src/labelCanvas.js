@@ -314,7 +314,7 @@ function instantiateEdgeBoxes(ctx, source, x1, y1, x2){
     const edgeType = edge.algebra;
     let onClick = () => {requestEdge(edgeType, source)};
 
-    var edgeBox = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, edge['text'], 12, 'black');
+    var edgeBox = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, true, border, edge['text'], 12, 'black');
     edgeBox.computeY2();
     y1 = edgeBox.c.y2;
     edgeBoxes.push(edgeBox);
@@ -460,10 +460,8 @@ function handleClick(event){
     }
   }
   if(clickInShape !== true){
-    const canvas = document.getElementById('aurum-overlay')
-    canvas.parentNode.removeChild(canvas)
+    removeOverlay();
   }
-  document.body.style.cursor = 'default';
 }
 
 function handleMousemove(event){
@@ -474,7 +472,7 @@ function handleMousemove(event){
       // condition is entered, but cursor style not changed. Not sure why.
       document.body.style.cursor = 'pointer';
       console.log('cursor should be pointer');
-      break;
+      return;
     }
   }
   document.body.style.cursor = 'default';
@@ -482,4 +480,9 @@ function handleMousemove(event){
 
 function insertAfter(referenceNode, newNode) {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
+
+export function removeOverlay(){
+    const canvas = document.getElementById('aurum-overlay')
+    canvas.parentNode.removeChild(canvas)
 }

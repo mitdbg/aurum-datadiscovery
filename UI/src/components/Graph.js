@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeRequest, makeConvert } from '../ajax'
-import { renderCanvas } from '../labelCanvas'
+import { renderCanvas, removeOverlay } from '../labelCanvas'
 import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -51,6 +51,7 @@ class Graph extends React.Component {
 
     this.props.updateQuery(query);
     this.props.updateResult(json);
+    removeOverlay();
   }
 
   // set state for columns after server api response
