@@ -253,8 +253,8 @@ var showOrHideMenu = function (shapeClicked){
 }
 
 var requestEdge = function(edge, source){
-  console.log(edge);
-  console.log(source);
+  var query = 'neighbor_search("'+ source + '", ' + edge + ')'
+  console.log(query);
   // call makeRequest
 }
 
@@ -298,7 +298,7 @@ function instantiateSourceBox(ctx, source, x1, y1, x2, y2){
   return sourceBox;
 }
 
-function instantiateEdgeBoxes(ctx, x1, y1, x2){
+function instantiateEdgeBoxes(ctx, source, x1, y1, x2){
   const border = {top: true, right:true, bottom: true, left: true}
   const edges = [
           {text: 'Find similar content', algebra: 'content_sim'},
@@ -309,11 +309,9 @@ function instantiateEdgeBoxes(ctx, x1, y1, x2){
   for (var i = 0; i < edges.length; i++) {
     var edge = edges[i];
     var coords = {x1: x1, y1: y1, x2: x2, y2: 0};
-    const edgeType = edge.albebra;
 
-    // need a way to pass this function
-    // currently, edgeType is undefined when the function is called.
-    var onClick = () => {requestEdge(edgeType, 'foo')};
+    const edgeType = edge.algebra;
+    let onClick = () => {requestEdge(edgeType, source)};
 
     var edgeBox = new Box(true, onClick, ctx, 'white', 'black', 1, 'sans-serif', 'normal', 'left', coords, false, border, edge['text'], 12, 'black');
     edgeBox.computeY2();
@@ -413,7 +411,7 @@ export function renderCanvas(source, columnsSelected, columnsAll, x, y){
   const x1_edgeBox = bkgrndBox.c.x2 + sourceMargin.right;
   const y1_edgeBox = triangle.c.y3 + sourceMargin.bottom;
   const x2_edgeBox = bkgrndBox.c.x2 + sourceMargin.right + 150;
-  const edgeBoxes = instantiateEdgeBoxes(ctx, x1_edgeBox, y1_edgeBox, x2_edgeBox);
+  const edgeBoxes = instantiateEdgeBoxes(ctx, source, x1_edgeBox, y1_edgeBox, x2_edgeBox);
   triangle.dependentShapes = triangle.dependentShapes.concat(edgeBoxes);
 
 
