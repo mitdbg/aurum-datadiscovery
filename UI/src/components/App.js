@@ -11,12 +11,14 @@ class App extends React.Component {
     this.updateQuery = this.updateQuery.bind(this);
     this.updateResult = this.updateResult.bind(this);
     this.addSelection = this.addSelection.bind(this);
-    // this.updateGraphNodes = this.updateGraphNodes.bind(this);
+    this.addGraphEdge = this.addGraphEdge.bind(this);
+    this.updateGraphNodes = this.updateGraphNodes.bind(this);
+    this.updateGraphEdges = this.updateGraphEdges.bind(this);
     // Initial State
     this.state = {
       query: '', // the current query
+      queryEdges: [], // Aurum edges returned from the query. NOT used for the graph viz.
       sources: {}, // the HITs returned from the query
-      edges: [], // Aurum edges returned from the query. NOT used for the graph viz.
 
 
       // This is what will actually display on the graph
@@ -33,15 +35,26 @@ class App extends React.Component {
 
   // updates the graph state, which  propegates to Graph.js Sigma.props.graph
   // a testing method
-  // updateGraphNodes(){
-  //   const graphNodes = [
-  //       {nid:"n1", label:"Bob"},
-  //       {nid:"n2", label:"Markey"},
-  //       {nid:"n3", label:"Fizz"},
-  //       {nid:"n4", label:"Buzz"},
-  //     ];
-  //   this.setState({ graphNodes });
-  // }
+  updateGraphEdges(){
+    const graphEdges = [{eid: "e1", source:"n1", target:"n2", label:"e1"}];
+    this.setState({ graphEdges });
+  }
+
+
+  // updates the graph state, which  propegates to Graph.js Sigma.props.graph
+  // a testing method
+  updateGraphNodes(){
+    const selection = {
+      "n1": {
+        "2417835865": {
+          "db_name": "ma_data",
+          "field_name": "BLDG_NAME"}},
+      "n2": {
+        "abcdefg": {
+          "db_name": "ma_data",
+          "field_name": "FOO_COL"}}}
+    this.setState({ selection });
+  }
 
 
   // This data structure is a bit more complicated.
@@ -61,6 +74,12 @@ class App extends React.Component {
     // insert the field
     selection[tableName][nid] = selected;
 
+    // Does the origin node exist in the displayed graph?
+    // if so, draw a graph between it and the current node
+    if (this.state.selection[this.state.originNode]) {
+      this.addGraphEdge(this.state.originNode, tableName, 'edgetype', 'edgeid');
+    }
+
     this.setState({ selection });
   }
 
@@ -72,6 +91,13 @@ class App extends React.Component {
 
   clearSelection(){
     this.setState({selection : {}})
+  }
+
+  addGraphEdge(source, target, label, eid){
+    var graphEdges = this.state.graphEdges;
+    const edge = {source: source, target: target, label: label, eid: eid};
+    graphEdges.push(edge);
+    this.setState({ graphEdges });
   }
 
 
@@ -95,14 +121,14 @@ class App extends React.Component {
         <Search
           query={this.state.query}
           sources={this.state.sources}
-          edges={this.state.edges}
+          edges={this.state.queryEdges}
           updateQuery={this.updateQuery}
           updateResult={this.updateResult}
         />
         <div id="middle">
           <Results
             sources={this.state.sources}
-            edges={this.state.edges}
+            edges={this.state.queryEdges}
             selectHit={this.state.selected}
             addSelection={this.addSelection}
           />
