@@ -12,8 +12,9 @@ class App extends React.Component {
     this.updateResult = this.updateResult.bind(this);
     this.addSelection = this.addSelection.bind(this);
     this.addGraphEdge = this.addGraphEdge.bind(this);
-    this.updateGraphNodes = this.updateGraphNodes.bind(this);
-    this.updateGraphEdges = this.updateGraphEdges.bind(this);
+    this.setQueryEdgeType = this.setQueryEdgeType.bind(this);
+    // this.updateGraphNodes = this.updateGraphNodes.bind(this);
+    // this.updateGraphEdges = this.updateGraphEdges.bind(this);
     // Initial State
     this.state = {
       query: '', // the current query
@@ -25,36 +26,34 @@ class App extends React.Component {
       selection: {}, // the table that the user selected (with HITs inside the obj)
       graphEdges: [], // no way to be populated in the UI yet
       originNode: false, // node that new search results were reached from. null/false/undefined if the search results were reached from the search box
-
-      // graphNodes: [{nid:"n1", label:"Bob"}, {nid:"n2", label:"Markey"}], // used for testing only
-      // graphEdges: [{eid: "e1", source:"n1", target:"n2", label:"e1"}],
+      queryEdgeType: '',
 
     };
   }
 
 
-  // updates the graph state, which  propegates to Graph.js Sigma.props.graph
-  // a testing method
-  updateGraphEdges(){
-    const graphEdges = [{eid: "e1", source:"n1", target:"n2", label:"e1"}];
-    this.setState({ graphEdges });
-  }
+  // // updates the graph state, which  propegates to Graph.js Sigma.props.graph
+  // // a testing method
+  // updateGraphEdges(){
+  //   const graphEdges = [{eid: "e1", source:"n1", target:"n2", label:"e1"}];
+  //   this.setState({ graphEdges });
+  // }
 
 
-  // updates the graph state, which  propegates to Graph.js Sigma.props.graph
-  // a testing method
-  updateGraphNodes(){
-    const selection = {
-      "n1": {
-        "2417835865": {
-          "db_name": "ma_data",
-          "field_name": "BLDG_NAME"}},
-      "n2": {
-        "abcdefg": {
-          "db_name": "ma_data",
-          "field_name": "FOO_COL"}}}
-    this.setState({ selection });
-  }
+  // // updates the graph state, which  propegates to Graph.js Sigma.props.graph
+  // // a testing method
+  // updateGraphNodes(){
+  //   const selection = {
+  //     "n1": {
+  //       "2417835865": {
+  //         "db_name": "ma_data",
+  //         "field_name": "BLDG_NAME"}},
+  //     "n2": {
+  //       "abcdefg": {
+  //         "db_name": "ma_data",
+  //         "field_name": "FOO_COL"}}}
+  //   this.setState({ selection });
+  // }
 
 
   // This data structure is a bit more complicated.
@@ -77,7 +76,7 @@ class App extends React.Component {
     // Does the origin node exist in the displayed graph?
     // if so, draw a graph between it and the current node
     if (this.state.selection[this.state.originNode]) {
-      this.addGraphEdge(this.state.originNode, tableName, 'edgetype', 'edgeid');
+      this.addGraphEdge(this.state.originNode, tableName, this.setQueryEdgeType, this.state.originNode + ' ' + tableName);
     }
 
     this.setState({ selection });
@@ -100,18 +99,23 @@ class App extends React.Component {
     this.setState({ graphEdges });
   }
 
+  // if the quer results came from an edge search, set the edge type
+  setQueryEdgeType(queryEdgeType){
+    this.setState({ queryEdgeType });
+  }
+
 
   updateQuery(query, originNode) {
     this.setState({ query });
-    this.setState({originNode})
+    this.setState({originNode});
     this.context.router.transitionTo(`/${query}`);
   }
 
   updateResult(result) {
     var sources = result['sources'];
-    var edges = result['edges'];
+    var queryEdges = result['edges'];
     this.setState( { sources });
-    this.setState( { edges });
+    this.setState( { queryEdges });
   }
 
 
@@ -138,6 +142,7 @@ class App extends React.Component {
               selection={this.state.selection}
               updateQuery={this.updateQuery}
               updateResult={this.updateResult}
+              setQueryEdgeType={this.setQueryEdgeType}
             />
             <Pandas />
           </div>

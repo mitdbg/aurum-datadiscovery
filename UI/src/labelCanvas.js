@@ -255,8 +255,11 @@ var showOrHideMenu = function (shapeClicked){
 var requestEdge = function(edge, source){
   var query = 'neighbor_search("'+ source + '", ' + edge + ')'
   console.log(query);
-  // call makeRequest
   window.makeRequest(query, window.handleRequestResponse);
+  window.updateQueryEdgeType(edge);
+
+  // assuming the request succeeded, the overlay layer will be gone
+  document.body.style.cursor = 'default';
 }
 
 ////////////////////////////////
@@ -471,7 +474,6 @@ function handleMousemove(event){
     if(shapes[i].clickable && shapes[i].inShape(x, y)){
       // condition is entered, but cursor style not changed. Not sure why.
       document.body.style.cursor = 'pointer';
-      console.log('cursor should be pointer');
       return;
     }
   }

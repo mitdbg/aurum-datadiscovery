@@ -12,8 +12,10 @@ class Graph extends React.Component {
     this.handleRequestResponse = this.handleRequestResponse.bind(this);
     this.handleSourceResponse = this.handleSourceResponse.bind(this);
     this.clearAndDrawNewLabels = this.clearAndDrawNewLabels.bind(this);
+    this.updateQueryEdgeType = this.updateQueryEdgeType.bind(this);
     window.makeRequest = makeRequest;
     window.handleRequestResponse = this.handleRequestResponse;
+    window.updateQueryEdgeType = this.updateQueryEdgeType; // call props.setQueryEdgeType
 
     this.state = {
       source: '',
@@ -27,6 +29,7 @@ class Graph extends React.Component {
         defaultNodeColor:'#bababa',
         labelSize:'proportional',
         drawLabels: true,
+        drawEdgeLabels: true,
 
         // onHover attributes
         borderSize:2,
@@ -34,6 +37,11 @@ class Graph extends React.Component {
 
         }
     };
+  }
+
+  updateQueryEdgeType(edgeType) {
+    // here b/c I haven't been able to work out how to pass this.props.setQueryEdgeType directly to the window.
+    this.props.setQueryEdgeType(edgeType);
   }
 
   clearAndDrawNewLabels(){
@@ -131,6 +139,7 @@ Graph.propTypes = {
   graphEdges: React.PropTypes.array.isRequired,
   updateQuery: React.PropTypes.func.isRequired,
   updateResult: React.PropTypes.func.isRequired,
+  setQueryEdgeType: React.PropTypes.func.isRequired,
 }
 
 export default Graph
