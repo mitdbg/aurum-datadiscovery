@@ -9,7 +9,6 @@ import java.util.Properties;
 import org.junit.Test;
 
 import core.Conductor;
-import core.TaskPackage;
 import core.WorkerTask;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
@@ -43,8 +42,8 @@ public class StoreLoadingTest {
           String name = filePath.getFileName().toString();
           if (!name.equals(".DS_Store")) { // Make sure only valid files are in
                                            // the folder
-            TaskPackage tp =
-                TaskPackage.makeCSVFileTaskPackage("", path, name, separator);
+            WorkerTask tp =
+                WorkerTask.makeCSVFileWorkerTask("", path, name, separator);
             c.submitTask(tp);
           }
         }

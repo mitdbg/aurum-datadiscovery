@@ -19,7 +19,6 @@ import com.codahale.metrics.Meter;
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import metrics.Metrics;
-import opennlp.tools.namefind.TokenNameFinderModel;
 import store.Store;
 
 public class Conductor {
@@ -29,7 +28,8 @@ public class Conductor {
   private ProfilerConfig pc;
   private File errorLogFile;
 
-  private BlockingQueue<TaskPackage> taskQueue;
+  private BlockingQueue<WorkerTask> taskQueue;
+  private BlockingQueue<WorkerSubTask> subTaskQueue;
   private List<Worker> activeWorkers;
   private List<Thread> workerPool;
   private BlockingQueue<WorkerTaskResult> results;
@@ -38,12 +38,13 @@ public class Conductor {
   private Store store;
 
   private Thread consumer;
-  private Consumer runnable;
+  private ErrorConsumer runnable;
   // Cached entity analyzers (expensive initialization)
   private Map<String, EntityAnalyzer> cachedEntityAnalyzers;
 
   // Metrics
   private int totalTasksSubmitted = 0;
+  private int totalSubTasksSubmitted = 0;
   private int totalFailedTasks = 0;
   private AtomicInteger totalProcessedTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
@@ -54,34 +55,55 @@ public class Conductor {
     this.pc = pc;
     this.store = s;
     this.taskQueue = new LinkedBlockingQueue<>();
+    this.subTaskQueue = new LinkedBlockingQueue<>();
     this.results = new LinkedBlockingQueue<>();
     this.errorQueue = new LinkedBlockingQueue<>();
 
     int numWorkers = pc.getInt(ProfilerConfig.NUM_POOL_THREADS);
     this.workerPool = new ArrayList<>();
     this.activeWorkers = new ArrayList<>();
-    List<TokenNameFinderModel> modelList = new ArrayList<>();
-    List<String> modelNameList = new ArrayList<>();
-    EntityAnalyzer first = new EntityAnalyzer();
-    modelList = first.getCachedModelList();
-    modelNameList = first.getCachedModelNameList();
+
+    // Entity analyzer is cached in Textual Analyzer
+//    List<TokenNameFinderModel> modelList = new ArrayList<>();
+//    List<String> modelNameList = new ArrayList<>();
+//    EntityAnalyzer first = new EntityAnalyzer();
+//    modelList = first.getCachedModelList();
+//    modelNameList = first.getCachedModelNameList();
+//    EntityAnalyzer cached = new EntityAnalyzer(modelList, modelNameList);
+
+    this.createTaskProducers(numWorkers);
+    this.createTaskConsumers(numWorkers);
+    this.startConsumer();
+
+    // Metrics
+    m = Metrics.REG.meter(name(Conductor.class, "tasks", "per", "sec"));
+    recordsPerSecond = Metrics.REG.meter(name(Conductor.class, "records", "per", "sec"));
+  }
+
+  private void createTaskProducers(int numWorkers) {
     for (int i = 0; i < numWorkers; i++) {
-      String name = "Worker-" + new Integer(i).toString();
-      EntityAnalyzer cached = new EntityAnalyzer(modelList, modelNameList);
-      Worker w = new Worker(this, pc, name, taskQueue, errorQueue, store, cached);
+      String name = "Producer-" + new Integer(i).toString();
+      TaskProducer producer = new TaskProducer(this, pc, name);
+      workerPool.add(new Thread(producer, name));
+      activeWorkers.add(producer);
+    }
+  }
+
+  private void createTaskConsumers(int numWorkers) {
+    for (int i = 0; i < numWorkers; i++) {
+      String name = "Consumer-" + new Integer(i).toString();
+      TaskConsumer w = new TaskConsumer(this, pc, name, store);
       Thread t = new Thread(w, name);
       workerPool.add(t);
       activeWorkers.add(w);
     }
+  }
 
-    this.runnable = new Consumer();
+  private void startConsumer() {
+    this.runnable = new ErrorConsumer();
     this.consumer = new Thread(runnable);
     String errorLogFileName = pc.getString(ProfilerConfig.ERROR_LOG_FILE_NAME);
     this.errorLogFile = new File(errorLogFileName);
-    
-    // Metrics
-    m = Metrics.REG.meter(name(Conductor.class, "tasks", "per", "sec"));
-    recordsPerSecond = Metrics.REG.meter(name(Conductor.class, "records", "per", "sec"));
   }
 
   public void start() {
@@ -98,13 +120,44 @@ public class Conductor {
     }
   }
 
-  public boolean submitTask(TaskPackage task) {
+  public boolean submitTask(WorkerTask task) {
     totalTasksSubmitted++;
     return taskQueue.add(task);
   }
+
+  public WorkerTask pullTask() {
+    try {
+      return taskQueue.poll(500, TimeUnit.MILLISECONDS);
+    } catch(InterruptedException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  public boolean submitSubTask(WorkerSubTask task) {
+    totalSubTasksSubmitted++;
+    return subTaskQueue.add(task);
+  }
+
+  public WorkerSubTask pullSubTask() {
+    try {
+      return subTaskQueue.poll(500, TimeUnit.MILLISECONDS);
+    } catch(InterruptedException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  public void submitError(String log) {
+    try {
+      errorQueue.put(new ErrorPackage(log));
+    } catch(InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
   
-  public int approxQueueLenght() {
-	  return taskQueue.size();
+  public int approxQueueLength() {
+	  return subTaskQueue.size();
   }
 
   public boolean isTherePendingWork() {
@@ -137,7 +190,7 @@ public class Conductor {
     LOG.info("");
   }
 
-  class Consumer implements Runnable {
+  class ErrorConsumer implements Runnable {
 
     private boolean doWork = true;
 
@@ -174,7 +227,7 @@ public class Conductor {
         w.stop();
       }
 
-      LOG.info("Consumer stopping");
+      LOG.info("ErrorConsumer stopping");
     }
   }
 }

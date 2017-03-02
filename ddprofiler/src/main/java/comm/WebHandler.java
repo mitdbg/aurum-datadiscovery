@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.WorkerTask;
+import core.WorkerSubTask;
 
 public class WebHandler extends HttpServlet {
 
@@ -83,7 +83,7 @@ public class WebHandler extends HttpServlet {
 
   private String processCSVDataSource(String dbName, String path, String name,
                                       String separator) {
-    WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(dbName, path, name, separator);
+    WorkerSubTask wt = WorkerSubTask.makeWorkerSubTaskForCSVFile(dbName, path, name, separator);
     boolean success = true; // c.submitTask(wt);
     if (success)
       return "OK";
