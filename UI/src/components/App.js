@@ -76,7 +76,7 @@ class App extends React.Component {
     // Does the origin node exist in the displayed graph?
     // if so, draw a graph between it and the current node
     if (this.state.selection[this.state.originNode]) {
-      this.addGraphEdge(this.state.originNode, tableName, this.setQueryEdgeType, this.state.originNode + ' ' + tableName);
+      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, this.state.queryEdgeType + ' ' + this.state.originNode + ' ' + tableName);
     }
 
     this.setState({ selection });
