@@ -70,6 +70,7 @@ public class TaskProducer implements Worker {
                     LOG.warn("No data read from: {}", c.getSourceName());
                     task.close();
                 }
+                final int numColumns = data.size();
 
                 // Create a tracker for this table
                 Tracker tracker = new Tracker();
@@ -101,6 +102,8 @@ public class TaskProducer implements Worker {
 
                 tracker.finishReading();
                 task.close();
+
+                this.conductor.notifyProcessedTask(numColumns);
             }
             catch(Exception e) {
                 String init = "#########";

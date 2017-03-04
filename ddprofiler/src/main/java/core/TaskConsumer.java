@@ -101,7 +101,7 @@ public class TaskConsumer implements Worker {
 //					store.storeDocument(wtr);
 //				}
 
-//				conductor.notifyProcessedTask(results.size());
+				conductor.notifyProcessedSubTask();
 			} catch (Exception e) {
 				String init = "#########";
 				String msg = task.toString() + " $FAILED$ cause-> " + e.getMessage();

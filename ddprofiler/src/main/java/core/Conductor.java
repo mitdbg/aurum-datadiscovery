@@ -46,6 +46,8 @@ public class Conductor {
   private int totalTasksSubmitted = 0;
   private int totalFailedTasks = 0;
   private AtomicInteger totalProcessedTasks = new AtomicInteger();
+  private AtomicInteger totalSubTasksSubmitted = new AtomicInteger();
+  private AtomicInteger totalProcessedSubTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
   private Meter m;
   public static Meter recordsPerSecond;
@@ -158,7 +160,9 @@ public class Conductor {
   }
 
   public boolean isTherePendingWork() {
-    return this.totalProcessedTasks.get() < this.totalTasksSubmitted;
+    boolean tasksFinished = this.totalProcessedTasks.get() < this.totalTasksSubmitted;
+    boolean subTasksFinished = this.totalProcessedSubTasks.get() < this.totalSubTasksSubmitted.get();
+    return tasksFinished && subTasksFinished;
   }
 
   public List<WorkerTaskResult> consumeResults() {
@@ -179,11 +183,18 @@ public class Conductor {
 
   public void notifyProcessedTask(int numCols) {
     totalProcessedTasks.incrementAndGet();
-    m.mark();
     LOG.info(" {}/{} ", totalProcessedTasks, totalTasksSubmitted);
     LOG.info(" Failed tasks: {} ", totalFailedTasks);
     totalColumns.addAndGet(numCols);
-    LOG.info("Added: {} cols, total processed: {} ", numCols, totalColumns);
+    LOG.info("Added: {} cols, total columns: {} ", numCols, totalColumns);
+    LOG.info("");
+  }
+
+  public void notifyProcessedSubTask() {
+    totalProcessedSubTasks.incrementAndGet();
+    m.mark();
+    LOG.info(" {}/{} ", totalProcessedSubTasks, totalSubTasksSubmitted);
+    LOG.info(" Failed tasks: {} ", totalFailedTasks);
     LOG.info("");
   }
 
