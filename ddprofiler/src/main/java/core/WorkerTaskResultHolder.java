@@ -31,11 +31,11 @@ public class WorkerTaskResultHolder {
 		this.results = results;
 	}
 	
-	public WorkerTaskResultHolder(String dbName, String path, String sourceName, List<Attribute> attributes, Map<String, Analysis> analyzers) {
+	public WorkerTaskResultHolder(String dbName, String path, String sourceName, List<Attribute> attributes) {
 		List<WorkerTaskResult> rs = new ArrayList<>();
 		for(Attribute a : attributes) {
 			AttributeType at = a.getColumnType();
-			Analysis an = analyzers.get(a.getColumnName());
+			Analysis an = a.getAnalyzer();
 			long id = Utils.computeAttrId(dbName, sourceName, a.getColumnName());
 			if(at.equals(AttributeType.FLOAT)) {
 				NumericalAnalysis na = ((NumericalAnalysis)an);

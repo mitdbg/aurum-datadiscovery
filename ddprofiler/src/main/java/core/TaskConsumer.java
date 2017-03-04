@@ -1,5 +1,6 @@
 package core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,9 +84,6 @@ public class TaskConsumer implements Worker {
 				indexer.indexData(task.getDBName(), task.getPath(), task.getValues());
 
 				// Get results and wrap them in a Result object
-				// FIXME: WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(), analyzers);
-//				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getDBName(), task.getPath(), task.getSourceName(), c.getAttributes(), analyzers);
-
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
 //				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
 
@@ -94,12 +92,19 @@ public class TaskConsumer implements Worker {
 				// Finish the subtask, and store a summary document if that was the last subtask
 				task.getTracker().processChunk();
 				if (task.getTracker().isDoneProcessing()) {
-					// TODO: merge and store document
+					WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(
+							task.getDBName(),
+							task.getPath(),
+							task.getSourceName(),
+							new ArrayList<>(task.getValues().keySet())
+					);
+					List<WorkerTaskResult> results = wtrf.get();
+					for(WorkerTaskResult wtr : results) {
+						store.storeDocument(wtr);
+					}
 				}
 
-//				for(WorkerTaskResult wtr : results) {
-//					store.storeDocument(wtr);
-//				}
+				// FIXME: indexer.flushAndClose();
 
 				conductor.notifyProcessedSubTask();
 			} catch (Exception e) {
