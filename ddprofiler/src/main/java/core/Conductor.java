@@ -44,7 +44,6 @@ public class Conductor {
 
   // Metrics
   private int totalTasksSubmitted = 0;
-  private int totalSubTasksSubmitted = 0;
   private int totalFailedTasks = 0;
   private AtomicInteger totalProcessedTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
@@ -73,7 +72,7 @@ public class Conductor {
 
     this.createTaskProducers(numWorkers);
     this.createTaskConsumers(numWorkers);
-    this.startConsumer();
+    this.createMainConsumer();
 
     // Metrics
     m = Metrics.REG.meter(name(Conductor.class, "tasks", "per", "sec"));
@@ -83,23 +82,22 @@ public class Conductor {
   private void createTaskProducers(int numWorkers) {
     for (int i = 0; i < numWorkers; i++) {
       String name = "Producer-" + new Integer(i).toString();
-      TaskProducer producer = new TaskProducer(this, pc, name);
-      workerPool.add(new Thread(producer, name));
-      activeWorkers.add(producer);
+      TaskProducer worker = new TaskProducer(this, pc, name);
+      workerPool.add(new Thread(worker, name));
+      activeWorkers.add(worker);
     }
   }
 
   private void createTaskConsumers(int numWorkers) {
     for (int i = 0; i < numWorkers; i++) {
       String name = "Consumer-" + new Integer(i).toString();
-      TaskConsumer w = new TaskConsumer(this, pc, name, store);
-      Thread t = new Thread(w, name);
-      workerPool.add(t);
-      activeWorkers.add(w);
+      TaskConsumer worker = new TaskConsumer(this, pc, name, store);
+      workerPool.add(new Thread(worker, name));
+      activeWorkers.add(worker);
     }
   }
 
-  private void startConsumer() {
+  private void createMainConsumer() {
     this.runnable = new ErrorConsumer();
     this.consumer = new Thread(runnable);
     String errorLogFileName = pc.getString(ProfilerConfig.ERROR_LOG_FILE_NAME);
@@ -135,7 +133,6 @@ public class Conductor {
   }
 
   public boolean submitSubTask(WorkerSubTask task) {
-    totalSubTasksSubmitted++;
     return subTaskQueue.add(task);
   }
 

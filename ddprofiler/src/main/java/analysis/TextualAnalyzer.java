@@ -31,13 +31,13 @@ public class TextualAnalyzer implements TextualAnalysis {
     analyzers.add(ea);
   }
 
-//  public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2, int pseudoRandomSeed) {
-//    ea2.clear();
-//    return new TextualAnalyzer(ea2, pseudoRandomSeed);
-//  }
+  public static TextualAnalyzer makeAnalyzer(int pseudoRandomSeed) {
+    ea.clear();
+    return new TextualAnalyzer(pseudoRandomSeed);
+  }
 
   @Override
-  public boolean feedTextData(List<String> records) {
+  synchronized public boolean feedTextData(List<String> records) {
     Iterator<DataConsumer> dcs = analyzers.iterator();
     while (dcs.hasNext()) {
       TextualDataConsumer dc = (TextualDataConsumer)dcs.next();

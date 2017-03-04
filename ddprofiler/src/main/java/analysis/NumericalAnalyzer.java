@@ -33,7 +33,7 @@ public class NumericalAnalyzer implements NumericalAnalysis {
   }
 
   @Override
-  public boolean feedIntegerData(List<Long> records) {
+  synchronized public boolean feedIntegerData(List<Long> records) {
 
     Iterator<DataConsumer> dcs = analyzers.iterator();
     while (dcs.hasNext()) {
@@ -45,7 +45,7 @@ public class NumericalAnalyzer implements NumericalAnalysis {
   }
 
   @Override
-  public boolean feedFloatData(List<Float> records) {
+  synchronized public boolean feedFloatData(List<Float> records) {
 
     Iterator<DataConsumer> dcs = analyzers.iterator();
     while (dcs.hasNext()) {

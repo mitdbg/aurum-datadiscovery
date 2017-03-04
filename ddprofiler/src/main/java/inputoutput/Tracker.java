@@ -16,9 +16,9 @@ public class Tracker {
     private AtomicBoolean doneReading;
 
     public Tracker() {
-        this.chunksSubmitted.set(0);
-        this.chunksProcessed.set(0);
-        this.doneReading.set(false);
+        this.chunksSubmitted = new AtomicInteger(0);
+        this.chunksProcessed = new AtomicInteger(0);
+        this.doneReading = new AtomicBoolean(false);
     }
 
     public int getChunksSubmitted() { return chunksSubmitted.get(); }
