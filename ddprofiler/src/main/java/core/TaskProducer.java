@@ -46,6 +46,29 @@ public class TaskProducer implements Worker {
         this.doWork = false;
     }
 
+    private void submitSubTasks(Map<Attribute, Values> data, String dbName, String path, String sourceName) {
+        int seed = 0; // To get a unique task ID
+        for (Entry<Attribute, Values> entry : data.entrySet()) {
+            // Get the tracker from the column header
+            Tracker tracker = entry.getKey().getTracker();
+
+            // Create a new WorkerSubTask
+            WorkerSubTask wst = new WorkerSubTask(
+                    task.getID(seed),
+                    entry.getKey(),
+                    entry.getValue(),
+                    dbName,
+                    path,
+                    sourceName
+            );
+            seed++;
+
+            // Submit the subTask to the conductor
+            this.conductor.submitSubTask(wst);
+            tracker.submitChunk();
+        }
+    }
+
     @Override
     public void run() {
 
@@ -65,45 +88,36 @@ public class TaskProducer implements Worker {
                 LOG.info("TaskProducer: {} processing: {}", workerName, c.getSourceName());
 
                 // Read initial records to figure out attribute types
-                Map<Attribute, Values> data = pa.readRows(numRecordChunk);
-                if(data == null) {
+                Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
+                if(initData == null) {
                     LOG.warn("No data read from: {}", c.getSourceName());
                     task.close();
                 }
-                final int numColumns = data.size();
 
-                // Create a tracker for this table
-                Tracker tracker = new Tracker();
-
-                // Submit the first subTask to the conductor
-                this.conductor.submitSubTask(new WorkerSubTask(
-                        task.getID(tracker.getChunksSubmitted()),
-                        tracker, data, c.getDBName(), c.getPath(), c.getSourceName()
-                ));
-                tracker.submitChunk();
+                this.submitSubTasks(initData, c.getDBName(), c.getPath(), c.getSourceName());
 
                 // Consume all remaining records from the connector
-                data = pa.readRows(numRecordChunk);
+                Map<Attribute, Values> data = pa.readRows(numRecordChunk);
                 int records = 0;
                 while(data != null) {
                     records = records + data.size();
                     Conductor.recordsPerSecond.mark(records);
 
-                    // Submit the subTask to the conductor
-                    this.conductor.submitSubTask(new WorkerSubTask(
-                            task.getID(tracker.getChunksSubmitted()),
-                            tracker, data, c.getDBName(), c.getPath(), c.getSourceName()
-                    ));
-                    tracker.submitChunk();
+                    // Submit the subTasks to the conductor
+                    this.submitSubTasks(data, c.getDBName(), c.getPath(), c.getSourceName());
 
                     // Read next chunk of data
                     data = pa.readRows(numRecordChunk);
                 }
 
-                tracker.finishReading();
-                task.close();
+                // Notify all the trackers that we're done reading
+                for (Attribute attribute : initData.keySet()) {
+                    attribute.getTracker().finishReading();
+                }
 
-                this.conductor.notifyProcessedTask(numColumns);
+                // Close the task
+                task.close();
+                this.conductor.notifyProcessedTask(initData.size());
             }
             catch(Exception e) {
                 String init = "#########";

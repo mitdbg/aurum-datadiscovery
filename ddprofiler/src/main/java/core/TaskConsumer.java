@@ -1,33 +1,17 @@
 package core;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import analysis.Analysis;
-import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
-import analysis.modules.EntityAnalyzer;
-import core.WorkerTask.TaskPackageType;
 import core.config.ProfilerConfig;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.BenchmarkingConnector;
 import inputoutput.conn.BenchmarkingData;
-import inputoutput.conn.Connector;
-import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 import store.Store;
-
-import javax.xml.soap.Text;
 
 public class TaskConsumer implements Worker {
 
@@ -67,21 +51,19 @@ public class TaskConsumer implements Worker {
 
 				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getDBName(), task.getPath(), task.getSourceName());
 
-				// Feed values to analyzers
-				for (Entry<Attribute, Values> entry : task.getValues().entrySet()) {
-					String atName = entry.getKey().getColumnName();
-					Values values = entry.getValue();
-					if (values.areFloatValues()) {
-						((NumericalAnalysis) entry.getKey().getAnalyzer()).feedFloatData(values.getFloats());
-					} else if (values.areIntegerValues()) {
-						((NumericalAnalysis) entry.getKey().getAnalyzer()).feedIntegerData(values.getIntegers());
-					} else if (values.areStringValues()) {
-						((TextualAnalysis) entry.getKey().getAnalyzer()).feedTextData(values.getStrings());
-					}
+				// Feed values to the analyzer
+				Analysis analyzer = task.getAttribute().getAnalyzer();
+				Values values = task.getValues();
+				if (values.areFloatValues()) {
+					((NumericalAnalysis) analyzer).feedFloatData(values.getFloats());
+				} else if (values.areIntegerValues()) {
+					((NumericalAnalysis) analyzer).feedIntegerData(values.getIntegers());
+				} else if (values.areStringValues()) {
+					((TextualAnalysis) analyzer).feedTextData(values.getStrings());
 				}
 
 				// Index the values in the store
-				indexer.indexData(task.getDBName(), task.getPath(), task.getValues());
+				indexer.indexData(task.getDBName(), task.getPath(), task.getAttribute(), task.getValues());
 
 				// Get results and wrap them in a Result object
 //				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
@@ -96,12 +78,13 @@ public class TaskConsumer implements Worker {
 							task.getDBName(),
 							task.getPath(),
 							task.getSourceName(),
-							new ArrayList<>(task.getValues().keySet())
+							Arrays.asList(task.getAttribute())
 					);
 					List<WorkerTaskResult> results = wtrf.get();
 					for(WorkerTaskResult wtr : results) {
 						store.storeDocument(wtr);
 					}
+					conductor.notifyProcessedColumn();
 				}
 
 				// FIXME: indexer.flushAndClose();

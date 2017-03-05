@@ -24,12 +24,14 @@ public class Attribute {
   private AttributeType columnType;
   private int columnSize;
   private Analysis analyzer;
+  private final Tracker tracker;
 
   public Attribute(String column_name) {
     this.columnName = column_name;
     this.columnType = AttributeType.UNKNOWN;
     this.columnSize = -1;
     this.analyzer = null;
+    this.tracker = new Tracker();
   }
 
   public Attribute(String column_name, String column_type, int column_size) {
@@ -37,6 +39,8 @@ public class Attribute {
     // TODO: swith(column_type) and transform string into enum
     this.columnType = AttributeType.UNKNOWN;
     this.columnSize = column_size;
+    this.analyzer = null;
+    this.tracker = new Tracker();
   }
 
   public String getColumnName() { return columnName; }
@@ -48,6 +52,8 @@ public class Attribute {
   public AttributeType getColumnType() { return columnType; }
 
   public Analysis getAnalyzer() { return analyzer; }
+
+  public Tracker getTracker() { return tracker; }
 
   public void setColumnType(AttributeType columnType) {
     this.columnType = columnType;

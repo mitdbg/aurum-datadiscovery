@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.WorkerSubTask;
 
 public class WebHandler extends HttpServlet {
 

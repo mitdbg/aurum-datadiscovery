@@ -55,29 +55,25 @@ public class FilterAndBatchDataIndexer implements DataIndexer {
    *   to do it as few times as possible
    */
   @Override
-  public boolean indexData(String dbName, String path, Map<Attribute, Values> data) {
-    for (Entry<Attribute, Values> entry : data.entrySet()) {
-      Attribute a = entry.getKey();
-      AttributeType at = a.getColumnType();
+  public boolean indexData(String dbName, String path, Attribute a, Values values) {
+    AttributeType at = a.getColumnType();
 
-      if (at.equals(AttributeType.STRING)) {
-        String columnName = a.getColumnName();
-        // Id for the attribute - computed only once
-        long id = 0;
-        if (!attributeIds.containsKey(a)) {
-          id = Utils.computeAttrId(dbName, sourceName, columnName);
-          attributeIds.put(a, id);
-        } else {
-          id = attributeIds.get(a);
-        }
-
-        // FIXME: introduce new call -> GC memory problems
-        //				storeNewValuesAndMaybeTriggerIndex(id,
-        //sourceName, a, entry.getValue().getStrings());
-
-        store.indexData(id, dbName, path, sourceName, columnName,
-                        entry.getValue().getStrings());
+    if (at.equals(AttributeType.STRING)) {
+      String columnName = a.getColumnName();
+      // Id for the attribute - computed only once
+      long id = 0;
+      if (!attributeIds.containsKey(a)) {
+        id = Utils.computeAttrId(dbName, sourceName, columnName);
+        attributeIds.put(a, id);
+      } else {
+        id = attributeIds.get(a);
       }
+
+      // FIXME: introduce new call -> GC memory problems
+      //				storeNewValuesAndMaybeTriggerIndex(id,
+      //sourceName, a, entry.getValue().getStrings());
+
+      store.indexData(id, dbName, path, sourceName, columnName, values.getStrings());
     }
     return true;
   }

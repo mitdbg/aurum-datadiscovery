@@ -49,6 +49,7 @@ public class Conductor {
   private AtomicInteger totalSubTasksSubmitted = new AtomicInteger();
   private AtomicInteger totalProcessedSubTasks = new AtomicInteger();
   private AtomicInteger totalColumns = new AtomicInteger();
+  private AtomicInteger totalProcessedColumns = new AtomicInteger();
   private Meter m;
   public static Meter recordsPerSecond;
 
@@ -135,6 +136,7 @@ public class Conductor {
   }
 
   public boolean submitSubTask(WorkerSubTask task) {
+    totalSubTasksSubmitted.incrementAndGet();
     return subTaskQueue.add(task);
   }
 
@@ -160,9 +162,9 @@ public class Conductor {
   }
 
   public boolean isTherePendingWork() {
-    boolean tasksFinished = this.totalProcessedTasks.get() < this.totalTasksSubmitted;
-    boolean subTasksFinished = this.totalProcessedSubTasks.get() < this.totalSubTasksSubmitted.get();
-    return tasksFinished && subTasksFinished;
+    boolean tasksFinished = this.totalProcessedTasks.get() == this.totalTasksSubmitted;
+    boolean subTasksFinished = this.totalProcessedSubTasks.get() == this.totalSubTasksSubmitted.get();
+    return !(tasksFinished && subTasksFinished);
   }
 
   public List<WorkerTaskResult> consumeResults() {
@@ -183,19 +185,32 @@ public class Conductor {
 
   public void notifyProcessedTask(int numCols) {
     totalProcessedTasks.incrementAndGet();
-    LOG.info(" {}/{} ", totalProcessedTasks, totalTasksSubmitted);
-    LOG.info(" Failed tasks: {} ", totalFailedTasks);
+    LOG.info("Processed: {}/{} tasks and {}/{} subtasks, {} failed tasks",
+            totalProcessedTasks,
+            totalTasksSubmitted,
+            totalProcessedSubTasks,
+            totalSubTasksSubmitted,
+            totalFailedTasks
+    );
     totalColumns.addAndGet(numCols);
-    LOG.info("Added: {} cols, total columns: {} ", numCols, totalColumns);
-    LOG.info("");
+    LOG.info("Added: {} cols", numCols);
   }
 
   public void notifyProcessedSubTask() {
     totalProcessedSubTasks.incrementAndGet();
     m.mark();
-    LOG.info(" {}/{} ", totalProcessedSubTasks, totalSubTasksSubmitted);
-    LOG.info(" Failed tasks: {} ", totalFailedTasks);
-    LOG.info("");
+//    LOG.info("Processed: {}/{} tasks and {}/{} subtasks, {} failed tasks",
+//            totalProcessedTasks,
+//            totalTasksSubmitted,
+//            totalProcessedSubTasks,
+//            totalSubTasksSubmitted,
+//            totalFailedTasks
+//    );
+  }
+
+  public void notifyProcessedColumn() {
+    totalProcessedColumns.incrementAndGet();
+    LOG.info("Columns processed: {}/{} ", totalProcessedColumns, totalColumns);
   }
 
   class ErrorConsumer implements Runnable {

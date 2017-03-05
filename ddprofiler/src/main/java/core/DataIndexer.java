@@ -7,6 +7,6 @@ import preanalysis.Values;
 
 public interface DataIndexer {
 
-  public boolean indexData(String dbName, String path, Map<Attribute, Values> data);
+  public boolean indexData(String dbName, String path, Attribute a, Values values);
   public boolean flushAndClose();
 }
