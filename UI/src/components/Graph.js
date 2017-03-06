@@ -88,8 +88,9 @@ class Graph extends React.Component {
     this.setState({ source });
 
     // x and y coordinates of the click
-    const clickX = node['cam0:x'];
-    const clickY = node['cam0:y'];
+    const clickX = event.offsetX;
+    var clickY = event.offsetY;
+
     this.setState( {clickX })
     this.setState( {clickY })
 
@@ -102,7 +103,7 @@ class Graph extends React.Component {
     <div id="graph">
       <Sigma
         settings={this.state.sigmaSettings}
-        renderer="webgl"
+        renderer="canvas"
         style={ {maxWidth:"inherit", height:"100%"}}
         onClickNode={e => this.displayNodeDetails(e)}
         >
