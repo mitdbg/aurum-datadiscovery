@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeRequest, makeConvert } from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
-import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, NOverlap, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -29,11 +29,17 @@ class Graph extends React.Component {
         defaultNodeColor:'#bababa',
         labelSize:'proportional',
         drawLabels: true,
-        drawEdgeLabels: true,
+
 
         // onHover attributes
         borderSize:2,
         defaultNodeBorderColor:'#000000',
+
+        // edges
+        // defaultEdgeColor: 'orange', // no effect
+        minEdgeSize: 4, // no effect
+        drawEdgeLabels: true, // no effect
+        drawEdges: true, // works
 
         }
     };
@@ -109,7 +115,7 @@ class Graph extends React.Component {
                   nid={key}
                   hits={this.props.selection[key]}
                   >
-                  <RelativeSize initialSize={15}/>
+                  <RelativeSize initialSize={10}/>
                   <RandomizeNodePositions/>
                 </SigmaNode>
               )
@@ -122,8 +128,6 @@ class Graph extends React.Component {
                 <SigmaEdge
                   key={key}
                   edge={this.props.graphEdges[key]}>
-                  <RelativeSize initialSize={15}/>
-                  <RandomizeNodePositions/>
                 </SigmaEdge>
               )
         }

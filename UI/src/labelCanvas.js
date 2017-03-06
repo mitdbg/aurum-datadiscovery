@@ -234,7 +234,6 @@ var showOrHideMenu = function (shapeClicked){
   shapeClicked.toggle = !shapeClicked.toggle;
 
   if(shapeClicked.toggle === true){
-    console.log('triangle on!');
     for (var i = 0; i < shapeClicked.dependentShapes.length; i++) {
       var shapesToShow = shapeClicked.dependentShapes[i];
       shapesToShow.render()
