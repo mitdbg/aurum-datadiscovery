@@ -88,8 +88,8 @@ class Graph extends React.Component {
     this.setState({ source });
 
     // x and y coordinates of the click
-    const clickX = eventData.offsetX;
-    var clickY = eventData.offsetY;
+    const clickX = node['renderer1:x'];
+    var clickY = node['renderer1:y'];
 
     this.setState( {clickX })
     this.setState( {clickY })
