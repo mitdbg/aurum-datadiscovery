@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeRequest, makeConvert } from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
-import {Sigma, EdgeShapes, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, EdgeShapes, Dagre, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -141,6 +141,7 @@ class Graph extends React.Component {
                 </SigmaEdge>
               )
         }
+        <ForceAtlas2 barnesHutOptimize={false} adjustSizes={true} scalingRatio={10}/>
 
       </Sigma>
     </div>
