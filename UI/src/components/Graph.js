@@ -24,6 +24,7 @@ class Graph extends React.Component {
       clickY: 0,
 
       sigmaSettings: {
+        // normal node attrs
         minNodeSize:10,
         enableHovering:true,
         defaultNodeColor:'#bababa',
@@ -31,15 +32,18 @@ class Graph extends React.Component {
         drawLabels: true,
 
 
-        // onHover attributes
+        // onHover node attrs
         borderSize:2,
         defaultNodeBorderColor:'#000000',
 
-        // edges
+        // normal edge attrs
+        // minEdgeSize: 4, // no effect
         // defaultEdgeColor: 'orange', // no effect
-        minEdgeSize: 4, // no effect
-        drawEdgeLabels: true, // no effect
+        drawEdgeLabels: true, // works
         drawEdges: true, // works
+
+        // onHover node attrs
+
 
         }
     };

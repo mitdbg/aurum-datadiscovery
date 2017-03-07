@@ -10,7 +10,9 @@ class SigmaEdge extends React.Component {
       id:props.edge.eid,
       source:props.edge.source,
       target:props.edge.target,
-      label:props.edge.label})
+      label:props.edge.label,
+      color: props.edge.color,
+    })
   }
 
   embedProps(elements: mixed, extraProps) {
@@ -31,7 +33,7 @@ class SigmaEdge extends React.Component {
 }
 
 SigmaEdge.propTypes = {
-  edge: React.PropTypes.object.isRequired
+  edge: React.PropTypes.object.isRequired,
 }
 
 export default SigmaEdge

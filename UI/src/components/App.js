@@ -94,7 +94,22 @@ class App extends React.Component {
 
   addGraphEdge(source, target, label, eid){
     var graphEdges = this.state.graphEdges;
-    const edge = {source: source, target: target, label: label, eid: eid};
+    var color = '';
+
+    switch (label){
+      case 'schema_sim':
+        color = '#FF7271';
+        break;
+      case 'content_sim':
+        color = '#D16EE8';
+        break;
+      case 'pkfk':
+        color = '#9088FF';
+        break;
+    }
+
+
+    const edge = {source: source, target: target, label: label, eid: eid, color: color};
 
     // check to see if an edge with this edge id already exists. If so, don't add it.
     for (var i = 0; i < this.state.graphEdges.length; i++) {
