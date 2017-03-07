@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeRequest, makeConvert } from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
-import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, EdgeShapes, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -137,6 +137,7 @@ class Graph extends React.Component {
                 <SigmaEdge
                   key={key}
                   edge={this.props.graphEdges[key]}>
+                  <EdgeShapes default="curvedArrow"/>
                 </SigmaEdge>
               )
         }
