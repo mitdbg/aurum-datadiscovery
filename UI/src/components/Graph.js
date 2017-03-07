@@ -125,7 +125,9 @@ class Graph extends React.Component {
                   hits={this.props.selection[key]}
                   >
                   <RelativeSize initialSize={10}/>
-                  <RandomizeNodePositions/>
+                  <RandomizeNodePositions>
+                    <ForceAtlas2 iterationsPerRender={1} timeout={6000}/>
+                  </RandomizeNodePositions>
                 </SigmaNode>
               )
         }
@@ -141,8 +143,6 @@ class Graph extends React.Component {
                 </SigmaEdge>
               )
         }
-        <ForceAtlas2 barnesHutOptimize={false} adjustSizes={true} scalingRatio={10}/>
-
       </Sigma>
     </div>
     )
