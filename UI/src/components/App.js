@@ -76,7 +76,24 @@ class App extends React.Component {
     // Does the origin node exist in the displayed graph?
     // if so, draw a graph between it and the current node
     if (this.state.selection[this.state.originNode]) {
-      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, this.state.queryEdgeType + ' ' + this.state.originNode + ' ' + tableName);
+
+      var color = '';
+      switch (this.state.queryEdgeType){
+        case 'schema_sim':
+          color = '#FF7271';
+          break;
+        case 'content_sim':
+          color = '#D16EE8';
+          break;
+        case 'pkfk':
+          color = '#9088FF';
+          break;
+        default:
+          color = 'lightgray';
+          break;
+      }
+
+      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, this.state.queryEdgeType + ' ' + this.state.originNode + ' ' + tableName, color);
     }
 
     this.setState({ selection });
@@ -92,25 +109,8 @@ class App extends React.Component {
     this.setState({selection : {}})
   }
 
-  addGraphEdge(source, target, label, eid){
+  addGraphEdge(source, target, label, eid, color){
     var graphEdges = this.state.graphEdges;
-    var color = '';
-
-    switch (label){
-      case 'schema_sim':
-        color = '#FF7271';
-        break;
-      case 'content_sim':
-        color = '#D16EE8';
-        break;
-      case 'pkfk':
-        color = '#9088FF';
-        break;
-      default:
-        color = 'lightgray';
-        break;
-    }
-
 
     const edge = {source: source, target: target, label: label, eid: eid, color: color};
 
