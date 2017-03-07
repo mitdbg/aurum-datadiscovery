@@ -106,6 +106,9 @@ class App extends React.Component {
       case 'pkfk':
         color = '#9088FF';
         break;
+      default:
+        color = 'lightgray';
+        break;
     }
 
 

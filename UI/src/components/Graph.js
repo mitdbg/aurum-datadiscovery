@@ -43,6 +43,9 @@ class Graph extends React.Component {
         drawEdges: true, // works
 
         // onHover node attrs
+        edgeHoverSizeRatio: 2,
+        edgeHoverColor: 'black',
+        edgeHoverExtremities: true,
 
 
         }
