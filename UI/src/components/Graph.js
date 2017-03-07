@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeRequest, makeConvert } from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
-import {Sigma, NOverlap, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -88,8 +88,8 @@ class Graph extends React.Component {
     this.setState({ source });
 
     // x and y coordinates of the click
-    const clickX = event.offsetX;
-    var clickY = event.offsetY;
+    const clickX = eventData.offsetX;
+    var clickY = eventData.offsetY;
 
     this.setState( {clickX })
     this.setState( {clickY })
