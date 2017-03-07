@@ -6,7 +6,6 @@ class Results extends React.Component {
   render() {
     return (
       <div id="left">
-      <div id="result-description">Keyword "school"</div>
         {Object
           .keys(this.props.sources)
           .map(
