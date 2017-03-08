@@ -19,7 +19,7 @@ class Graph extends React.Component {
     window.updateQueryEdgeType = this.updateQueryEdgeType; // call props.setQueryEdgeType
 
     this.state = {
-      source: '',
+      source: false,
       columns: [],
       clickX: 0,
       clickY: 0,
@@ -146,13 +146,19 @@ class Graph extends React.Component {
               )
         }
 
-        <SourceMenu
-          selection={this.props.selection[this.state.source]}
-          source={this.state.source}
-          x={this.state.clickX}
-          y={this.state.clickY}
-        />
+        {this.state.source?
+          <SourceMenu
+            selection={this.props.selection[this.state.source]}
+            source={this.state.source}
+            x={this.state.clickX}
+            y={this.state.clickY}
+          />
+          : <div />
+        }
+
       </Sigma>
+
+
 
     </div>
     )
