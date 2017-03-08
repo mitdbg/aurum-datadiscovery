@@ -323,3 +323,20 @@ footer {
   float: right;
   border-bottom: 0px;
 }
+.source-title {
+  text-align: center;
+  font-weight: bold;
+}
+.box {
+  display: inline-block;
+  background: #f2f2f2;
+  margin: 20px 5px 5px 0px;
+  border: 1px solid #000;
+  padding: 5px 5px 5px 5px;
+  color: #000;
+}
+#relbox {
+  position: relative;
+  top: 20px;
+  left: 20px;
+}

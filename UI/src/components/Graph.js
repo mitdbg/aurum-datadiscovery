@@ -1,7 +1,8 @@
 import React from 'react';
+import SourceMenu from './SourceMenu';
 import { makeRequest, makeConvert } from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
-import {Sigma, EdgeShapes, Dagre, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
+import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 
@@ -98,11 +99,12 @@ class Graph extends React.Component {
     // x and y coordinates of the click
     const clickX = node['renderer1:x'];
     var clickY = node['renderer1:y'];
+    console.log(clickX, ', ', clickY)
 
     this.setState( {clickX })
     this.setState( {clickY })
 
-    makeConvert(this.state.source, this.handleSourceResponse);
+    // makeConvert(this.state.source, this.handleSourceResponse);
   }
 
   render() {
@@ -112,7 +114,7 @@ class Graph extends React.Component {
       <Sigma
         settings={this.state.sigmaSettings}
         renderer="canvas"
-        style={ {maxWidth:"inherit", height:"100%"}}
+        style={{maxWidth:"inherit", height:"100%"}}
         onClickNode={e => this.displayNodeDetails(e)}
         >
         {
@@ -126,7 +128,7 @@ class Graph extends React.Component {
                   >
                   <RelativeSize initialSize={10}/>
                   <RandomizeNodePositions>
-                    <ForceAtlas2 iterationsPerRender={1} timeout={6000}/>
+                    <ForceAtlas2 iterationsPerRender={1} timeout={600}/>
                   </RandomizeNodePositions>
                 </SigmaNode>
               )
@@ -143,7 +145,15 @@ class Graph extends React.Component {
                 </SigmaEdge>
               )
         }
+
+        <SourceMenu
+          selection={this.props.selection[this.state.source]}
+          source={this.state.source}
+          x={this.state.clickX}
+          y={this.state.clickY}
+        />
       </Sigma>
+
     </div>
     )
   }
