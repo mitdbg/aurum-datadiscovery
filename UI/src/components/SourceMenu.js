@@ -19,10 +19,21 @@ class SourceMenu extends React.Component {
                 top: this.props.y + 'px',
                 left: this.props.x + this.state.width/2 + 'px'}}>
 
-          <div className="source-title">{this.props.source}</div>
-          <hr/>
+          <div className="source-menu-title">{this.props.source}</div>
 
-
+          {Object
+            .keys(this.props.selection)
+            .map(
+              key =>
+              <FieldMenu
+                nid={this.props.selection[key]['nid']}
+                sourceName={this.props.selection[key]['source_name']}
+                fieldName={this.props.selection[key]['field_name']}
+                dbName={this.props.selection[key]['db_name']}
+                score={this.props.selection[key]['score']}
+              />
+              )
+          }
 
       </div>
       )

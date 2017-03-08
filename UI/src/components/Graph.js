@@ -1,6 +1,6 @@
 import React from 'react';
 import SourceMenu from './SourceMenu';
-import { makeRequest, makeConvert } from '../ajax'
+import { makeRequest} from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
@@ -99,12 +99,11 @@ class Graph extends React.Component {
     // x and y coordinates of the click
     const clickX = node['renderer1:x'];
     var clickY = node['renderer1:y'];
-    console.log(clickX, ', ', clickY)
+    // console.log(clickX, ', ', clickY)
 
     this.setState( {clickX })
     this.setState( {clickY })
 
-    // makeConvert(this.state.source, this.handleSourceResponse);
   }
 
   render() {
@@ -153,7 +152,8 @@ class Graph extends React.Component {
             x={this.state.clickX}
             y={this.state.clickY}
           />
-          : <div />
+          :
+          <div className="display-none"/>
         }
 
       </Sigma>

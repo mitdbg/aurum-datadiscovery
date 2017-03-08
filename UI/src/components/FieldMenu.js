@@ -4,8 +4,8 @@ class FieldMenu extends React.Component {
 
   render() {
     return(
-      <div>
-        foo
+      <div className="field-menu-title">
+        {this.props.fieldName}
       </div>
       )
   }
