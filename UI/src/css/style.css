@@ -347,6 +347,15 @@ footer {
   top: 20px;
   left: 20px;
 }
+#triangle {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 20px solid #f00;
+  position: relative;
+  left: 250px;
+}
 .display-none {
   display: none;
 }

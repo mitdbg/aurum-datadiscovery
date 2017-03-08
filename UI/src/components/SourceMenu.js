@@ -26,6 +26,7 @@ class SourceMenu extends React.Component {
             .map(
               key =>
               <FieldMenu
+                key={key}
                 nid={this.props.selection[key]['nid']}
                 sourceName={this.props.selection[key]['source_name']}
                 fieldName={this.props.selection[key]['field_name']}
@@ -35,6 +36,7 @@ class SourceMenu extends React.Component {
               )
           }
 
+          <div id="triangle"></div>
       </div>
       )
   }
