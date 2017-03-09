@@ -15,6 +15,6 @@ export default FieldMenu
 
 
 FieldMenu.propTypes = {
-  nid: React.PropTypes.string,
-  sourceName: React.PropTypes.string,
+  nid: React.PropTypes.number.isRequired,
+  sourceName: React.PropTypes.string.isRequired,
 }

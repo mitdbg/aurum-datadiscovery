@@ -1,6 +1,5 @@
 import React from 'react';
 import FieldMenu from './FieldMenu';
-import EdgeMenu from './EdgeMenu';
 
 class SourceMenu extends React.Component {
   constructor() {
@@ -13,7 +12,8 @@ class SourceMenu extends React.Component {
 
 
   render() {
-    return(
+    if(this.props.source !== '') {
+      return(
       <div
         className="box"
         id="relbox"
@@ -38,11 +38,16 @@ class SourceMenu extends React.Component {
               )
           }
 
-          <div id="triangle"></div>
-          <EdgeMenu />
-
       </div>
       )
+    } else {
+      return(
+        <div className="display-none"></div>
+        )
+    }
+
+
+
   }
 }
 

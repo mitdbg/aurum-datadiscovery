@@ -1,8 +1,7 @@
 import React from 'react';
 import SourceMenu from './SourceMenu';
-import EdgeMenu from './EdgeMenu'
-import EmptyDiv from './EmptyDiv';
-import { makeRequest} from '../ajax'
+import EdgeMenu from './EdgeMenu';
+import TriangleToggle from './TriangleToggle';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -13,7 +12,7 @@ class Graph extends React.Component {
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
 
     this.state = {
-      source: false,
+      source: '',
       columns: [],
       clickX: 0,
       clickY: 0,
@@ -78,28 +77,23 @@ class Graph extends React.Component {
         style={{maxWidth:"inherit", height:"100%"}}
         onClickNode={e => this.displayNodeDetails(e)}
         >
-        {this.state.source?
+
           <SourceMenu
             selection={this.props.selection[this.state.source]}
             source={this.state.source}
             x={this.state.clickX}
             y={this.state.clickY}
           />
-          :
-          <EmptyDiv />
-        }
 
-        {this.state.source?
-          <div id="triangle"></div>
-          :
-          <EmptyDiv />
-        }
+          <TriangleToggle
+            source={this.state.source}
+          />
 
-        {this.state.source ?
-          <EdgeMenu />
-          :
-          <EmptyDiv />
-        }
+          <EdgeMenu
+            source={this.state.source}
+            updateQuery={this.props.updateQuery}
+            setQueryEdgeType={this.props.setQueryEdgeType}
+          />
 
         {
           // cycle through that are passed as selected items
