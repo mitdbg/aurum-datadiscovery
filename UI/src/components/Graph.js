@@ -1,5 +1,6 @@
 import React from 'react';
 import SourceMenu from './SourceMenu';
+import EmptyDiv from './EmptyDiv';
 import { makeRequest} from '../ajax'
 import { renderCanvas, removeOverlay } from '../labelCanvas'
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
@@ -116,6 +117,17 @@ class Graph extends React.Component {
         style={{maxWidth:"inherit", height:"100%"}}
         onClickNode={e => this.displayNodeDetails(e)}
         >
+        {this.state.source?
+          <SourceMenu
+            selection={this.props.selection[this.state.source]}
+            source={this.state.source}
+            x={this.state.clickX}
+            y={this.state.clickY}
+          />
+          :
+          <EmptyDiv />
+        }
+
         {
           // cycle through that are passed as selected items
           Object.keys(this.props.selection).map(
@@ -145,16 +157,7 @@ class Graph extends React.Component {
               )
         }
 
-        {this.state.source?
-          <SourceMenu
-            selection={this.props.selection[this.state.source]}
-            source={this.state.source}
-            x={this.state.clickX}
-            y={this.state.clickY}
-          />
-          :
-          <div className="display-none"/>
-        }
+
 
       </Sigma>
 

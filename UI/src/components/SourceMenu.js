@@ -1,5 +1,6 @@
 import React from 'react';
 import FieldMenu from './FieldMenu';
+import EdgeMenu from './EdgeMenu';
 
 class SourceMenu extends React.Component {
   constructor() {
@@ -9,6 +10,7 @@ class SourceMenu extends React.Component {
       width: 225, // width of the box, in pixels
     }
   }
+
 
   render() {
     return(
@@ -37,6 +39,8 @@ class SourceMenu extends React.Component {
           }
 
           <div id="triangle"></div>
+          <EdgeMenu />
+
       </div>
       )
   }

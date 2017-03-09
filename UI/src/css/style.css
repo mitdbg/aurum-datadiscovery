@@ -334,6 +334,13 @@ footer {
   border-top: 1px solid #ccc;
   padding: 3px 5px 3px 5px;
 }
+.edge-menu-title {
+  text-align: left;
+  font-weight: normal;
+  list-style-type: none;
+  padding: 3px 5px 3px 5px;
+  border-bottom: 1px solid #808080;
+}
 .box {
   display: inline-block;
   background: #f2f2f2;
@@ -341,6 +348,14 @@ footer {
   border: 1px solid #000;
   padding: 5px 5px 5px 5px;
   color: #000;
+}
+#edge-box {
+  color: #808080;
+  background-color: #fff;
+  border: 1px solid #808080;
+  position: relative;
+  left: 275px;
+  width: 120px;
 }
 #relbox {
   position: relative;
@@ -354,7 +369,7 @@ footer {
   border-right: 20px solid transparent;
   border-top: 20px solid #f00;
   position: relative;
-  left: 250px;
+  left: 225px;
 }
 .display-none {
   display: none;
