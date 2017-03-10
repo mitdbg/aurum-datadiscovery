@@ -10,7 +10,6 @@ from nearpy.hashes import RandomDiscretizedProjections
 from nearpy.distances import CosineDistance
 from sklearn.decomposition import TruncatedSVD
 from datasketch import MinHash, MinHashLSH
-from knowledgerepr.fieldnetwork import FieldNetwork
 
 from sklearn.cluster import DBSCAN
 import numpy as np
@@ -74,7 +73,29 @@ def lsa_dimensionality_reduction(tfidf):
     return new_tfidf_vectors
 
 
+class LSHRandomProjectionsIndex:
+
+    def __init__(self, num_features, projection_count=30):
+        self.num_features = num_features
+        self.rbp = RandomBinaryProjections('default', projection_count)
+        self.text_engine = Engine(num_features, lshashes=[self.rbp], distance=CosineDistance())
+
+    def index(self, vector, key):
+        if len(vector) != self.num_features:
+            print("ERROR received vector.dim: " + str(len(vector)) + " on engine.dim: " + str(self.num_features))
+            raise Exception
+        self.text_engine.store_vector(vector, key)
+
+    def query(self, vector):
+        res = self.text_engine.neighbours(vector)
+        return res
+
+
 def build_schema_sim_relation(network):
+
+    def connect(nid1, nid2, score):
+        network.add_relation(nid1, nid2, Relation.SCHEMA_SIM, score)
+
     st = time.time()
     docs = []
     for (_, _, field_name, _) in network.iterate_values():
@@ -84,10 +105,43 @@ def build_schema_sim_relation(network):
     et = time.time()
     print("Time to create docs and TF-IDF: ")
     print("Create docs and TF-IDF: {0}".format(str(et - st)))
+
     nid_gen = network.iterate_ids()
-    text_engine = index_in_text_engine(nid_gen, tfidf, rbp)  # rbp the global variable
+    num_features = tfidf.shape[1]
+    new_index_engine = LSHRandomProjectionsIndex(num_features)
+
+    # Index vectors in engine
+    st = time.time()
+    row_idx = 0
+    for key in nid_gen:
+        sparse_row = tfidf.getrow(row_idx)
+        dense_row = sparse_row.todense()
+        array = dense_row.A[0]
+        row_idx += 1
+        new_index_engine.index(array, key)
+    et = time.time()
+    print("Total index text: " + str((et - st)))
+
+    # Create schema_sim links
     nid_gen = network.iterate_ids()
-    create_sim_graph_text(nid_gen, network, text_engine, tfidf, Relation.SCHEMA_SIM)
+    st = time.time()
+    row_idx = 0
+    for nid in nid_gen:
+
+        sparse_row = tfidf.getrow(row_idx)
+        dense_row = sparse_row.todense()
+        array = dense_row.A[0]
+        row_idx += 1
+        N = new_index_engine.query(array)
+        if len(N) > 1:
+            for n in N:
+                (data, key, value) = n
+                if nid != key:
+                    connect(nid, key, value)
+    et = time.time()
+    print("Create graph schema: {0}".format(str(et - st)))
+
+    return new_index_engine
 
 
 def build_schema_sim_relation_lsa(network, fields):
@@ -177,28 +231,24 @@ def build_content_sim_mh_text(network, mh_signatures):
     # Materialize signatures for convenience
     mh_sig_obj = []
 
-    lsh = MinHashLSH(threshold=0.7, num_perm=512)
+    content_index = MinHashLSH(threshold=0.7, num_perm=512)
 
-
-    # Create minhashe objects and index
+    # Create minhash objects and index
     for nid, mh_sig in mh_signatures:
         mh_obj = MinHash(num_perm=512)
         mh_array = np.asarray(mh_sig, dtype=int)
         mh_obj.hashvalues = mh_array
-        lsh.insert(nid, mh_obj)
-        #print(mh_obj.hashvalues)
+        content_index.insert(nid, mh_obj)
         mh_sig_obj.append((nid, mh_obj))
 
     # Query objects
     for nid, mh_obj in mh_sig_obj:
-        res = lsh.query(mh_obj)
+        res = content_index.query(mh_obj)
         for r_nid in res:
             if r_nid != nid:
                 connect(nid, r_nid, 1)
-        #if len(res) > 1:
-        #    print("sim to: " + str(nid))
-        #    for r in res:
-        #        print(str(r))
+
+    return content_index
 
 
 def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
@@ -217,7 +267,6 @@ def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
 
     def check_overlap_maybe_connect(overlap):
         return
-
 
     class Event(Enum):
         OPEN = 0
@@ -366,7 +415,7 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
 
                         # min overlap for precision
                         actual_overlap = compute_overlap(ref_x_left, ref_x_right, candidate_x_left, candidate_x_right)
-                        if actual_overlap >= 0.5:
+                        if actual_overlap >= 0.3:
                             connect(candidate_nid, ref_nid, 1, inddep=True)
                     """
                     if candidate_x_left >= ref_x_left and candidate_x_right <= ref_x_right:
@@ -578,7 +627,7 @@ def build_pkfk_relation(network):
         n_card = network.get_cardinality_of(n)
         if n == '2314808454' or n == '1504465753':
             debug = True
-        if n_card > 0.9:  # Early check if this is a candidate
+        if n_card > 0.7:  # Early check if this is a candidate
             neighborhood = get_neighborhood(n)
             for ne in neighborhood:
                 if ne is not n:
@@ -589,9 +638,9 @@ def build_pkfk_relation(network):
                         highest_card = n_card
                     else:
                         highest_card = ne_card
-                    if ne_card < 0.5:
-                        network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
-                        total_pkfk_relations += 1
+                    #if ne_card < 0.5:
+                    network.add_relation(n, ne.nid, Relation.PKFK, highest_card)
+                    total_pkfk_relations += 1
                     #print(str(n) + " -> " + str(ne))
     print("Total number PKFK: {0}".format(str(total_pkfk_relations)))
 

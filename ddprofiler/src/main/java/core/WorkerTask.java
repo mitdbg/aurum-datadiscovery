@@ -2,6 +2,7 @@ package core;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.sql.Connection;
 
 import inputoutput.conn.DBConnector;
 import inputoutput.conn.DBType;
@@ -39,13 +40,13 @@ public class WorkerTask implements Closeable {
                                                String tableName,
                                                String username,
                                                String password) {
-    DBConnector dbc = null;
-    try {
-      dbc = new DBConnector(dbName, dbType, connIP, port, sourceName, tableName,
-                            username, password);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+	// Retrieve existing pool connection or create a new one if necessary
+    Connection c = DBConnector.getOrCreateConnector(dbName, dbType, connIP, port, sourceName,
+    		  tableName, username, password);
+      
+    DBConnector dbc = new DBConnector(c, dbName, dbType, connIP, port, sourceName,
+      			tableName, username, password);
+    
     int id = computeTaskId(sourceName, tableName);
     return new WorkerTask(id, dbc);
   }

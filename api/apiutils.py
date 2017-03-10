@@ -57,6 +57,15 @@ class Relation(Enum):
     ENTITY_SIM = 3
     PKFK = 5
     INCLUSION_DEPENDENCY = 6
+    MEANS_SAME = 10
+    MEANS_DIFF = 11
+    SUBCLASS = 12
+    SUPERCLASS = 13
+    MEMBER = 14
+    CONTAINER = 15
+
+    def from_metadata(self):
+        return self.value >= 10
 
 
 class OP(Enum):
@@ -70,6 +79,12 @@ class OP(Enum):
     PKFK = 7
     ENTITY_SIM = 8
     ENTITY_LOOKUP = 9
+    MEANS_SAME = 10
+    MEANS_DIFF = 11
+    SUBCLASS = 12
+    SUPERCLASS = 13
+    MEMBER = 14
+    CONTAINER = 15
 
 
 class Operation:
