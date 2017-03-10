@@ -9,6 +9,7 @@ class EdgeMenu extends React.Component {
     this.handleResponse = this.handleResponse.bind(this);
     this.state = {
       tempQueryEdgeType: '', // temporary query edge. Does not propigate to app unless the query was successful
+      tempQuery: '', // temporary query. Does not propigate to app unless the query was successful
     }
   }
 
@@ -18,16 +19,17 @@ class EdgeMenu extends React.Component {
   // and update the edgeType
   handleResponse(response){
     const json = JSON.parse(response.responseText);
-    this.props.updateQuery(this.state.userQuery, false);
+    this.props.updateQuery(this.state.tempQuery, this.props.source);
     this.props.updateResult(json);
     this.props.setQueryEdgeType(this.state.tempQueryEdgeType);
   }
 
 
   clickEdgeMenu(tempQueryEdgeType){
-    var query = 'neighbor_search("' + this.props.source + '",' + tempQueryEdgeType + ')';
-    makeRequest(query, this.handleResponse);
+    var tempQuery = 'neighbor_search("' + this.props.source + '",' + tempQueryEdgeType + ')';
+    makeRequest(tempQuery, this.handleResponse);
     this.setState({tempQueryEdgeType});
+    this.setState({tempQuery});
 
   }
 

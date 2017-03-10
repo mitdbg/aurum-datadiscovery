@@ -28,7 +28,7 @@ class SourceMenu extends React.Component {
               key =>
               <FieldMenu
                 key={key}
-                nid={this.props.selection[key]['nid']}
+                nid={this.props.selection[key]['nid'].toString()}
                 sourceName={this.props.selection[key]['source_name']}
                 fieldName={this.props.selection[key]['field_name']}
                 dbName={this.props.selection[key]['db_name']}
