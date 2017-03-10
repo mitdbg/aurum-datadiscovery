@@ -132,6 +132,7 @@ footer
   padding: 3px 5px 3px 5px
 
 .edge-menu-title
+  cursor pointer
   text-align left
   font-weight normal
   list-style-type none
@@ -139,27 +140,31 @@ footer
   border-bottom 1px solid gray
 
 .box {
-   display inline-block;
-   background #f2f2f2;
-   margin 20px 5px 5px 0px
-   border 1px solid black
-   padding 5px 5px 5px 5px
-   color black;
+
 }
 
-#edge-box {
+#edge-menu {
   color gray
-  background-color white
+
   border 1px solid gray
   position relative
+  display inline-block
+  background white
   left 275px
   width 120px
 }
 
-#relbox {
-   position relative
-   top 20px
-   left 20px
+#source-menu {
+  display inline-block;
+  background #f2f2f2;
+  margin 20px 5px 5px 0px
+  border 1px solid black
+  padding 5px 5px 5px 5px
+  color black;
+
+  position relative
+  top 20px
+  left 20px
 }
 
 #triangle
@@ -168,9 +173,15 @@ footer
   border-left: 20px solid transparent;
   border-right: 20px solid transparent;
   border-top: 20px solid #f00;
-  position: relative
-  left 225px
+
+  display inline-block
+  position relative
+  left 20px
 
 .display-none {
   display none
+}
+
+#purple {
+  background-color purple
 }

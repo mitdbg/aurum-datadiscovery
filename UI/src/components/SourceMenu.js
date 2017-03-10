@@ -15,8 +15,7 @@ class SourceMenu extends React.Component {
     if(this.props.source !== '') {
       return(
       <div
-        className="box"
-        id="relbox"
+        id="source-menu"
         style={{width: this.state.width + 'px',
                 top: this.props.y + 'px',
                 left: this.props.x + this.state.width/2 + 'px'}}>

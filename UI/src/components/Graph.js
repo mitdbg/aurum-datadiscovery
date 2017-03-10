@@ -78,22 +78,23 @@ class Graph extends React.Component {
         onClickNode={e => this.displayNodeDetails(e)}
         >
 
-          <SourceMenu
-            selection={this.props.selection[this.state.source]}
-            source={this.state.source}
-            x={this.state.clickX}
-            y={this.state.clickY}
-          />
+        <SourceMenu
+          selection={this.props.selection[this.state.source]}
+          source={this.state.source}
+          x={this.state.clickX}
+          y={this.state.clickY}
+        />
 
-          <TriangleToggle
-            source={this.state.source}
-          />
+        <TriangleToggle
+          source={this.state.source}
+        />
 
-          <EdgeMenu
-            source={this.state.source}
-            updateQuery={this.props.updateQuery}
-            setQueryEdgeType={this.props.setQueryEdgeType}
-          />
+        <EdgeMenu
+          source={this.state.source}
+          updateQuery={this.props.updateQuery}
+          setQueryEdgeType={this.props.setQueryEdgeType}
+          updateResult={this.props.updateResult}
+        />
 
         {
           // cycle through that are passed as selected items
@@ -124,10 +125,7 @@ class Graph extends React.Component {
               )
         }
 
-
-
       </Sigma>
-
 
 
     </div>

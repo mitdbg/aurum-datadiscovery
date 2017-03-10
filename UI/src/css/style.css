@@ -335,29 +335,29 @@ footer {
   padding: 3px 5px 3px 5px;
 }
 .edge-menu-title {
+  cursor: pointer;
   text-align: left;
   font-weight: normal;
   list-style-type: none;
   padding: 3px 5px 3px 5px;
   border-bottom: 1px solid #808080;
 }
-.box {
+#edge-menu {
+  color: #808080;
+  border: 1px solid #808080;
+  position: relative;
+  display: inline-block;
+  background: #fff;
+  left: 275px;
+  width: 120px;
+}
+#source-menu {
   display: inline-block;
   background: #f2f2f2;
   margin: 20px 5px 5px 0px;
   border: 1px solid #000;
   padding: 5px 5px 5px 5px;
   color: #000;
-}
-#edge-box {
-  color: #808080;
-  background-color: #fff;
-  border: 1px solid #808080;
-  position: relative;
-  left: 275px;
-  width: 120px;
-}
-#relbox {
   position: relative;
   top: 20px;
   left: 20px;
@@ -368,9 +368,13 @@ footer {
   border-left: 20px solid transparent;
   border-right: 20px solid transparent;
   border-top: 20px solid #f00;
+  display: inline-block;
   position: relative;
-  left: 225px;
+  left: 20px;
 }
 .display-none {
   display: none;
+}
+#purple {
+  background-color: #800080;
 }
