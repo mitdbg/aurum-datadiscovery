@@ -2,7 +2,6 @@ import React from 'react';
 import Search from './Search';
 import Results from './Results';
 import Graph from './Graph';
-import Pandas from './Pandas';
 
 class App extends React.Component {
   constructor() {
@@ -171,7 +170,7 @@ class App extends React.Component {
               updateResult={this.updateResult}
               setQueryEdgeType={this.setQueryEdgeType}
             />
-            <Pandas />
+
           </div>
         </div>
         <footer>

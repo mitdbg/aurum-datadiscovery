@@ -5,6 +5,7 @@ import TriangleToggle from './TriangleToggle';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
+import Pandas from './Pandas';
 
 class Graph extends React.Component {
   constructor() {
@@ -126,6 +127,9 @@ class Graph extends React.Component {
         }
 
       </Sigma>
+      <Pandas
+        source={this.state.source}
+      />
 
 
     </div>

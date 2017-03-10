@@ -31,6 +31,22 @@ export function makeConvert(identifier, newCallback) {
   httpRequest.send();
 }
 
+export function makeInspect(identifier, newCallback) {
+  callback = newCallback;
+  var url = "http://127.0.0.1:5000/inspect/" + identifier;
+  console.log(url);
+
+  httpRequest = new XMLHttpRequest();
+
+  if (!httpRequest) {
+    alert('Giving up :( Cannot create an XMLHTTP instance');
+    return false;
+  }
+  httpRequest.onreadystatechange = ignoreErr;
+  httpRequest.open('GET', url);
+  httpRequest.send();
+}
+
 
 function ignoreErr() {
   if (httpRequest.readyState === XMLHttpRequest.DONE) {
