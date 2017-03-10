@@ -11,6 +11,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from api.apiutils import Relation
+from api.light_processing import pandas_handler
 from modelstore.elasticstore import StoreHandler
 from knowledgerepr import fieldnetwork
 from algebra import API
@@ -73,6 +74,16 @@ def convert(input):
     except Exception as e:
         res = "error: " + str(e)
     return res
+
+@app.route('/inspect/<general_input>')
+def inspect(general_input):
+    drs = api._general_to_drs(general_input)
+    drs.set_table_mode()
+    # get the first nid from the drs. Doesn't matter which, since
+    # eventually getting the whole file, anyhow.
+    hit = drs.data[0]
+    data_frame = pandas_handler(store_client, hit)
+    return data_frame.head(10).to_json()
 
 
 class InvalidUsage(Exception):

@@ -1,4 +1,3 @@
-from modelstore import elasticstore
 from api.apiutils import compute_field_id as id_from
 import pandas as pd
 
@@ -29,17 +28,18 @@ def sample(dbname, sname, fname=False):
     return
 
 
-def pandas_handler(dbname, sname, fname):
+def pandas_handler(store_handler, hit):
     """
     Just obtain a handler to a pandas DataFrame, without exposing the format
     of the underlying data source
-    :param dbname:
-    :param sname:
-    :param fname:
+    :param store_handler:
+    :param nid:
     :return:
     """
-    nid = id_from(dbname, sname, fname)
-    path = elasticstore.get_path_of(nid)
+    nid = hit.nid
+    sname = hit.source_name
+
+    path = store_handler.get_path_of(nid) + sname
     df = __obtain_dataframe(path)
     return df
 
