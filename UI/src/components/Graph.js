@@ -42,8 +42,6 @@ class Graph extends React.Component {
         edgeHoverSizeRatio: 3,
         // edgeHoverColor: 'black',
         // edgeHoverExtremities: false,
-
-
         }
     };
   }
@@ -52,7 +50,7 @@ class Graph extends React.Component {
   // callback to process the data.
   displayNodeDetails(eventData){
     // get the position of the click, to draw a box there later
-    const node = eventData.data.node;
+    const { data: { node } } = eventData;
 
     // name of the table that was selected
     const source = node.id;

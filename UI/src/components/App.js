@@ -59,8 +59,7 @@ class App extends React.Component {
   // Needs additional setting and getting
   addSelection(selected) {
     // get the tableName/Key
-    const tableName = selected['source_name']
-    const nid = selected['nid']
+    const { nid, source_name: tableName } = selected;
 
     const selection = {...this.state.selection};
 
@@ -92,7 +91,7 @@ class App extends React.Component {
           break;
       }
 
-      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, this.state.queryEdgeType + ' ' + this.state.originNode + ' ' + tableName, color);
+      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, `$(this.state.queryEdgeType) $(this.state.originNode) $(tableName)`, color);
     }
 
     this.setState({ selection });

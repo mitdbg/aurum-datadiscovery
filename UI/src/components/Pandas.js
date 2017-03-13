@@ -10,7 +10,6 @@ class Pandas extends React.Component {
     this.state = {
       headings: [],
       tableBody: [],
-
     }
   }
 
@@ -21,7 +20,6 @@ class Pandas extends React.Component {
     var numRows = Object.keys(data[headings[0]]).length; // assume all rows are the same length
 
     var tableBody = []
-    debugger;
     for (var j = 0; j < numRows; j++) {
         var row = [];
         var strindex = j.toString();
@@ -38,10 +36,11 @@ class Pandas extends React.Component {
   }
 
   clearPandas() {
-    console.log('clearPandas called');
+    // console.log('clearPandas called');
   }
 
   componentDidUpdate(){
+    console.log('Pandas.prototype.componentDidUpdate called');
     if (this.props.source !== '') {
       console.log('makeInspect called');
       makeInspect(this.props.source, this.populatePandas);
