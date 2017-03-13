@@ -33,32 +33,46 @@ class Pandas extends React.Component {
     }
 
     this.setState({ headings, tableBody });
+    console.log('pandas populated');
   }
 
   clearPandas() {
-    // console.log('clearPandas called');
+    this.setState({ headings: [], tableBody: [] });
   }
 
-  componentDidUpdate(){
-    console.log('Pandas.prototype.componentDidUpdate called');
-    if (this.props.source !== '') {
-      console.log('makeInspect called');
-      makeInspect(this.props.source, this.populatePandas);
+  componentWillReceiveProps(nextProps){
+    if (nextProps.source !== '' && nextProps.source !== this.props.source) {
+      makeInspect(nextProps.source, this.populatePandas);
     } else {
       this.clearPandas();
     }
-
   }
 
+
   render() {
+    const headings = this.state.headings.map((heading) =>
+      <th key={heading}>{heading}</th>
+    );
+
+    let rowHTML = (row, rowIndex) => {
+      return row.map((cell, index) =>
+        <td key={rowIndex.toString() + index.toString()}>{cell}</td>
+        )
+    }
+
 
    return (
     <div id="pandas">
-    <table>
-      <thead>
-          {this.state.headings.forEach((heading) => <tr>heading</tr>)}
-      </thead>
-    </table>
+      <table>
+        <thead>
+          <tr>
+            {headings}
+          </tr>
+        </thead>
+        <tbody>
+          {this.state.tableBody.map((row, index) => <tr key={'r'+index.toString()}>{rowHTML(row, index)}</tr>)}
+        </tbody>
+      </table>
     </div>
     )
   }
