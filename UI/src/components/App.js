@@ -132,16 +132,14 @@ class App extends React.Component {
 
 
   updateQuery(query, originNode) {
-    this.setState({ query });
-    this.setState({originNode});
+    this.setState({ query, originNode });
     this.context.router.transitionTo(`/${query}`);
   }
 
   updateResult(result) {
     var sources = result['sources'];
     var queryEdges = result['edges'];
-    this.setState( { sources });
-    this.setState( { queryEdges });
+    this.setState( { sources, queryEdges });
   }
 
 

@@ -28,9 +28,7 @@ class EdgeMenu extends React.Component {
   clickEdgeMenu(tempQueryEdgeType){
     var tempQuery = 'neighbor_search("' + this.props.source + '",' + tempQueryEdgeType + ')';
     makeRequest(tempQuery, this.handleResponse);
-    this.setState({tempQueryEdgeType});
-    this.setState({tempQuery});
-
+    this.setState({tempQueryEdgeType, tempQuery});
   }
 
   render() {

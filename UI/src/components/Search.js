@@ -30,9 +30,9 @@ class Search extends React.Component {
   }
 
   handleChange(e){
-    const query = e.target.value;
-    this.setState({ userQuery: query });
-    makeRequest(query, this.handleResponse);
+    const userQuery = e.target.value;
+    this.setState({ userQuery });
+    makeRequest(userQuery, this.handleResponse);
   }
 
   render() {

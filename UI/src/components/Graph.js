@@ -56,16 +56,13 @@ class Graph extends React.Component {
 
     // name of the table that was selected
     const source = node.id;
-    this.setState({ source });
 
     // x and y coordinates of the click
     const clickX = node['renderer1:x'];
     var clickY = node['renderer1:y'];
     // console.log(clickX, ', ', clickY)
 
-    this.setState( {clickX })
-    this.setState( {clickY })
-
+    this.setState({ clickX, clickY, source })
   }
 
   render() {

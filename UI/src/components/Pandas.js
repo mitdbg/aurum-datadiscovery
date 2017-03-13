@@ -34,8 +34,7 @@ class Pandas extends React.Component {
         tableBody.push(row);
     }
 
-    this.setState( {headings} );
-    this.setState({ tableBody });
+    this.setState({ headings, tableBody });
   }
 
   clearPandas() {
