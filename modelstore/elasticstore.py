@@ -56,6 +56,44 @@ class StoreHandler:
         path = hit['_source']['path']
         return path
 
+    def write_all_fields_to_csv(self, filename: str):
+        """
+        Reads all fields from the store and writes them to a csv.
+        """
+        target = open('ddprofiler/src/test/java/test/resources/%s.csv' % filename, 'w')
+        body = {"query": {"match_all": {}}}
+        res = client.search(index='profile', body=body, scroll="10m",
+                            filter_path=['_scroll_id',
+                                         'hits.hits._id',
+                                         'hits.total',
+                                         'hits.hits._source']
+                            )
+        scroll_id = res['_scroll_id']
+        remaining = res['hits']['total']
+        while remaining > 0:
+            hits = res['hits']['hits']
+            for h in hits:
+                if h['_source']['dataType'] == "N":
+                    data = [h['_id'], h['_source']['dbName'], h['_source']['sourceName'],
+                            h['_source']['columnName'], h['_source']['totalValues'],
+                            h['_source']['uniqueValues'], h['_source']['dataType'],
+                            h['_source']['minValue'], h['_source']['maxValue'],
+                            h['_source']['avgValue'], h['_source']['median'], h['_source']['iqr']]
+                else:
+                    data = [h['_id'], h['_source']['dbName'], h['_source']['sourceName'],
+                            h['_source']['columnName'], h['_source']['totalValues'],
+                            h['_source']['uniqueValues'], h['_source']['dataType']]
+                target.write('%s\n' % ','.join(map(str, data)))
+                remaining -= 1
+            res = client.scroll(scroll="5m", scroll_id=scroll_id,
+                                filter_path=['_scroll_id',
+                                             'hits.hits._id',
+                                             'hits.hits._source']
+                                )
+            scroll_id = res['_scroll_id']  # update the scroll_id
+        client.clear_scroll(scroll_id=scroll_id)
+        target.close()
+
     def get_all_fields(self):
         """
         Reads all fields, described as (id, source_name, field_name) from the store.
