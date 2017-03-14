@@ -41,10 +41,10 @@ class Pandas extends React.Component {
   }
 
   componentWillReceiveProps(nextProps){
-    if (nextProps.source !== '' && nextProps.source !== this.props.source) {
-      makeInspect(nextProps.source, this.populatePandas);
-    } else {
+    if (nextProps.source === '') {
       this.clearPandas();
+    } else if (nextProps.source !== this.props.source) {
+      makeInspect(nextProps.source, this.populatePandas);
     }
   }
 
@@ -56,21 +56,21 @@ class Pandas extends React.Component {
 
     let rowHTML = (row, rowIndex) => {
       return row.map((cell, index) =>
-        <td key={rowIndex.toString() + index.toString()}>{cell}</td>
+        <td className="pandas-cell" title={cell} key={rowIndex.toString() + index.toString()}>{cell}</td>
         )
     }
 
 
    return (
     <div id="pandas">
-      <table>
-        <thead>
-          <tr>
+      <table id="pandas-table">
+        <thead id="pandas-table-head">
+          <tr id="pandas-table-head-row">
             {headings}
           </tr>
         </thead>
         <tbody>
-          {this.state.tableBody.map((row, index) => <tr key={'r'+index.toString()}>{rowHTML(row, index)}</tr>)}
+          {this.state.tableBody.map((row, index) => <tr className="pandas-row" key={'r'+index.toString()}>{rowHTML(row, index)}</tr>)}
         </tbody>
       </table>
     </div>
