@@ -234,10 +234,9 @@ def combine_matchings2(all_matchings):
     return combined_matchings, l4_matchings
 
 
-def find_relation_class_attr_name_sem_matchings(network, kr_handlers):
+def find_relation_class_attr_name_sem_matchings(network, kr_handlers, semantic_sim_threshold=0.5, sensitivity_neg_signal=0.4):
     # Retrieve relation names
 
-    #self.find_relation_class_name_sem_matchings()
     st = time.time()
     names = []
     seen_fields = []
@@ -276,19 +275,26 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers):
                         svs.append(sv)
             names.append(('class', (kr_name, original_cl_name), svs))
 
-    matchings = []
+    pos_matchings = []
+    neg_matchings = []
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
         for idx_class in range(num_attributes_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
-            if semantic_sim > 0.8:
+            semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                    penalize_unknown_word=True,
+                                    add_exact_matches=False,
+                                    sensitivity_neg_signal=sensitivity_neg_signal)
+            if semantic_sim > semantic_sim_threshold:
                 # match.format db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
-                matchings.append(match)
+                pos_matchings.append(match)
+            elif neg_signal:
+                match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
+                neg_matchings.append(match)
     et = time.time()
     print("Time to relation-class (sem): " + str(et - st))
-    return matchings
+    return pos_matchings, neg_matchings
 
 
 def find_relation_class_attr_name_matching(network, kr_handlers):
@@ -385,20 +391,23 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
                     svs.append(sv)  # append even None, to apply penalization later
             names.append(('class', (kr_name, original_cl_name), svs))
 
-    matchings = []
+    pos_matchings = []  # evidence for a real matching
+    neg_matchings = []  # evidence that this matching probably is wrong
     for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
-            #semantic_sim = SS.compute_semantic_similarity(svs_rel, svs_cla)
+            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
             if semantic_sim > 0.5:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
-                matchings.append(match)
+                pos_matchings.append(match)
+            elif negative_signal:
+                match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
+                neg_matchings.append(match)
     et = time.time()
     print("Time to relation-class (sem): " + str(et - st))
-    return matchings
+    return pos_matchings, neg_matchings
 
 
 def find_relation_class_name_matchings(network, kr_handlers):

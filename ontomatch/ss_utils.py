@@ -291,20 +291,36 @@ def groupwise_semantic_sim(sv1, sv2, threshold):
     return to_ret
 
 
-def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True):
+def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.6):
+    total_comparisons = 0
+    skipped_comparisons = 0
     accum = []
     for a, b in itertools.product(sv1, sv2):
+        total_comparisons += 1
         if a is not None and b is not None:
             if not (a == b).all() or add_exact_matches:  # otherwise this just does not add up
                 sim = glove_api.semantic_distance(a, b)
                 accum.append(sim)
         elif penalize_unknown_word:  # if one is None and penalize is True, then sim = 0
+            skipped_comparisons += 1
             sim = 0
             accum.append(sim)
+        elif (a == b).all() and not add_exact_matches:
+            skipped_comparisons += 1
     sim = 0
     if len(accum) > 0:
         sim = np.mean(accum)
-    return sim
+
+    strong_signal = False
+    if total_comparisons == 0:
+        strong_signal = False
+        return sim, strong_signal
+    ratio_skipped_comparisons = float(skipped_comparisons/total_comparisons)
+    # if not many skipped comparisons, then this is a strong signal
+    if ratio_skipped_comparisons < sensitivity_neg_signal:
+        strong_signal = True
+
+    return sim, strong_signal
 
 
 def __compute_semantic_similarity(sv1, sv2):

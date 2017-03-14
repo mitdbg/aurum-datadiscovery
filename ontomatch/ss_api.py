@@ -589,35 +589,8 @@ def test_4_n_42(path_to_serialized_model):
     om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
+    om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)
 
-    # L3: [class.context] -> relation
-    print("Finding L3 matchings...")
-    st = time.time()
-    l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(om.network, om.kr_handlers)
-    print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
-    et = time.time()
-    print("Took: " + str(et - st))
-
-    for m in l3_matchings:
-        print(m)
-
-    # L6: [Relations] -> [Class names] (semantic groups)
-
-    print("Finding L6 matchings...")
-    st = time.time()
-    l6_matchings, sem_coh_groups = matcherlib.find_sem_coh_matchings(om.network, om.kr_handlers)
-    print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
-    et = time.time()
-    print("Took: " + str(et - st))
-
-    for m in l6_matchings:
-        print(m)
-
-    for k, v in sem_coh_groups.items():
-        print(str(k) + " -> " + str(v))
-
-    exit()
 
     print("Finding matchings...")
     st = time.time()
@@ -629,7 +602,7 @@ def test_4_n_42(path_to_serialized_model):
     et = time.time()
     print("Took: " + str(et - st))
 
-    print("computing fanout")
+    print("computing fanout L4")
     fanout = defaultdict(int)
     for m in l4_matchings:
         sch, cla = m
@@ -638,19 +611,26 @@ def test_4_n_42(path_to_serialized_model):
     for o in ordered:
         print(o)
 
-    # for match in l4_matchings:
-    #    print(match)
 
     # L4.2: [Relation names] -> [Class names] (semantic)
     print("Finding L42 matchings...")
     st = time.time()
-    l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers)
+    l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers)
     print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
     et = time.time()
     print("Took: " + str(et - st))
     et = time.time()
     print("Finding matchings...OK")
     print("Took: " + str(et - st))
+
+    print("computing fanout L42")
+    fanout = defaultdict(int)
+    for m in l42_matchings:
+        sch, cla = m
+        fanout[sch] += 1
+    ordered = sorted(fanout.items(), key=operator.itemgetter(1), reverse=True)
+    for o in ordered:
+        print(o)
 
     print("are l4 subsumed by l42?")
     not_in_l42 = 0
@@ -660,6 +640,25 @@ def test_4_n_42(path_to_serialized_model):
             not_in_l42 += 1
             not_subsumed.append(m)
     print("NOT-subsumed: " + str(not_in_l42))
+
+    print("does l42 cancel any l4?")
+    total_neg = len(neg_l42_matchings)
+    cancelled_matchings = []
+    l4_dict = {(match, 1) for match in l4_matchings}
+    total_cancelled = 0
+    for m in neg_l42_matchings:
+        if m in l4_dict:
+            total_cancelled += 1
+            cancelled_matchings.append(m)
+            print(m)
+
+    print("Total l4: " + str(len(l4_matchings)))
+    print("Total l42: " + str(len(l42_matchings)))
+    print("Total not_subsumed: " + str(len(not_subsumed)))
+    print("Total neg_l42: " + str(total_neg))
+    print("Total cancelled out: " + str(total_cancelled))
+
+
 
     """
     # L5: [Attribute names] -> [Class names] (syntax)
@@ -692,23 +691,130 @@ def test_4_n_42(path_to_serialized_model):
         f.write("L42" + '\n')
         for m in l42_matchings:
             f.write(str(m) + '\n')
-        f.write("L5" + '\n')
+        #f.write("L5" + '\n')
         #for m in l5_matchings:
         #    f.write(str(m) + '\n')
         #f.write("L52" + '\n')
         #for m in l52_matchings:
         #    f.write(str(m) + '\n')
-        #f.write("l4 not subsubmed by l42")
-        #for m in not_subsumed:
-        #    f.write(str(m) + '\n')
+        f.write("l4 not subsubmed by l42" + '\n')
+        for m in not_subsumed:
+            f.write(str(m) + '\n')
 
-    #print("L4")
-    #for m in l4_matchings:
-    #    print(m)
+        f.write("l42 cancels the following l4" + '\n')
+        for m in cancelled_matchings:
+            f.write(str(m) + '\n')
 
-    #print("L42")
-    #for m in l42_matchings:
-    #    print(m)
+
+def test_5_n_52(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)
+    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
+
+    print("Finding matchings...")
+    st = time.time()
+    # L4: [Relation names] -> [Class names] (syntax)
+    print("Finding L5 matchings...")
+    st = time.time()
+    l5_matchings = matcherlib.find_relation_class_attr_name_matching(om.network, om.kr_handlers)
+    print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    print("computing fanout L5")
+    fanout = defaultdict(int)
+    for m in l5_matchings:
+        sch, cla = m
+        fanout[sch] += 1
+    ordered = sorted(fanout.items(), key=operator.itemgetter(1), reverse=True)
+    for o in ordered:
+        print(o)
+
+    # L5.2: [Relation names] -> [Class names] (semantic)
+    print("Finding L52 matchings...")
+    st = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(
+        om.network,
+        om.kr_handlers,
+        semantic_sim_threshold=0.5,
+        sensitivity_neg_signal=0.6)
+    print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et - st))
+
+    print("computing fanout L52")
+    fanout = defaultdict(int)
+    for m in l52_matchings:
+        sch, cla = m
+        fanout[sch] += 1
+    ordered = sorted(fanout.items(), key=operator.itemgetter(1), reverse=True)
+    for o in ordered:
+        print(o)
+
+    print("are l5 subsumed by l52?")
+    not_in_l52 = 0
+    not_subsumed = []
+    for m in l5_matchings:
+        if m not in l52_matchings:
+            not_in_l52 += 1
+            not_subsumed.append(m)
+    print("NOT-subsumed: " + str(not_in_l52))
+
+    print("does l52 cancel any l5?")
+    total_neg = len(neg_l52_matchings)
+    cancelled_matchings = []
+    l5_dict = {(match, 1) for match in l5_matchings}
+    total_cancelled = 0
+    for m in neg_l52_matchings:
+        if m in l5_dict:
+            total_cancelled += 1
+            cancelled_matchings.append(m)
+            print(m)
+
+    print("Total l5: " + str(len(l5_matchings)))
+    print("Total l52: " + str(len(l52_matchings)))
+    print("Total not_subsumed: " + str(len(not_subsumed)))
+    print("Total neg_l52: " + str(total_neg))
+    print("Total cancelled out: " + str(total_cancelled))
+
+    with open('OUTPUT_552_only', 'w') as f:
+        f.write("L5" + '\n')
+        for m in l5_matchings:
+            f.write(str(m) + '\n')
+        f.write("L52" + '\n')
+        for m in l52_matchings:
+            f.write(str(m) + '\n')
+
+        f.write("l5 not subsubmed by l52" + '\n')
+        for m in not_subsumed:
+            f.write(str(m) + '\n')
+
+        f.write("l52 cancels the following l5" + '\n')
+        for m in cancelled_matchings:
+            f.write(str(m) + '\n')
 
 
 def main(path_to_serialized_model):
@@ -847,8 +953,8 @@ if __name__ == "__main__":
     #test_fuzzy("../models/chembl21/")
     #exit()
 
-    #test_4_n_42("../models/chembl22/")
-    #exit()
+    test_5_n_52("../models/chembl22/")
+    exit()
 
     test_e2e("../models/chembl22/")
     exit()
