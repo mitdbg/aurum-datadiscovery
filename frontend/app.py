@@ -82,8 +82,8 @@ def inspect(general_input):
     # get the first nid from the drs. Doesn't matter which, since
     # eventually getting the whole file, anyhow.
     hit = drs.data[0]
-    data_frame = pandas_handler(store_client, hit)
-    return data_frame.head(10).to_json()
+    data_frame = pandas_handler(store_handler=store_client, hit=hit, nrows=10)
+    return data_frame.to_json()
 
 
 class InvalidUsage(Exception):
