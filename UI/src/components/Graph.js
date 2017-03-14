@@ -11,12 +11,14 @@ class Graph extends React.Component {
   constructor() {
     super();
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
+    this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
     this.state = {
       source: '',
       columns: [],
       clickX: 0,
       clickY: 0,
+      edgeMenuEnabled: false,
 
       sigmaSettings: {
         // normal node attrs
@@ -63,6 +65,10 @@ class Graph extends React.Component {
     this.setState({ clickX, clickY, source })
   }
 
+  toggleEdgeMenu(){
+    this.setState({ edgeMenuEnabled: !this.state.edgeMenuEnabled });
+  }
+
   render() {
 
    return (
@@ -83,6 +89,7 @@ class Graph extends React.Component {
 
         <TriangleToggle
           source={this.state.source}
+          toggleEdgeMenu={this.toggleEdgeMenu}
         />
 
         <EdgeMenu
@@ -90,6 +97,7 @@ class Graph extends React.Component {
           updateQuery={this.props.updateQuery}
           setQueryEdgeType={this.props.setQueryEdgeType}
           updateResult={this.props.updateResult}
+          enabled={this.state.edgeMenuEnabled}
         />
 
         {

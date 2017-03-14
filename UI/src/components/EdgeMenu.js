@@ -33,7 +33,7 @@ class EdgeMenu extends React.Component {
 
   render() {
 
-    if(this.props.source !== ''){
+    if(this.props.enabled && this.props.source !== ''){
       return(
         <div id="edge-menu">
           <div
@@ -61,6 +61,7 @@ class EdgeMenu extends React.Component {
 
 
 EdgeMenu.propTypes = {
+  enabled: React.PropTypes.bool.isRequired,
   source: React.PropTypes.string,
   updateQuery: React.PropTypes.func.isRequired,
   setQueryEdgeType: React.PropTypes.func.isRequired,
