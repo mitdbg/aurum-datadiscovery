@@ -375,10 +375,10 @@ class FieldNetwork:
                     # Append successful paths to found_paths
                     # T1.A join T2.B, and T2.C may join with other tables T3.D
                     # get_table_neighbors returns next_candidates (s, sibling) (C,B)
-                    # in case T2 is the target add to the path (sibling, None)
+                    # in case T2 is the target add to the path (sibling, sibling)
                     # Otherwise (C,B)
                     if s.source_name == targets[0].source_name:
-                        next_paths = append_to_paths(paths, (sibling,None))
+                        next_paths = append_to_paths(paths, (sibling,sibling))
                     else :
                         next_paths = append_to_paths(paths, (s, sibling))
                     found_paths.extend(next_paths)
