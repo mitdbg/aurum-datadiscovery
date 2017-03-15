@@ -326,7 +326,8 @@ class FieldNetwork:
                     prev_c = c
                 sink = DRS([tgt_sibling], Operation(OP.PKFK, params=[prev_c]))
 
-                if tgt.nid != tgt_sibling.nid:
+                #The join path at the target has None sibling
+                if tgt !=None and tgt_sibling!=None and tgt.nid != tgt_sibling.nid:
                     o_drs = o_drs.absorb_provenance(sink)
                     linker = DRS([tgt], Operation(OP.TABLE, params=[tgt_sibling]))
                     o_drs.absorb(linker)
@@ -353,6 +354,12 @@ class FieldNetwork:
         def get_table_neighbors(hit, relation, paths):
             results = []
             direct_neighbors = self.neighbors_id(hit, relation)
+
+            # Rewriting results - filtering out results that are in the same table as the input. Rewriting prov
+            direct_neighbors_list = [neigh for neigh in direct_neighbors if neigh.source_name != hit.source_name]
+            op = self.get_op_from_relation(relation)
+            direct_neighbors = DRS(direct_neighbors_list, Operation(op, params=[hit]))
+
             # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
                 if not check_membership(n, paths):
@@ -366,7 +373,14 @@ class FieldNetwork:
             for (s, sibling) in sources:
                 if s in targets:
                     # Append successful paths to found_paths
-                    next_paths = append_to_paths(paths, (s, sibling))
+                    # T1.A join T2.B, and T2.C may join with other tables T3.D
+                    # get_table_neighbors returns next_candidates (s, sibling) (C,B)
+                    # in case T2 is the target add to the path (sibling, None)
+                    # Otherwise (C,B)
+                    if s.source_name == targets[0].source_name:
+                        next_paths = append_to_paths(paths, (sibling,None))
+                    else :
+                        next_paths = append_to_paths(paths, (s, sibling))
                     found_paths.extend(next_paths)
                     return True
 
