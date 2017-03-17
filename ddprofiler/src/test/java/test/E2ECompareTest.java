@@ -12,11 +12,11 @@ import static org.junit.Assert.assertEquals;
 
 public class E2ECompareTest {
 
-    String filePath = "/Users/gina/Documents/UROP/aurum/ddprofiler/src/test/java/test/resources/";
-    String pathToExpected = "master.csv";
-    String pathToResults = "load_balance.csv";
+    String filePath = "/Users/gina/Documents/UROP/aurum/ddprofiler/src/test/python/test";
+    String pathToExpected = "master.dd";
+    String pathToResults = "load-balance.dd";
 
-    private void parseCSVToMap(String path, Map map) {
+    private void parseDDToMap(String path, Map map) {
 
         BufferedReader br = null;
         String line = "";
@@ -47,8 +47,8 @@ public class E2ECompareTest {
         Map<String, Node> expected = new HashMap<>();
         Map<String, Node> results = new HashMap<>();
 
-        parseCSVToMap(filePath + pathToExpected, expected);
-        parseCSVToMap(filePath + pathToResults, results);
+        parseDDToMap(filePath + pathToExpected, expected);
+        parseDDToMap(filePath + pathToResults, results);
 
         assertEquals("Expected " + expected.size() + " columns but got " + results.size(),
                 expected.size(), results.size());
@@ -60,8 +60,8 @@ public class E2ECompareTest {
         Map<String, Node> results = new HashMap<>();
         List<CompareError> errorList = new ArrayList<>();
 
-        parseCSVToMap(filePath + pathToExpected, expected);
-        parseCSVToMap(filePath + pathToResults, results);
+        parseDDToMap(filePath + pathToExpected, expected);
+        parseDDToMap(filePath + pathToResults, results);
 
         int successes = 0;
         int errors = 0;
@@ -86,8 +86,8 @@ public class E2ECompareTest {
         Map<String, Node> results = new HashMap<>();
         List<CompareError> errorList = new ArrayList<>();
 
-        parseCSVToMap(filePath + pathToExpected, expected);
-        parseCSVToMap(filePath + pathToResults, results);
+        parseDDToMap(filePath + pathToExpected, expected);
+        parseDDToMap(filePath + pathToResults, results);
 
         int successes = 0;
         int errors = 0;
