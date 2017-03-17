@@ -71,7 +71,7 @@ class Matching:
             for attr_name, values in self.attr_matchings.items():
                 for kr_name, classes in values.items():
                     for class_name, matchings in classes.items():
-                        line = attr_name + " -> " + kr_name + " - " + class_name + " : " + str(matchings)
+                        line = attr_name + " ==>> " + kr_name + " - " + class_name + " : " + str(matchings)
                         relation_matchings.append(line)
         string_repr = '\n'.join(relation_matchings)
         return string_repr
@@ -80,14 +80,14 @@ class Matching:
         relation_matchings = []
         for kr_name, values in self.source_level_matchings.items():
             for class_name, matchings in values.items():
-                line = self.db_name + " %%% " + self.source_name + " %%% _ -> " + kr_name \
+                line = self.db_name + " %%% " + self.source_name + " %%% _ ==>> " + kr_name \
                        + " %%% " + class_name + " %%% " + str(matchings)
                 relation_matchings.append(line)
         for attr_name, values in self.attr_matchings.items():
             for kr_name, classes in values.items():
                 for class_name, matchings in classes.items():
                     line = self.db_name + " %%% " + self.source_name + " %%% " + attr_name \
-                           + " -> " + kr_name + " %%% " + class_name + " %%% " + str(matchings)
+                           + " ==>> " + kr_name + " %%% " + class_name + " %%% " + str(matchings)
                     relation_matchings.append(line)
         #string_repr = '\n'.join(relation_matchings)
         return relation_matchings
@@ -352,7 +352,7 @@ def find_relation_class_attr_name_matching(network, kr_handlers):
     return matchings
 
 
-def find_relation_class_name_sem_matchings(network, kr_handlers):
+def find_relation_class_name_sem_matchings(network, kr_handlers, sem_sim_threshold=0.5, sensitivity_neg_signal=0.4):
     # Retrieve relation names
     st = time.time()
     names = []
@@ -397,8 +397,11 @@ def find_relation_class_name_sem_matchings(network, kr_handlers):
         for idx_class in range(num_relations_inserted, len(names)):
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
-            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla, penalize_unknown_word=True, add_exact_matches=False)
-            if semantic_sim > 0.5:
+            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                            penalize_unknown_word=True,
+                                            add_exact_matches=False,
+                                            sensitivity_neg_signal=sensitivity_neg_signal)
+            if semantic_sim > sem_sim_threshold:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 pos_matchings.append(match)
@@ -558,13 +561,13 @@ def __find_relation_class_matchings(self):
     return clean_matchings
 
 
-def find_sem_coh_matchings(network, kr_handlers):
+def find_sem_coh_matchings(network, kr_handlers, sem_sim_threshold=0.7, group_size_cutoff=2):
     matchings = []
     matchings_special = []
     # Get all relations with groups
     table_groups = dict()
     for db, t, attrs in SS.read_table_columns(None, network=network):
-        groups = SS.extract_cohesive_groups(t, attrs)
+        groups = SS.extract_cohesive_groups(t, attrs, sem_sim_threshold=sem_sim_threshold, group_size_cutoff=group_size_cutoff)
         table_groups[(db, t)] = groups  # (score, [set()])
 
     names = []
@@ -589,6 +592,8 @@ def find_sem_coh_matchings(network, kr_handlers):
         db_name, table_name = db_table_info
         class_seen = []  # to filter out already seen classes
         for g_score, g_tokens in groups:
+            if len(g_tokens) == 0:
+                continue
             g_svs = []
             for t in g_tokens:
                 sv = glove_api.get_embedding_for_word(t)
@@ -596,7 +601,10 @@ def find_sem_coh_matchings(network, kr_handlers):
                     g_svs.append(sv)
             for _, class_info, class_svs in names:
                 kr_name, class_name = class_info
-                sim = SS.compute_semantic_similarity(class_svs, g_svs)
+                sim, strong_signal = SS.compute_semantic_similarity(class_svs, g_svs,
+                                                                    penalize_unknown_word=True,
+                                                                    add_exact_matches=False,
+                                                                    sensitivity_neg_signal=0.4)
                 if sim > g_score and class_name not in class_seen:
                     class_seen.append(class_name)
                     match = ((db_name, table_name, "_"), (kr_name, class_name))
@@ -610,7 +618,7 @@ def find_sem_coh_matchings(network, kr_handlers):
                 continue
                 """
 
-    return matchings, table_groups #, matchings_special
+    return matchings, table_groups  #, matchings_special
 
 cutoff_likely_match_threshold = 0.4
 min_relevance_score = 0.2
@@ -680,7 +688,7 @@ def find_relation_class_sem_coh_clss_context(network, kr_handlers):
 
             for class_info, class_svs in class_ss.items():
                 kr_name, class_name = class_info
-                sim = SS.compute_semantic_similarity(class_svs, g_svs)
+                sim, strong_signal = SS.compute_semantic_similarity(class_svs, g_svs)
                 if sim > g_score and class_name not in class_seen:
                     class_seen.append(class_name)
                     match = ((db_name, table_name, "_"), (kr_name, class_name))

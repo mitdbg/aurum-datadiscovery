@@ -56,7 +56,7 @@ def minhash(str_values):
     return mh
 
 
-def extract_cohesive_groups(table_name, attrs):
+def extract_cohesive_groups(table_name, attrs, sem_sim_threshold=0.7, group_size_cutoff=0):
 
     def does_it_keep_group_coherent(running_group, a, b, threshold):
         if len(running_group) == 0:
@@ -75,8 +75,6 @@ def extract_cohesive_groups(table_name, attrs):
             else:
                 return False
 
-    threshold = 0.7
-    groups = []
     tokens = set()
     ctb = nlp.curate_string(table_name)
     tokens |= set(ctb.split(' '))
@@ -92,10 +90,10 @@ def extract_cohesive_groups(table_name, attrs):
         if av is None or bv is None:
             continue
         sim = glove_api.semantic_distance(av, bv)
-        if sim > threshold:  # try to add to existing group
+        if sim > sem_sim_threshold:  # try to add to existing group
             added_to_existing_group = False
             for running_group in running_groups:
-                ans = does_it_keep_group_coherent(running_group, a, b, threshold)
+                ans = does_it_keep_group_coherent(running_group, a, b, sem_sim_threshold)
                 if ans:  # Add to as many groups as necessary
                     added_to_existing_group = True
                     running_group.add(a)
@@ -106,8 +104,8 @@ def extract_cohesive_groups(table_name, attrs):
                 running_group.add(b)
                 running_groups.append(running_group)
 
-    return [(threshold, group) for group in running_groups]
-    #return [(threshold, running_groups)]
+    return [(sem_sim_threshold, group) for group in running_groups if len(group) > group_size_cutoff]
+
 
 def extract_cohesive_groups1(table_name, attrs):
 
@@ -291,7 +289,7 @@ def groupwise_semantic_sim(sv1, sv2, threshold):
     return to_ret
 
 
-def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.6):
+def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.4):
     total_comparisons = 0
     skipped_comparisons = 0
     accum = []
@@ -317,7 +315,7 @@ def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact
         return sim, strong_signal
     ratio_skipped_comparisons = float(skipped_comparisons/total_comparisons)
     # if not many skipped comparisons, then this is a strong signal
-    if ratio_skipped_comparisons < sensitivity_neg_signal:
+    if ratio_skipped_comparisons > sensitivity_neg_signal:
         strong_signal = True
 
     return sim, strong_signal
@@ -449,7 +447,7 @@ def compute_new_ss(table, semantic_vectors):
         if table != k:
             if k == "molecule_hierarchy":
                 a = 1
-            ss = compute_semantic_similarity(sv1, v)
+            ss, strong_signal = compute_semantic_similarity(sv1, v)
             #print(str(k) + " -> " + str(ss))
             res[k] = ss
     return res
