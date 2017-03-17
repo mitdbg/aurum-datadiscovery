@@ -297,7 +297,7 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers, semantic_s
     return pos_matchings, neg_matchings
 
 
-def find_relation_class_attr_name_matching(network, kr_handlers):
+def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_threshold=0.5):
     # Retrieve relation names
     st = time.time()
     names = []
@@ -334,7 +334,7 @@ def find_relation_class_attr_name_matching(network, kr_handlers):
             names.append(('class', (kr_name, original_cl_name), m))
 
     # Index all the minhashes
-    lsh_index = MinHashLSH(threshold=0.6, num_perm=64)
+    lsh_index = MinHashLSH(threshold=minhash_sim_threshold, num_perm=64)
 
     for idx in range(len(names)):
         lsh_index.insert(idx, names[idx][2])
@@ -352,7 +352,11 @@ def find_relation_class_attr_name_matching(network, kr_handlers):
     return matchings
 
 
-def find_relation_class_name_sem_matchings(network, kr_handlers, sem_sim_threshold=0.5, sensitivity_neg_signal=0.4):
+def find_relation_class_name_sem_matchings(network, kr_handlers,
+                                           sem_sim_threshold=0.5,
+                                           sensitivity_neg_signal=0.4,
+                                           penalize_unknown_word=False,
+                                           add_exact_matches=True):
     # Retrieve relation names
     st = time.time()
     names = []
@@ -398,8 +402,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers, sem_sim_thresho
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
             semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
-                                            penalize_unknown_word=True,
-                                            add_exact_matches=False,
+                                            penalize_unknown_word=penalize_unknown_word,
+                                            add_exact_matches=add_exact_matches,
                                             sensitivity_neg_signal=sensitivity_neg_signal)
             if semantic_sim > sem_sim_threshold:
                 # match.format is db_name, source_name, field_name -> class_name
@@ -413,7 +417,7 @@ def find_relation_class_name_sem_matchings(network, kr_handlers, sem_sim_thresho
     return pos_matchings, neg_matchings
 
 
-def find_relation_class_name_matchings(network, kr_handlers):
+def find_relation_class_name_matchings(network, kr_handlers, minhash_sim_threshold=0.5):
     # Retrieve relation names
     st = time.time()
     names = []
@@ -450,7 +454,7 @@ def find_relation_class_name_matchings(network, kr_handlers):
             names.append(('class', (kr_name, original_cl_name), m))
 
     # Index all the minhashes
-    lsh_index = MinHashLSH(threshold=0.5, num_perm=32)
+    lsh_index = MinHashLSH(threshold=minhash_sim_threshold, num_perm=32)
 
     for idx in range(len(names)):
         lsh_index.insert(idx, names[idx][2])

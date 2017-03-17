@@ -208,8 +208,7 @@ class SSAPI:
         st = time.time()
         l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
                                                                                semantic_sim_threshold=0.7,
-                                                                               sensitivity_neg_signal=0.4
-                                                                               )
+                                                                               sensitivity_neg_signal=0.4)
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -999,8 +998,14 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
     l52_and_not_l6 = []
     for m in l52_dict.keys():
         if m not in l6_dict:
-            #l52_matchings.remove(m)
-            l52_and_not_l6.append(m)
+            db_to_remove, rel_to_remove, _ = m[0]
+            for el in l52_matchings:
+                sch, cla = el
+                db, relation, attr = sch
+                if db == db_to_remove and relation == rel_to_remove:
+                    if el in l52_matchings:
+                        l52_matchings.remove(el)
+                        l52_and_not_l6.append(el)
     total_l52_after_correction = len(l52_matchings)
 
     print("l6 and not l52")
