@@ -161,7 +161,7 @@ def build_and_write(branch_name: str, folder_path: str) -> dict:
     print("*** (This may take a while.)")
     jar_cmd = "java -jar build/libs/ddprofiler.jar --execution.mode 1 --sources.folder.path %s" % folder_path
     start = time.time()
-    call(jar_cmd, stdout=FNULL, shell=True, stderr=sys.stderr)
+    call(jar_cmd, shell=True, stderr=sys.stderr)
     end = time.time()
     print("\nWRITE SUCCESSFUL (%s)\n" % branch_name)
     print("Total time: %.2f secs\n" % (end - start))

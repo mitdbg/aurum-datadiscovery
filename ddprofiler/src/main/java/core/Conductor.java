@@ -28,6 +28,7 @@ public class Conductor {
   private ProfilerConfig pc;
   private File errorLogFile;
 
+  private final int MAX_SUB_TASKS = 1000;
   private BlockingQueue<WorkerTask> taskQueue;
   private BlockingQueue<WorkerSubTask> subTaskQueue;
   private List<Worker> activeWorkers;
@@ -73,7 +74,7 @@ public class Conductor {
 //    modelNameList = first.getCachedModelNameList();
 //    EntityAnalyzer cached = new EntityAnalyzer(modelList, modelNameList);
 
-    this.createTaskProducers(numWorkers);
+    this.createTaskProducer();
     this.createTaskConsumers(numWorkers);
     this.createMainConsumer();
 
@@ -82,13 +83,11 @@ public class Conductor {
     recordsPerSecond = Metrics.REG.meter(name(Conductor.class, "records", "per", "sec"));
   }
 
-  private void createTaskProducers(int numWorkers) {
-    for (int i = 0; i < numWorkers; i++) {
-      String name = "Producer-" + new Integer(i).toString();
-      TaskProducer worker = new TaskProducer(this, pc, name);
-      workerPool.add(new Thread(worker, name));
-      activeWorkers.add(worker);
-    }
+  private void createTaskProducer() {
+    String name = "Producer";
+    TaskProducer worker = new TaskProducer(this, pc, name);
+    workerPool.add(new Thread(worker, name));
+    activeWorkers.add(worker);
   }
 
   private void createTaskConsumers(int numWorkers) {
@@ -136,6 +135,7 @@ public class Conductor {
   }
 
   public boolean submitSubTask(WorkerSubTask task) {
+    while(subTaskQueue.size() > MAX_SUB_TASKS) {};
     totalSubTasksSubmitted.incrementAndGet();
     return subTaskQueue.add(task);
   }
@@ -185,15 +185,17 @@ public class Conductor {
 
   public void notifyProcessedTask(int numCols) {
     totalProcessedTasks.incrementAndGet();
-    LOG.info("Processed: {}/{} tasks and {}/{} subtasks, {} failed tasks",
+    LOG.info("Processed: {}/{} tasks, {}/{} subtasks, and {}/{} columns; {} failed tasks",
             totalProcessedTasks,
             totalTasksSubmitted,
             totalProcessedSubTasks,
             totalSubTasksSubmitted,
+            totalProcessedColumns,
+            totalColumns,
             totalFailedTasks
     );
     totalColumns.addAndGet(numCols);
-    LOG.info("Added: {} cols", numCols);
+//    LOG.info("Added: {} cols", numCols);
   }
 
   public void notifyProcessedSubTask() {
@@ -210,7 +212,7 @@ public class Conductor {
 
   public void notifyProcessedColumn() {
     totalProcessedColumns.incrementAndGet();
-    LOG.info("Columns processed: {}/{} ", totalProcessedColumns, totalColumns);
+//    LOG.info("Columns processed: {}/{} ", totalProcessedColumns, totalColumns);
   }
 
   class ErrorConsumer implements Runnable {
