@@ -294,6 +294,14 @@ def combine_matchings2(all_matchings):
     return combined_matchings, l4_matchings
 
 
+def find_negative_sem_signal_attr_sch_sch(network,
+                                          penalize_unknown_word=False,
+                                          add_exact_matches=True,
+                                          sensitivity_neg_signal=0.4):
+    # TODO: find negative sem signals between schema elements (only)
+    return
+
+
 def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
                                                 semantic_sim_threshold=0.5,
                                                 sensitivity_neg_signal=0.4,
