@@ -28,16 +28,41 @@ class SimpleTrie:
     def __init__(self):
         self._leave = "_leave_"
         self.root = dict()
+        self.step_dic = defaultdict(int)
+        self.summarized_matchings = []
 
-    def add_sequences(self, sequences):
+    def add_sequences(self, sequences_map_to_matchings):
+        sequences = sequences_map_to_matchings.keys()
         for seq in sequences:
             current_dict = self.root
             for token in seq:
                 current_dict = current_dict.setdefault(token, {})  # another dict as default
+                self.step_dic[token] += 1
             current_dict[self._leave] = self._leave
-        return self.root
+        return self.root, self.step_dic
 
-    def longest_prefix(self):
+    def summarize_on_node(self, subtree, num_seqs):
+        if (len(subtree.keys()) / num_seqs) > 0.5:
+            return True
+        return False
+
+    def reduce_matchings(self, subtree, child):
+        return []
+
+    def summarize(self, subtree):
+        for child in subtree.keys():
+            if child == "_leave_":
+                continue
+            num_seqs = self.step_dic[child]
+            does_summarize = self.summarize_on_node(subtree[child], num_seqs)
+            if does_summarize:
+                matchings = self.reduce_matchings(subtree, child)
+                for el in matchings:
+                    self.summarized_matchings.append(el)
+            else:
+                self.summarize(subtree[child])
+
+    def longest_prefix(self, sequences_map_to_matchings, num_matchings):
         return
 
 
@@ -91,6 +116,41 @@ class Matching:
                     relation_matchings.append(line)
         #string_repr = '\n'.join(relation_matchings)
         return relation_matchings
+
+
+def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=3):
+
+    def summarize(matchings):
+        seq_ancestors = defaultdict(list)
+        for el in matchings:
+            sch, cla = el
+            class_name = cla[1]
+            root_to_class_name = om.ancestors_of_class(class_name)
+            seq_ancestors[root_to_class_name].append(el)
+
+        trie = SimpleTrie()
+        trie.add_sequences(seq_ancestors)
+        longest_prefix = trie.longest_prefix()
+
+    def compute_fanout(matchings):
+        fanout = defaultdict(list)
+        for m in matchings:
+            sch, cla = m
+            fanout[sch] += m
+        ordered = sorted(fanout.items(), key=len(operator.itemgetter(1)), reverse=True)
+        return ordered
+
+    summarized_matchings = []
+    fanout = compute_fanout(matchings)
+    for k, v in fanout.items():
+        if len(v) > threshold_to_summarize:
+            s_matchings = summarize(v)
+            for el in s_matchings:
+                summarized_matchings.append(el)
+        else:  # just propagate matchings
+            for el in v:
+                summarized_matchings.append(el)
+    return summarized_matchings
 
 
 def combine_matchings(all_matchings):
@@ -234,9 +294,12 @@ def combine_matchings2(all_matchings):
     return combined_matchings, l4_matchings
 
 
-def find_relation_class_attr_name_sem_matchings(network, kr_handlers, semantic_sim_threshold=0.5, sensitivity_neg_signal=0.4):
+def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
+                                                semantic_sim_threshold=0.5,
+                                                sensitivity_neg_signal=0.4,
+                                                penalize_unknown_word=False,
+                                                add_exact_matches=True):
     # Retrieve relation names
-
     st = time.time()
     names = []
     seen_fields = []
@@ -282,8 +345,8 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers, semantic_s
             svs_rel = names[idx_rel][2]
             svs_cla = names[idx_class][2]
             semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
-                                    penalize_unknown_word=True,
-                                    add_exact_matches=False,
+                                    penalize_unknown_word=penalize_unknown_word,
+                                    add_exact_matches=add_exact_matches,
                                     sensitivity_neg_signal=sensitivity_neg_signal)
             if semantic_sim > semantic_sim_threshold:
                 # match.format db_name, source_name, field_name -> class_name
@@ -293,7 +356,7 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers, semantic_s
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
-    print("Time to relation-class (sem): " + str(et - st))
+    print("l52: " + str(et - st))
     return pos_matchings, neg_matchings
 
 
@@ -349,6 +412,8 @@ def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_thr
                 # match.format db_name, source_name, field_name -> class_name
                 match = ((names[idx][1][0], names[idx][1][1], names[idx][1][2]), names[n][1])
                 matchings.append(match)
+    et = time.time()
+    print("l5: " + str((et-st)))
     return matchings
 
 
@@ -413,7 +478,7 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
-    print("Time to relation-class (sem): " + str(et - st))
+    print("l42: " + str(et - st))
     return pos_matchings, neg_matchings
 
 
@@ -470,7 +535,7 @@ def find_relation_class_name_matchings(network, kr_handlers, minhash_sim_thresho
                 match = ((names[idx][1][0], names[idx][1][1], "_"), names[n][1])
                 matchings.append(match)
     et = time.time()
-    print("Time to relation-class (name): " + str(et - st))
+    print("l4: " + str(et - st))
     return matchings
 
 
@@ -566,6 +631,7 @@ def __find_relation_class_matchings(self):
 
 
 def find_sem_coh_matchings(network, kr_handlers, sem_sim_threshold=0.7, group_size_cutoff=2):
+    st = time.time()
     matchings = []
     matchings_special = []
     # Get all relations with groups
@@ -621,7 +687,8 @@ def find_sem_coh_matchings(network, kr_handlers, sem_sim_threshold=0.7, group_si
                     matchings_special.append(match)
                 continue
                 """
-
+    et = time.time()
+    print("l6: " + str((et-st)))
     return matchings, table_groups  #, matchings_special
 
 cutoff_likely_match_threshold = 0.4
@@ -731,8 +798,9 @@ if __name__ == "__main__":
 
     sequences = [["a", "b", "c", "d"], ["a", "b", "c", "v"], ["a", "b", "c"], ["a", "b", "c", "lk"]]
 
-    root = st.add_sequences(sequences)
+    root, steps = st.add_sequences(sequences)
 
     print(root)
+    print(steps)
 
 

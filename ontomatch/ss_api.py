@@ -56,7 +56,7 @@ class SSAPI:
                 o.store_ontology("cache_onto/" + kr_name + ".pkl")
             self.kr_handlers[kr_name] = o
 
-    def __compare_content_signatures(self, kr_name, signatures):
+    def compare_content_signatures(self, kr_name, signatures):
         positive_matches = []
         for class_name, mh_sig in signatures:
             mh_obj = MinHash(num_perm=512)
@@ -70,7 +70,7 @@ class SSAPI:
                 positive_matches.append(matching)
         return positive_matches
 
-    def __build_content_sim(self, threshold):
+    def priv_build_content_sim(self, threshold):
         # Build a content similarity index
         # Content_sim text relation (minhash-based)
         start_text_sig_sim = time.time()
@@ -103,7 +103,7 @@ class SSAPI:
         all_matchings = defaultdict(list)
 
         # Build content sim
-        self.__build_content_sim(0.6)
+        self.priv_build_content_sim(0.6)
 
         # L1: [class] -> attr.content
         st = time.time()
@@ -112,7 +112,7 @@ class SSAPI:
         l1_matchings = []
         for kr_name, kr_handler in self.kr_handlers.items():
             kr_class_signatures = kr_handler.get_classes_signatures()
-            l1_matchings += self.__compare_content_signatures(kr_name, kr_class_signatures)
+            l1_matchings += self.compare_content_signatures(kr_name, kr_class_signatures)
 
         print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
         et = time.time()
@@ -1214,7 +1214,7 @@ def print_table_attrs_for(path_to_serialized_model):
     sch_elements = []
     for db, t, attrs in SS.read_table_columns(None, network=network):
         for attr in attrs:
-            sch_el = (db, t, attr)
+            sch_el = db + " %%% " + t + " %%% " + attr + " ==>> "
             print(str(sch_el))
             sch_elements.append(sch_el)
 
@@ -1240,8 +1240,8 @@ if __name__ == "__main__":
     #test_5_n_52("../models/chembl22/")
     #exit()
 
-    #print_table_attrs_for("../models/chembl22/")
-    #exit()
+    print_table_attrs_for("../models/chembl22/")
+    exit()
 
     can_l6_cancel_l42_and_l52("../models/chembl22/")
     exit()

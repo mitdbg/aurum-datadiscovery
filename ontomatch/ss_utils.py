@@ -299,12 +299,12 @@ def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact
             if not (a == b).all() or add_exact_matches:  # otherwise this just does not add up
                 sim = glove_api.semantic_distance(a, b)
                 accum.append(sim)
+            elif (a == b).all() and not add_exact_matches:
+                skipped_comparisons += 1
         elif penalize_unknown_word:  # if one is None and penalize is True, then sim = 0
             skipped_comparisons += 1
             sim = 0
             accum.append(sim)
-        elif (a == b).all() and not add_exact_matches:
-            skipped_comparisons += 1
     sim = 0
     if len(accum) > 0:
         sim = np.mean(accum)
