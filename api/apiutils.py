@@ -27,7 +27,7 @@ class Hit(BaseHit):
         elif isinstance(other, Hit):  # cover the case of comparing a Node with a Hit
             if self.nid == other.nid:
                 return True
-        elif self.nid == other.nid:  # cover the case of comparing two nodes
+        elif other != None and self.nid == other.nid:  # cover the case of comparing two nodes
             return True
         return False
 
