@@ -9,6 +9,7 @@ from datasketch import MinHash, MinHashLSH
 from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from dataanalysis import dataanalysis as da
 import operator
+from collections import namedtuple
 
 
 class MatchingType(Enum):
@@ -23,10 +24,13 @@ class MatchingType(Enum):
     L7_CLASSNAME_ATTRNAME_FUZZY = 8
 
 
+Leave = namedtuple('Leave', 'id, matching')
+
+
 class SimpleTrie:
 
     def __init__(self):
-        self._leave = "_leave_"
+        self._leave = 0
         self.root = dict()
         self.step_dic = defaultdict(int)
         self.summarized_matchings = []
@@ -38,32 +42,37 @@ class SimpleTrie:
             for token in seq:
                 current_dict = current_dict.setdefault(token, {})  # another dict as default
                 self.step_dic[token] += 1
-            current_dict[self._leave] = self._leave
+            self._leave += 1  # increase leave id
+            leave = Leave(self._leave, sequences_map_to_matchings[seq])  # create leave and assign matchings
+            current_dict[leave] = leave
         return self.root, self.step_dic
 
-    def summarize_on_node(self, subtree, num_seqs):
-        if (len(subtree.keys()) / num_seqs) > 0.5:
-            return True
-        return False
-
-    def reduce_matchings(self, subtree, child):
-        return []
-
-    def summarize(self, subtree):
+    def _reduce_matchings(self, subtree, output):
         for child in subtree.keys():
-            if child == "_leave_":
-                continue
+            if type(child) is not Leave:
+                output = self._reduce_matchings(subtree[child], output)
+            elif type(child) is Leave:
+                for el in subtree[child].matching:
+                    output.append(el)
+        return output
+
+    def _add_matchings(self, subtree):
+        matchings = self._reduce_matchings(subtree, [])
+        for el in matchings:
+            self.summarized_matchings.append(el)
+
+    def summarize(self, subtree=None):
+
+        if subtree is None:
+            subtree = self.root
+
+        for child in subtree.keys():
             num_seqs = self.step_dic[child]
-            does_summarize = self.summarize_on_node(subtree[child], num_seqs)
-            if does_summarize:
-                matchings = self.reduce_matchings(subtree, child)
-                for el in matchings:
-                    self.summarized_matchings.append(el)
+            if (len(list(subtree[child].keys())) / num_seqs) > 0.5:
+                self._add_matchings(subtree[child])
             else:
                 self.summarize(subtree[child])
-
-    def longest_prefix(self, sequences_map_to_matchings, num_matchings):
-        return
+        return self.summarized_matchings
 
 
 class Matching:
@@ -130,7 +139,8 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=3):
 
         trie = SimpleTrie()
         trie.add_sequences(seq_ancestors)
-        longest_prefix = trie.longest_prefix()
+        summ_matchings = trie.summarize()
+        return summ_matchings
 
     def compute_fanout(matchings):
         fanout = defaultdict(list)
@@ -144,7 +154,7 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=3):
     fanout = compute_fanout(matchings)
     for k, v in fanout.items():
         if len(v) > threshold_to_summarize:
-            s_matchings = summarize(v)
+            s_matchings = summarize(v)  # [sch - class]
             for el in s_matchings:
                 summarized_matchings.append(el)
         else:  # just propagate matchings
