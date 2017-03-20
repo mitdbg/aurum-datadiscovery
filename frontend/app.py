@@ -79,9 +79,16 @@ def convert(input):
 def inspect(general_input):
     drs = api._general_to_drs(general_input)
     drs.set_table_mode()
+
+    #  if the DRS is empty, it was a bad request
+    if len(drs.data) < 1:
+        res = 'error:  The table or HIT, ' + general_input + 'does not exist';
+        return res;
+
     # get the first nid from the drs. Doesn't matter which, since
     # eventually getting the whole file, anyhow.
     hit = drs.data[0]
+
     data_frame = pandas_handler(store_handler=store_client, hit=hit, nrows=10)
     return data_frame.to_json()
 
