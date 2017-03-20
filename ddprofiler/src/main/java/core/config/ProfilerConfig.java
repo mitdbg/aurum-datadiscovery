@@ -66,6 +66,10 @@ public class ProfilerConfig extends Config {
   
   public static final String REPORT_METRICS_CONSOLE = "console.metrics";
   private static final String REPORT_METRICS_CONSOLE_DOC = "Output metrics to console";
+  
+  public static final String WORKER_SERVER_PORT = "worker.server.port";
+  private static final String WORKER_SERVER_PORT_DOC =
+      "The port where a wokrer server listens";
 
   static {
     config =
@@ -94,7 +98,9 @@ public class ProfilerConfig extends Config {
             .define(CSV_SEPARATOR, Type.STRING, ",", Importance.MEDIUM,
                     CSV_SEPARATOR_DOC)
     		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, 
-    				Importance.HIGH, REPORT_METRICS_CONSOLE_DOC);
+    				Importance.HIGH, REPORT_METRICS_CONSOLE_DOC)
+    		.define(WORKER_SERVER_PORT, Type.INT, 8090, Importance.MEDIUM,
+                    WORKER_SERVER_PORT_DOC);
   }
 
   public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

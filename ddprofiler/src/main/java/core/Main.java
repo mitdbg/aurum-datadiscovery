@@ -12,17 +12,33 @@ import java.sql.ResultSetMetaData;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.zip.CRC32;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import comm.WebServer;
+import comm.WorkerServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
@@ -42,14 +58,17 @@ public class Main {
     ONLINE(0),
     OFFLINE_FILES(1),
     OFFLINE_DB(2),
-    BENCHMARK(3);
+    BENCHMARK(3),
+	  
+	WORKER (4),
+	MASTER (5);
 
     int mode;
 
     ExecutionMode(int mode) { this.mode = mode; }
   }
 
-  public void startProfiler(ProfilerConfig pc) {
+  public void startProfiler(ProfilerConfig pc) throws ClientProtocolException, IOException {
 
     long start = System.nanoTime();
 
@@ -68,14 +87,21 @@ public class Main {
     int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
     if (executionMode == ExecutionMode.ONLINE.mode) {
       // Start infrastructure for REST server
-      WebServer ws = new WebServer(pc, c);
-      ws.init();
+        WebServer ws = new WebServer(pc, c);
+     	ws.init();
     } 
     else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
       // Run with the configured input parameters and produce results to file
       // (?)
       String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-      this.readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+      //this.readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+      //send message
+      //Webserver = 
+      // ws.init()
+      // -> send and wait
+      // wait to receive message
+      // 
+      System.out.println("Sources path: " + pathToSources);
     } 
     else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
       this.readTablesFromDBAndCreateTasks(dbName, c);
@@ -84,25 +110,87 @@ public class Main {
       // Piggyback property to benchmark system with one file 
       String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
-    }
+    } else if(executionMode == ExecutionMode.MASTER.mode) {
+        // -> send and wait
 
-    while (c.isTherePendingWork()) {
-      try {
-        Thread.sleep(3000);
-      } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+    	// Find workers
+    	// Splite up files and distribute
+    	// Wait for completion
+    	// Rerport to client
+    	HttpClient httpclient = HttpClients.createDefault();
+    	HttpPost httppost = new HttpPost("http://localhost:8090/dd");
+
+    	// Request parameters and other properties.
+    	List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+        String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+
+    	
+    	params.add(new BasicNameValuePair("dbName", dbName));
+    	params.add(new BasicNameValuePair("pathToSources", pathToSources));
+    	params.add(new BasicNameValuePair("separator", pc.getString(ProfilerConfig.CSV_SEPARATOR)));
+
+
+    	httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+
+    	//Execute and get the response.
+    	HttpResponse response = (HttpResponse) httpclient.execute(httppost);
+        	//URLConnection connection = new URL(url).openConnection();
+        	//connection.setRequestProperty("Accept-Charset", charset);
+        	//URL actualURl = new URL(url);
+//        	try {
+//    			InputStream response = new URL(url).openStream();
+//    			
+//    			Scanner scanner = new Scanner(response);
+//    	    		String responseBody = scanner.useDelimiter("\\A").next();
+//    	    		System.out.println(responseBody);
+//    	    
+//    		} catch (IOException e) {
+//    			// TODO Auto-generated catch block
+//    			e.printStackTrace();
+//    		}
+        	
+        	
+        	////
+
+    	
+    } else if (executionMode == ExecutionMode.WORKER.mode) {
+    	//send message
+        //Webserver = 
+        // ws.init()
+        // wait to receive message
+        //
+    	// handl post request
+    	
+    	
+    	WorkerServer ws = new  WorkerServer(pc, c);
+    	ws.init();
+        //System.out.println("Sources path: " + pathToSources);
+    }
+    while (true) {
+        try {
+          Thread.sleep(3000);
+        } catch (InterruptedException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
       }
-    }
+//    while (c.isTherePendingWork()) {
+//      try {
+//        Thread.sleep(3000);
+//      } catch (InterruptedException e) {
+//        // TODO Auto-generated catch block
+//        e.printStackTrace();
+//      }
+//    }
 
-    c.stop();
-    s.tearDownStore();
+    //c.stop();
+    //s.tearDownStore();
 
-    long end = System.nanoTime();
-    LOG.info("Finished processing in {}", (end - start));
+    //long end = System.nanoTime();
+    //LOG.info("Finished processing in {}", (end - start));
   }
 
-  public static void main(String args[]) {
+  public static void main(String args[]) throws Exception, IOException {
 	  
 //	  CRC32 crc = new CRC32();
 //	  String s = "dwhsmallBuildings.csvBuilding Name";
