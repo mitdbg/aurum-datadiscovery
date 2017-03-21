@@ -1,3 +1,5 @@
+/*jshint esversion: 6 */
+
 import React from 'react';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
@@ -62,10 +64,11 @@ class Graph extends React.Component {
     var clickY = node['renderer1:y'];
     // console.log(clickX, ', ', clickY)
 
-    this.setState({ clickX, clickY, source })
+    this.setState({ clickX, clickY, source });
   }
 
-  toggleEdgeMenu(){
+  toggleEdgeMenu(selectionType, selectionName){
+    console.log('toggleEdgeMenu called');
     this.setState({ edgeMenuEnabled: !this.state.edgeMenuEnabled });
   }
 
@@ -80,15 +83,17 @@ class Graph extends React.Component {
         onClickNode={e => this.displayNodeDetails(e)}
         >
 
+
+        <TriangleToggle
+          source={this.state.source}
+          toggleEdgeMenu={this.toggleEdgeMenu}
+        />
+
         <SourceMenu
           selection={this.props.selection[this.state.source]}
           source={this.state.source}
           x={this.state.clickX}
           y={this.state.clickY}
-        />
-
-        <TriangleToggle
-          source={this.state.source}
           toggleEdgeMenu={this.toggleEdgeMenu}
         />
 

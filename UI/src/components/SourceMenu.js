@@ -1,14 +1,22 @@
+/*jshint esversion: 6 */
 import React from 'react';
 import FieldMenu from './FieldMenu';
 
 class SourceMenu extends React.Component {
   constructor() {
     super();
+    this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
     this.state = {
       width: 225, // width of the box, in pixels
-    }
+    };
   }
+
+  toggleEdgeMenu(){
+    const selectionType = 'source';
+    this.props.toggleEdgeMenu(selectionType, this.props.source);
+  }
+
 
 
   render() {
@@ -20,7 +28,7 @@ class SourceMenu extends React.Component {
                 top: this.props.y + 'px',
                 left: this.props.x + this.state.width/2 + 'px'}}>
 
-          <div className="source-menu-title">{this.props.source}</div>
+          <div onClick={this.toggleEdgeMenu} className="source-menu-title">{this.props.source}</div>
 
           {Object
             .keys(this.props.selection)
@@ -33,6 +41,7 @@ class SourceMenu extends React.Component {
                 fieldName={this.props.selection[key]['field_name']}
                 dbName={this.props.selection[key]['db_name']}
                 score={this.props.selection[key]['score']}
+                toggleEdgeMenu={this.props.toggleEdgeMenu}
               />
               )
           }
@@ -45,17 +54,15 @@ class SourceMenu extends React.Component {
         )
     }
 
-
-
   }
 }
 
 export default SourceMenu
 
-
 SourceMenu.propTypes = {
   selection: React.PropTypes.object,
   source: React.PropTypes.string,
   x: React.PropTypes.number,
-  y: React.PropTypes.number
+  y: React.PropTypes.number,
+  toggleEdgeMenu: React.PropTypes.func.isRequired,
 }
