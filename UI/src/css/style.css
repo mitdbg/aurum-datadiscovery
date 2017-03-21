@@ -327,12 +327,14 @@ footer {
   text-align: center;
   font-weight: bold;
   margin-bottom: 5px;
+  cursor: pointer;
 }
 .field-menu-title {
   text-align: left;
   font-weight: normal;
   border-top: 1px solid #ccc;
   padding: 3px 5px 3px 5px;
+  cursor: pointer;
 }
 .edge-menu-title {
   cursor: pointer;

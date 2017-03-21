@@ -3,7 +3,6 @@
 import React from 'react';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
-import TriangleToggle from './TriangleToggle';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -74,7 +73,9 @@ class Graph extends React.Component {
 
   render() {
 
-   return (
+  // SourceMenu and EdgeMenu ultimately need to exist outside of the <Sigma>
+  // component, so that they can be rendered above it
+  return (
     <div id="graph">
       <Sigma
         settings={this.state.sigmaSettings}
@@ -83,11 +84,6 @@ class Graph extends React.Component {
         onClickNode={e => this.displayNodeDetails(e)}
         >
 
-
-        <TriangleToggle
-          source={this.state.source}
-          toggleEdgeMenu={this.toggleEdgeMenu}
-        />
 
         <SourceMenu
           selection={this.props.selection[this.state.source]}
