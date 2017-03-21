@@ -173,17 +173,8 @@ class SSAPI:
 
         print("Does L42 cancel any L4?")
         print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-        total_neg = len(neg_l42_matchings)
-        cancelled_l4_matchings = []
-        l4_dict = dict()
-        for matching in l4_matchings:
-            l4_dict[matching] = 1
-        total_cancelled = 0
-        for m in neg_l42_matchings:
-            if m in l4_dict:
-                total_cancelled += 1
-                l4_matchings.remove(m)
-                cancelled_l4_matchings.append(m)
+
+
         print("Cancelled: " + str(total_cancelled))
         print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
 

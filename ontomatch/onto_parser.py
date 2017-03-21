@@ -19,6 +19,7 @@ class OntoHandler:
         self.objectProperties = []
         self.class_hierarchy = []
         self.class_hierarchy_signatures = []
+        self.map_classname_class = dict()
 
     def parse_ontology(self, file):
         """
@@ -60,6 +61,10 @@ class OntoHandler:
         self.class_hierarchy = pickle.load(f)
         self.class_hierarchy_signatures = pickle.load(f)
         self.objectProperties = self.o.objectProperties
+        self.map_classname_class = dict()
+        for c in self.o.classes:
+            label = c.bestLabel().title()
+            self.map_classname_class[label] = c
         f.close()
         #self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
 
@@ -104,11 +109,28 @@ class OntoHandler:
     def fake(self):
         return self.__get_class_levels_hierarchy()
 
+    def get_class_from_name(self, class_name):
+        if class_name in self.map_classname_class:
+            return self.map_classname_class[class_name]
+        else:
+            return None
+
     def ancestors_of_class(self, c):
         """
         Ancestors of given class
         """
-        return list(self.__get_ancestors_of_class(c))
+        class_from_name = self.get_class_from_name(c)
+        if class_from_name is None:
+            return []
+        ancestors = [el for el in reversed(class_from_name.ancestors())]
+        return ancestors
+
+    def name_of_sequence(self, seq):
+        seq_name = []
+        for s in seq:
+            name = s.bestLabel().title()
+            seq_name.append(name)
+        return seq_name
 
     def descendants_of_class(self, c):
         """
