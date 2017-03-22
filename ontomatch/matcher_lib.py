@@ -343,7 +343,7 @@ def get_ban_indexes(relation1, relation2):
 def find_negative_sem_signal_attr_sch_sch(network,
                                           penalize_unknown_word=False,
                                           add_exact_matches=False,
-                                          sensitivity_neg_signal=0.1):
+                                          signal_strength_threshold=0.5):
     # TODO: find negative sem signals between schema elements (only)
 
     # Retrieve relation names
@@ -399,15 +399,13 @@ def find_negative_sem_signal_attr_sch_sch(network,
     for idx_rel1 in range(0, num_attributes_inserted):  # Compare only with classes
         for idx_rel2 in range(1, num_attributes_inserted):
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel1][1][2], names[idx_rel2][1][2])
-            # svs_rel = names[idx_rel1][2]
-            # svs_cla = names[idx_rel2][2]
             svs_rel = removed_banned_vectors(ban_index1, names[idx_rel1][2])
             svs_cla = removed_banned_vectors(ban_index2, names[idx_rel2][2])
 
-            semantic_sim, neg_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
+            semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                                                       penalize_unknown_word=True,
                                                                       add_exact_matches=False,
-                                                                      sensitivity_neg_signal=sensitivity_neg_signal)
+                                                                      signal_strength_threshold=signal_strength_threshold)
             if neg_signal and semantic_sim < 0.4:
                 match = ((names[idx_rel1][1][0], names[idx_rel1][1][1], names[idx_rel1][1][2]), names[idx_rel2][1])
                 neg_matchings.append(match)
@@ -426,7 +424,8 @@ def find_negative_sem_signal_attr_sch_sch(network,
 
 def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
                                                 semantic_sim_threshold=0.5,
-                                                sensitivity_neg_signal=0.4,
+                                                sensitivity_neg_signal=0.5,
+                                                negative_signal_threshold=0.4,
                                                 penalize_unknown_word=False,
                                                 add_exact_matches=True):
     # Retrieve relation names
@@ -472,21 +471,18 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
     neg_matchings = []
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
         for idx_class in range(num_attributes_inserted, len(names)):
-            # svs_rel = names[idx_rel][2]
-            # svs_cla = names[idx_class][2]
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][2], names[idx_class][1][1])
             svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
             svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
-            semantic_sim, neg_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
+            semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                     penalize_unknown_word=penalize_unknown_word,
                                     add_exact_matches=add_exact_matches,
-                                    sensitivity_neg_signal=sensitivity_neg_signal)
-            neg_sem_sim_threshold = 0.4
+                                    signal_strength_threshold=sensitivity_neg_signal)
             if semantic_sim > semantic_sim_threshold:
                 # match.format db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 pos_matchings.append(match)
-            elif neg_signal and semantic_sim < neg_sem_sim_threshold:
+            elif neg_signal and semantic_sim < negative_signal_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
@@ -553,7 +549,8 @@ def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_thr
 
 def find_relation_class_name_sem_matchings(network, kr_handlers,
                                            sem_sim_threshold=0.5,
-                                           sensitivity_neg_signal=0.4,
+                                           negative_signal_threshold=0.4,
+                                           sensitivity_neg_signal=0.5,
                                            penalize_unknown_word=False,
                                            add_exact_matches=True):
     # Retrieve relation names
@@ -597,23 +594,18 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
     neg_matchings = []  # evidence that this matching probably is wrong
     for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
         for idx_class in range(num_relations_inserted, len(names)):
-            # svs_rel = names[idx_rel][2]
-            # svs_cla = names[idx_class][2]
-            # if names[idx_rel][1][1]=='atc_classification' and names[idx_class][1][1] == 'Atc Classification System':
-            #     print(names[idx_rel][1][1])
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][1], names[idx_class][1][1])
             svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
             svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
-            semantic_sim, negative_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
+            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                             penalize_unknown_word=penalize_unknown_word,
                                             add_exact_matches=add_exact_matches,
-                                            sensitivity_neg_signal=sensitivity_neg_signal)
-            neg_sem_sim_threshold = 0.4
+                                            signal_strength_threshold=sensitivity_neg_signal)
             if semantic_sim > sem_sim_threshold:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 pos_matchings.append(match)
-            elif negative_signal and semantic_sim < neg_sem_sim_threshold:
+            elif negative_signal and semantic_sim < negative_signal_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
@@ -813,7 +805,7 @@ def find_sem_coh_matchings(network, kr_handlers, sem_sim_threshold=0.7, group_si
                 sim, strong_signal = SS.compute_semantic_similarity(class_svs, g_svs,
                                                                     penalize_unknown_word=True,
                                                                     add_exact_matches=False,
-                                                                    sensitivity_neg_signal=0.4)
+                                                                    signal_strength_threshold=0.5)
                 if sim > g_score and class_name not in class_seen:
                     class_seen.append(class_name)
                     match = ((db_name, table_name, "_"), (kr_name, class_name))
