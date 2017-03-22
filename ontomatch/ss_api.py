@@ -1409,11 +1409,10 @@ if __name__ == "__main__":
     #test_5_n_52("../models/chembl22/")
     #exit()
 
-<<<<<<< HEAD
     test_chembl_annotations("../models/chembl22/")
-=======
+    exit()
+
     debug_neg_signal("../models/chembl22/")
->>>>>>> 6ab4225962a7cbde1b97be1a16d74f8b2ec8a7f9
     exit()
 
     print_table_attrs_for("../models/chembl22/")
