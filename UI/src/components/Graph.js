@@ -1,12 +1,14 @@
 /*jshint esversion: 6 */
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
 import Pandas from './Pandas';
+import interact from 'interact.js';
 
 class Graph extends React.Component {
   constructor() {
@@ -50,6 +52,26 @@ class Graph extends React.Component {
     };
   }
 
+  componentDidMount() {
+    let handle = document.getElementsByClassName('vertical-drag-handle')[0]
+    interact(ReactDOM.findDOMNode(this))
+      .resizable({
+        edges: {
+          top: false,
+          left: false,
+          bottom: handle,
+          right: false
+        },
+        onmove: function(event) {
+          let box = this.element().firstChild
+          var height = box.clientHeight + event.dy
+          box.style['height'] = height + "px"
+          let s = window.sigma.instances(0)
+          s.refresh()
+        }
+      });
+  }
+
   // read the graph object. call the api with the id, and then use another
   // callback to process the data.
   displayNodeDetails(eventData){
@@ -89,7 +111,6 @@ class Graph extends React.Component {
       <Sigma
         settings={this.state.sigmaSettings}
         renderer="canvas"
-        style={{maxWidth:"inherit", height:"100%"}}
         onClickNode={e => this.displayNodeDetails(e)}
         >
 
@@ -145,6 +166,9 @@ class Graph extends React.Component {
         }
 
       </Sigma>
+      <div
+        className="vertical-drag-handle"
+      />
       <Pandas
         source={this.state.source}
       />

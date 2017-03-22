@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "history": "4.2.0",
+    "interact.js": "^1.2.8",
     "re-base": "2.2.0",
     "react": "15.3.2",
     "react-addons-css-transition-group": "15.3.2",
