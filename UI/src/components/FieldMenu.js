@@ -15,7 +15,8 @@ class FieldMenu extends React.Component {
   render() {
     return(
       <div onClick={this.toggleEdgeMenu} className="field-menu-title">
-        {this.props.fieldName} &#9654;
+        {this.props.fieldName}
+        <span className="align-right">&#9654;</span>
       </div>
       )
   }

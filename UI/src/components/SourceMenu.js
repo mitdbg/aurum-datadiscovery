@@ -30,7 +30,8 @@ class SourceMenu extends React.Component {
 
           <div
             onClick={this.toggleEdgeMenu}
-            className="source-menu-title">{this.props.source} &#9654;
+            className="source-menu-title">{this.props.source}
+            <span className="align-right">&#9654;</span>
           </div>
 
           {Object
