@@ -13,8 +13,7 @@ class SourceMenu extends React.Component {
   }
 
   toggleEdgeMenu(){
-    const selectionType = 'source';
-    this.props.toggleEdgeMenu(selectionType, this.props.source);
+    this.props.toggleEdgeMenu(this.props.source, '', '');
   }
 
 
@@ -40,10 +39,10 @@ class SourceMenu extends React.Component {
               key =>
               <FieldMenu
                 key={key}
-                nid={this.props.selection[key]['nid'].toString()}
-                sourceName={this.props.selection[key]['source_name']}
-                fieldName={this.props.selection[key]['field_name']}
                 dbName={this.props.selection[key]['db_name']}
+                source={this.props.selection[key]['source_name']}
+                field={this.props.selection[key]['field_name']}
+                nid={this.props.selection[key]['nid'].toString()}
                 score={this.props.selection[key]['score']}
                 toggleEdgeMenu={this.props.toggleEdgeMenu}
               />
@@ -66,6 +65,8 @@ export default SourceMenu
 SourceMenu.propTypes = {
   selection: React.PropTypes.object,
   source: React.PropTypes.string,
+  field: React.PropTypes.string,
+  nid: React.PropTypes.string,
   x: React.PropTypes.number,
   y: React.PropTypes.number,
   toggleEdgeMenu: React.PropTypes.func.isRequired,

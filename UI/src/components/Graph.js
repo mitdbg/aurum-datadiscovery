@@ -15,7 +15,9 @@ class Graph extends React.Component {
     this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
     this.state = {
-      source: '',
+      source: '', // name of the table selected
+      field: '', // field in the table selected.
+      nid: '', // nid of the field BUT NOT SOURCE selected, if a field is selected
       columns: [],
       clickX: 0,
       clickY: 0,
@@ -66,9 +68,17 @@ class Graph extends React.Component {
     this.setState({ clickX, clickY, source });
   }
 
-  toggleEdgeMenu(selectionType, selectionName){
-    console.log('toggleEdgeMenu called');
-    this.setState({ edgeMenuEnabled: !this.state.edgeMenuEnabled });
+  toggleEdgeMenu(source, field, nid){
+
+    // the user clicked the same Source/Field Menu item again. Dismiss the EdgeMenu
+    if (this.state.edgeMenuEnabled === true && this.state.source === source && this.state.field === field && this.state.nid === nid){
+      this.setState({ edgeMenuEnabled: false, field: '', nid: '' });
+    }
+    // the user clicked a new menu item. UpdateVariables and show the menu
+    else{
+      this.setState({ field, nid, edgeMenuEnabled: true });
+    }
+
   }
 
   render() {
@@ -86,8 +96,11 @@ class Graph extends React.Component {
 
 
         <SourceMenu
+          // the source, and field names the user selected from the results panel
           selection={this.props.selection[this.state.source]}
-          source={this.state.source}
+          source={this.state.source} // the node the user selected in the graph
+          field={this.state.field} // the field (if any) the user selected in the menu in the graph
+          nid={this.state.nid} // the nid of the above field
           x={this.state.clickX}
           y={this.state.clickY}
           toggleEdgeMenu={this.toggleEdgeMenu}
@@ -95,6 +108,8 @@ class Graph extends React.Component {
 
         <EdgeMenu
           source={this.state.source}
+          field={this.state.field}
+          nid={this.state.nid}
           updateQuery={this.props.updateQuery}
           setQueryEdgeType={this.props.setQueryEdgeType}
           updateResult={this.props.updateResult}
