@@ -108,7 +108,7 @@ class SimpleTrie:
 
             # Does the max representing child cuts?
             ratio_cut = float(max_repr / num_seqs)
-            if ratio_cut > 0.5:  # if cuts, keep digging
+            if ratio_cut > 0.35:  # if cuts, keep digging
                 return summarize_seq(num_seqs, subtree[chosen_child], chosen_child)
             else:  # i then summarize
                 matchings = self._reduce_matchings(subtree, set())
