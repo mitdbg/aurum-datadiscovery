@@ -95,6 +95,176 @@ class SSAPI:
 
         self.content_sim_index = content_index
 
+
+    def find_matchings(self):
+        """
+        Find matching for each of the different possible categories
+        :return: list of matchings
+        """
+        all_matchings = defaultdict(list)
+
+        # Build content sim
+        self.priv_build_content_sim(0.6)
+
+        # L1: [class] -> attr.content
+        st = time.time()
+        print("Finding L1 matchings...")
+        kr_class_signatures = []
+        l1_matchings = []
+        for kr_name, kr_handler in self.kr_handlers.items():
+            kr_class_signatures = kr_handler.get_classes_signatures()
+            l1_matchings += self.compare_content_signatures(kr_name, kr_class_signatures)
+
+        print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
+        et = time.time()
+        print("Took: " + str(et-st))
+        all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
+
+        #for match in l1_matchings:
+        #    print(match)
+
+        # L2: [class.data] -> attr.content
+        print("Finding L2 matchings...")
+        st = time.time()
+        kr_classdata_signatures = []
+        l2_matchings = []
+        #for kr_name, kr_handler in self.kr_handlers.items():
+        #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
+        #    l2_matchings = self.__compare_content_signatures(kr_name, kr_classdata_signatures)
+        print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE] = l2_matchings
+
+        #for match in l2_matchings:
+        #    print(match)
+
+        # L3: [class.context] -> relation
+        print("Finding L3 matchings...")
+        st = time.time()
+        #l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
+        l3_matchings = []
+        print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L3_CLASSCTX_RELATIONCTX] = l3_matchings
+
+        #for match in l3_matchings:
+        #    print(match)
+
+        # L4: [Relation names] -> [Class names] (syntax)
+        print("Finding L4 matchings...")
+        st = time.time()
+        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers)
+        print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
+
+        # L4.2: [Relation names] -> [Class names] (semantic)
+        print("Finding L42 matchings...")
+        st = time.time()
+        l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
+                                                                                             sem_sim_threshold=0.5,
+                                                                                             sensitivity_neg_signal=0.4)
+        print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
+
+        print("Does L42 cancel any L4?")
+        print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        total_neg = len(neg_l42_matchings)
+        cancelled_l4_matchings = []
+        l4_dict = dict()
+        for matching in l4_matchings:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in neg_l42_matchings:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4_matchings.remove(m)
+                print("cancelled by L42 : " + str(m))
+                cancelled_l4_matchings.append(m)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
+
+        print("Cancelled: " + str(total_cancelled))
+        print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+
+        #for match in l42_matchings:
+        #    print(match)
+
+        # L5: [Attribute names] -> [Class names] (syntax)
+        print("Finding L5 matchings...")
+        st = time.time()
+        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers)
+        print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+
+        #for match in l5_matchings:
+        #    print(match)
+
+        #l52_matchings = []
+        # L52: [Attribute names] -> [Class names] (semantic)
+        print("Finding L52 matchings...")
+        st = time.time()
+        l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
+                                                                               semantic_sim_threshold=0.7,
+                                                                               sensitivity_neg_signal=0.4)
+        print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
+
+        print("Does L52 cancel any L5?")
+        print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        total_neg = len(neg_l52_matchings)
+        cancelled_l5_matchings = []
+        l5_dict = dict()
+        for matching in l5_matchings:
+            l5_dict[matching] = 1
+        total_cancelled = 0
+        for m in neg_l52_matchings:
+            if m in l5_dict:
+                total_cancelled += 1
+                l5_matchings.remove(m)
+                cancelled_l5_matchings.append(m)
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+        print("Cancelled: " + str(total_cancelled))
+        print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+
+        ## L6: [Relations] -> [Class names] (semantic groups)
+        #print("Finding L6 matchings...")
+        #st = time.time()
+        #l6_matchings, table_groups = matcherlib.find_sem_coh_matchings(self.network, self.kr_handlers,
+        #                                                               sem_sim_threshold=0.5)
+        #print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
+        #et = time.time()
+        #print("Took: " + str(et - st))
+        l6_matchings = []
+        all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
+
+        # L7: [Attribute names] -> [class names] (content - fuzzy naming)
+        print("Finding L7 matchings...")
+        st = time.time()
+        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+
+        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
+
+        total_matchings_pre_combined = 0
+        for values in all_matchings.values():
+            total_matchings_pre_combined += len(values)
+        print("ALL_matchings: " + str(total_matchings_pre_combined))
+        combined_matchings = matcherlib.combine_matchings(all_matchings)
+        print("COMBINED_matchings: " + str(len(combined_matchings.items())))
+
+        return combined_matchings
+
     def find_coarse_grain_hooks_n2(self):
         matchings = []
         table_ss = SS.generate_table_vectors(None, network=self.network)  # get semantic signatures of tables
@@ -791,6 +961,7 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
     l42_dict = dict()
     for matching in l42_matchings:
         l42_dict[matching] = 1
+
     l52_dict = dict()
     for matching in l52_matchings:
         # adapt matching to be compared to L6
@@ -798,6 +969,7 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
         sch0, sch1, sch2 = sch
         matching = ((sch0, sch1, '_'), cla)
         l52_dict[matching] = 1
+
     l6_dict = dict()
     for matching in l6_matchings:
         l6_dict[matching] = 1

@@ -33,46 +33,179 @@ class SimpleTrie:
         self._leave = 0
         self.root = dict()
         self.step_dic = defaultdict(int)
-        self.summarized_matchings = []
+        self.summarized_matchings = dict()
 
-    def add_sequences(self, sequences_map_to_matchings):
-        sequences = sequences_map_to_matchings.keys()
+    def add_sequences(self, sequences, seq_corresponding_matching):
+        self.step_dic["root"] = len(sequences)  # add also the number of sequences
         for seq in sequences:
             current_dict = self.root
             for token in seq:
                 current_dict = current_dict.setdefault(token, {})  # another dict as default
                 self.step_dic[token] += 1
             self._leave += 1  # increase leave id
-            leave = Leave(self._leave, sequences_map_to_matchings[seq])  # create leave and assign matchings
-            current_dict[leave] = leave
+            leave = Leave(self._leave, seq_corresponding_matching[str(seq)])  # create leave and assign matchings
+            current_dict[self._leave] = leave
         return self.root, self.step_dic
 
     def _reduce_matchings(self, subtree, output):
-        for child in subtree.keys():
-            if type(child) is not Leave:
-                output = self._reduce_matchings(subtree[child], output)
-            elif type(child) is Leave:
-                for el in subtree[child].matching:
-                    output.append(el)
+        if type(subtree) is Leave:
+            for el in subtree.matching:
+                output.add(el)
+        else:
+            for child in subtree.keys():
+                if type(child) is not Leave:
+                    output = self._reduce_matchings(subtree[child], output)
+                elif type(child) is Leave:
+                    for el in subtree[child].matching:
+                        output.add(el)
         return output
 
-    def _add_matchings(self, subtree):
-        matchings = self._reduce_matchings(subtree, [])
-        for el in matchings:
-            self.summarized_matchings.append(el)
+    def _add_matchings(self, subtree, child):
+        subtree = subtree[child]
+        if type(subtree) is Leave:
+            matchings_of_child = subtree.matching
+            for el in matchings_of_child:
+                self.summarized_matchings[el] = 1  # the child
+            return
+        matchings = self._reduce_matchings(subtree, set())
+        sch, cla = list(matchings)[0]
+        new_match = (sch, (cla[0], child))  # child summarizes all the others
+        self.summarized_matchings[new_match] = len(matchings)  # the number
 
-    def summarize(self, subtree=None):
+    def _add_matchings2(self, subtree, parent):
+
+        matchings = self._reduce_matchings(subtree, set())
+        sch, cla = list(matchings)[0]
+        new_match = (sch, (cla[0], parent))  # child summarizes all the others
+        self.summarized_matchings[new_match] = len(matchings)  # the number
+
+    """
+    def cuts(self, current_node, subtree=None, num_seqs=None):
+        if subtree is None and num_seqs is None:
+            subtree = self.root
+            num_seqs = self.step_dic["root"]
+
+        #children = len(subtree.keys())
+        children_represented = self.step_dic[current_node]
+        ratio_cut = float(children / num_seqs)
+        if ratio_cut > 0.5:
+            return True
+        return False
+    """
+
+    def summarize(self, num_seqs):
+
+        def summarize_seq(num_seqs, subtree=None, current_node=None):
+
+            # Choose the max representing child
+            max_repr = 0
+            chosen_child = None
+            for child in subtree.keys():
+                represented_seqs = self.step_dic[child]
+                if represented_seqs > max_repr:
+                    max_repr = represented_seqs
+                    chosen_child = child
+
+            # Does the max representing child cuts?
+            ratio_cut = float(max_repr / num_seqs)
+            if ratio_cut > 0.35:  # if cuts, keep digging
+                return summarize_seq(num_seqs, subtree[chosen_child], chosen_child)
+            else:  # i then summarize
+                matchings = self._reduce_matchings(subtree, set())
+                return matchings, current_node
+
+        matchings, cutter = summarize_seq(num_seqs, self.root, "root")
+        sch, cla = list(matchings)[0]
+        new_match = (sch, (cla[0], cutter))
+        return new_match
+
+    def summarize3(self, num_seqs, subtree=None):
+
+        if subtree is None:
+            subtree = self.root
+
+        for child in subtree.keys():
+            represented_seqs = self.step_dic[child]
+            ratio_cut = float(represented_seqs / num_seqs)
+            if ratio_cut > 0.5:  # if cuts, keep digging
+                summarizes = self.summarize(num_seqs, subtree[child])
+                if summarizes:
+                    break  # we finish the loop here, as we already found 1 summary node
+            else:
+                if type(child) is Leave:
+                    matchings_of_child = subtree[child].matching
+                    for el in matchings_of_child:
+                        self.summarized_matchings[el] = 1  # the child
+                else:
+                    self._add_matchings(subtree, child)  # we summarize here
+                return False
+        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
+        remaining = ordered[0][0]
+        return remaining
+
+    def __summarize(self, num_seqs, subtree=None):
+
+        if subtree is None:
+            subtree = self.root
+        #    current_node = "root"
+
+        for child in subtree.keys():
+            represented_seqs = self.step_dic[child]
+            ratio_cut = float(represented_seqs / num_seqs)
+            if ratio_cut > 0.5:  # if cuts, keep digging
+                summarizes = self.summarize(num_seqs, subtree[child])
+                if summarizes:
+                    break  # we finish the loop here, as we already found 1 summary node
+            else:
+                if type(child) is Leave:
+                    matchings_of_child = subtree[child].matching
+                    for el in matchings_of_child:
+                        self.summarized_matchings[el] = 1  # the child
+                else:
+                    self._add_matchings(subtree, child)  # we summarize here
+                return False
+        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
+        remaining = ordered[0][0]
+        return remaining
+
+    def summarize_old(self, num_seqs, current_node=None, subtree=None):
+
+        if subtree is None and current_node is None:
+            subtree = self.root
+            current_node = "root"
+
+        if type(subtree) is Leave:
+            return False  # does not summarize
+
+        does_cut = self.cuts(current_node, subtree, num_seqs)
+        if does_cut:
+            self._add_matchings2(subtree, current_node)
+            return True
+        else:
+            for child in subtree.keys():
+                summarizes = self.summarize(num_seqs, child, subtree[child])
+                if summarizes:
+                    return True
+
+    def _summarize(self, subtree=None):
 
         if subtree is None:
             subtree = self.root
 
         for child in subtree.keys():
             num_seqs = self.step_dic[child]
-            if (len(list(subtree[child].keys())) / num_seqs) > 0.5:
-                self._add_matchings(subtree[child])
+            if type(child) is int:
+                matchings_of_child = subtree[child].matching
+                for el in matchings_of_child:
+                    self.summarized_matchings[el] = 1  # the child
+            elif (len(list(subtree[child].keys())) / num_seqs) > 0.6:
+                self._add_matchings(subtree, child)
             else:
                 self.summarize(subtree[child])
-        return self.summarized_matchings
+
+        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
+        remaining = ordered[0][0]
+        return remaining
 
 
 class Matching:
@@ -110,6 +243,15 @@ class Matching:
         string_repr = '\n'.join(relation_matchings)
         return string_repr
 
+    def get_matchings(self):
+        matchings = []
+        for attr_name, values in self.attr_matchings.items():
+            for kr_name, classes in values.items():
+                for class_name, ms in classes.items():
+                    match = ((self.db_name, self.source_name, attr_name), (kr_name, class_name))
+                    matchings.append(match)
+        return matchings
+
     def print_serial(self):
         relation_matchings = []
         for kr_name, values in self.source_level_matchings.items():
@@ -127,36 +269,49 @@ class Matching:
         return relation_matchings
 
 
-def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=3):
+def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=5):
 
     def summarize(matchings):
-        seq_ancestors = defaultdict(list)
+        sequences = list()
+        seq_corresponding_matching = defaultdict(list)
         for el in matchings:
             sch, cla = el
             class_name = cla[1]
             root_to_class_name = om.ancestors_of_class(class_name)
-            seq_ancestors[root_to_class_name].append(el)
+            root_to_class_name = om.name_of_sequence(root_to_class_name)
+            seq_corresponding_matching[str(root_to_class_name)].append(el)
+            sequences.append(root_to_class_name)
 
         trie = SimpleTrie()
-        trie.add_sequences(seq_ancestors)
-        summ_matchings = trie.summarize()
+        trie.add_sequences(sequences, seq_corresponding_matching)
+        summ_matchings = trie.summarize(len(sequences))
         return summ_matchings
 
     def compute_fanout(matchings):
         fanout = defaultdict(list)
         for m in matchings:
             sch, cla = m
-            fanout[sch] += m
-        ordered = sorted(fanout.items(), key=len(operator.itemgetter(1)), reverse=True)
-        return ordered
+            fanout[sch].append(m)
+        ordered = sorted(fanout.items(), key=lambda x: len(x[1]), reverse=True)
+        ordered_dict = dict()
+        for key, value in ordered:
+            ordered_dict[key] = value
+        return ordered_dict
 
     summarized_matchings = []
     fanout = compute_fanout(matchings)
     for k, v in fanout.items():
         if len(v) > threshold_to_summarize:
-            s_matchings = summarize(v)  # [sch - class]
-            for el in s_matchings:
-                summarized_matchings.append(el)
+            print("Summarize: ")
+            for el in v:
+                if(el[0][2] == "qudt_units"):
+                    print("l")
+                print(str(el))
+            s_matching = summarize(v)  # [sch - class] -> returns only 1 !
+            print("Into: ")
+            print(str(s_matching))
+            #for el in set(s_matchings):
+            summarized_matchings.append(s_matching)
         else:  # just propagate matchings
             for el in v:
                 summarized_matchings.append(el)
@@ -840,16 +995,111 @@ def _get_kr_classes_vectors(kr_handlers):
     return class_vectors
 
 
+def adhoc_test():
+    from inputoutput import inputoutput as io
+    from knowledgerepr import fieldnetwork
+    from modelstore.elasticstore import StoreHandler
+    from ontomatch.ss_api import SSAPI
+
+    s1 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Motility Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s2 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By Sequencer %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s3 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Microscopy Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s4 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Chromosome Conformation Capture Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s5 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By Molecule %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s6 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By Array %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s7 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By High Throughput Sequencer %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s8 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Protein Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s9 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Dna Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s10 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Population Growth Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s11 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By Instrument %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s12 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay By Mass Spectrometry %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s13 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Finishing Sequencing Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s14 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Rna Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    s15 = "chembl_22 %%% assay_type %%% assay_desc ==>> efo %%% Assay %%% [ < MatchingType.L5_CLASSNAME_ATTRNAME_SYN: 5 >]"
+    matchings_str = [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15]
+
+    matchings = []
+    for m in matchings_str:
+        tokens = m.split("==>>")
+        sch = tokens[0]
+        cla = tokens[1]
+        sch_tokens = sch.split("%%%")
+        db, r, attr = sch_tokens[0].strip(), sch_tokens[1].strip(), sch_tokens[2].strip()
+        cla_tokens = cla.split("%%%")
+        o_name, cla_name = cla_tokens[0].strip(), cla_tokens[1].strip()
+        match = ((db, r, attr), (o_name, cla_name))
+        matchings.append(match)
+
+    # Deserialize model
+    network = fieldnetwork.deserialize_network("../models/chembl22/")
+    # Create client
+    store_client = StoreHandler()
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object("../models/chembl22/" + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object("../models/chembl22/" + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    # class_name = "Motility Assay"
+    # root_to_class_name = om.kr_handlers["efo"].ancestors_of_class(class_name)
+    # root_to_class_name = om.kr_handlers["efo"].name_of_sequence(root_to_class_name)
+
+    sum_matchings = summarize_matchings_to_ancestor(om.kr_handlers["efo"], matchings)
+
+    print("Original: " + str(len(matchings)))
+    print("Summary: " + str(len(sum_matchings)))
+
+    for m in sum_matchings:
+        print(m)
+
 if __name__ == "__main__":
     print("Matcher lib")
 
-    st = SimpleTrie()
+    #adhoc_test()
 
-    sequences = [["a", "b", "c", "d"], ["a", "b", "c", "v"], ["a", "b", "c"], ["a", "b", "c", "lk"]]
+    from inputoutput import inputoutput as io
+    from knowledgerepr import fieldnetwork
+    from modelstore.elasticstore import StoreHandler
+    from ontomatch.ss_api import SSAPI
 
-    root, steps = st.add_sequences(sequences)
+    matchings = []
+    with open("results/basic_05", 'r') as f:
+        lines = f.readlines()
+        for l in lines:
+            tokens = l.split("==>>")
+            sch = tokens[0]
+            cla = tokens[1]
+            sch_tokens = sch.split("%%%")
+            sch_tokens = [t.strip() for t in sch_tokens]
+            cla_tokens = cla.split("%%%")
+            cla_tokens = [t.strip() for t in cla_tokens]
+            matching_format = ((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1]))
+            matchings.append(matching_format)
 
-    print(root)
-    print(steps)
+    # Deserialize model
+    network = fieldnetwork.deserialize_network("../models/chembl22/")
+    # Create client
+    store_client = StoreHandler()
 
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object("../models/chembl22/" + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object("../models/chembl22/" + 'content_sim_index.pkl')
 
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    sum_matchings = summarize_matchings_to_ancestor(om.kr_handlers["efo"], matchings)
+
+    print("Original: " + str(len(matchings)))
+    print("Summary: " + str(len(sum_matchings)))
+
+    #sum_matchings2 = summarize_matchings_to_ancestor(om.kr_handlers["efo"], sum_matchings)
+
+    #print("Summary2: " + str(len(sum_matchings2)))
+
+    #for s in sum_matchings:
+    #    print(s)
