@@ -288,6 +288,43 @@ def groupwise_semantic_sim(sv1, sv2, threshold):
         to_ret = True  # if at least we iterate once, the default changes to True
     return to_ret
 
+def compute_semantic_similarity2(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.4):
+    total_comparisons = 0
+    skipped_comparisons = 0
+    accum = []
+    for a, b in itertools.product(sv1, sv2):
+        if a is not None and b is not None:
+            if not (a == b).all() or add_exact_matches:  # otherwise this just does not add up
+                total_comparisons += 1
+                sim = glove_api.semantic_distance(a, b)
+                accum.append(sim)
+            elif (a == b).all() and not add_exact_matches:
+                skipped_comparisons += 1
+        elif penalize_unknown_word:  # if one is None and penalize is True, then sim = 0
+            skipped_comparisons += 1
+            sim = 0
+            accum.append(sim)
+    sim = 0
+    if len(accum) > 0:
+        sim = np.mean(accum)
+
+    strong_signal = False
+    # in this case we cannot judge the semantic as the word is not in the dict
+    if total_comparisons == 0:
+        # capturing the case of [] - [a, ...n] when n > 1: intuition is that many words convey a lot of "meaning"
+        if len(sv1) > 1 or len(sv2) > 1:
+            return sim, True
+        return sim, strong_signal
+    total_of_all_comparisons = skipped_comparisons + total_comparisons
+    ratio_of_strong_signal = 0
+    if total_of_all_comparisons > 0:
+        ratio_of_strong_signal = float(total_comparisons/total_of_all_comparisons)
+
+    # # if not many skipped comparisons, then this is a strong signal
+    if ratio_of_strong_signal >= 0.5:
+        strong_signal = True
+
+    return sim, strong_signal
 
 def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.4):
     total_comparisons = 0

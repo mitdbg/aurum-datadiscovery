@@ -304,12 +304,124 @@ def combine_matchings2(all_matchings):
     return combined_matchings, l4_matchings
 
 
+def removed_banned_vectors (ban_index, svs):
+    nSVS  = []
+    for iter1 in range(0, len(ban_index)):
+        if ban_index[iter1] == 0: # the corresponding vector is not banned
+            if iter1 < len(svs):
+                nSVS.append(svs[iter1])
+        iter1 += 1
+    return nSVS
+
+
+def get_ban_indexes(relation1, relation2):
+    relation1 = nlp.camelcase_to_snakecase(relation1)
+    relation1 = relation1.replace('-', ' ')
+    relation1 = relation1.replace('_', ' ')
+    relation1 = relation1.lower()
+
+    relation2 = nlp.camelcase_to_snakecase(relation2)
+    relation2 = relation2.replace('-', ' ')
+    relation2 = relation2.replace('_', ' ')
+    relation2 = relation2.lower()
+
+    if relation1 is not None and relation2 is not None:
+        ban_index1 = [0] * len(relation1.split())
+        ban_index2 = [0] * len(relation2.split())
+        iter1 = 0
+        for token1 in relation1.split():
+            iter2 = 0
+            for token2 in relation2.split():
+                if token1 == token2:
+                    ban_index1[iter1] = 1
+                    ban_index2[iter2] = 1
+                iter2 += 1
+            iter1 += 1
+        return ban_index1, ban_index2
+
+
 def find_negative_sem_signal_attr_sch_sch(network,
                                           penalize_unknown_word=False,
-                                          add_exact_matches=True,
-                                          sensitivity_neg_signal=0.4):
+                                          add_exact_matches=False,
+                                          sensitivity_neg_signal=0.1):
     # TODO: find negative sem signals between schema elements (only)
+
+    # Retrieve relation names
+    st = time.time()
+    names = []
+    seen_fields = []
+    # for (db_name, source_name, field_name, _) in network.iterate_values():
+    #     orig_field_name = field_name
+    #     if field_name not in seen_fields:
+    #         seen_fields.append(field_name)  # seen already
+    #         field_name = nlp.camelcase_to_snakecase(field_name)
+    #         field_name = field_name.replace('-', ' ')
+    #         field_name = field_name.replace('_', ' ')
+    #         field_name = field_name.lower()
+    #         svs = []
+    #         for token in field_name.split():
+    #             if token not in stopwords.words('english'):
+    #                 sv = glove_api.get_embedding_for_word(token)
+    #                 if sv is not None:
+    #                     svs.append(sv)
+    #         names.append(('attribute', (db_name, source_name, orig_field_name), svs))
+
+    svs1 = []
+    #'chembl_22', 'docs', 'volume'
+    # 'atc_classification', '_'), ('efo', 'Atc Classification System'
+    field_name = 'atc_classification'
+    field_name = nlp.camelcase_to_snakecase(field_name)
+    field_name = field_name.lower()
+    field_name = field_name.replace('_', ' ')
+    for token in field_name.split():
+        if token not in stopwords.words('english'):
+            sv = glove_api.get_embedding_for_word(token)
+            if sv is not None:
+                svs1.append(sv)
+    names.append(('attribute', ('chembl_22', 'docs', field_name), svs1))
+
+    svs2 = []
+    field_name = 'Atc Classification System'
+    field_name = nlp.camelcase_to_snakecase(field_name)
+    field_name = field_name.lower()
+    field_name = field_name.replace('_', ' ')
+    for token in field_name.split():
+        if token not in stopwords.words('english'):
+            sv2 = glove_api.get_embedding_for_word(token)
+            if sv2 is not None:
+                svs2.append(sv2)
+    names.append(('attribute', ('chembl_22', 'docs', field_name), svs2))
+
+    num_attributes_inserted = len(names)
+
+
+    neg_matchings = []
+    for idx_rel1 in range(0, num_attributes_inserted):  # Compare only with classes
+        for idx_rel2 in range(1, num_attributes_inserted):
+            ban_index1, ban_index2 = get_ban_indexes(names[idx_rel1][1][2], names[idx_rel2][1][2])
+            # svs_rel = names[idx_rel1][2]
+            # svs_cla = names[idx_rel2][2]
+            svs_rel = removed_banned_vectors(ban_index1, names[idx_rel1][2])
+            svs_cla = removed_banned_vectors(ban_index2, names[idx_rel2][2])
+
+            semantic_sim, neg_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
+                                                                      penalize_unknown_word=True,
+                                                                      add_exact_matches=False,
+                                                                      sensitivity_neg_signal=sensitivity_neg_signal)
+            if neg_signal and semantic_sim < 0.4:
+                match = ((names[idx_rel1][1][0], names[idx_rel1][1][1], names[idx_rel1][1][2]), names[idx_rel2][1])
+                neg_matchings.append(match)
+    et = time.time()
+    print("negative_sem_signal: " + str(et - st))
+    return neg_matchings
+
+
+
+
+
     return
+
+
 
 
 def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
@@ -360,17 +472,21 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
     neg_matchings = []
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
         for idx_class in range(num_attributes_inserted, len(names)):
-            svs_rel = names[idx_rel][2]
-            svs_cla = names[idx_class][2]
-            semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+            # svs_rel = names[idx_rel][2]
+            # svs_cla = names[idx_class][2]
+            ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][2], names[idx_class][1][1])
+            svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
+            svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
+            semantic_sim, neg_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
                                     penalize_unknown_word=penalize_unknown_word,
                                     add_exact_matches=add_exact_matches,
                                     sensitivity_neg_signal=sensitivity_neg_signal)
+            neg_sem_sim_threshold = 0.4
             if semantic_sim > semantic_sim_threshold:
                 # match.format db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 pos_matchings.append(match)
-            elif neg_signal:
+            elif neg_signal and semantic_sim < neg_sem_sim_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
@@ -477,22 +593,27 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
                     #if sv is not None:
                     svs.append(sv)  # append even None, to apply penalization later
             names.append(('class', (kr_name, original_cl_name), svs))
-
     pos_matchings = []  # evidence for a real matching
     neg_matchings = []  # evidence that this matching probably is wrong
     for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
         for idx_class in range(num_relations_inserted, len(names)):
-            svs_rel = names[idx_rel][2]
-            svs_cla = names[idx_class][2]
-            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+            # svs_rel = names[idx_rel][2]
+            # svs_cla = names[idx_class][2]
+            # if names[idx_rel][1][1]=='atc_classification' and names[idx_class][1][1] == 'Atc Classification System':
+            #     print(names[idx_rel][1][1])
+            ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][1], names[idx_class][1][1])
+            svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
+            svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
+            semantic_sim, negative_signal = SS.compute_semantic_similarity2(svs_rel, svs_cla,
                                             penalize_unknown_word=penalize_unknown_word,
                                             add_exact_matches=add_exact_matches,
                                             sensitivity_neg_signal=sensitivity_neg_signal)
+            neg_sem_sim_threshold = 0.4
             if semantic_sim > sem_sim_threshold:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 pos_matchings.append(match)
-            elif negative_signal:
+            elif negative_signal and semantic_sim < neg_sem_sim_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
