@@ -948,6 +948,7 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
     l42_dict = dict()
     for matching in l42_matchings:
         l42_dict[matching] = 1
+
     l52_dict = dict()
     for matching in l52_matchings:
         # adapt matching to be compared to L6
@@ -955,6 +956,7 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
         sch0, sch1, sch2 = sch
         matching = ((sch0, sch1, '_'), cla)
         l52_dict[matching] = 1
+
     l6_dict = dict()
     for matching in l6_matchings:
         l6_dict[matching] = 1
