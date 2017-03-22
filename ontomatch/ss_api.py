@@ -95,6 +95,7 @@ class SSAPI:
 
         self.content_sim_index = content_index
 
+
     def find_matchings(self):
         """
         Find matching for each of the different possible categories
@@ -173,7 +174,19 @@ class SSAPI:
 
         print("Does L42 cancel any L4?")
         print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-
+        total_neg = len(neg_l42_matchings)
+        cancelled_l4_matchings = []
+        l4_dict = dict()
+        for matching in l4_matchings:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in neg_l42_matchings:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4_matchings.remove(m)
+                print("cancelled by L42 : " + str(m))
+                cancelled_l4_matchings.append(m)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
 
         print("Cancelled: " + str(total_cancelled))
         print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
@@ -218,6 +231,7 @@ class SSAPI:
                 total_cancelled += 1
                 l5_matchings.remove(m)
                 cancelled_l5_matchings.append(m)
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
         print("Cancelled: " + str(total_cancelled))
         print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
 
@@ -516,7 +530,6 @@ def test_l6(path_to_serialized_model):
     print("matchings")
     for m in l6_matchings:
         print(m)
-
 
 def test_e2e(path_to_serialized_model):
     # Deserialize model
@@ -1217,6 +1230,114 @@ def print_table_attrs_for(path_to_serialized_model):
     print("DONE")
 
 
+def debug_neg_signal(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+    # om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+
+    # L4: [Relation names] -> [Class names] (syntax)
+    print("Finding L4 matchings...")
+    st = time.time()
+    l4_matchings = matcherlib.find_relation_class_name_matchings(om.network, om.kr_handlers)
+    print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    # L4.2: [Relation names] -> [Class names] (semantic)
+    print("Finding L42 matchings...")
+    st = time.time()
+    l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers,
+                                                                                         sem_sim_threshold=0.5,
+                                                                                         sensitivity_neg_signal=0.4,
+                                                                                         add_exact_matches=False,
+                                                                                         penalize_unknown_word=True)
+    print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    print("Does L42 cancel any L4?")
+    print("Original L4: " + str(l4_matchings))
+    total_neg = len(neg_l42_matchings)
+    cancelled_l4_matchings = []
+    l4_dict = dict()
+    for matching in l4_matchings:
+        l4_dict[matching] = 1
+    total_cancelled = 0
+    for m in neg_l42_matchings:
+        if m in l4_dict:
+            total_cancelled += 1
+            l4_matchings.remove(m)
+            print("cancelled by L42 : "+ str(m))
+            cancelled_l4_matchings.append(m)
+    print("Cancelled: " + str(total_cancelled))
+    print("Resulting L4: " + str(l4_matchings))
+
+    # for match in l42_matchings:
+    #    print(match)
+
+    # L5: [Attribute names] -> [Class names] (syntax)
+    print("Finding L5 matchings...")
+    st = time.time()
+    l5_matchings = matcherlib.find_relation_class_attr_name_matching(om.network, om.kr_handlers)
+    print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    # for match in l5_matchings:
+    #    print(match)
+
+    # l52_matchings = []
+    # L52: [Attribute names] -> [Class names] (semantic)
+    print("Finding L52 matchings...")
+    st = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(om.network,
+                                                                                              om.kr_handlers,
+                                                                                              semantic_sim_threshold=0.7,
+                                                                                              sensitivity_neg_signal=0.4,
+                                                                                              add_exact_matches=False,
+                                                                                              penalize_unknown_word=True)
+    print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+    et = time.time()
+    print("Took: " + str(et - st))
+
+    print("Does L52 cancel any L5?")
+    print("Original L5: " + str(l5_matchings))
+    total_neg = len(neg_l52_matchings)
+    cancelled_l5_matchings = []
+    l5_dict = dict()
+    for matching in l5_matchings:
+        l5_dict[matching] = 1
+    total_cancelled = 0
+    for m in neg_l52_matchings:
+        if m in l5_dict:
+            total_cancelled += 1
+            l5_matchings.remove(m)
+            print("cancelled by L52 : " + str(m))
+            cancelled_l5_matchings.append(m)
+    print("Cancelled: " + str(total_cancelled))
+    print("Resulting L5: " + str(len(l5_matchings)))
+
+
 
 
 if __name__ == "__main__":
@@ -1232,6 +1353,9 @@ if __name__ == "__main__":
 
     #test_5_n_52("../models/chembl22/")
     #exit()
+
+    debug_neg_signal("../models/chembl22/")
+    exit()
 
     print_table_attrs_for("../models/chembl22/")
     exit()

@@ -288,15 +288,14 @@ def groupwise_semantic_sim(sv1, sv2, threshold):
         to_ret = True  # if at least we iterate once, the default changes to True
     return to_ret
 
-
-def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, sensitivity_neg_signal=0.4):
+def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, signal_strength_threshold=0.5):
     total_comparisons = 0
     skipped_comparisons = 0
     accum = []
     for a, b in itertools.product(sv1, sv2):
-        total_comparisons += 1
         if a is not None and b is not None:
             if not (a == b).all() or add_exact_matches:  # otherwise this just does not add up
+                total_comparisons += 1
                 sim = glove_api.semantic_distance(a, b)
                 accum.append(sim)
             elif (a == b).all() and not add_exact_matches:
@@ -310,16 +309,22 @@ def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact
         sim = np.mean(accum)
 
     strong_signal = False
+    # in this case we cannot judge the semantic as the word is not in the dict
     if total_comparisons == 0:
-        strong_signal = False
+        # capturing the case of [] - [a, ...n] when n > 1: intuition is that many words convey a lot of "meaning"
+        if len(sv1) > 1 or len(sv2) > 1:
+            return sim, True
         return sim, strong_signal
-    ratio_skipped_comparisons = float(skipped_comparisons/total_comparisons)
-    # if not many skipped comparisons, then this is a strong signal
-    if ratio_skipped_comparisons > sensitivity_neg_signal:
+    total_of_all_comparisons = skipped_comparisons + total_comparisons
+    ratio_of_strong_signal = 0
+    if total_of_all_comparisons > 0:
+        ratio_of_strong_signal = float(total_comparisons/total_of_all_comparisons)
+
+    # # if not many skipped comparisons, then this is a strong signal
+    if ratio_of_strong_signal >= signal_strength_threshold:
         strong_signal = True
 
     return sim, strong_signal
-
 
 def __compute_semantic_similarity(sv1, sv2):
     products = 0
