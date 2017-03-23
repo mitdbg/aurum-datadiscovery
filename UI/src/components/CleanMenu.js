@@ -9,20 +9,29 @@ class CleanMenu extends React.Component {
     this.buttonClick = this.buttonClick.bind(this);
 
     this.state = {
-      width: 225, // width of the box, in pixels
+      width: 140, // width of the box, in pixels
     };
   }
 
   buttonClick(e){
     // console.log(e);
     makeClean(this.props.source, this.props.target, (r)=>console.log(r));
-    debugger;
   }
 
 
   render() {
     if(this.props.enabled === true) {
-      return( <div id="clean-menu" onClick={this.buttonClick}>Clean Menu Visible</div> );
+      return(
+        <div
+          id="clean-menu"
+          onClick={this.buttonClick}
+          style={
+            {top: this.props.y/2 + 'px',
+            left: this.props.x/2 + this.state.width/2 + 'px',
+            width: this.state.width + 'px',
+            }}
+          >Clean Menu Visible</div>
+      );
     } else{
       return( <div className="display-none"></div> );
     }

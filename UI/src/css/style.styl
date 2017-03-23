@@ -145,6 +145,9 @@ footer
   margin-bottom: 5px
   cursor pointer
 
+.source-menu-title:hover
+  color slategray
+
 .field-menu-title
   text-align left
   font-weight normal
@@ -152,7 +155,8 @@ footer
   padding: 3px 0px 3px 0px
   cursor pointer
 
-
+.field-menu-title:hover
+  font-weight bold
 
 .edge-menu-name
   text-align center
@@ -168,6 +172,9 @@ footer
   padding 3px 5px 3px 5px
   border-top 1px solid gray
 
+.edge-menu-title:hover
+  color black
+
 #edge-menu {
   color gray
   position absolute
@@ -182,13 +189,16 @@ footer
   color gray
   position absolute
   border 1px solid gray
-  margin 5px 5px 5px 10px
+  margin 30px 5px 5px 10px
   display inline-block
   background white
   z-index 99
   min-height 20px
-  min-width 40px
   padding 5px 5px 5px 5px
+  cursor pointer
+
+#clean-menu:hover
+  color black
 
 #source-menu
   display inline-block
@@ -199,17 +209,6 @@ footer
   color black
   position absolute
   z-index 98
-
-#triangle
-  width: 0
-  height: 0
-  border-left: 15px solid transparent
-  border-right: 15px solid transparent
-  border-top: 15px solid #000
-  display inline-block
-  position relative
-  left 20px
-  cursor pointer
 
 .display-none
   display none

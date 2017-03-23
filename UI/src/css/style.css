@@ -383,12 +383,18 @@ footer {
   margin-bottom: 5px;
   cursor: pointer;
 }
+.source-menu-title:hover {
+  color: #708090;
+}
 .field-menu-title {
   text-align: left;
   font-weight: normal;
   border-top: 1px solid #ccc;
   padding: 3px 0px 3px 0px;
   cursor: pointer;
+}
+.field-menu-title:hover {
+  font-weight: bold;
 }
 .edge-menu-name {
   text-align: center;
@@ -404,6 +410,9 @@ footer {
   padding: 3px 5px 3px 5px;
   border-top: 1px solid #808080;
 }
+.edge-menu-title:hover {
+  color: #000;
+}
 #edge-menu {
   color: #808080;
   position: absolute;
@@ -417,13 +426,16 @@ footer {
   color: #808080;
   position: absolute;
   border: 1px solid #808080;
-  margin: 5px 5px 5px 10px;
+  margin: 30px 5px 5px 10px;
   display: inline-block;
   background: #fff;
   z-index: 99;
   min-height: 20px;
-  min-width: 40px;
   padding: 5px 5px 5px 5px;
+  cursor: pointer;
+}
+#clean-menu:hover {
+  color: #000;
 }
 #source-menu {
   display: inline-block;
@@ -434,17 +446,6 @@ footer {
   color: #000;
   position: absolute;
   z-index: 98;
-}
-#triangle {
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 15px solid #000;
-  display: inline-block;
-  position: relative;
-  left: 20px;
-  cursor: pointer;
 }
 .display-none {
   display: none;
