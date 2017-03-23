@@ -103,7 +103,7 @@ class Graph extends React.Component {
     }
     // the user clicked a new menu item. UpdateVariables and show the menu
     else{
-      this.setState({ field, nid, edgeMenuEnabled: true, edgeX: this.state.clickX, edgeY: this.state.clickY });
+      this.setState({ field, nid, edgeMenuEnabled: true, edgeX: this.state.nodeClickX, edgeY: this.state.nodeClickY });
 
     }
   }
