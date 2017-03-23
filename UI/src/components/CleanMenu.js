@@ -20,6 +20,16 @@ class CleanMenu extends React.Component {
 
 
   render() {
+    // 2 seems to work, while the derived number seems to be wrong
+    // ... so we're using two for a scaling factor.
+    // const canvas = document.getElementById('graph').getElementsByTagName('canvas')[0];
+    // const xScalingFactor = canvas.width/canvas.clientWidth;
+    // const yScalingFactor = canvas.height/canvas.clientHeight;
+    // console.log(xScalingFactor + ', ' + yScalingFactor);
+
+
+
+
     if(this.props.enabled === true) {
       return(
         <div

@@ -18,7 +18,7 @@ class Graph extends React.Component {
     this.edgeClick = this.edgeClick.bind(this);
     this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
-    this.state = {
+    this._initialState = {
       source: '', // name of the table selected
       field: '', // field in the table selected.
       nid: '', // nid of the field BUT NOT SOURCE selected, if a field is selected
@@ -59,6 +59,7 @@ class Graph extends React.Component {
         edgeHoverExtremities: true,
         }
     };
+    this.state = this._initialState;
   }
 
   componentDidMount() {
@@ -75,11 +76,21 @@ class Graph extends React.Component {
           let box = this.element().firstChild;
           var height = box.clientHeight + event.dy;
           box.style.height = height + "px";
-          box.style['max-height'] = height + "px";
           let s = window.sigma.instances(0);
           s.refresh();
         }
       });
+  }
+
+
+  componentWillReceiveProps(nextProps){
+    const oldSources = Object.keys(this.props.selection).sort().join(', ');
+    const nextSources = Object.keys(nextProps.selection).sort().join(', ');
+    // if new SOURCES are selected (new keys appear in this.props.selection),
+    // reset the state
+    if (oldSources !== nextSources){
+      this.setState(this._initialState);
+    }
   }
 
   // read the graph object. call the api with the id, and then use another
@@ -117,9 +128,6 @@ class Graph extends React.Component {
     const edgeClickY = e.data.captor.clientY;
     const edgeClickSource = e.data.edge.source;
     const edgeClickTarget = e.data.edge.target;
-
-
-
     // show cleanMenu
     this.setState({
       edgeClickX, edgeClickY, edgeClickSource, edgeClickTarget,
