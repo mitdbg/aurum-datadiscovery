@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
+import CleanMenu from './CleanMenu';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -21,9 +22,10 @@ class Graph extends React.Component {
       source: '', // name of the table selected
       field: '', // field in the table selected.
       nid: '', // nid of the field BUT NOT SOURCE selected, if a field is selected
-      clickX: 0, // x coordinate of where a node was clicked
-      clickY: 0, // y coordinate of where a node was clicked
+      nodeClickX: 0, // x coordinate of where a node was clicked
+      nodeClickY: 0, // y coordinate of where a node was clicked
       edgeMenuEnabled: false, // should the EdgeMenu show?
+      cleanMenuEnabled: false, // should the CleanMenu to show?
       edgeX: 0, // x coordinate of where to put the edge menu
       edgeY: 0, // y coordinate of where to put the edge menu
 
@@ -85,11 +87,11 @@ class Graph extends React.Component {
     const source = node.id;
 
     // x and y coordinates of the click
-    const clickX = node['renderer1:x'];
-    var clickY = node['renderer1:y'];
-    // console.log(clickX, ', ', clickY)
+    const nodeClickX = node['renderer1:x'];
+    var nodeClickY = node['renderer1:y'];
+    // console.log(nodeClickX, ', ', nodeClickY)
 
-    this.setState({ clickX, clickY, source });
+    this.setState({ nodeClickX, nodeClickY, source });
   }
 
   toggleEdgeMenu(source, field, nid, x, y){
@@ -105,8 +107,13 @@ class Graph extends React.Component {
     }
   }
 
-  edgeClick(e){
-    console.log('edgeClick');
+  edgeClick(e, f){
+    console.log(e);
+    const x = e.data.captor.clientX;
+    const y = e.data.captor.clientY;
+    debugger;
+
+    this.setState({ cleanMenuEnabled: !this.state.cleanMenuEnabled});
   }
 
   render() {
@@ -129,8 +136,8 @@ class Graph extends React.Component {
           source={this.state.source} // the node the user selected in the graph
           field={this.state.field} // the field (if any) the user selected in the menu in the graph
           nid={this.state.nid} // the nid of the above field
-          x={this.state.clickX}
-          y={this.state.clickY}
+          x={this.state.nodeClickX}
+          y={this.state.nodeClickY}
           toggleEdgeMenu={this.toggleEdgeMenu}
         />
 
@@ -144,6 +151,10 @@ class Graph extends React.Component {
           setQueryEdgeType={this.props.setQueryEdgeType}
           updateResult={this.props.updateResult}
           enabled={this.state.edgeMenuEnabled}
+        />
+
+        <CleanMenu
+          enabled={this.state.cleanMenuEnabled}
         />
 
         {
