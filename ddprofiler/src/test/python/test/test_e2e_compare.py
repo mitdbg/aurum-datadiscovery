@@ -56,6 +56,9 @@ class Node:
     def __repr__(self):
         return self.__str__()
 
+    def __iter__(self):
+        return list.__iter__(list(self.__dict__.values()))
+
 class TestStoreHandler:
 
     # Store client
@@ -69,13 +72,13 @@ class TestStoreHandler:
         global client
         client = Elasticsearch([{'host': 'localhost', 'port': '9200'}])
 
-    def write_all_fields_to_dict(self) -> dict:
+    def write_all_fields_to_dict(self, branch_name: str) -> dict:
         """
         Reads all fields from the store and returns a dictionary mapping
-        node ids to their nodes.
+        node ids to their nodes. Also writes fields to a .dd file.
         """
         all_fields = {}
-        # target = open('%s.dd' % filename, 'w')
+        target = open('src/test/python/test/%s.dd' % branch_name, 'w')
         body = {"query": {"match_all": {}}}
         res = client.search(index='profile', body=body, scroll="10m",
                             filter_path=['_scroll_id',
@@ -112,7 +115,7 @@ class TestStoreHandler:
                             s['uniqueValues'],
                             s['dataType'])
                 all_fields[h['_id']] = n
-                # target.write('%s\n' % ','.join(map(str, data)))
+                target.write('%s\n' % ','.join(map(str, n)))
                 remaining -= 1
             res = client.scroll(scroll="5m", scroll_id=scroll_id,
                                 filter_path=['_scroll_id',
@@ -121,7 +124,7 @@ class TestStoreHandler:
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
-        # target.close()
+        target.close()
         return all_fields
 
     def DELETE_ALL(self):
@@ -130,6 +133,7 @@ class TestStoreHandler:
         """
         return client.indices.delete(index='_all')
 
+
 def git_checkout(branch_name: str):
     """
     Checkout branch <branch_name> on github.
@@ -137,7 +141,22 @@ def git_checkout(branch_name: str):
     """
     call("git checkout %s" % branch_name, shell=True, stdout=sys.stdout, stderr=sys.stderr)
 
-def build_and_write(branch_name: str, folder_path: str) -> dict:
+
+def parse_dd_to_dict(branch_name: str) -> dict:
+    """
+    Writes the store content cached in <branch_name>.dd to a dict.
+    """
+    all_fields = {}
+    with open('src/test/python/test/%s.dd' % branch_name, 'r') as file:
+        for line in file:
+            data = line.strip().split(',')
+            n = Node(*data)
+            all_fields[n.nid] = n
+    print("\nRetrieved cached results (%s)\n" % branch_name)
+    return all_fields
+
+
+def build_and_write_to_store(branch_name: str, folder_path: str) -> dict:
     """
     1. Build a new ddprofiler jar.
     2. Run the new jar on some files specified by <folder_path>.
@@ -159,16 +178,18 @@ def build_and_write(branch_name: str, folder_path: str) -> dict:
     # Write to elastic store
     print("*** Writing to elastic store...")
     print("*** (This may take a while.)")
+
     jar_cmd = "java -jar build/libs/ddprofiler.jar --execution.mode 1 --sources.folder.path %s" % folder_path
     start = time.time()
     call(jar_cmd, shell=True, stderr=sys.stderr)
     end = time.time()
+
     print("\nWRITE SUCCESSFUL (%s)\n" % branch_name)
     print("Total time: %.2f secs\n" % (end - start))
     print("*** Finished writing to elastic store!")
 
     # Write the store content out to a dictionary
-    return store_client.write_all_fields_to_dict()
+    return store_client.write_all_fields_to_dict(branch_name)
 
 def test_number_of_columns(exp: dict, res: dict):
     """
@@ -236,9 +257,6 @@ def test_statistics(data_type: str, exp: dict, res: dict) -> bool:
 
     return False
 
-def test_numerical_statistics(exp: dict, res: dict):
-    pass
-
 if __name__ == "__main__":
     # REQUIREMENTS
     # ./bin/elasticsearch
@@ -249,13 +267,16 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--path', metavar='P', required=True, help='path to folder with csv files')
     parser.add_argument('-b1', '--branch_expected', metavar='B2', required=True, help='github branch with expected results')
     parser.add_argument('-b2', '--branch_test', metavar='B2', required=True, help='github branch to analyze')
+    parser.add_argument('-c', '--cached', metavar='cached', required=False, help='use cached .dd file for expected results')
     inp = parser.parse_args(sys.argv[1:])
 
-    # Write the expected results to a dictionary
-    exp: dict = build_and_write(branch_name=inp.branch_expected, folder_path=inp.path)
+    if inp.cached:
+        exp: dict = parse_dd_to_dict(branch_name=inp.branch_expected)
+    else:
+        exp: dict = build_and_write_to_store(branch_name='master', folder_path=inp.path)
 
     # Write the actual results to a dictionary
-    res: dict = build_and_write(branch_name=inp.branch_test, folder_path=inp.path)
+    res: dict = build_and_write_to_store(branch_name=inp.branch_test, folder_path=inp.path)
 
     # Compare the expected and actual results with each other
     test_number_of_columns(exp=exp, res=res)
