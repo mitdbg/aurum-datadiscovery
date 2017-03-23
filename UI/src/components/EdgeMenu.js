@@ -56,7 +56,11 @@ class EdgeMenu extends React.Component {
 
     if(this.props.enabled && this.props.source !== ''){
       return(
-        <div id="edge-menu">
+        <div id="edge-menu"
+          style={{
+            top: this.props.y + 'px',
+            left: this.props.x + (document.getElementById('source-menu').clientWidth / 2) + 'px'}}>
+
         <div className="edge-menu-name">
           {sourceOrFieldNameForMenu}
         </div>
@@ -89,6 +93,8 @@ EdgeMenu.propTypes = {
   source: React.PropTypes.string,
   field: React.PropTypes.string,
   nid: React.PropTypes.string,
+  x: React.PropTypes.number,
+  y: React.PropTypes.number,
   updateQuery: React.PropTypes.func.isRequired,
   setQueryEdgeType: React.PropTypes.func.isRequired,
 

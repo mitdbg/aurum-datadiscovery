@@ -406,12 +406,12 @@ footer {
 }
 #edge-menu {
   color: #808080;
+  position: absolute;
   border: 1px solid #808080;
-  position: relative;
+  margin: 20px 5px 5px 10px;
   display: inline-block;
   background: #fff;
-  left: 275px;
-  width: 120px;
+  z-index: 99;
 }
 #source-menu {
   display: inline-block;

@@ -23,6 +23,8 @@ class Graph extends React.Component {
       clickX: 0, // x coordinate of where a node was clicked
       clickY: 0, // y coordinate of where a node was clicked
       edgeMenuEnabled: false, // should the EdgeMenu show?
+      edgeX: 0, // x coordinate of where to put the edge menu
+      edgeY: 0, // y coordinate of where to put the edge menu
 
       sigmaSettings: {
         // normal node attrs
@@ -89,7 +91,7 @@ class Graph extends React.Component {
     this.setState({ clickX, clickY, source });
   }
 
-  toggleEdgeMenu(source, field, nid){
+  toggleEdgeMenu(source, field, nid, x, y){
 
     // the user clicked the same Source/Field Menu item again. Dismiss the EdgeMenu
     if (this.state.edgeMenuEnabled === true && this.state.source === source && this.state.field === field && this.state.nid === nid){
@@ -97,7 +99,8 @@ class Graph extends React.Component {
     }
     // the user clicked a new menu item. UpdateVariables and show the menu
     else{
-      this.setState({ field, nid, edgeMenuEnabled: true });
+      this.setState({ field, nid, edgeMenuEnabled: true, edgeX: this.state.clickX, edgeY: this.state.clickY });
+
     }
 
   }
@@ -130,6 +133,8 @@ class Graph extends React.Component {
           source={this.state.source}
           field={this.state.field}
           nid={this.state.nid}
+          x={this.state.edgeX}
+          y={this.state.edgeY}
           updateQuery={this.props.updateQuery}
           setQueryEdgeType={this.props.setQueryEdgeType}
           updateResult={this.props.updateResult}
