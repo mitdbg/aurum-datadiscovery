@@ -213,9 +213,6 @@ body {
   margin: 0 0 0 0;
   font-size: 11pt;
 }
-canvas {
-  background-color: rgba(0,255,0,0.2);
-}
 data-reactroot {
   height: 100% !important;
 }
