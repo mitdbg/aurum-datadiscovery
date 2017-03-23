@@ -411,7 +411,19 @@ footer {
   margin: 20px 5px 5px 10px;
   display: inline-block;
   background: #fff;
+  z-index: 98;
+}
+#clean-menu {
+  color: #808080;
+  position: absolute;
+  border: 1px solid #808080;
+  margin: 5px 5px 5px 10px;
+  display: inline-block;
+  background: #fff;
   z-index: 99;
+  min-height: 20px;
+  min-width: 40px;
+  padding: 5px 5px 5px 5px;
 }
 #source-menu {
   display: inline-block;
@@ -421,7 +433,7 @@ footer {
   padding: 5px 5px 5px 5px;
   color: #000;
   position: absolute;
-  z-index: 99;
+  z-index: 98;
 }
 #triangle {
   width: 0;

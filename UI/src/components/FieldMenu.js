@@ -14,8 +14,11 @@ class FieldMenu extends React.Component {
   render() {
     return(
       <div onClick={this.toggleEdgeMenu} className="field-menu-title">
-        {this.props.field}
         <span className="align-right">&#9654;</span>
+        <div style={{width: this.props.parentWidth - 10 + 'px'}}>
+          {this.props.field}
+        </div>
+
       </div>
       )
   }
@@ -31,4 +34,5 @@ FieldMenu.propTypes = {
   nid: React.PropTypes.string.isRequired,
   score: React.PropTypes.number.isRequired,
   toggleEdgeMenu: React.PropTypes.func.isRequired,
+  parentWidth: React.PropTypes.number.isRequired
 }

@@ -45,6 +45,7 @@ class SourceMenu extends React.Component {
                 nid={this.props.selection[key]['nid'].toString()}
                 score={this.props.selection[key]['score']}
                 toggleEdgeMenu={this.props.toggleEdgeMenu}
+                parentWidth={this.state.width}
               />
               )
           }

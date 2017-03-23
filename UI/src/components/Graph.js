@@ -5,7 +5,6 @@ import ReactDOM from 'react-dom';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
 import CleanMenu from './CleanMenu';
-import { makeClean } from '../ajax';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -27,6 +26,8 @@ class Graph extends React.Component {
       nodeClickY: 0, // y coordinate of where a node was clicked
       edgeClickX: 0, // x coordinate of where an edge was clicked
       edgeClickY: 0, // y coordinate of where an edge was clicked
+      edgeClickSource: null, // the name/nid of the node at the start of an edge's click
+      edgeClickTarget: null, // the name/nid of the node at the end of an edge's click
       edgeMenuEnabled: false, // should the EdgeMenu show?
       cleanMenuEnabled: false, // should the CleanMenu to show?
       edgeMenuX: 0, // x coordinate of where to put the edge menu
@@ -106,23 +107,22 @@ class Graph extends React.Component {
     }
     // the user clicked a new menu item. UpdateVariables and show the menu
     else{
-      this.setState({ field, nid, edgeMenuEnabled: true, edgeMenuX: this.state.clickX, edgeMenuY: this.state.clickY });
+      this.setState({ field, nid, edgeMenuEnabled: true, edgeMenuX: this.state.nodeClickX, edgeMenuY: this.state.nodeClickY });
 
     }
   }
 
   edgeClick(e, f){
-    console.log(e);
     const edgeClickX = e.data.captor.clientX;
     const edgeClickY = e.data.captor.clientY;
-    const source = e.data.edge.source;
-    const target = e.data.edge.target;
+    const edgeClickSource = e.data.edge.source;
+    const edgeClickTarget = e.data.edge.target;
 
-    makeClean(source, target, (r)=>console.log(r));
+
 
     // show cleanMenu
     this.setState({
-      edgeClickX, edgeClickY,
+      edgeClickX, edgeClickY, edgeClickSource, edgeClickTarget,
       cleanMenuEnabled: !this.state.cleanMenuEnabled});
   }
 
@@ -165,6 +165,10 @@ class Graph extends React.Component {
 
         <CleanMenu
           enabled={this.state.cleanMenuEnabled}
+          x={this.state.edgeClickX}
+          y={this.state.edgeClickY}
+          source={this.state.edgeClickSource}
+          target={this.state.edgeClickTarget}
         />
 
         {
