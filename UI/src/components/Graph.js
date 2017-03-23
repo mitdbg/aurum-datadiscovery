@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
 import CleanMenu from './CleanMenu';
+import { makeClean } from '../ajax';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -24,10 +25,12 @@ class Graph extends React.Component {
       nid: '', // nid of the field BUT NOT SOURCE selected, if a field is selected
       nodeClickX: 0, // x coordinate of where a node was clicked
       nodeClickY: 0, // y coordinate of where a node was clicked
+      edgeClickX: 0, // x coordinate of where an edge was clicked
+      edgeClickY: 0, // y coordinate of where an edge was clicked
       edgeMenuEnabled: false, // should the EdgeMenu show?
       cleanMenuEnabled: false, // should the CleanMenu to show?
-      edgeX: 0, // x coordinate of where to put the edge menu
-      edgeY: 0, // y coordinate of where to put the edge menu
+      edgeMenuX: 0, // x coordinate of where to put the edge menu
+      edgeMenuY: 0, // y coordinate of where to put the edge menu
 
       sigmaSettings: {
         // normal node attrs
@@ -58,7 +61,7 @@ class Graph extends React.Component {
   }
 
   componentDidMount() {
-    let handle = document.getElementsByClassName('vertical-drag-handle')[0]
+    let handle = document.getElementsByClassName('vertical-drag-handle')[0];
     interact(ReactDOM.findDOMNode(this))
       .resizable({
         edges: {
@@ -68,12 +71,12 @@ class Graph extends React.Component {
           right: false
         },
         onmove: function(event) {
-          let box = this.element().firstChild
-          var height = box.clientHeight + event.dy
-          box.style['height'] = height + "px"
-          box.style['max-height'] = height + "px"
-          let s = window.sigma.instances(0)
-          s.refresh()
+          let box = this.element().firstChild;
+          var height = box.clientHeight + event.dy;
+          box.style.height = height + "px";
+          box.style['max-height'] = height + "px";
+          let s = window.sigma.instances(0);
+          s.refresh();
         }
       });
   }
@@ -103,18 +106,24 @@ class Graph extends React.Component {
     }
     // the user clicked a new menu item. UpdateVariables and show the menu
     else{
-      this.setState({ field, nid, edgeMenuEnabled: true, edgeX: this.state.nodeClickX, edgeY: this.state.nodeClickY });
+      this.setState({ field, nid, edgeMenuEnabled: true, edgeMenuX: this.state.clickX, edgeMenuY: this.state.clickY });
 
     }
   }
 
   edgeClick(e, f){
     console.log(e);
-    const x = e.data.captor.clientX;
-    const y = e.data.captor.clientY;
-    debugger;
+    const edgeClickX = e.data.captor.clientX;
+    const edgeClickY = e.data.captor.clientY;
+    const source = e.data.edge.source;
+    const target = e.data.edge.target;
 
-    this.setState({ cleanMenuEnabled: !this.state.cleanMenuEnabled});
+    makeClean(source, target, (r)=>console.log(r));
+
+    // show cleanMenu
+    this.setState({
+      edgeClickX, edgeClickY,
+      cleanMenuEnabled: !this.state.cleanMenuEnabled});
   }
 
   render() {
@@ -146,8 +155,8 @@ class Graph extends React.Component {
           source={this.state.source}
           field={this.state.field}
           nid={this.state.nid}
-          x={this.state.edgeX}
-          y={this.state.edgeY}
+          x={this.state.edgeMenuX}
+          y={this.state.edgeMenuY}
           updateQuery={this.props.updateQuery}
           setQueryEdgeType={this.props.setQueryEdgeType}
           updateResult={this.props.updateResult}

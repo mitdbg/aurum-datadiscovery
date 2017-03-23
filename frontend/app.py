@@ -92,6 +92,18 @@ def inspect(general_input):
     data_frame = pandas_handler(store_handler=store_client, hit=hit, nrows=10)
     return data_frame.to_json()
 
+@app.route('/clean/<general_source>/<general_target>')
+def clean(general_source, general_target):
+    my_dict = {
+        'source': general_source,
+        'target': general_target,
+        'message': 'dummy response from the "clean" endpoint'}
+
+    return jsonify(my_dict)
+
+
+
+
 
 class InvalidUsage(Exception):
     status_code = 400

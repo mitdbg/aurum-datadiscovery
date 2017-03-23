@@ -34,7 +34,21 @@ export function makeConvert(identifier, newCallback) {
 export function makeInspect(identifier, newCallback) {
   callback = newCallback;
   var url = "http://127.0.0.1:5000/inspect/" + identifier;
-  console.log(url);
+
+  httpRequest = new XMLHttpRequest();
+
+  if (!httpRequest) {
+    alert('Giving up :( Cannot create an XMLHTTP instance');
+    return false;
+  }
+  httpRequest.onreadystatechange = ignoreErr;
+  httpRequest.open('GET', url);
+  httpRequest.send();
+}
+
+export function makeClean(source, target, newCallback) {
+  callback = newCallback;
+  var url = "http://127.0.0.1:5000/clean/" + source + "/" + target;
 
   httpRequest = new XMLHttpRequest();
 
