@@ -38,10 +38,11 @@ public class TextualAnalyzer implements TextualAnalysis {
 
   @Override
   synchronized public boolean feedTextData(List<String> records) {
-    Iterator<DataConsumer> dcs = analyzers.iterator();
-    while (dcs.hasNext()) {
-      TextualDataConsumer dc = (TextualDataConsumer)dcs.next();
-      dc.feedTextData(records);
+    for (int i = 0; i < analyzers.size(); i++) {
+      TextualDataConsumer dc = (TextualDataConsumer)analyzers.get(i);
+      synchronized (dc) {
+        dc.feedTextData(records);
+      }
     }
 
     return false;

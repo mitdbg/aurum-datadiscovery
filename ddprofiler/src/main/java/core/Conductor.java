@@ -28,7 +28,7 @@ public class Conductor {
   private ProfilerConfig pc;
   private File errorLogFile;
 
-  private final int MAX_SUB_TASKS = 1000;
+  private final int MAX_SUB_TASKS = 100;
   private BlockingQueue<WorkerTask> taskQueue;
   private BlockingQueue<WorkerSubTask> subTaskQueue;
   private List<Worker> activeWorkers;
