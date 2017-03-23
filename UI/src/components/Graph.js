@@ -48,8 +48,8 @@ class Graph extends React.Component {
         // onHover node attrs
         enableEdgeHovering: true,
         edgeHoverSizeRatio: 3,
-        // edgeHoverColor: 'black',
-        // edgeHoverExtremities: false,
+        edgeHoverColor: 'black',
+        edgeHoverExtremities: true,
         }
     };
   }
@@ -165,7 +165,7 @@ class Graph extends React.Component {
                 <SigmaEdge
                   key={key}
                   edge={this.props.graphEdges[key]}>
-                  <EdgeShapes default="curvedArrow"/>
+                  <EdgeShapes default="arrow"/>
                 </SigmaEdge>
               )
         }

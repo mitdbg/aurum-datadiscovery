@@ -1,3 +1,4 @@
+/*jshint esversion: 6 */
 import React from 'react';
 
 class SigmaEdge extends React.Component {
@@ -13,7 +14,7 @@ class SigmaEdge extends React.Component {
       label:props.edge.label,
       color: props.edge.color,
       size: 4,
-    })
+    });
   }
 
   embedProps(elements: mixed, extraProps) {
@@ -21,7 +22,7 @@ class SigmaEdge extends React.Component {
             (element) => React.cloneElement(element, extraProps))
     }
 
-  render() {
+  render(){
 
     // The sigma instance needs to be passed as props of children
     // Can see how it's done in the react-sigma project here:
