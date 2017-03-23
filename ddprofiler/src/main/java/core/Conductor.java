@@ -58,7 +58,7 @@ public class Conductor {
     this.pc = pc;
     this.store = s;
     this.taskQueue = new LinkedBlockingQueue<>();
-    this.subTaskQueue = new LinkedBlockingQueue<>();
+    this.subTaskQueue = new LinkedBlockingQueue<>(MAX_SUB_TASKS);
     this.results = new LinkedBlockingQueue<>();
     this.errorQueue = new LinkedBlockingQueue<>();
 
@@ -135,9 +135,16 @@ public class Conductor {
   }
 
   public boolean submitSubTask(WorkerSubTask task) {
-    while(subTaskQueue.size() > MAX_SUB_TASKS) {};
     totalSubTasksSubmitted.incrementAndGet();
-    return subTaskQueue.add(task);
+    boolean success = false;
+    try {
+      while (!success) {
+        success = subTaskQueue.offer(task, 500, TimeUnit.MILLISECONDS);
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    return success;
   }
 
   public WorkerSubTask pullSubTask() {
