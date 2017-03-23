@@ -18,10 +18,9 @@ class Graph extends React.Component {
       source: '', // name of the table selected
       field: '', // field in the table selected.
       nid: '', // nid of the field BUT NOT SOURCE selected, if a field is selected
-      columns: [],
-      clickX: 0,
-      clickY: 0,
-      edgeMenuEnabled: false,
+      clickX: 0, // x coordinate of where a node was clicked
+      clickY: 0, // y coordinate of where a node was clicked
+      edgeMenuEnabled: false, // should the EdgeMenu show?
 
       sigmaSettings: {
         // normal node attrs
