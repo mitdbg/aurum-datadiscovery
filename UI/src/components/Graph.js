@@ -14,6 +14,7 @@ class Graph extends React.Component {
   constructor() {
     super();
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
+    this.edgeClick = this.edgeClick.bind(this);
     this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
     this.state = {
@@ -102,7 +103,10 @@ class Graph extends React.Component {
       this.setState({ field, nid, edgeMenuEnabled: true, edgeX: this.state.clickX, edgeY: this.state.clickY });
 
     }
+  }
 
+  edgeClick(e){
+    console.log('edgeClick');
   }
 
   render() {
@@ -115,6 +119,7 @@ class Graph extends React.Component {
         settings={this.state.sigmaSettings}
         renderer="canvas"
         onClickNode={e => this.displayNodeDetails(e)}
+        onClickEdge={e => this.edgeClick(e)}
         >
 
 
