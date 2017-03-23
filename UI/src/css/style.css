@@ -287,7 +287,6 @@ footer {
           flex: 1;
   width: 100%;
   background-color: #fff;
-  min-height: 150px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -297,10 +296,11 @@ footer {
           flex-direction: column;
 }
 #graph >div:first-of-type {
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
+  -webkit-box-flex: 99;
+      -ms-flex: 99;
+          flex: 99;
   position: relative;
+  min-height: 150px;
 }
 #pandas {
   -webkit-box-flex: 1;
@@ -308,16 +308,19 @@ footer {
           flex: 1;
   overflow: auto;
   background-color: #fff;
+  min-height: 150px;
 }
 .horizontal-drag-handle {
   height: 100%;
   width: 5px;
+  min-width: 5px;
   background-color: #eee;
   border-right: 1px solid #bbb;
   float: right;
 }
 .vertical-drag-handle {
   height: 5px;
+  min-height: 5px;
   width: 100%;
   background-color: #eee;
   border-bottom: 1px solid #bbb;

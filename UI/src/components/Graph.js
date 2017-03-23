@@ -71,6 +71,7 @@ class Graph extends React.Component {
           let box = this.element().firstChild
           var height = box.clientHeight + event.dy
           box.style['height'] = height + "px"
+          box.style['max-height'] = height + "px"
           let s = window.sigma.instances(0)
           s.refresh()
         }
