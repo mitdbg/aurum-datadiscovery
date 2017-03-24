@@ -27,7 +27,7 @@ class App extends React.Component {
       selection: {}, // the table that the user selected (with HITs inside the obj)
       graphEdges: [], // no way to be populated in the UI yet
       originNode: false, // node that new search results were reached from. null/false/undefined if the search results were reached from the search box
-      originSource: false,
+      originField: false,
       queryEdgeType: '',
 
     };
@@ -95,7 +95,7 @@ class App extends React.Component {
       }
       const eid = this.state.queryEdgeType + ' | ' + this.state.originNode + ' | ' + tableName;
       const score = selected.score;
-      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, eid, score, color);
+      this.addGraphEdge(this.state.originNode, this.state.originField, tableName, this.state.queryEdgeType, eid, score, color);
     }
 
     this.setState({ selection });
@@ -113,7 +113,7 @@ class App extends React.Component {
 
   // add an edge to the state. Edges receive scores because
   // different relationships to B can have diffferent scores.
-  addGraphEdge(source, target, label, eid, score, color){
+  addGraphEdge(source, field, target, label, eid, score, color){
     var graphEdges = this.state.graphEdges;
 
     const edge = {source: source, target: target, label: label, eid: eid, score: score, color: color};
@@ -140,7 +140,7 @@ class App extends React.Component {
   // origin node is where the previous query originated from
   // used for linking edges
   updateQuery(query, source, field) {
-    this.setState({ query, originNode:source, originSource:field });
+    this.setState({ query, originNode:source, originField:field });
     this.context.router.transitionTo(`/${query}`);
   }
 
