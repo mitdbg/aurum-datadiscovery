@@ -154,7 +154,6 @@ class Graph extends React.Component {
       e_to: e.data.edge.target,
       score: e.data.edge.score,
       enabled: true};
-    debugger;
 
     this.setState({ edgeHover });
 

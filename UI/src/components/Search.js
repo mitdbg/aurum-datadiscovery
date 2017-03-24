@@ -25,7 +25,7 @@ class Search extends React.Component {
 
   handleResponse(response) {
     const json = JSON.parse(response.responseText);
-    this.props.updateQuery(this.state.userQuery, false);
+    this.props.updateQuery(this.state.userQuery, false, false);
     this.props.updateResult(json);
   }
 

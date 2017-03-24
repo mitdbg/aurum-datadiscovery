@@ -21,7 +21,7 @@ class EdgeMenu extends React.Component {
   handleResponse(response){
     const json = JSON.parse(response.responseText);
 
-    this.props.updateQuery(this.state.tempQuery, this.props.source);
+    this.props.updateQuery(this.state.tempQuery, this.props.source, this.props.field);
     this.props.updateResult(json);
     this.props.setQueryEdgeType(this.state.tempQueryEdgeType);
   }

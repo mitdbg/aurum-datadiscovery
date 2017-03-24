@@ -27,6 +27,7 @@ class App extends React.Component {
       selection: {}, // the table that the user selected (with HITs inside the obj)
       graphEdges: [], // no way to be populated in the UI yet
       originNode: false, // node that new search results were reached from. null/false/undefined if the search results were reached from the search box
+      originSource: false,
       queryEdgeType: '',
 
     };
@@ -138,8 +139,8 @@ class App extends React.Component {
   // query is what will be displayed in the search bar.
   // origin node is where the previous query originated from
   // used for linking edges
-  updateQuery(query, originNode) {
-    this.setState({ query, originNode });
+  updateQuery(query, source, field) {
+    this.setState({ query, originNode:source, originSource:field });
     this.context.router.transitionTo(`/${query}`);
   }
 
