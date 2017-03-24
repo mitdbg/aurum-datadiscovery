@@ -12,6 +12,7 @@ class SigmaEdge extends React.Component {
       source:props.edge.source,
       target:props.edge.target,
       label:props.edge.label,
+      score:props.edge.score,
       color: props.edge.color,
       size: 4,
     });

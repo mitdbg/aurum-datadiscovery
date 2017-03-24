@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import SourceMenu from './SourceMenu';
 import EdgeMenu from './EdgeMenu';
 import CleanMenu from './CleanMenu';
+import EdgeToolTip from './EdgeToolTip';
 import {Sigma, EdgeShapes, ForceAtlas2, RandomizeNodePositions, RelativeSize} from 'react-sigma';
 import SigmaNode from './SigmaNode';
 import SigmaEdge from './SigmaEdge';
@@ -16,6 +17,8 @@ class Graph extends React.Component {
     super();
     this.displayNodeDetails = this.displayNodeDetails.bind(this);
     this.edgeClick = this.edgeClick.bind(this);
+    this.edgeHover = this.edgeHover.bind(this);
+    this.edgeOut = this.edgeOut.bind(this);
     this.toggleEdgeMenu = this.toggleEdgeMenu.bind(this);
 
     this._initialState = {
@@ -32,6 +35,14 @@ class Graph extends React.Component {
       cleanMenuEnabled: false, // should the CleanMenu to show?
       edgeMenuX: 0, // x coordinate of where to put the edge menu
       edgeMenuY: 0, // y coordinate of where to put the edge menu
+      edgeHover: {x: 0,
+                  y:0,
+                  e_from: '',
+                  e_to: '',
+                  label: '',
+                  score: '',
+                  enabled: false
+                  }, // object to contain variables for edge hovering
 
       sigmaSettings: {
         // normal node attrs
@@ -123,7 +134,7 @@ class Graph extends React.Component {
     }
   }
 
-  edgeClick(e, f){
+  edgeClick(e){
     const edgeClickX = e.data.captor.clientX;
     const edgeClickY = e.data.captor.clientY;
     const edgeClickSource = e.data.edge.source;
@@ -132,6 +143,24 @@ class Graph extends React.Component {
     this.setState({
       edgeClickX, edgeClickY, edgeClickSource, edgeClickTarget,
       cleanMenuEnabled: !this.state.cleanMenuEnabled});
+  }
+
+  edgeHover(e){
+    const edgeHover = {
+      x: e.data.captor.clientX,
+      y: e.data.captor.clientY,
+      label: e.data.edge.labe,
+      e_from: e.data.edge.sourc,
+      e_to: e.data.edge.targe,
+      score: e.data.edge.scor,
+      enabled: true};
+
+    this.setState({ edgeHover });
+
+  }
+
+  edgeOut(e){
+    this.setState({ edgeHover: this._initialState.edgeHover });
   }
 
   render() {
@@ -145,6 +174,8 @@ class Graph extends React.Component {
         renderer="canvas"
         onClickNode={e => this.displayNodeDetails(e)}
         onClickEdge={e => this.edgeClick(e)}
+        onOverEdge={e => this.edgeHover(e)}
+        onOutEdge={e => this.edgeOut(e)}
         >
 
 
@@ -180,12 +211,12 @@ class Graph extends React.Component {
         />
 
         <EdgeToolTip
-          enabled={this.state.cleanMenuEnabled}
-          x={this.state.edgeClickX}
-          y={this.state.edgeClickY}
-          source={this.state.edgeClickSource}
-          target={this.state.edgeClickTarget}
-          score={1}
+          enabled={this.state.edgeHover.enabled}
+          x={this.state.edgeHover.x}
+          y={this.state.edgeHover.y}
+          source={this.state.edgeHover.e_from}
+          target={this.state.edgeHover.e_to}
+          score={this.state.edgeHover.score}
         />
 
         {
