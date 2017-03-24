@@ -245,6 +245,10 @@ class Matching:
 
     def get_matchings(self):
         matchings = []
+        for kr_name, values in self.source_level_matchings.items():
+            for class_name, ms in values.items():
+                match = ((self.db_name, self.source_name, "_"), (kr_name, class_name))
+                matchings.append(match)
         for attr_name, values in self.attr_matchings.items():
             for kr_name, classes in values.items():
                 for class_name, ms in classes.items():
@@ -269,7 +273,7 @@ class Matching:
         return relation_matchings
 
 
-def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=5):
+def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2):
 
     def summarize(matchings):
         sequences = list()
@@ -302,14 +306,14 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=5):
     fanout = compute_fanout(matchings)
     for k, v in fanout.items():
         if len(v) > threshold_to_summarize:
-            print("Summarize: ")
-            for el in v:
-                if(el[0][2] == "qudt_units"):
-                    print("l")
-                print(str(el))
+            #print("Summarize: ")
+            #for el in v:
+            #    #if(el[0][2] == "qudt_units"):
+            #    #    print("l")
+            #    print(str(el))
             s_matching = summarize(v)  # [sch - class] -> returns only 1 !
-            print("Into: ")
-            print(str(s_matching))
+            #print("Into: ")
+            #print(str(s_matching))
             #for el in set(s_matchings):
             summarized_matchings.append(s_matching)
         else:  # just propagate matchings
@@ -504,11 +508,12 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
     # Retrieve relation names
     st = time.time()
     names = []
-    seen_fields = []
+    seen_fields = set()
     for (db_name, source_name, field_name, _) in network.iterate_values():
         orig_field_name = field_name
-        if field_name not in seen_fields:
-            seen_fields.append(field_name)  # seen already
+        key_seen = source_name + field_name
+        if key_seen not in seen_fields:
+            seen_fields.add(key_seen)  # seen already
             field_name = nlp.camelcase_to_snakecase(field_name)
             field_name = field_name.replace('-', ' ')
             field_name = field_name.replace('_', ' ')
@@ -528,7 +533,7 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
         all_classes = kr_handler.classes()
         for cl in all_classes:
             original_cl_name = cl
-            cl = nlp.camelcase_to_snakecase(cl)
+            #cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
             cl = cl.lower()
@@ -567,11 +572,12 @@ def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_thr
     # Retrieve relation names
     st = time.time()
     names = []
-    seen_fields = []
+    seen_fields = set()
     for (db_name, source_name, field_name, _) in network.iterate_values():
         orig_field_name = field_name
-        if field_name not in seen_fields:
-            seen_fields.append(field_name)  # seen already
+        key_seen = source_name + field_name
+        if key_seen not in seen_fields:
+            seen_fields.add(key_seen)  # seen already
             field_name = nlp.camelcase_to_snakecase(field_name)
             field_name = field_name.replace('-', ' ')
             field_name = field_name.replace('_', ' ')
@@ -588,8 +594,10 @@ def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_thr
     for kr_name, kr_handler in kr_handlers.items():
         all_classes = kr_handler.classes()
         for cl in all_classes:
+            if cl == "SMILES" or cl == "InChI":
+                print("a")
             original_cl_name = cl
-            cl = nlp.camelcase_to_snakecase(cl)
+            #cl = nlp.camelcase_to_snakecase(cl)
             cl = cl.replace('-', ' ')
             cl = cl.replace('_', ' ')
             cl = cl.lower()
@@ -607,6 +615,8 @@ def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_thr
 
     matchings = []
     for idx in range(0, num_attributes_inserted):  # Compare only with classes
+        if names[idx][1][2] == "standard_inchi" or names[idx][1][2] == "standard_inchi_key":
+            print("B")
         N = lsh_index.query(names[idx][2])
         for n in N:
             kind_q = names[idx][0]
@@ -629,11 +639,11 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
     # Retrieve relation names
     st = time.time()
     names = []
-    seen_sources = []
+    seen_sources = set()
     for (db_name, source_name, _, _) in network.iterate_values():
         original_source_name = source_name
         if source_name not in seen_sources:
-            seen_sources.append(source_name)  # seen already
+            seen_sources.add(source_name)  # seen already
             source_name = source_name.replace('-', ' ')
             source_name = source_name.replace('_', ' ')
             source_name = source_name.lower()
@@ -690,11 +700,11 @@ def find_relation_class_name_matchings(network, kr_handlers, minhash_sim_thresho
     # Retrieve relation names
     st = time.time()
     names = []
-    seen_sources = []
+    seen_sources = set()
     for (db_name, source_name, _, _) in network.iterate_values():
         original_source_name = source_name
         if source_name not in seen_sources:
-            seen_sources.append(source_name)  # seen already
+            seen_sources.add(source_name)  # seen already
             source_name = nlp.camelcase_to_snakecase(source_name)
             source_name = source_name.replace('-', ' ')
             source_name = source_name.replace('_', ' ')

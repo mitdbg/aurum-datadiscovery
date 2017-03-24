@@ -995,8 +995,6 @@ def generate_results_battery_parameters(path_to_serialized_model, onto_name,
                                         path_to_ontology, path_to_sem_model,
                                         path_to_results):
 
-    map_name_raw = dict()
-
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     # Create client
@@ -1016,128 +1014,158 @@ def generate_results_battery_parameters(path_to_serialized_model, onto_name,
     # Load parsed ontology
     om.add_krs([(onto_name, path_to_ontology)], parsed=True)
 
-    # Build content sim
-    om.priv_build_content_sim(0.6)
+    # # Build content sim
+    # om.priv_build_content_sim(0.6)
+    #
+    # l1_matchings = []
+    # for kr_name, kr_handler in om.kr_handlers.items():
+    #     kr_class_signatures = kr_handler.get_classes_signatures()
+    #     l1_matchings += om.compare_content_signatures(kr_name, kr_class_signatures)
+    #
+    # write_matchings_to(path_to_results + 'l1', l1_matchings)
+    #
+    # l7_matchings = matcherlib.find_hierarchy_content_fuzzy(om.kr_handlers, store_client)
+    # write_matchings_to(path_to_results + 'l7', l7_matchings)
+    #
+    # l4_matchings_01 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.1)
+    # write_matchings_to(path_to_results + 'l4_01', l4_matchings_01)
+    # l4_matchings_02 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.2)
+    # write_matchings_to(path_to_results + 'l4_02', l4_matchings_02)
+    # l4_matchings_03 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.3)
+    # write_matchings_to(path_to_results + 'l4_03', l4_matchings_03)
+    #
+    #
+    # l5_matchings_01 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.1)
+    # write_matchings_to(path_to_results + 'l5_01', l5_matchings_01)
 
-    l1_matchings = []
-    for kr_name, kr_handler in om.kr_handlers.items():
-        kr_class_signatures = kr_handler.get_classes_signatures()
-        l1_matchings += om.compare_content_signatures(kr_name, kr_class_signatures)
-
-    write_matchings_to(path_to_results + 'l1', l1_matchings)
-
-    l7_matchings = matcherlib.find_hierarchy_content_fuzzy(om.kr_handlers, store_client)
-    write_matchings_to(path_to_results + 'l7', l7_matchings)
-
-    l4_matchings_01 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.1)
-    write_matchings_to(path_to_results + 'l4_01', l4_matchings_01)
-    l4_matchings_02 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.2)
-    write_matchings_to(path_to_results + 'l4_02', l4_matchings_02)
-    l4_matchings_03 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.3)
-    write_matchings_to(path_to_results + 'l4_03', l4_matchings_03)
-
-
-    l5_matchings_01 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.1)
-    write_matchings_to(path_to_results + 'l5_01', l5_matchings_01)
     l5_matchings_02 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
                                                                         minhash_sim_threshold=0.2)
     write_matchings_to(path_to_results + 'l5_02', l5_matchings_02)
-    l5_matchings_03 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.3)
-    write_matchings_to(path_to_results + 'l5_03', l5_matchings_03)
+    exit()
 
+    # l5_matchings_03 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.3)
+    # write_matchings_to(path_to_results + 'l5_03', l5_matchings_03)
+    #
     l42_matchings_04, neg_l42_matchings_02 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
                                                                                          sem_sim_threshold=0.4,
-                                                                                         sensitivity_neg_signal=0.2)
+                                                                                         negative_signal_threshold=0.2,
+                                                                                         add_exact_matches=False,
+                                                                                         penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l42_04', l42_matchings_04)
     write_matchings_to(path_to_results + 'neg_l42_02', neg_l42_matchings_02)
-    l42_matchings_05, neg_l42_matchings_03 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
-                                                                                         sem_sim_threshold=0.5,
-                                                                                         sensitivity_neg_signal=0.3)
-    write_matchings_to(path_to_results + 'l42_05', l42_matchings_05)
-    write_matchings_to(path_to_results + 'neg_l42_03', neg_l42_matchings_03)
+    l42_matchings_04 = None
+    neg_l42_matchings_02 = None
+
+    # l42_matchings_05, neg_l42_matchings_03 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
+    #                                                                                      sem_sim_threshold=0.5,
+    #                                                                                      negative_signal_threshold=0.3,
+    #                                                                                      add_exact_matches=False,
+    #                                                                                      penalize_unknown_word=True)
+    # write_matchings_to(path_to_results + 'l42_05', l42_matchings_05)
+    # write_matchings_to(path_to_results + 'neg_l42_03', neg_l42_matchings_03)
+
     l42_matchings_06, neg_l42_matchings_04 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
                                                                                          sem_sim_threshold=0.6,
-                                                                                         sensitivity_neg_signal=0.4)
+                                                                                         negative_signal_threshold=0.4,
+                                                                                         add_exact_matches=False,
+                                                                                         penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l42_06', l42_matchings_06)
     write_matchings_to(path_to_results + 'neg_l42_04', neg_l42_matchings_04)
-    l42_matchings_07, neg_l42_matchings_05 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
-                                                                                         sem_sim_threshold=0.7,
-                                                                                         sensitivity_neg_signal=0.5)
-    write_matchings_to(path_to_results + 'l42_07', l42_matchings_07)
-    write_matchings_to(path_to_results + 'neg_l42_05', neg_l42_matchings_05)
+    l42_matchings_06 = None
+    neg_l42_matchings_04 = None
+
+    # l42_matchings_07, neg_l42_matchings_05 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
+    #                                                                                      sem_sim_threshold=0.7,
+    #                                                                                      negative_signal_threshold=0.5,
+    #                                                                                      add_exact_matches=False,
+    #                                                                                      penalize_unknown_word=True)
+    # write_matchings_to(path_to_results + 'l42_07', l42_matchings_07)
+    # write_matchings_to(path_to_results + 'neg_l42_05', neg_l42_matchings_05)
 
     l52_matchings_04, neg_l52_matchings_02 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
                                                                                           semantic_sim_threshold=0.4,
-                                                                                          sensitivity_neg_signal=0.2)
+                                                                                          negative_signal_threshold=0.2,
+                                                                                          add_exact_matches=False,
+                                                                                          penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l52_04', l52_matchings_04)
     write_matchings_to(path_to_results + 'neg_l52_02', neg_l52_matchings_02)
+    l52_matchings_04 = None
+    neg_l52_matchings_02 = None
 
-    l52_matchings_05, neg_l52_matchings_03 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
-                                                                                          semantic_sim_threshold=0.5,
-                                                                                          sensitivity_neg_signal=0.3)
-    write_matchings_to(path_to_results + 'l52_05', l52_matchings_05)
-    write_matchings_to(path_to_results + 'neg_l52_03', neg_l52_matchings_03)
+    # l52_matchings_05, neg_l52_matchings_03 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
+    #                                                                                       semantic_sim_threshold=0.5,
+    #                                                                                       negative_signal_threshold=0.3,
+    #                                                                                       penalize_unknown_word=True,
+    #                                                                                       add_exact_matches=False)
+    # write_matchings_to(path_to_results + 'l52_05', l52_matchings_05)
+    # write_matchings_to(path_to_results + 'neg_l52_03', neg_l52_matchings_03)
 
     l52_matchings_06, neg_l52_matchings_04 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
                                                                                           semantic_sim_threshold=0.6,
-                                                                                          sensitivity_neg_signal=0.4)
+                                                                                          negative_signal_threshold=0.4,
+                                                                                            add_exact_matches=False,
+                                                                                            penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l52_06', l52_matchings_06)
     write_matchings_to(path_to_results + 'neg_l52_04', neg_l52_matchings_04)
+    l52_matchings_06 = None
+    neg_l52_matchings_04 = None
 
-    l52_matchings_07, neg_l52_matchings_05 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
-                                                                                          semantic_sim_threshold=0.7,
-                                                                                          sensitivity_neg_signal=0.5)
-    write_matchings_to(path_to_results + 'l52_07', l52_matchings_07)
-    write_matchings_to(path_to_results + 'neg_l52_05', neg_l52_matchings_05)
+    # l52_matchings_07, neg_l52_matchings_05 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
+    #                                                                                       semantic_sim_threshold=0.7,
+    #                                                                                       negative_signal_threshold=0.5,
+    #                                                                                       add_exact_matches=False,
+    #                                                                                       penalize_unknown_word=True)
+    # write_matchings_to(path_to_results + 'l52_07', l52_matchings_07)
+    # write_matchings_to(path_to_results + 'neg_l52_05', neg_l52_matchings_05)
 
-    l6_matchings_03_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.3,
-                                                                   group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_03_1', l6_matchings_03_1)
-
-    l6_matchings_03_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.3,
-                                                                   group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_03_2', l6_matchings_03_2)
-
-    l6_matchings_03_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.3,
-                                                                   group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_03_3', l6_matchings_03_3)
-
-    l6_matchings_04_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.4,
-                                                                   group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_04_1', l6_matchings_04_1)
-
-    l6_matchings_04_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.4,
-                                                                   group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_04_2', l6_matchings_04_2)
-
-    l6_matchings_04_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.4,
-                                                                   group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_04_3', l6_matchings_04_3)
-
-    l6_matchings_05_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.5,
-                                                                   group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_05_1', l6_matchings_05_1)
-
-    l6_matchings_05_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.5,
-                                                                   group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_05_2', l6_matchings_05_2)
-    l6_matchings_05_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.5,
-                                                                   group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_05_3', l6_matchings_05_3)
+    # l6_matchings_03_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.3,
+    #                                                                group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_03_1', l6_matchings_03_1)
+    #
+    # l6_matchings_03_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.3,
+    #                                                                group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_03_2', l6_matchings_03_2)
+    #
+    # l6_matchings_03_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.3,
+    #                                                                group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_03_3', l6_matchings_03_3)
+    #
+    # l6_matchings_04_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.4,
+    #                                                                group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_04_1', l6_matchings_04_1)
+    #
+    # l6_matchings_04_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.4,
+    #                                                                group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_04_2', l6_matchings_04_2)
+    #
+    # l6_matchings_04_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.4,
+    #                                                                group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_04_3', l6_matchings_04_3)
+    #
+    # l6_matchings_05_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.5,
+    #                                                                group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_05_1', l6_matchings_05_1)
+    #
+    # l6_matchings_05_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.5,
+    #                                                                group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_05_2', l6_matchings_05_2)
+    # l6_matchings_05_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.5,
+    #                                                                group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_05_3', l6_matchings_05_3)
 
 
 def generate_results_battery_parameters2(path_to_serialized_model, onto_name,
@@ -1164,140 +1192,164 @@ def generate_results_battery_parameters2(path_to_serialized_model, onto_name,
 
     # Build content sim
 
-    l4_matchings_04 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.4)
-    write_matchings_to(path_to_results + 'l4_04', l4_matchings_04)
-    l4_matchings_05 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.5)
-    write_matchings_to(path_to_results + 'l4_05', l4_matchings_05)
-
-    l4_matchings_06 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.6)
-    write_matchings_to(path_to_results + 'l4_06', l4_matchings_06)
-
-    l4_matchings_07 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.7)
-    write_matchings_to(path_to_results + 'l4_07', l4_matchings_07)
-
-    l4_matchings_08 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                minhash_sim_threshold=0.8)
-    write_matchings_to(path_to_results + 'l4_08', l4_matchings_08)
-
-    l4_matchings_09 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.9)
-    write_matchings_to(path_to_results + 'l4_09', l4_matchings_09)
-
-    l5_matchings_04 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.4)
-    write_matchings_to(path_to_results + 'l5_04', l5_matchings_04)
-
-    l5_matchings_05 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.5)
-    write_matchings_to(path_to_results + 'l5_05', l5_matchings_05)
-
-    l5_matchings_06 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.6)
-    write_matchings_to(path_to_results + 'l5_06', l5_matchings_06)
-
-    l5_matchings_07 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                        minhash_sim_threshold=0.7)
-    write_matchings_to(path_to_results + 'l5_07', l5_matchings_07)
-
-    l5_matchings_08 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.8)
-    write_matchings_to(path_to_results + 'l5_08', l5_matchings_08)
-
-    l5_matchings_09 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
-                                                                    minhash_sim_threshold=0.9)
-    write_matchings_to(path_to_results + 'l5_09', l5_matchings_09)
+    # l4_matchings_04 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.4)
+    # write_matchings_to(path_to_results + 'l4_04', l4_matchings_04)
+    # l4_matchings_05 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.5)
+    # write_matchings_to(path_to_results + 'l4_05', l4_matchings_05)
+    #
+    # l4_matchings_06 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.6)
+    # write_matchings_to(path_to_results + 'l4_06', l4_matchings_06)
+    #
+    # l4_matchings_07 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.7)
+    # write_matchings_to(path_to_results + 'l4_07', l4_matchings_07)
+    #
+    # l4_matchings_08 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                             minhash_sim_threshold=0.8)
+    # write_matchings_to(path_to_results + 'l4_08', l4_matchings_08)
+    #
+    # l4_matchings_09 = matcherlib.find_relation_class_name_matchings(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.9)
+    # write_matchings_to(path_to_results + 'l4_09', l4_matchings_09)
+    #
+    # l5_matchings_04 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.4)
+    # write_matchings_to(path_to_results + 'l5_04', l5_matchings_04)
+    #
+    # l5_matchings_05 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.5)
+    # write_matchings_to(path_to_results + 'l5_05', l5_matchings_05)
+    #
+    # l5_matchings_06 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.6)
+    # write_matchings_to(path_to_results + 'l5_06', l5_matchings_06)
+    #
+    # l5_matchings_07 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                     minhash_sim_threshold=0.7)
+    # write_matchings_to(path_to_results + 'l5_07', l5_matchings_07)
+    #
+    # l5_matchings_08 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.8)
+    # write_matchings_to(path_to_results + 'l5_08', l5_matchings_08)
+    #
+    # l5_matchings_09 = matcherlib.find_relation_class_attr_name_matching(network, om.kr_handlers,
+    #                                                                 minhash_sim_threshold=0.9)
+    # write_matchings_to(path_to_results + 'l5_09', l5_matchings_09)
 
     l42_matchings_08, neg_l42_matchings_01 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
                                                                                                sem_sim_threshold=0.8,
-                                                                                               sensitivity_neg_signal=0.1)
+                                                                                               negative_signal_threshold=0.1,
+                                                                                               add_exact_matches=False,
+                                                                                               penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l42_08', l42_matchings_08)
     write_matchings_to(path_to_results + 'neg_l42_01', neg_l42_matchings_01)
+    l42_matchings_08 = None
+    neg_l42_matchings_01 = None
 
     l42_matchings_09, neg_l42_matchings_06 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
                                                                                                sem_sim_threshold=0.9,
-                                                                                               sensitivity_neg_signal=0.6)
+                                                                                               negative_signal_threshold=0.6,
+                                                                                               add_exact_matches=False,
+                                                                                               penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l42_09', l42_matchings_09)
     write_matchings_to(path_to_results + 'neg_l42_06', neg_l42_matchings_06)
+    l42_matchings_09 = None
+    neg_l42_matchings_06 = None
 
     l42_matchings_03, neg_l42_matchings_07 = matcherlib.find_relation_class_name_sem_matchings(network, om.kr_handlers,
                                                                                                sem_sim_threshold=0.3,
-                                                                                               sensitivity_neg_signal=0.7)
+                                                                                               negative_signal_threshold=0.7,
+                                                                                               add_exact_matches=False,
+                                                                                               penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l42_03', l42_matchings_03)
     write_matchings_to(path_to_results + 'neg_l42_07', neg_l42_matchings_07)
+    l42_matchings_03 = None
+    neg_l42_matchings_07 = None
 
     l52_matchings_08, neg_l52_matchings_01 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
                                                                                                     semantic_sim_threshold=0.8,
-                                                                                                    sensitivity_neg_signal=0.1)
+                                                                                                    negative_signal_threshold=0.1,
+                                                                                                    add_exact_matches=False,
+                                                                                                    penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l52_08', l52_matchings_08)
     write_matchings_to(path_to_results + 'neg_l52_01', neg_l52_matchings_01)
+    l52_matchings_08 = None
+    neg_l52_matchings_01 = None
 
     l52_matchings_09, neg_l52_matchings_06 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
                                                                                                     semantic_sim_threshold=0.9,
-                                                                                                    sensitivity_neg_signal=0.6)
+                                                                                                    negative_signal_threshold=0.6,
+                                                                                                    add_exact_matches=False,
+                                                                                                    penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l52_09', l52_matchings_09)
     write_matchings_to(path_to_results + 'neg_l52_06', neg_l52_matchings_06)
+    l52_matchings_09 = None
+    neg_l52_matchings_06 = None
 
     l52_matchings_03, neg_l52_matchings_07 = matcherlib.find_relation_class_attr_name_sem_matchings(network, om.kr_handlers,
                                                                                                     semantic_sim_threshold=0.3,
-                                                                                                    sensitivity_neg_signal=0.7)
+                                                                                                    negative_signal_threshold=0.7,
+                                                                                                    add_exact_matches=False,
+                                                                                                    penalize_unknown_word=True)
     write_matchings_to(path_to_results + 'l52_03', l52_matchings_03)
     write_matchings_to(path_to_results + 'neg_l52_07', neg_l52_matchings_07)
+    l52_matchings_03 = None
+    neg_l52_matchings_07 = None
 
-    l6_matchings_02_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.2,
-                                                                        group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_02_1', l6_matchings_02_1)
-
-    l6_matchings_02_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.2,
-                                                                        group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_02_2', l6_matchings_02_2)
-
-    l6_matchings_02_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.2,
-                                                                        group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_02_3', l6_matchings_02_3)
-
-    l6_matchings_06_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.6,
-                                                                        group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_06_1', l6_matchings_06_1)
-
-    l6_matchings_06_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.6,
-                                                                        group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_06_2', l6_matchings_06_2)
-
-    l6_matchings_06_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.6,
-                                                                        group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_06_3', l6_matchings_06_3)
-
-    l6_matchings_07_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.7,
-                                                                        group_size_cutoff=1)
-    write_matchings_to(path_to_results + 'l6_07_1', l6_matchings_07_1)
-
-    l6_matchings_07_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.7,
-                                                                        group_size_cutoff=2)
-    write_matchings_to(path_to_results + 'l6_07_2', l6_matchings_07_2)
-
-    l6_matchings_07_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
-                                                                        sem_sim_threshold=0.7,
-                                                                        group_size_cutoff=3)
-    write_matchings_to(path_to_results + 'l6_07_3', l6_matchings_07_3)
+    # l6_matchings_02_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.2,
+    #                                                                     group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_02_1', l6_matchings_02_1)
+    #
+    # l6_matchings_02_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.2,
+    #                                                                     group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_02_2', l6_matchings_02_2)
+    #
+    # l6_matchings_02_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.2,
+    #                                                                     group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_02_3', l6_matchings_02_3)
+    #
+    # l6_matchings_06_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.6,
+    #                                                                     group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_06_1', l6_matchings_06_1)
+    #
+    # l6_matchings_06_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.6,
+    #                                                                     group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_06_2', l6_matchings_06_2)
+    #
+    # l6_matchings_06_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.6,
+    #                                                                     group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_06_3', l6_matchings_06_3)
+    #
+    # l6_matchings_07_1, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.7,
+    #                                                                     group_size_cutoff=1)
+    # write_matchings_to(path_to_results + 'l6_07_1', l6_matchings_07_1)
+    #
+    # l6_matchings_07_2, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.7,
+    #                                                                     group_size_cutoff=2)
+    # write_matchings_to(path_to_results + 'l6_07_2', l6_matchings_07_2)
+    #
+    # l6_matchings_07_3, table_groups = matcherlib.find_sem_coh_matchings(network, om.kr_handlers,
+    #                                                                     sem_sim_threshold=0.7,
+    #                                                                     group_size_cutoff=3)
+    # write_matchings_to(path_to_results + 'l6_07_3', l6_matchings_07_3)
 
 
 def read(path):
     matchings = []
     with open(path, 'r') as f:
-        lines = f.readlines()
-        for l in lines:
+        #lines = f.readlines()
+        for l in f:
             tokens = l.split("==>>")
             sch = tokens[0]
             cla = tokens[1]
@@ -1308,6 +1360,163 @@ def read(path):
             matching_format = ((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1]))
             matchings.append(matching_format)
     return matchings
+
+
+def local_test(path_to_raw_data, path_to_ground_truth_file):
+    # Getting ground truth
+    with open(path_to_ground_truth_file, 'r') as gt:
+        ground_truth_matchings_strings = gt.readlines()
+
+    def parse_strings(list_of_strings):
+        # format is: db %%% table %%% attr ==>> onto %%% class_name %%% list_of_matchers
+        matchings = []
+        for l in list_of_strings:
+            tokens = l.split("==>>")
+            sch = tokens[0]
+            cla = tokens[1]
+            sch_tokens = sch.split("%%%")
+            sch_tokens = [t.strip() for t in sch_tokens]
+            cla_tokens = cla.split("%%%")
+            cla_tokens = [t.strip() for t in cla_tokens]
+            matching_format = (((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])))
+            matchings.append(matching_format)
+        return matchings
+
+    ground_truth_matchings = parse_strings(ground_truth_matchings_strings)
+
+    # Deserialize model
+    network = fieldnetwork.deserialize_network("../models/chembl22/")
+    # Create client
+    store_client = StoreHandler()
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object("../models/chembl22/" + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object("../models/chembl22/" + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    def list_from_dict(combined):
+        l = []
+        for k, v in combined.items():
+            matchings = v.get_matchings()
+            for el in matchings:
+                l.append(el)
+        return l
+
+    def syn_and_we(l4, l5, l42, l52, name):
+        all_matchings = defaultdict(list)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
+        combined = matcherlib.combine_matchings(all_matchings)
+        combined_list = list_from_dict(combined)
+
+        print(str(len(combined_list)))
+        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
+
+        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
+        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
+        print(name + ", " + str(precision) + ", " + str(recall))
+        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+        return combined_list, combined_sum
+
+    def test1(l4, l5, nl42, nl52, name, l42=[], l52=[], l1=[], l7=[]):
+
+        l4_dict = dict()
+        l4_cancelled = []
+        for matching in l4:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl42:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4_cancelled.append(m)
+                l4.remove(m)
+        print("total l4 cancelled: " + str(total_cancelled))
+
+        print("#######")
+        print("cancelled matching in gts: ")
+        gt_set = set(ground_truth_matchings)
+        for m in l4_cancelled:
+            if m in gt_set:
+                print(m)
+        print("#######")
+
+        l5_dict = dict()
+        l5_cancelled = []
+        for matching in l5:
+            l5_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl52:
+            if m in l5_dict:
+                total_cancelled += 1
+                l5_cancelled.append(m)
+                l5.remove(m)
+        print("total l5 cancelled: " + str(total_cancelled))
+
+        print("#######")
+        print("cancelled matching in gts: ")
+        gt_set = set(ground_truth_matchings)
+        for m in l5_cancelled:
+            if m in gt_set:
+                print(m)
+        print("#######")
+
+        #l42 = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], l42)
+        #l52 = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], l52)
+
+        all_matchings = defaultdict(list)
+        all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1
+        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
+
+        combined = matcherlib.combine_matchings(all_matchings)
+        combined_list = list_from_dict(combined)
+
+        print(str(len(combined_list)))
+        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
+
+        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
+        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
+        print(name + ", " + str(precision) + ", " + str(recall))
+        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+        return combined_list, combined_sum
+
+    l1 = read(path_to_raw_data + "l1")
+    l7 = read(path_to_raw_data + "l7")
+    l4 = read(path_to_raw_data + "l4_02")  #l4_02 0.015/0.46 - 0.33/0.38 (summary=2)
+    l5 = read(path_to_raw_data + "l5_02")  #l5_02
+    l42 = read(path_to_raw_data + "l42_04")  #l42_05
+    l52 = read(path_to_raw_data + "l52_04")  #l52_05
+    nl42 = read(path_to_raw_data + "neg_l42_05")  #neg_l42_05
+    nl52 = read(path_to_raw_data + "neg_l52_05")  #neg_l42_05
+
+    #combined_list, combined_sum = syn_and_we(l4, l5, l42, l52, "syn_and_we_02_03")
+    combined_list, combined_sum = test1(l4, l5, nl42, nl52, "test1", l42=l42, l52=l52, l1=l1, l7=l7)
+
+    print("num combined_list: " + str(len(combined_list)))
+    for m in combined_list:
+        print(str(m))
+
+    print("the matchings that we could not find")
+    print("#############")
+    gt_set = set(ground_truth_matchings)
+    for m in gt_set:
+        if m not in combined_list:
+            print(m)
+    print("#############")
+
+    print("SUMMARY")
+
+    print("num combined_sum: " + str(len(combined_sum)))
+    for m in combined_sum:
+        print(str(m))
 
 
 def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
@@ -1355,11 +1564,11 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
     neg_l42_07 = read(path_to_raw_data + "neg_l42_07")
     neg_l52_01 = read(path_to_raw_data + "neg_l52_01")
     neg_l52_02 = read(path_to_raw_data + "neg_l52_02")
-    neg_l52_03 = read(path_to_raw_data + "neg_l52_03")
-    neg_l52_04 = read(path_to_raw_data + "neg_l52_04")
-    neg_l52_05 = read(path_to_raw_data + "neg_l52_05")
-    neg_l52_06 = read(path_to_raw_data + "neg_l52_06")
-    neg_l52_07 = read(path_to_raw_data + "neg_l52_07")
+    # neg_l52_03 = read(path_to_raw_data + "neg_l52_03")
+    # neg_l52_04 = read(path_to_raw_data + "neg_l52_04")
+    # neg_l52_05 = read(path_to_raw_data + "neg_l52_05")
+    # neg_l52_06 = read(path_to_raw_data + "neg_l52_06")
+    # neg_l52_07 = read(path_to_raw_data + "neg_l52_07")
     l6_02_1 = read(path_to_raw_data + "l6_02_1")
     l6_02_2 = read(path_to_raw_data + "l6_02_1")
     l6_02_3 = read(path_to_raw_data + "l6_02_1")
@@ -1438,18 +1647,6 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
         print(name + ", " + str(precision) + ", " + str(recall))
         print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
 
-    print("Syn only")
-    # l4 and l5 01
-    syn_only(l4_matchings_01, l5_matchings_01, "syn_01")
-    syn_only(l4_matchings_02, l5_matchings_02, "syn_02")
-    syn_only(l4_matchings_03, l5_matchings_03, "syn_03")
-    syn_only(l4_matchings_04, l5_matchings_04, "syn_04")
-    syn_only(l4_matchings_05, l5_matchings_05, "syn_05")
-    syn_only(l4_matchings_06, l5_matchings_06, "syn_06")
-    syn_only(l4_matchings_07, l5_matchings_07, "syn_07")
-    syn_only(l4_matchings_08, l5_matchings_08, "syn_08")
-    syn_only(l4_matchings_09, l5_matchings_09, "syn_09")
-
     def syn_and_we(l4, l5, l42, l52, name):
         all_matchings = defaultdict(list)
         all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
@@ -1466,6 +1663,142 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
         precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
         print(name + ", " + str(precision) + ", " + str(recall))
         print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+
+    def syn_we_c4(l4, l5, l42, l52, nl42, name):
+        l4_dict = dict()
+        for matching in l4:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl42:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4.remove(m)
+
+        all_matchings = defaultdict(list)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
+        combined = matcherlib.combine_matchings(all_matchings)
+        combined_list = list_from_dict(combined)
+
+        print(str(len(combined_list)))
+        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
+
+        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
+        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
+        print(name + ", " + str(precision) + ", " + str(recall))
+        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+
+    def syn_we_c4_c5(l4, l5, l42, l52, nl42, nl52, name):
+        l4_dict = dict()
+        for matching in l4:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl42:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4.remove(m)
+
+        l5_dict = dict()
+        for matching in l5:
+            l5_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl52:
+            if m in l5_dict:
+                total_cancelled += 1
+                l5.remove(m)
+
+        all_matchings = defaultdict(list)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
+        combined = matcherlib.combine_matchings(all_matchings)
+        combined_list = list_from_dict(combined)
+
+        print(str(len(combined_list)))
+        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
+
+        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
+        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
+        print(name + ", " + str(precision) + ", " + str(recall))
+        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+
+    def syn_we_c4_c5_c6(l4, l5, l6, l42, l52, nl42, nl52, name):
+        l4_dict = dict()
+        for matching in l4:
+            l4_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl42:
+            if m in l4_dict:
+                total_cancelled += 1
+                l4.remove(m)
+
+        l5_dict = dict()
+        for matching in l5:
+            l5_dict[matching] = 1
+        total_cancelled = 0
+        for m in nl52:
+            if m in l5_dict:
+                total_cancelled += 1
+                l5.remove(m)
+
+        l6_dict = dict()
+        for matching in l6:
+            l6_dict[matching] = 1
+
+        # curate l42 with l6
+        removed_l42 = 0
+        for m in l42:
+            if m not in l6_dict:
+                removed_l42 += 1
+                l42.remove(m)
+        print("rem-l42: " + str(removed_l42))
+
+        # curate l52 with l6
+        removed_l52 = 0
+        for m in l52.keys():
+            if m not in l6_dict:
+                db_to_remove, rel_to_remove, _ = m[0]
+                for el in l52:
+                    sch, cla = el
+                    db, relation, attr = sch
+                    if db == db_to_remove and relation == rel_to_remove:
+                        if el in l52:
+                            removed_l52 += 1
+                            l52.remove(el)
+        print("rem-l52: " + str(removed_l52))
+
+        all_matchings = defaultdict(list)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
+        combined = matcherlib.combine_matchings(all_matchings)
+        combined_list = list_from_dict(combined)
+
+        print(str(len(combined_list)))
+        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
+
+        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
+        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
+        print(name + ", " + str(precision) + ", " + str(recall))
+        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+
+    print("Syn only")
+    # l4 and l5 01
+    syn_only(l4_matchings_01, l5_matchings_01, "syn_01")
+    syn_only(l4_matchings_02, l5_matchings_02, "syn_02")
+    syn_only(l4_matchings_03, l5_matchings_03, "syn_03")
+    syn_only(l4_matchings_04, l5_matchings_04, "syn_04")
+    syn_only(l4_matchings_05, l5_matchings_05, "syn_05")
+    syn_only(l4_matchings_06, l5_matchings_06, "syn_06")
+    syn_only(l4_matchings_07, l5_matchings_07, "syn_07")
+    syn_only(l4_matchings_08, l5_matchings_08, "syn_08")
+    syn_only(l4_matchings_09, l5_matchings_09, "syn_09")
+
+    # syn and we
 
     syn_and_we(l4_matchings_01, l5_matchings_01, l42_matchings_03, l52_matchings_03, "syn_and_we_01_03")
     syn_and_we(l4_matchings_02, l5_matchings_02, l42_matchings_03, l52_matchings_03, "syn_and_we_02_03")
@@ -1537,31 +1870,7 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
     syn_and_we(l4_matchings_08, l5_matchings_08, l42_matchings_09, l52_matchings_09, "syn_and_we_08_09")
     syn_and_we(l4_matchings_09, l5_matchings_09, l42_matchings_09, l52_matchings_09, "syn_and_we_09_09")
 
-    def syn_we_c4(l4, l5, l42, l52, nl42, name):
-        l4_dict = dict()
-        for matching in l4:
-            l4_dict[matching] = 1
-        total_cancelled = 0
-        for m in nl42:
-            if m in l4_dict:
-                total_cancelled += 1
-                l4.remove(m)
-
-        all_matchings = defaultdict(list)
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
-        combined = matcherlib.combine_matchings(all_matchings)
-        combined_list = list_from_dict(combined)
-
-        print(str(len(combined_list)))
-        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
-
-        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
-        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
-        print(name + ", " + str(precision) + ", " + str(recall))
-        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+    # syn and we c4
 
     syn_we_c4(l4_matchings_01, l5_matchings_01, l42_matchings_03, l52_matchings_03, neg_l42_01, "basic_01_03_c4_1")
     syn_we_c4(l4_matchings_02, l5_matchings_02, l42_matchings_03, l52_matchings_03, neg_l42_01, "basic_02_03_c4_1")
@@ -1853,40 +2162,7 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
     syn_we_c4(l4_matchings_08, l5_matchings_08, l42_matchings_09, l52_matchings_09, neg_l42_03, "basic_08_09_c4_3")
     syn_we_c4(l4_matchings_09, l5_matchings_09, l42_matchings_09, l52_matchings_09, neg_l42_03, "basic_09_09_c4_3")
 
-    def syn_we_c4_c5(l4, l5, l42, l52, nl42, nl52, name):
-        l4_dict = dict()
-        for matching in l4:
-            l4_dict[matching] = 1
-        total_cancelled = 0
-        for m in nl42:
-            if m in l4_dict:
-                total_cancelled += 1
-                l4.remove(m)
-
-        l5_dict = dict()
-        for matching in l5:
-            l5_dict[matching] = 1
-        total_cancelled = 0
-        for m in nl52:
-            if m in l5_dict:
-                total_cancelled += 1
-                l5.remove(m)
-
-        all_matchings = defaultdict(list)
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
-        combined = matcherlib.combine_matchings(all_matchings)
-        combined_list = list_from_dict(combined)
-
-        print(str(len(combined_list)))
-        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
-
-        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
-        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
-        print(name + ", " + str(precision) + ", " + str(recall))
-        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
+    # syn and we c4 and c5
 
     syn_we_c4_c5(l4_matchings_01, l5_matchings_01, l42_matchings_03, l52_matchings_03, neg_l42_01, neg_l52_01,"basic_01_03_c45_1")
     syn_we_c4_c5(l4_matchings_02, l5_matchings_02, l42_matchings_03, l52_matchings_03, neg_l42_01, neg_l52_01,"basic_02_03_c45_1")
@@ -2031,67 +2307,6 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
     syn_we_c4_c5(l4_matchings_09, l5_matchings_09, l42_matchings_09, l52_matchings_09, neg_l42_02, neg_l52_02, "basic_09_09_c45_1")
 
     # cancel l6
-
-    def syn_we_c4_c5_c6(l4, l5, l6, l42, l52, nl42, nl52, name):
-        l4_dict = dict()
-        for matching in l4:
-            l4_dict[matching] = 1
-        total_cancelled = 0
-        for m in nl42:
-            if m in l4_dict:
-                total_cancelled += 1
-                l4.remove(m)
-
-        l5_dict = dict()
-        for matching in l5:
-            l5_dict[matching] = 1
-        total_cancelled = 0
-        for m in nl52:
-            if m in l5_dict:
-                total_cancelled += 1
-                l5.remove(m)
-
-        l6_dict = dict()
-        for matching in l6:
-            l6_dict[matching] = 1
-
-        # curate l42 with l6
-        removed_l42 = 0
-        for m in l42:
-            if m not in l6_dict:
-                removed_l42 += 1
-                l42.remove(m)
-        print("rem-l42: " + str(removed_l42))
-
-        # curate l52 with l6
-        removed_l52 = 0
-        for m in l52.keys():
-            if m not in l6_dict:
-                db_to_remove, rel_to_remove, _ = m[0]
-                for el in l52:
-                    sch, cla = el
-                    db, relation, attr = sch
-                    if db == db_to_remove and relation == rel_to_remove:
-                        if el in l52:
-                            removed_l52 += 1
-                            l52.remove(el)
-        print("rem-l52: " + str(removed_l52))
-
-        all_matchings = defaultdict(list)
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52
-        combined = matcherlib.combine_matchings(all_matchings)
-        combined_list = list_from_dict(combined)
-
-        print(str(len(combined_list)))
-        precision, recall = compute_pr_matchings(ground_truth_matchings, combined_list)
-
-        combined_sum = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], combined_list)
-        precision_sum, recall_sum = compute_pr_matchings(ground_truth_matchings, combined_sum)
-        print(name + ", " + str(precision) + ", " + str(recall))
-        print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
 
     syn_we_c4_c5_c6(l4_matchings_01, l5_matchings_01, l6_02_1, l42_matchings_03, l52_matchings_03, neg_l42_01, neg_l52_01, "basic_01_03_c456_02_1")
     syn_we_c4_c5_c6(l4_matchings_02, l5_matchings_02, l6_02_1, l42_matchings_03, l52_matchings_03, neg_l42_01, neg_l52_01, "basic_02_03_c456_02_1")
@@ -2534,8 +2749,11 @@ if __name__ == "__main__":
     #                         "../glove/glove.6B.100d.txt",
     #                         "results/")
 
-    #generate_results_battery_parameters2("../models/chembl22/", "efo", "cache_onto/efo.pkl",
-    #                                    "../glove/glove.6B.100d.txt", "raw/")
+    # generate_results_battery_parameters("../models/chembl22/", "efo", "cache_onto/efo.pkl",
+    #                                     "../glove/glove.6B.100d.txt", "raw/")
+    #
+    # generate_results_battery_parameters2("../models/chembl22/", "efo", "cache_onto/efo.pkl",
+    #                                     "../glove/glove.6B.100d.txt", "raw/")
 
     #best_config("../models/chembl22/", "efo", "cache_onto/efo.pkl", "../glove/glove.6B.100d.txt", "results/")
 
@@ -2546,4 +2764,7 @@ if __name__ == "__main__":
 
     #check_quality_results("MATCHINGS_GROUND_TRUTH_CHEMBL", "results/")
 
-    combine_and_report_results("raw/", "MATCHINGS_GROUND_TRUTH_CHEMBL")
+    #combine_and_report_results("raw/", "MATCHINGS_GROUND_TRUTH_CHEMBL")
+
+    local_test("raw/", "MATCHINGS_GROUND_TRUTH_CHEMBL")
+

@@ -288,7 +288,11 @@ def groupwise_semantic_sim(sv1, sv2, threshold):
         to_ret = True  # if at least we iterate once, the default changes to True
     return to_ret
 
-def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact_matches=True, signal_strength_threshold=0.5):
+
+def compute_semantic_similarity(sv1, sv2,
+                                penalize_unknown_word=False,
+                                add_exact_matches=True,
+                                signal_strength_threshold=0.5):
     total_comparisons = 0
     skipped_comparisons = 0
     accum = []
@@ -312,7 +316,7 @@ def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact
     # in this case we cannot judge the semantic as the word is not in the dict
     if total_comparisons == 0:
         # capturing the case of [] - [a, ...n] when n > 1: intuition is that many words convey a lot of "meaning"
-        if len(sv1) > 1 or len(sv2) > 1:
+        if len(sv1) > 2 or len(sv2) > 2:
             return sim, True
         return sim, strong_signal
     total_of_all_comparisons = skipped_comparisons + total_comparisons
@@ -325,6 +329,7 @@ def compute_semantic_similarity(sv1, sv2, penalize_unknown_word=False, add_exact
         strong_signal = True
 
     return sim, strong_signal
+
 
 def __compute_semantic_similarity(sv1, sv2):
     products = 0
