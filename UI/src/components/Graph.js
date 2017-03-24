@@ -179,6 +179,15 @@ class Graph extends React.Component {
           target={this.state.edgeClickTarget}
         />
 
+        <EdgeToolTip
+          enabled={this.state.cleanMenuEnabled}
+          x={this.state.edgeClickX}
+          y={this.state.edgeClickY}
+          source={this.state.edgeClickSource}
+          target={this.state.edgeClickTarget}
+          score={1}
+        />
+
         {
           // cycle through that are passed as selected items
           Object.keys(this.props.selection).map(

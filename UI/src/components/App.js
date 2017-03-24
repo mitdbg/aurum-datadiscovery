@@ -93,7 +93,8 @@ class App extends React.Component {
           break;
       }
       const eid = this.state.queryEdgeType + ' | ' + this.state.originNode + ' | ' + tableName;
-      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, eid, color);
+      const score = selected.score;
+      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, eid, score, color);
     }
 
     this.setState({ selection });
@@ -109,10 +110,12 @@ class App extends React.Component {
     this.setState({selection : {}})
   }
 
-  addGraphEdge(source, target, label, eid, color){
+  // add an edge to the state. Edges receive scores because
+  // different relationships to B can have diffferent scores.
+  addGraphEdge(source, target, label, eid, score, color){
     var graphEdges = this.state.graphEdges;
 
-    const edge = {source: source, target: target, label: label, eid: eid, color: color};
+    const edge = {source: source, target: target, label: label, eid: eid, score: score, color: color};
 
     // check to see if an edge with this edge id already exists. If so, don't add it.
     for (var i = 0; i < this.state.graphEdges.length; i++) {
