@@ -21,7 +21,21 @@ class EdgeToolTip extends React.Component {
     // console.log(xScalingFactor + ', ' + yScalingFactor);
 
 
-    const text = this.props.label;
+    const labelText = this.props.label;
+    let fromText;
+    let toText;
+    if (this.props.formField && this.props.formField !== ''){
+      fromText = 'from: ' + this.props.fromField;
+    } else{
+      fromText = 'from: ' + this.props.fromSource;
+    }
+
+    if (this.props.formField && this.props.formField !== ''){
+      toText = 'to: ' + this.props.toField;
+    } else{
+      toText = 'to: ' + this.props.toSource;
+    }
+
 
     if(this.props.enabled === true) {
       return(
@@ -33,7 +47,12 @@ class EdgeToolTip extends React.Component {
             left: this.props.x/2 + this.state.width/2 + 'px',
             width: this.state.width + 'px',
             }}
-          >{text}</div>
+          >
+          <div>{labelText}</div>
+          <div>{fromText}</div>
+          <div>{toText}</div>
+
+          </div>
       );
     } else{
       return( <div className="display-none"></div> );
@@ -45,8 +64,10 @@ EdgeToolTip.propTypes = {
   x: React.PropTypes.number, // coordinates of the hover event
   y: React.PropTypes.number, // coordinates of the hover event
   label: React.PropTypes.string, // type of edge
-  source: React.PropTypes.string, // the edge hover goes from here...
-  target: React.PropTypes.string, // ...to here
+  fromSource: React.PropTypes.string, // the edge hover goes from here...
+  fromField: React.PropTypes.string,
+  toSource: React.PropTypes.string, // ...to here
+  toField: React.PropTypes.string,
   score: React.PropTypes.number, // the relevance score the edge has
   enabled: React.PropTypes.bool.isRequired, // should the menu display?
 }

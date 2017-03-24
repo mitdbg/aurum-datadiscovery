@@ -37,7 +37,7 @@ class CleanMenu extends React.Component {
           onClick={this.buttonClick}
           style={
             {top: this.props.y/2 + 'px',
-            left: this.props.x/2 + this.state.width/2 + 'px',
+            left: this.props.x/2 + this.state.width/2 + 145 + 'px',
             width: this.state.width + 'px',
             }}
           >Clean Menu Visible</div>

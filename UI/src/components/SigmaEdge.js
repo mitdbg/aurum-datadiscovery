@@ -9,8 +9,10 @@ class SigmaEdge extends React.Component {
     // This puts edges on the graph
     props.sigma.graph.addEdge({
       id:props.edge.eid,
-      source:props.edge.source,
-      target:props.edge.target,
+      source:props.edge.source, // tablename that the edge begins at
+      fromField: props.edge.fromField, // fieldname that the edge begins at
+      target: props.edge.target, // tablename that the edge ends at
+      toField: props.edge.toField, // fieldname that the edge ends at
       label:props.edge.label,
       score:props.edge.score,
       color: props.edge.color,

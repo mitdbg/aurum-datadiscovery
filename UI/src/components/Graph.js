@@ -37,8 +37,10 @@ class Graph extends React.Component {
       edgeMenuY: 0, // y coordinate of where to put the edge menu
       edgeHover: {x: 0,
                   y:0,
-                  e_from: '',
-                  e_to: '',
+                  e_from_source: '',
+                  e_from_field: '',
+                  e_to_source: '',
+                  e_to_field: '',
                   label: '',
                   score: 0,
                   enabled: false
@@ -150,8 +152,10 @@ class Graph extends React.Component {
       x: e.data.captor.clientX,
       y: e.data.captor.clientY,
       label: e.data.edge.label,
-      e_from: e.data.edge.source,
-      e_to: e.data.edge.target,
+      e_from_source: e.data.edge.source,
+      e_from_field: e.data.edge.fromField,
+      e_to_source: e.data.edge.target,
+      e_to_field: e.data.edge.toField,
       score: e.data.edge.score,
       enabled: true};
 
@@ -215,8 +219,10 @@ class Graph extends React.Component {
           label={this.state.edgeHover.label}
           x={this.state.edgeHover.x}
           y={this.state.edgeHover.y}
-          source={this.state.edgeHover.e_from}
-          target={this.state.edgeHover.e_to}
+          fromSource={this.state.edgeHover.e_from_source}
+          fromField={this.state.edgeHover.e_from_field}
+          toSource={this.state.edgeHover.e_to_source}
+          toField={this.state.edgeHover.e_to_field}
           score={this.state.edgeHover.score}
         />
 

@@ -62,7 +62,7 @@ class App extends React.Component {
   // Needs additional setting and getting
   addSelection(selected) {
     // get the tableName/Key
-    const { nid, source_name: tableName } = selected;
+    const { nid, source_name: tableName, field_name:fieldName } = selected;
 
     const selection = {...this.state.selection};
 
@@ -95,7 +95,7 @@ class App extends React.Component {
       }
       const eid = this.state.queryEdgeType + ' | ' + this.state.originNode + ' | ' + tableName;
       const score = selected.score;
-      this.addGraphEdge(this.state.originNode, this.state.originField, tableName, this.state.queryEdgeType, eid, score, color);
+      this.addGraphEdge(this.state.originNode, this.state.originField, tableName, fieldName, this.state.queryEdgeType, eid, score, color);
     }
 
     this.setState({ selection });
@@ -113,10 +113,10 @@ class App extends React.Component {
 
   // add an edge to the state. Edges receive scores because
   // different relationships to B can have diffferent scores.
-  addGraphEdge(source, field, target, label, eid, score, color){
+  addGraphEdge(source, fromField, target, toField, label, eid, score, color){
     var graphEdges = this.state.graphEdges;
 
-    const edge = {source: source, target: target, label: label, eid: eid, score: score, color: color};
+    const edge = {source: source, fromField: fromField, target: target, toField: toField, label: label, eid: eid, score: score, color: color};
 
     // check to see if an edge with this edge id already exists. If so, don't add it.
     for (var i = 0; i < this.state.graphEdges.length; i++) {
