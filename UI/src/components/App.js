@@ -1,3 +1,5 @@
+/*jshint esversion: 6 */
+
 import React from 'react';
 import Search from './Search';
 import Results from './Results';
@@ -90,14 +92,14 @@ class App extends React.Component {
           color = 'lightgray';
           break;
       }
-
-      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, `$(this.state.queryEdgeType) $(this.state.originNode) $(tableName)`, color);
+      const eid = this.state.queryEdgeType + ' | ' + this.state.originNode + ' | ' + tableName;
+      this.addGraphEdge(this.state.originNode, tableName, this.state.queryEdgeType, eid, color);
     }
 
     this.setState({ selection });
   }
 
-  removeSelection(nid) {
+  removeSelection(nid){
     const selection = {...this.state.selection};
     delete selection[nid];
     this.setState({ selection }) ;
