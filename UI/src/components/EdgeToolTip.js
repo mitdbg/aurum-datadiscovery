@@ -21,7 +21,7 @@ class EdgeToolTip extends React.Component {
     // console.log(xScalingFactor + ', ' + yScalingFactor);
 
 
-    const text = 'this is the score';
+    const text = this.props.label;
 
     if(this.props.enabled === true) {
       return(
@@ -44,10 +44,10 @@ class EdgeToolTip extends React.Component {
 EdgeToolTip.propTypes = {
   x: React.PropTypes.number, // coordinates of the hover event
   y: React.PropTypes.number, // coordinates of the hover event
-  label: React.PropTypes.string,
+  label: React.PropTypes.string, // type of edge
   source: React.PropTypes.string, // the edge hover goes from here...
   target: React.PropTypes.string, // ...to here
-  score: React.PropTypes.string, // the relevance score the edge has
+  score: React.PropTypes.number, // the relevance score the edge has
   enabled: React.PropTypes.bool.isRequired, // should the menu display?
 }
 

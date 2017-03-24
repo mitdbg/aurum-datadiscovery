@@ -1,3 +1,4 @@
+/*jshint esversion: 6 */
 import React from 'react';
 
 class FieldSource extends React.Component {

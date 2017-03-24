@@ -1,3 +1,4 @@
+/*jshint esversion: 6 */
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Source from './Source';
@@ -5,7 +6,7 @@ import interact from 'interact.js';
 
 class Results extends React.Component {
   componentDidMount() {
-    let handle = document.getElementsByClassName('horizontal-drag-handle')[0]
+    let handle = document.getElementsByClassName('horizontal-drag-handle')[0];
     interact(ReactDOM.findDOMNode(this))
       .resizable({
         edges: {
@@ -15,12 +16,12 @@ class Results extends React.Component {
           right: handle
         },
         onmove: function(event) {
-          let desired = event.rect.right
-          var decided = Math.min(desired, window.innerWidth)
+          let desired = event.rect.right;
+          var decided = Math.min(desired, window.innerWidth);
           // console.log("Desired: " + desired + ", Decided: " + decided + ", Current: " + this.style)
-          this.element().style['maxWidth'] = decided + "px"
-          let s = window.sigma.instances(0)
-          s.refresh()
+          this.element().style.maxWidth = decided + "px";
+          let s = window.sigma.instances(0);
+          s.refresh();
         }
       });
   }

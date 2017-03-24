@@ -135,6 +135,9 @@ class App extends React.Component {
   }
 
 
+  // query is what will be displayed in the search bar.
+  // origin node is where the previous query originated from
+  // used for linking edges
   updateQuery(query, originNode) {
     this.setState({ query, originNode });
     this.context.router.transitionTo(`/${query}`);

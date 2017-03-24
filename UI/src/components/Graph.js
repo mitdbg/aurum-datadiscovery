@@ -40,7 +40,7 @@ class Graph extends React.Component {
                   e_from: '',
                   e_to: '',
                   label: '',
-                  score: '',
+                  score: 0,
                   enabled: false
                   }, // object to contain variables for edge hovering
 
@@ -149,11 +149,12 @@ class Graph extends React.Component {
     const edgeHover = {
       x: e.data.captor.clientX,
       y: e.data.captor.clientY,
-      label: e.data.edge.labe,
-      e_from: e.data.edge.sourc,
-      e_to: e.data.edge.targe,
-      score: e.data.edge.scor,
+      label: e.data.edge.label,
+      e_from: e.data.edge.source,
+      e_to: e.data.edge.target,
+      score: e.data.edge.score,
       enabled: true};
+    debugger;
 
     this.setState({ edgeHover });
 
@@ -212,6 +213,7 @@ class Graph extends React.Component {
 
         <EdgeToolTip
           enabled={this.state.edgeHover.enabled}
+          label={this.state.edgeHover.label}
           x={this.state.edgeHover.x}
           y={this.state.edgeHover.y}
           source={this.state.edgeHover.e_from}
