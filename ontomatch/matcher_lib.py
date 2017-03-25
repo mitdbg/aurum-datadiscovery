@@ -115,97 +115,9 @@ class SimpleTrie:
                 return matchings, current_node
 
         matchings, cutter = summarize_seq(num_seqs, self.root, "root")
-        sch, cla = list(matchings)[0]
-        new_match = (sch, (cla[0], cutter))
-        return new_match
-
-    def summarize3(self, num_seqs, subtree=None):
-
-        if subtree is None:
-            subtree = self.root
-
-        for child in subtree.keys():
-            represented_seqs = self.step_dic[child]
-            ratio_cut = float(represented_seqs / num_seqs)
-            if ratio_cut > 0.5:  # if cuts, keep digging
-                summarizes = self.summarize(num_seqs, subtree[child])
-                if summarizes:
-                    break  # we finish the loop here, as we already found 1 summary node
-            else:
-                if type(child) is Leave:
-                    matchings_of_child = subtree[child].matching
-                    for el in matchings_of_child:
-                        self.summarized_matchings[el] = 1  # the child
-                else:
-                    self._add_matchings(subtree, child)  # we summarize here
-                return False
-        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
-        remaining = ordered[0][0]
-        return remaining
-
-    def __summarize(self, num_seqs, subtree=None):
-
-        if subtree is None:
-            subtree = self.root
-        #    current_node = "root"
-
-        for child in subtree.keys():
-            represented_seqs = self.step_dic[child]
-            ratio_cut = float(represented_seqs / num_seqs)
-            if ratio_cut > 0.5:  # if cuts, keep digging
-                summarizes = self.summarize(num_seqs, subtree[child])
-                if summarizes:
-                    break  # we finish the loop here, as we already found 1 summary node
-            else:
-                if type(child) is Leave:
-                    matchings_of_child = subtree[child].matching
-                    for el in matchings_of_child:
-                        self.summarized_matchings[el] = 1  # the child
-                else:
-                    self._add_matchings(subtree, child)  # we summarize here
-                return False
-        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
-        remaining = ordered[0][0]
-        return remaining
-
-    def summarize_old(self, num_seqs, current_node=None, subtree=None):
-
-        if subtree is None and current_node is None:
-            subtree = self.root
-            current_node = "root"
-
-        if type(subtree) is Leave:
-            return False  # does not summarize
-
-        does_cut = self.cuts(current_node, subtree, num_seqs)
-        if does_cut:
-            self._add_matchings2(subtree, current_node)
-            return True
-        else:
-            for child in subtree.keys():
-                summarizes = self.summarize(num_seqs, child, subtree[child])
-                if summarizes:
-                    return True
-
-    def _summarize(self, subtree=None):
-
-        if subtree is None:
-            subtree = self.root
-
-        for child in subtree.keys():
-            num_seqs = self.step_dic[child]
-            if type(child) is int:
-                matchings_of_child = subtree[child].matching
-                for el in matchings_of_child:
-                    self.summarized_matchings[el] = 1  # the child
-            elif (len(list(subtree[child].keys())) / num_seqs) > 0.6:
-                self._add_matchings(subtree, child)
-            else:
-                self.summarize(subtree[child])
-
-        ordered = sorted(self.summarized_matchings.items(), key=lambda x: x[1], reverse=True)
-        remaining = ordered[0][0]
-        return remaining
+        #sch, cla = list(matchings)[0]
+        #new_match = (sch, (cla[0], cutter))
+        return matchings, cutter
 
 
 class Matching:
@@ -273,52 +185,84 @@ class Matching:
         return relation_matchings
 
 
-def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2):
+def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
 
-    def summarize(matchings):
+    def summarize(matchings, handler):
         sequences = list()
         seq_corresponding_matching = defaultdict(list)
         for el in matchings:
             sch, cla = el
             class_name = cla[1]
-            root_to_class_name = om.ancestors_of_class(class_name)
-            root_to_class_name = om.name_of_sequence(root_to_class_name)
+            onto_name = cla[0]
+            if handler is None:
+                handler = om.kr_handlers[onto_name]
+            root_to_class_name = handler.ancestors_of_class(class_name)
+            root_to_class_name = handler.name_of_sequence(root_to_class_name)
             seq_corresponding_matching[str(root_to_class_name)].append(el)
             sequences.append(root_to_class_name)
 
         trie = SimpleTrie()
         trie.add_sequences(sequences, seq_corresponding_matching)
-        summ_matchings = trie.summarize(len(sequences))
-        return summ_matchings
+        matching_to_be_summarized, cutter = trie.summarize(len(sequences))
+        summ_matchings = []
+        if (len(matching_to_be_summarized) / len(matchings)) > summary_ratio:  # good summarization
+            # get level of class
+            root_to_class_name = handler.ancestors_of_class(cutter)
+            root_to_class_name = handler.name_of_sequence(root_to_class_name)
+            if len(root_to_class_name) > 2:
+                sch, cla = list(matching_to_be_summarized)[0]
+                new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
+                if summarize_or_remove:
+                    summ_matchings.append(new_match)
+                    return summ_matchings
+                else:
+                    summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
+                    summ_matchings.append(new_match)
+                    return summ_matchings
+
+        if summarize_or_remove:
+            sch, cla = list(matching_to_be_summarized)[0]
+            new_match = (sch, (cla[0], cutter))  # don't add -> breaking precision...
+            return []  # could not summarize -> remove
+        else:
+            summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
+            sch, cla = list(matching_to_be_summarized)[0]
+            new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
+            summ_matchings.append(new_match)
+            return summ_matchings  # could not summarize, return original
 
     def compute_fanout(matchings):
-        fanout = defaultdict(list)
+        fanout = defaultdict(lambda: defaultdict(list))
         for m in matchings:
             sch, cla = m
-            fanout[sch].append(m)
-        ordered = sorted(fanout.items(), key=lambda x: len(x[1]), reverse=True)
+            onto_name = cla[0]
+            fanout[sch][onto_name].append(m)
+        ordered = sorted(fanout.items(), key=lambda x: len(x[1].values()), reverse=True)
         ordered_dict = dict()
         for key, value in ordered:
             ordered_dict[key] = value
         return ordered_dict
 
+    handler = None  # the handler for the ontology
     summarized_matchings = []
     fanout = compute_fanout(matchings)
     for k, v in fanout.items():
-        if len(v) > threshold_to_summarize:
-            #print("Summarize: ")
-            #for el in v:
-            #    #if(el[0][2] == "qudt_units"):
-            #    #    print("l")
-            #    print(str(el))
-            s_matching = summarize(v)  # [sch - class] -> returns only 1 !
-            #print("Into: ")
-            #print(str(s_matching))
-            #for el in set(s_matchings):
-            summarized_matchings.append(s_matching)
-        else:  # just propagate matchings
-            for el in v:
-                summarized_matchings.append(el)
+        for onto_name, el in v.items():
+            if len(el) > threshold_to_summarize:
+                #print("Summarize: ")
+                #for el in v:
+                #    #if(el[0][2] == "qudt_units"):
+                #    #    print("l")
+                #    print(str(el))
+                s_matching = summarize(el, handler)  # [sch - class] -> returns only 1 !
+                #print("Into: ")
+                #print(str(s_matching))
+                #for el in set(s_matchings):
+                for m in s_matching:
+                    summarized_matchings.append(m)
+            else:  # just propagate matchings
+                for matching in el:
+                    summarized_matchings.append(matching)
     return summarized_matchings
 
 
@@ -552,15 +496,15 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][2], names[idx_class][1][1])
             svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
             svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
-            semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+            semantic_sim, strong_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                     penalize_unknown_word=penalize_unknown_word,
                                     add_exact_matches=add_exact_matches,
                                     signal_strength_threshold=sensitivity_neg_signal)
-            if semantic_sim > semantic_sim_threshold:
+            if strong_signal and semantic_sim > semantic_sim_threshold:
                 # match.format db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 pos_matchings.append(match)
-            elif neg_signal and semantic_sim < negative_signal_threshold:
+            elif strong_signal and semantic_sim < negative_signal_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], names[idx_rel][1][2]), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()
@@ -680,15 +624,15 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][1], names[idx_class][1][1])
             svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
             svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
-            semantic_sim, negative_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+            semantic_sim, strong_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                             penalize_unknown_word=penalize_unknown_word,
                                             add_exact_matches=add_exact_matches,
                                             signal_strength_threshold=sensitivity_neg_signal)
-            if semantic_sim > sem_sim_threshold:
+            if strong_signal and semantic_sim > sem_sim_threshold:
                 # match.format is db_name, source_name, field_name -> class_name
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 pos_matchings.append(match)
-            elif negative_signal and semantic_sim < negative_signal_threshold:
+            elif strong_signal and semantic_sim < negative_signal_threshold:
                 match = ((names[idx_rel][1][0], names[idx_rel][1][1], "_"), names[idx_class][1])
                 neg_matchings.append(match)
     et = time.time()

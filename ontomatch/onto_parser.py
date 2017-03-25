@@ -76,6 +76,12 @@ class OntoHandler:
         """
         return [x.bestLabel().title() for x in self.o.classes]
 
+    def class_and_descr(self):
+        for x in self.o.classes:
+            class_name = x.bestLabel().title()
+            descr = x.bestDescription()
+            yield (class_name, descr)
+
     def classes_id(self):
         """
         Return list of IDs

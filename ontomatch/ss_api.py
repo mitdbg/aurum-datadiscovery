@@ -95,7 +95,6 @@ class SSAPI:
 
         self.content_sim_index = content_index
 
-
     def find_matchings(self):
         """
         Find matching for each of the different possible categories
@@ -155,7 +154,7 @@ class SSAPI:
         # L4: [Relation names] -> [Class names] (syntax)
         print("Finding L4 matchings...")
         st = time.time()
-        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers)
+        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.4)
         print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -166,10 +165,15 @@ class SSAPI:
         st = time.time()
         l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
                                                                                              sem_sim_threshold=0.5,
-                                                                                             sensitivity_neg_signal=0.4)
+                                                                                             add_exact_matches=False,
+                                                                                             penalize_unknown_word=True,
+                                                                                             negative_signal_threshold=0.5)
         print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
+
+        l42_matchings = matcherlib.summarize_matchings_to_ancestor(om, l42_matchings, summarize_or_remove=True)
+
         all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
 
         print("Does L42 cancel any L4?")
@@ -197,7 +201,7 @@ class SSAPI:
         # L5: [Attribute names] -> [Class names] (syntax)
         print("Finding L5 matchings...")
         st = time.time()
-        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers)
+        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers, minhash_sim_threshold=0.5)
         print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -211,8 +215,10 @@ class SSAPI:
         print("Finding L52 matchings...")
         st = time.time()
         l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
-                                                                               semantic_sim_threshold=0.7,
-                                                                               sensitivity_neg_signal=0.4)
+                                                                                semantic_sim_threshold=0.5,
+                                                                                negative_signal_threshold=0.4,
+                                                                                add_exact_matches=False,
+                                                                                penalize_unknown_word=True)
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -372,6 +378,7 @@ class SSAPI:
         links = set()
 
         print("finding all links...")
+        seen_links = set()
         # find all links
         for matching, matching_types in matchings:
             schema_A, kr = matching
@@ -388,7 +395,9 @@ class SSAPI:
                     schemas = map_ontoclass_to_schema[onto_class_B]
                     for schema_B in schemas:
                         if schema_B != schema_A:
-                            links.add((schema_A, "is_a", schema_B))
+                            if str(schema_A) + str(schema_B) not in seen_links and str(schema_B) + str(schema_A) not in seen_links:
+                                seen_links.add(str(schema_A) + str(schema_B))
+                                links.add((schema_A, "is_a", schema_B))
             # find property links
             properties = o.get_properties_all_of(onto_class_A)
             for p in properties:
@@ -398,7 +407,10 @@ class SSAPI:
                             schemas = map_ontoclass_to_schema[onto_class_B]
                             for schema_B in schemas:
                                 if schema_B != schema_A:
-                                    links.add((schema_A, (p.bestLabel().title(), repr(p)), schema_B))
+                                    label = p.bestLabel().title()
+                                    if str(schema_A) + label + str(schema_B) not in seen_links and str(schema_B) + label + str(schema_A) not in links:
+                                        seen_links.add(str(schema_A) + label + str(schema_B))
+                                        links.add((schema_A, (label, repr(p)), schema_B))
                 
         return list(links)
 
@@ -533,6 +545,7 @@ def test_l6(path_to_serialized_model):
     for m in l6_matchings:
         print(m)
 
+
 def test_e2e(path_to_serialized_model):
     # Deserialize model
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
@@ -566,7 +579,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str(et-st))
 
     print("Writing MATCHINGS output to disk...")
-    with open('MATCHINGS_OUTPUT_MASSDATA', 'w') as f:
+    with open('OUTPUT_FOR_6.1', 'w') as f:
         for k, v in matchings.items():
             lines = v.print_serial()
             for l in lines:
@@ -575,7 +588,7 @@ def test_e2e(path_to_serialized_model):
 
     matchings = []
     line = 0
-    with open("MATCHINGS_OUTPUT_MASSDATA", 'r') as f:
+    with open("OUTPUT_FOR_6.1", 'r') as f:
         lines = f.readlines()
         for l in lines:
             tokens = l.split("==>>")
@@ -598,7 +611,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('LINKS_OUTPUT_MASSDATA', 'w') as f:
+    with open('LINKS_OUTPUT_FOR_6.1', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -920,52 +933,34 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
     # om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)  # parse again
 
     # L5.2: [Relation names] -> [Class names] (semantic)
-    print("Finding L52 matchings...")
-    st = time.time()
-    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(
-        om.network,
-        om.kr_handlers,
-        semantic_sim_threshold=0.7,
-        sensitivity_neg_signal=0.4)
-    print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
-    et = time.time()
-    print("Took: " + str(et - st))
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et - st))
 
-    # L4.2: [Relation names] -> [Class names] (semantic)
-    print("Finding L42 matchings...")
-    st = time.time()
-    l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers)
-    print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
-    et = time.time()
-    print("Took: " + str(et - st))
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et - st))
+    from ontomatch.sem_prop_benchmarking import read
 
-    # L6: [Relations] -> [Class names] (semantic groups)
-    print("Finding L6 matchings...")
-    st = time.time()
-    l6_matchings, table_groups = matcherlib.find_sem_coh_matchings(om.network, om.kr_handlers,
-                                                                   sem_sim_threshold=0.5,
-                                                                   group_size_cutoff=1)
-    print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
-    et = time.time()
-    print("Took: " + str(et - st))
+    l42 = read("raw/" + "l42_04")  # l42_05
+    l52 = read("raw/" + "l52_04")  # l52_05
+    l6 = read("raw/" + "l6_07_1")
 
-    total_l42 = len(l42_matchings)
-    total_l52 = len(l52_matchings)
-    total_l6 = len(l6_matchings)
+    # # L6: [Relations] -> [Class names] (semantic groups)
+    # print("Finding L6 matchings...")
+    # st = time.time()
+    # l6_matchings, table_groups = matcherlib.find_sem_coh_matchings(om.network, om.kr_handlers,
+    #                                                                sem_sim_threshold=0.5,
+    #                                                                group_size_cutoff=1)
+    # print("Finding L6 matchings...OK, " + str(len(l6_matchings)) + " found")
+    # et = time.time()
+    # print("Took: " + str(et - st))
+
+    total_l42 = len(l42)
+    total_l52 = len(l52)
+    total_l6 = len(l6)
 
     # prepare lookup structures
     l42_dict = dict()
-    for matching in l42_matchings:
+    for matching in l42:
         l42_dict[matching] = 1
 
     l52_dict = dict()
-    for matching in l52_matchings:
+    for matching in l52:
         # adapt matching to be compared to L6
         sch, cla = matching
         sch0, sch1, sch2 = sch
@@ -973,26 +968,26 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
         l52_dict[matching] = 1
 
     l6_dict = dict()
-    for matching in l6_matchings:
+    for matching in l6:
         l6_dict[matching] = 1
 
     print("l42 AND l6")
     l42_and_l6 = []
-    for m in l42_matchings:
+    for m in l42:
         if m in l6_dict:
             l42_and_l6.append(m)
 
     print("l42 and not l6")
     l42_and_not_l6 = []
-    for m in l42_matchings:
+    for m in l42:
         if m not in l6_dict:
-            l42_matchings.remove(m)
+            l42.remove(m)
             l42_and_not_l6.append(m)
-    total_l42_after_correction = len(l42_matchings)
+    total_l42_after_correction = len(l42)
 
     print("l6 and not l42")
     l6_and_not_l42 = []
-    for m in l6_matchings:
+    for m in l6:
         if m not in l42_dict:
             l6_and_not_l42.append(m)
 
@@ -1007,18 +1002,18 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
     for m in l52_dict.keys():
         if m not in l6_dict:
             db_to_remove, rel_to_remove, _ = m[0]
-            for el in l52_matchings:
+            for el in l52:
                 sch, cla = el
                 db, relation, attr = sch
                 if db == db_to_remove and relation == rel_to_remove:
-                    if el in l52_matchings:
-                        l52_matchings.remove(el)
+                    if el in l52:
+                        l52.remove(el)
                         l52_and_not_l6.append(el)
-    total_l52_after_correction = len(l52_matchings)
+    total_l52_after_correction = len(l52)
 
     print("l6 and not l52")
     l6_and_not_l52 = []
-    for m in l6_matchings:
+    for m in l6:
         if m not in l52_dict:
             l6_and_not_l52.append(m)
 
@@ -1037,13 +1032,13 @@ def can_l6_cancel_l42_and_l52(path_to_serialized_model):
 
     with open('UNDERSTANDING_L6', 'w') as f:
         f.write("L6" + '\n')
-        for m in l6_matchings:
+        for m in l6:
             f.write(str(m) + '\n')
         f.write("L42" + '\n')
-        for m in l42_matchings:
+        for m in l42:
             f.write(str(m) + '\n')
         f.write("L52" + '\n')
-        for m in l52_matchings:
+        for m in l52:
             f.write(str(m) + '\n')
         f.write("L6 AND L42" + '\n')
         for m in l42_and_l6:
@@ -1395,6 +1390,112 @@ def debug_neg_signal(path_to_serialized_model):
     print("Resulting L5: " + str(len(l5_matchings)))
 
 
+def try_descr(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    def coh(t, g):
+        tv = glove_api.get_embedding_for_word(t)
+        if tv is None:
+            return False
+        for el in g:
+            elv = glove_api.get_embedding_for_word(el)
+            if elv is not None:
+                sim = glove_api.semantic_distance(tv, elv)
+                if sim < 0.6:
+                    return False
+        return True
+
+    from ontomatch import ss_utils
+    cla_coh = dict()
+
+    for cla_name, descr in om.kr_handlers["efo"].class_and_descr():
+        if descr is not '':
+            attrs = nlp.get_nouns(descr)
+            groups = ss_utils.extract_cohesive_groups(cla_name, attrs, sem_sim_threshold=0.5)
+            chosen_group = []
+            max_len = 0
+            for _, group in groups:
+                if len(group) > max_len:
+                    chosen_group = list(group)
+                    max_len = len(group)
+            if len(chosen_group) > 0:
+                cla_coh[cla_name] = group
+
+    matchings = []
+
+    for db, t, attrs in SS.read_table_columns(None, network=network):
+        for k, v in cla_coh.items():
+            if coh(t, v):
+                matchings.append((t, "_", k))
+            for attr in attrs:
+                if coh(attr, v):
+                    matchings.append((t, attr, k))
+
+    with open('MATCHINGS_DESCRIPTION_TEST', 'w') as f:
+        for m in matchings:
+            f.write(str(m) + '\n')
+
+
+def test(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    matchings = []
+    with open("MATCHINGS_OUTPUT_MASSDATA", 'r') as f:
+        for l in f:
+            tokens = l.split("==>>")
+            sch = tokens[0]
+            cla = tokens[1]
+            sch_tokens = sch.split("%%%")
+            sch_tokens = [t.strip() for t in sch_tokens]
+            cla_tokens = cla.split("%%%")
+            cla_tokens = [t.strip() for t in cla_tokens]
+            matching_format = (
+            ((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
+            matchings.append(matching_format)
+
+    matchings = [a for a, b in matchings]
+
+    s_matchings = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], matchings)
+
+    for s in s_matchings:
+        print(str(s))
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
@@ -1409,20 +1510,26 @@ if __name__ == "__main__":
     #test_5_n_52("../models/chembl22/")
     #exit()
 
-    test_chembl_annotations("../models/chembl22/")
-    exit()
+    # test_chembl_annotations("../models/chembl22/")
+    # exit()
+    #
+    # debug_neg_signal("../models/chembl22/")
+    # exit()
+    #
+    # print_table_attrs_for("../models/chembl22/")
+    # exit()
 
-    debug_neg_signal("../models/chembl22/")
-    exit()
+    # try_descr("../models/chembl22/")
+    # exit()
+    #
+    # can_l6_cancel_l42_and_l52("../models/chembl22/")
+    # exit()
+    #
+    # test_l6("../models/chembl22/")
+    # exit()
 
-    print_table_attrs_for("../models/chembl22/")
-    exit()
-
-    can_l6_cancel_l42_and_l52("../models/chembl22/")
-    exit()
-
-    test_l6("../models/chembl22/")
-    exit()
+    # test("../models/chembl22/")
+    # exit()
 
     test_e2e("../models/chembl22/")
     exit()

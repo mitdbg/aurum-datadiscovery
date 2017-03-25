@@ -324,7 +324,7 @@ def compute_semantic_similarity(sv1, sv2,
     if total_of_all_comparisons > 0:
         ratio_of_strong_signal = float(total_comparisons/total_of_all_comparisons)
 
-    # # if not many skipped comparisons, then this is a strong signal
+    # if not many skipped comparisons, then this is a strong signal
     if ratio_of_strong_signal >= signal_strength_threshold:
         strong_signal = True
 
