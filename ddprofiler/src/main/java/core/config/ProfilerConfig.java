@@ -70,6 +70,10 @@ public class ProfilerConfig extends Config {
   public static final String WORKER_SERVER_PORT = "worker.server.port";
   private static final String WORKER_SERVER_PORT_DOC =
       "The port where a wokrer server listens";
+  
+  public static final String MASTER_SERVER_PORT = "master.server.port";
+  private static final String MASTER_SERVER_PORT_DOC =
+      "The port where a wokrer server listens";
 
   static {
     config =
@@ -100,7 +104,9 @@ public class ProfilerConfig extends Config {
     		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, 
     				Importance.HIGH, REPORT_METRICS_CONSOLE_DOC)
     		.define(WORKER_SERVER_PORT, Type.INT, 8090, Importance.MEDIUM,
-                    WORKER_SERVER_PORT_DOC);
+                    WORKER_SERVER_PORT_DOC)
+        .define(MASTER_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM,
+                    MASTER_SERVER_PORT_DOC);
   }
 
   public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {
