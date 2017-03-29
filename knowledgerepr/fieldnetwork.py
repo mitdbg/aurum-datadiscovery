@@ -159,13 +159,16 @@ class FieldNetwork:
         return topk_nodes
 
     def enumerate_relation(self, relation):
+        seen_pairs = set()
         for nid in self.iterate_ids():
             db_name, source_name, field_name, data_type = self.__id_names[nid]
             hit = Hit(nid, db_name, source_name, field_name, 0)
             neighbors = self.neighbors_id(hit, relation)
             for n2 in neighbors:
-                string = str(hit) + " - " + str(n2)
-                yield string
+                if not (n2.nid, nid) in seen_pairs:
+                    seen_pairs.add((nid, n2.nid))
+                    string = str(hit) + " - " + str(n2)
+                    yield string
 
     def print_relations(self, relation):
         total_relationships = 0
