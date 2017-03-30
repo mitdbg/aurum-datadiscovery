@@ -28,7 +28,7 @@ public class Master {
 	private Map<String, Boolean> tasks;
 	
 	// catalog
-	// private Map<String, String> catalog = new HashMap<String, String>();
+	private Map<String, String> catalog = new HashMap<String, String>();
 
 	public Master(ProfilerConfig pc, Conductor c) {
 		this.pc = pc;
@@ -41,10 +41,16 @@ public class Master {
 		pendingWork = true;
 		// split up work
 		tasks = new HashMap<String, Boolean>();
-		tasks.put(sourcePath, true);
 		
-		System.out.println("tasks: " + tasks.toString());
-		// check catalog for tasks already complete
+		// 
+		for (String task : tasks.keySet()) {
+			if (catalog.containsKey(task)) {
+				// see if user wants to re-execute, otherwise, ignore
+			}
+		}
+		//
+		tasks.put(sourcePath, true);// for simplicity just putting all work into one task
+
 		
 		Master master = this;
 
