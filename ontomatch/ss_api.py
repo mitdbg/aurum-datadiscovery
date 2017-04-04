@@ -154,7 +154,7 @@ class SSAPI:
         # L4: [Relation names] -> [Class names] (syntax)
         print("Finding L4 matchings...")
         st = time.time()
-        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.4)
+        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
         print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -172,23 +172,19 @@ class SSAPI:
         et = time.time()
         print("Took: " + str(et - st))
 
-        l42_matchings = matcherlib.summarize_matchings_to_ancestor(om, l42_matchings, summarize_or_remove=True)
+        # summarize structurally l42 before adding
+        l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
 
         all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
 
         print("Does L42 cancel any L4?")
         print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-        cancelled_l4_matchings = []
-        l4_dict = dict()
         l4_matchings_set = set(l4_matchings)
-        for matching in l4_matchings_set:
-            l4_dict[matching] = 1
         total_cancelled = 0
         for m in neg_l42_matchings:
-            if m in l4_dict:
+            if m in l4_matchings_set:
                 total_cancelled += 1
                 l4_matchings_set.remove(m)
-                cancelled_l4_matchings.append(m)
         l4_matchings = list(l4_matchings_set)
         all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
 
@@ -201,7 +197,7 @@ class SSAPI:
         # L5: [Attribute names] -> [Class names] (syntax)
         print("Finding L5 matchings...")
         st = time.time()
-        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers, minhash_sim_threshold=0.5)
+        l5_matchings = matcherlib.find_relation_class_attr_name_matching(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
         print("Finding L5 matchings...OK, " + str(len(l5_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
@@ -216,29 +212,28 @@ class SSAPI:
         st = time.time()
         l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
                                                                                 semantic_sim_threshold=0.5,
-                                                                                negative_signal_threshold=0.4,
+                                                                                negative_signal_threshold=0.5,
                                                                                 add_exact_matches=False,
                                                                                 penalize_unknown_word=True)
         print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
         et = time.time()
         print("Took: " + str(et - st))
+
+        # summarize structurally l52 before adding
+        l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
+
         all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
 
         print("Does L52 cancel any L5?")
         print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
-        total_neg = len(neg_l52_matchings)
-        cancelled_l5_matchings = []
-        l5_dict = dict()
-        for matching in l5_matchings:
-            l5_dict[matching] = 1
+        l5_matchings_set = set(l5_matchings)
         total_cancelled = 0
         for m in neg_l52_matchings:
-            if m in l5_dict:
+            if m in l5_matchings_set:
                 total_cancelled += 1
-                l5_matchings.remove(m)
-                cancelled_l5_matchings.append(m)
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+                l5_matchings_set.remove(m)
         print("Cancelled: " + str(total_cancelled))
+        l5_matchings = list(l5_matchings_set)
         all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
         print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
 
@@ -579,7 +574,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str(et-st))
 
     print("Writing MATCHINGS output to disk...")
-    with open('OUTPUT_FOR_6.1', 'w') as f:
+    with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
         for k, v in matchings.items():
             lines = v.print_serial()
             for l in lines:
@@ -588,7 +583,7 @@ def test_e2e(path_to_serialized_model):
 
     matchings = []
     line = 0
-    with open("OUTPUT_FOR_6.1", 'r') as f:
+    with open("output_chembl_and_drugcentral_allonto_6.1", 'r') as f:
         lines = f.readlines()
         for l in lines:
             tokens = l.split("==>>")
@@ -611,7 +606,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('LINKS_OUTPUT_FOR_6.1', 'w') as f:
+    with open('links_output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -1496,6 +1491,17 @@ def test(path_to_serialized_model):
     for s in s_matchings:
         print(str(s))
 
+
+def take_links():
+    total_cross_links = 0
+    with open("links_output_chembl_and_drugcentral_allonto_6.1", 'r') as f:
+        for line in f:
+            if 'drugcentral' in line and 'chembl_22' in line:
+                total_cross_links += 1
+                print(line)
+    print("TOTAL: " + str(total_cross_links))
+
+
 if __name__ == "__main__":
 
     #test_find_semantic_sim()
@@ -1531,7 +1537,10 @@ if __name__ == "__main__":
     # test("../models/chembl22/")
     # exit()
 
-    test_e2e("../models/chembl22/")
+    take_links()
+    exit()
+
+    test_e2e("../models/chembl_drugcentral/")
     exit()
 
     #test("../models/massdata/")
