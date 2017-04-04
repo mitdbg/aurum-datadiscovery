@@ -1422,7 +1422,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
         print(name + "_sum, " + str(precision_sum) + ", " + str(recall_sum))
         return combined_list, combined_sum
 
-    def test1(name, l4, l5, nl42=[], nl52=[], l42=[], l52=[], l1=[], l7=[], l6=[]):
+    def test1(name, l4=[], l5=[], nl42=[], nl52=[], l42=[], l52=[], l1=[], l7=[], l6=[]):
 
         # 1-. l4 - l42
         l4_dict = dict()
@@ -1442,6 +1442,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
         gt_set = set(ground_truth_matchings)
         for m in l4_cancelled:
             if m in gt_set:
+                continue
                 print(m)
         print("#######")
 
@@ -1463,6 +1464,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
         gt_set = set(ground_truth_matchings)
         for m in l5_cancelled:
             if m in gt_set:
+                continue
                 print(m)
         print("#######")
 
@@ -1491,10 +1493,12 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
 
         print("SUM L42")
         for m in l42:
+            continue
             print(str(m))
 
         print("SUM L52")
         for m in l52:
+            continue
             print(str(m))
 
         #l4 = matcherlib.summarize_matchings_to_ancestor(om.kr_handlers["efo"], l4, summarize_or_remove=True)
@@ -1565,24 +1569,27 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
 
     l1 = read(path_to_raw_data + "l1")
     l7 = read(path_to_raw_data + "l7")
-    l4 = read(path_to_raw_data + "l4_02")  #l4_02 0.015/0.46 - 0.33/0.38 (summary=2)
-    l5 = read(path_to_raw_data + "l5_02")  #l5_02
+    l4 = read(path_to_raw_data + "l4_07")  #l4_02 0.015/0.46 - 0.33/0.38 (summary=2)
+    l5 = read(path_to_raw_data + "l5_07")  #l5_02
     l42 = read(path_to_raw_data + "l42_05")  #l42_05
     l52 = read(path_to_raw_data + "l52_05")  #l52_05
     nl42 = read(path_to_raw_data + "neg_l42_05")  #neg_l42_05
     nl52 = read(path_to_raw_data + "neg_l52_05")  #neg_l42_05
 
     #combined_list, combined_sum = syn_and_we(l4, l5, l42, l52, "syn_and_we_02_03")
-    combined_list, combined_sum = test1("test1", l4, l5, nl42=nl42, nl52=nl52, l42=l42, l52=l52, l1=l1, l7=l7)
+    #combined_list, combined_sum = test1("test1", l4, l5, nl42=nl42, nl52=nl52, l42=l42, l52=l52, l1=l1, l7=l7)
+    combined_list, combined_sum = test1("test1", l4=l4, l5=l5, nl42=nl42, nl52=nl52, l42=l42, l52=l52, l1=l1, l7=l7)
 
     print("num combined_list: " + str(len(combined_list)))
     for m in combined_list:
+        continue
         print(str(m))
 
     print("SUMMARY")
 
     print("num combined_sum: " + str(len(combined_sum)))
     for m in combined_sum:
+        continue
         print(str(m))
 
     print("the matchings that we could not find - list")
@@ -1591,6 +1598,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
     missed_list = []
     for m in gt_set:
         if m not in combined_list:
+            continue
             print(m)
             missed_list.append(m)
     print("#############")
@@ -1601,6 +1609,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
     gt_set = set(ground_truth_matchings)
     for m in gt_set:
         if m not in combined_sum:
+            continue
             print(m)
             missed_sum.append(m)
     print("#############")
@@ -1608,6 +1617,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
     print("so the matchings removed by summary are: ")
     for m in missed_sum:
         if m not in missed_list:
+            continue
             print(m)
 
     return combined_list, combined_sum, om
@@ -2861,6 +2871,7 @@ if __name__ == "__main__":
     #combine_and_report_results("raw/", "MATCHINGS_GROUND_TRUTH_CHEMBL")
 
     cl, cs, om = local_test("raw/", "MATCHINGS_GROUND_TRUTH_CHEMBL")
+    exit()
 
     cs = [(el, "none") for el in cs]
 

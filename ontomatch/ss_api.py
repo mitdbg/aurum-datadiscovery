@@ -263,8 +263,20 @@ class SSAPI:
             total_matchings_pre_combined += len(values)
         print("ALL_matchings: " + str(total_matchings_pre_combined))
 
+        def list_from_dict(combined):
+            l = []
+            for k, v in combined.items():
+                matchings = v.get_matchings()
+                for el in matchings:
+                    l.append(el)
+            return l
+
         combined_matchings = matcherlib.combine_matchings(all_matchings)
         print("COMBINED_matchings: " + str(len(combined_matchings.items())))
+
+        combined_list = list_from_dict(combined_matchings)
+
+        combined_matchings = matcherlib.summarize_matchings_to_ancestor(self, combined_list, summarize_or_remove=True)
 
         return combined_matchings
 
@@ -563,23 +575,25 @@ def test_e2e(path_to_serialized_model):
     om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
+    #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
     #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
-    print("Finding matchings...")
-    st = time.time()
-    matchings = om.find_matchings()
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et-st))
-
-    print("Writing MATCHINGS output to disk...")
-    with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
-        for k, v in matchings.items():
-            lines = v.print_serial()
-            for l in lines:
-                f.write(l + '\n')
-    print("Writing MATCHINGS output to disk...OK")
+    # print("Finding matchings...")
+    # st = time.time()
+    # matchings = om.find_matchings()
+    # et = time.time()
+    # print("Finding matchings...OK")
+    # print("Took: " + str(et-st))
+    #
+    # #matchings = matcherlib.summarize_matchings_to_ancestor(om)
+    #
+    # print("Writing MATCHINGS output to disk...")
+    # with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
+    #     for k in matchings:
+    #         #lines = k.print_serial()
+    #         #for l in lines:
+    #         f.write(str(k) + '\n')
+    # print("Writing MATCHINGS output to disk...OK")
 
     matchings = []
     line = 0
@@ -1537,8 +1551,8 @@ if __name__ == "__main__":
     # test("../models/chembl22/")
     # exit()
 
-    take_links()
-    exit()
+    #take_links()
+    #exit()
 
     test_e2e("../models/chembl_drugcentral/")
     exit()
