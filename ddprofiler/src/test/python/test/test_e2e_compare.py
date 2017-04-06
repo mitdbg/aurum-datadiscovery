@@ -156,7 +156,7 @@ def parse_dd_to_dict(branch_name: str) -> dict:
     return all_fields
 
 
-def build_and_write_to_store(branch_name: str, folder_path: str) -> dict:
+def build_and_write_to_store(branch_name: str, inp) -> dict:
     """
     1. Build a new ddprofiler jar.
     2. Run the new jar on some files specified by <folder_path>.
@@ -179,7 +179,13 @@ def build_and_write_to_store(branch_name: str, folder_path: str) -> dict:
     print("*** Writing to elastic store...")
     print("*** (This may take a while.)")
 
-    jar_cmd = "java -jar build/libs/ddprofiler.jar --execution.mode 1 --sources.folder.path %s" % folder_path
+    execution_mode = inp.execution_mode
+    jar_cmd = "java -jar build/libs/ddprofiler.jar --execution.mode %s " % execution_mode
+    if execution_mode == "1":  # offline CSV
+        jar_cmd += "--sources.folder.path %s" % inp.path_name
+    elif execution_mode == "2":  # offline DB
+        jar_cmd += "--db.name %s" % inp.db_name
+
     start = time.time()
     call(jar_cmd, shell=True, stderr=sys.stderr)
     end = time.time()
@@ -264,7 +270,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     # no dangerous bash injections please
-    parser.add_argument('-p', '--path', metavar='P', required=True, help='path to folder with csv files')
+    parser.add_argument('-m', '--execution_mode', metavar='P', required=False, help='(1) offline CSV, (2) offline DB')
+    parser.add_argument('-p', '--path_name', metavar='P', required=False, help='path to folder with csv files')
+    parser.add_argument('-db', '--db_name', metavar='P', required=False, help='db name')
     parser.add_argument('-b1', '--branch_expected', metavar='B2', required=True, help='github branch with expected results')
     parser.add_argument('-b2', '--branch_test', metavar='B2', required=True, help='github branch to analyze')
     parser.add_argument('-c', '--cached', metavar='cached', required=False, help='use cached .dd file for expected results')
@@ -273,10 +281,10 @@ if __name__ == "__main__":
     if inp.cached:
         exp: dict = parse_dd_to_dict(branch_name=inp.branch_expected)
     else:
-        exp: dict = build_and_write_to_store(branch_name='master', folder_path=inp.path)
+        exp: dict = build_and_write_to_store(branch_name='master', inp=inp)
 
     # Write the actual results to a dictionary
-    res: dict = build_and_write_to_store(branch_name=inp.branch_test, folder_path=inp.path)
+    res: dict = build_and_write_to_store(branch_name=inp.branch_test, inp=inp)
 
     # Compare the expected and actual results with each other
     test_number_of_columns(exp=exp, res=res)
