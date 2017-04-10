@@ -170,8 +170,8 @@ public class Conductor {
 
   public boolean isTherePendingWork() {
     boolean tasksFinished = this.totalProcessedTasks.get() == this.totalTasksSubmitted;
-    boolean subTasksFinished = this.totalProcessedSubTasks.get() == this.totalSubTasksSubmitted.get();
-    return !(tasksFinished && subTasksFinished);
+    boolean columnsFinished = this.totalProcessedColumns.get() == this.totalColumns.get();
+    return !(tasksFinished && columnsFinished);
   }
 
   public List<WorkerTaskResult> consumeResults() {
@@ -191,6 +191,7 @@ public class Conductor {
   }
 
   public void notifyProcessedTask(int numCols) {
+    totalColumns.addAndGet(numCols);
     totalProcessedTasks.incrementAndGet();
     LOG.info("Processed: {}/{} tasks, {}/{} subtasks, and {}/{} columns; {} failed tasks",
             totalProcessedTasks,
@@ -201,7 +202,6 @@ public class Conductor {
             totalColumns,
             totalFailedTasks
     );
-    totalColumns.addAndGet(numCols);
 //    LOG.info("Added: {} cols", numCols);
   }
 
