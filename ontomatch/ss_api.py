@@ -276,7 +276,8 @@ class SSAPI:
 
         combined_list = list_from_dict(combined_matchings)
 
-        combined_matchings = matcherlib.summarize_matchings_to_ancestor(self, combined_list, summarize_or_remove=True)
+        #combined_matchings = matcherlib.summarize_matchings_to_ancestor(self, combined_list, summarize_or_remove=True)
+        combined_matchings = combined_list
 
         return combined_matchings
 
@@ -572,28 +573,34 @@ def test_e2e(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
-    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
-    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
     #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
-    # print("Finding matchings...")
-    # st = time.time()
-    # matchings = om.find_matchings()
-    # et = time.time()
-    # print("Finding matchings...OK")
-    # print("Took: " + str(et-st))
-    #
-    # #matchings = matcherlib.summarize_matchings_to_ancestor(om)
-    #
-    # print("Writing MATCHINGS output to disk...")
-    # with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
-    #     for k in matchings:
-    #         #lines = k.print_serial()
-    #         #for l in lines:
-    #         f.write(str(k) + '\n')
-    # print("Writing MATCHINGS output to disk...OK")
+    hand = om.kr_handlers["uniprot"]
+
+    all_classes = hand.classes()
+
+    print("Finding matchings...")
+    st = time.time()
+    matchings = om.find_matchings()
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et-st))
+
+    #matchings = matcherlib.summarize_matchings_to_ancestor(om)
+
+    print("Writing MATCHINGS output to disk...")
+    with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
+        for k in matchings:
+            #lines = k.print_serial()
+            #for l in lines:
+            print(str(k))
+            f.write(str(k) + '\n')
+    print("Writing MATCHINGS output to disk...OK")
 
     matchings = []
     line = 0
