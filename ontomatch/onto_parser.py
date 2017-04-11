@@ -370,23 +370,30 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    input = "go.owl"
-    output = "cache_onto/go.pkl"
-
-    parse_ontology(input, output)
-
-    exit()
+    # input = "uniprotcore.owl"
+    # output = "cache_onto/uniprot.pkl"
+    #
+    # parse_ontology(input, output)
+    #
+    # exit()
 
     o = OntoHandler()
 
-    o.load_ontology("cache_onto/efo.pkl")
+    o.load_ontology("cache_onto/uniprot.pkl")
 
     total = 0
     nodesc = 0
     for c in o.o.classes:
         total += 1
+        label = c.bestLabel()
+        print(str(label))
+        print(str(label.title()))
         descr = c.bestDescription()
         if descr == "":
             nodesc += 1
+
+    for c in o.classes():
+        print(str(c))
+
     print(str(nodesc) + "/" + str(total) + " no descr")
     # EFO output: 18604/19230 no descr
