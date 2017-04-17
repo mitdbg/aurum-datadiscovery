@@ -108,7 +108,7 @@ class SimpleTrie:
 
             # Does the max representing child cuts?
             ratio_cut = float(max_repr / num_seqs)
-            if ratio_cut > 0.35:  # if cuts, keep digging
+            if ratio_cut > 0.4:  # if cuts, keep digging
                 return summarize_seq(num_seqs, subtree[chosen_child], chosen_child)
             else:  # i then summarize
                 matchings = self._reduce_matchings(subtree, set())
@@ -187,6 +187,13 @@ class Matching:
 
 def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
 
+    def get_sem_similar_matchings_from(matchings):
+        matchings_to_keep = []
+        for el in matchings:
+            if (el[0][2].lower() == el[1][1].lower()):
+                matchings_to_keep.append(el)
+        return matchings_to_keep
+
     def summarize(matchings, handler):
         sequences = list()
         seq_corresponding_matching = defaultdict(list)
@@ -214,6 +221,9 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
                 new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
                 if summarize_or_remove:
                     summ_matchings.append(new_match)
+                    semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+                    for el in semantically_similar_matchings:
+                        summ_matchings.append(el)
                     return summ_matchings
                 else:
                     summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
@@ -223,12 +233,17 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
         if summarize_or_remove:
             sch, cla = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # don't add -> breaking precision...
-            return []  # could not summarize -> remove
+            # return []  # could not summarize -> remove
+            semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+            return semantically_similar_matchings  # could not summarize -> remove
         else:
             summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
             sch, cla = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
             summ_matchings.append(new_match)
+            semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+            for el in semantically_similar_matchings:
+                summ_matchings.append(el)
             return summ_matchings  # could not summarize, return original
 
     def compute_fanout(matchings):
