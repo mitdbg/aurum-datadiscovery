@@ -185,12 +185,60 @@ class Matching:
         return relation_matchings
 
 
+
+# double check for better recall
+def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
+                                          penalize_unknown_word=True,
+                                          add_exact_matches=True):
+    # st = time.time()
+    svs1 = []
+    field_name1 = attribute1
+    field_name1 = nlp.camelcase_to_snakecase(field_name1)
+    field_name1 = field_name1.lower()
+    field_name1 = field_name1.replace('_', ' ')
+    for token in field_name1.split():
+        if token not in stopwords.words('english'):
+            sv = glove_api.get_embedding_for_word(token)
+            if sv is not None:
+                svs1.append(sv)
+    svs2 = []
+    field_name2 = attribute2
+    field_name2 = nlp.camelcase_to_snakecase(field_name2)
+    field_name2 = field_name2.lower()
+    field_name2 = field_name2.replace('_', ' ')
+    for token in field_name2.split():
+        if token not in stopwords.words('english'):
+            sv2 = glove_api.get_embedding_for_word(token)
+            if sv2 is not None:
+                svs2.append(sv2)
+
+    neg_matchings = []
+    ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
+    svs_rel = removed_banned_vectors(ban_index1, svs1)
+    svs_cla = removed_banned_vectors(ban_index2, svs2)
+    semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                                              penalize_unknown_word=penalize_unknown_word,
+                                                              add_exact_matches=add_exact_matches)
+    # et = time.time()
+    # print("negative_sem_signal: " + str(et - st))
+    # return neg_matchings
+
+    return semantic_sim, neg_signal
+
+
 def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
 
     def get_sem_similar_matchings_from(matchings):
         matchings_to_keep = []
         for el in matchings:
-            if (el[0][2].lower() == el[1][1].lower()):
+             # double check exact matching only
+             # if (el[0][2].lower() == el[1][1].lower()):
+             #    matchings_to_keep.append(el)
+            # double check using the semantic
+            attribute1 = el[0][2]
+            attribute2 = el[1][1]
+            semantic_sim, neg_signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2)
+            if not neg_signal and semantic_sim > 0.8:
                 matchings_to_keep.append(el)
         return matchings_to_keep
 
