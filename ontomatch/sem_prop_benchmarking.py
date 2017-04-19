@@ -1613,7 +1613,7 @@ def local_test(path_to_raw_data, path_to_ground_truth_file):
     gt_set = set(ground_truth_matchings)
     for m in gt_set:
         if m not in combined_sum:
-            continue
+            # continue
             print(m)
             missed_sum.append(m)
     print("#############")
@@ -2850,6 +2850,13 @@ def combine_and_report_results(path_to_raw_data, path_to_ground_truth_file):
 
 
 if __name__ == "__main__":
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
     print("Benchmarking matchers and linkers")
     # relative_merit_one_onto("../models/chembl22/",
     #                         "efo",

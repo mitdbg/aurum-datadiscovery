@@ -213,9 +213,13 @@ def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
                 svs2.append(sv2)
 
     neg_matchings = []
-    ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
-    svs_rel = removed_banned_vectors(ban_index1, svs1)
-    svs_cla = removed_banned_vectors(ban_index2, svs2)
+    if not add_exact_matches:
+        ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
+        svs_rel = removed_banned_vectors(ban_index1, svs1)
+        svs_cla = removed_banned_vectors(ban_index2, svs2)
+    else:
+        svs_rel = svs1
+        svs_cla = svs2
     semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                                               penalize_unknown_word=penalize_unknown_word,
                                                               add_exact_matches=add_exact_matches)
@@ -225,20 +229,34 @@ def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
 
     return semantic_sim, neg_signal
 
+def remove_intutive_description(attribute1,attribute2):
+    intutive_description = ['_id', '_name', '_type', '_class', '_parameters', '_units', '_desc', 'res_']
+    # intutive_description = ['_id', '_name']
+    tokens1 = attribute1.lower().replace('_', ' ').split()
+    tokens2 = attribute2.lower().replace('_', ' ').split()
+    if attribute2.lower() in attribute1.lower() and len(tokens1) > 1 and len(tokens2) == 1:
+        for el in intutive_description:
+            if el.replace('_', '').lower() != attribute2.lower():
+                attribute1 = attribute1.replace(el, '')
+    return attribute1
 
 def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
 
     def get_sem_similar_matchings_from(matchings):
         matchings_to_keep = []
         for el in matchings:
-             # double check exact matching only
-             # if (el[0][2].lower() == el[1][1].lower()):
-             #    matchings_to_keep.append(el)
             # double check using the semantic
-            attribute1 = el[0][2]
             attribute2 = el[1][1]
-            semantic_sim, neg_signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2)
-            if not neg_signal and semantic_sim > 0.8:
+            if el[0][2] == '_':
+                attribute1 = el[0][1]
+            else:
+                attribute1 = el[0][2]
+
+            attribute1 = remove_intutive_description(attribute1, attribute2)
+            semantic_sim, signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2, False)
+            if el[0][2] == 'res_stem_id' and attribute2 == 'Stem':
+                 print(el, " sem is ", semantic_sim, "sig is ", signal)
+            if signal and semantic_sim >= 0.85:
                 matchings_to_keep.append(el)
         return matchings_to_keep
 
