@@ -236,7 +236,7 @@ def remove_intutive_description(attribute1,attribute2):
     tokens2 = attribute2.lower().replace('_', ' ').split()
     if attribute2.lower() in attribute1.lower() and len(tokens1) > 1 and len(tokens2) == 1:
         for el in intutive_description:
-            if el.replace('_', '').lower() != attribute2.lower():
+            if not (attribute2.lower() in el.replace('_', '').lower()):
                 attribute1 = attribute1.replace(el, '')
     return attribute1
 
@@ -253,8 +253,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
                 attribute1 = el[0][2]
 
             attribute1 = remove_intutive_description(attribute1, attribute2)
+            if el[0][2] == 'published_units' and attribute2 == 'Unit':
+                print("for published_units ", attribute1, attribute2)
             semantic_sim, signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2, False)
-            if el[0][2] == 'res_stem_id' and attribute2 == 'Stem':
+            if el[0][2] == 'published_units' and attribute2 == 'Unit':
                  print(el, " sem is ", semantic_sim, "sig is ", signal)
             if signal and semantic_sim >= 0.85:
                 matchings_to_keep.append(el)
