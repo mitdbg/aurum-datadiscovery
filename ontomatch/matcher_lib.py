@@ -253,11 +253,11 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
                 attribute1 = el[0][2]
 
             attribute1 = remove_intutive_description(attribute1, attribute2)
-            if el[0][2] == 'published_units' and attribute2 == 'Unit':
-                print("for published_units ", attribute1, attribute2)
+            # if el[0][2] == 'published_units' and attribute2 == 'Unit':
+            #     print("for published_units ", attribute1, attribute2)
             semantic_sim, signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2, False)
-            if el[0][2] == 'published_units' and attribute2 == 'Unit':
-                 print(el, " sem is ", semantic_sim, "sig is ", signal)
+            # if el[0][2] == 'published_units' and attribute2 == 'Unit':
+            #      print(el, " sem is ", semantic_sim, "sig is ", signal)
             if signal and semantic_sim >= 0.85:
                 matchings_to_keep.append(el)
         return matchings_to_keep
