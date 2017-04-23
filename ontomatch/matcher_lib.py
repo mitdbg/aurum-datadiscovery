@@ -190,29 +190,22 @@ class Matching:
 def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
                                           penalize_unknown_word=True,
                                           add_exact_matches=True):
-    # st = time.time()
-    svs1 = []
-    field_name1 = attribute1
-    field_name1 = nlp.camelcase_to_snakecase(field_name1)
-    field_name1 = field_name1.lower()
-    field_name1 = field_name1.replace('_', ' ')
-    for token in field_name1.split():
-        if token not in stopwords.words('english'):
-            sv = glove_api.get_embedding_for_word(token)
-            if sv is not None:
-                svs1.append(sv)
-    svs2 = []
-    field_name2 = attribute2
-    field_name2 = nlp.camelcase_to_snakecase(field_name2)
-    field_name2 = field_name2.lower()
-    field_name2 = field_name2.replace('_', ' ')
-    for token in field_name2.split():
-        if token not in stopwords.words('english'):
-            sv2 = glove_api.get_embedding_for_word(token)
-            if sv2 is not None:
-                svs2.append(sv2)
+    def getSVS(attribute):
+        svs = []
+        field_name = attribute
+        field_name = nlp.camelcase_to_snakecase(field_name)
+        field_name = field_name.lower()
+        field_name = field_name.replace('_', ' ')
+        for token in field_name.split():
+            if token not in stopwords.words('english'):
+                sv = glove_api.get_embedding_for_word(token)
+                if sv is not None:
+                    svs.append(sv)
+        return svs, field_name
 
-    neg_matchings = []
+    svs1, field_name1 = getSVS(attribute1)
+    svs2, field_name2 = getSVS(attribute2)
+
     if not add_exact_matches:
         ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
         svs_rel = removed_banned_vectors(ban_index1, svs1)
@@ -220,25 +213,23 @@ def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
     else:
         svs_rel = svs1
         svs_cla = svs2
+
     semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                                               penalize_unknown_word=penalize_unknown_word,
                                                               add_exact_matches=add_exact_matches)
-    # et = time.time()
-    # print("negative_sem_signal: " + str(et - st))
-    # return neg_matchings
-
     return semantic_sim, neg_signal
 
-def remove_intutive_description(attribute1,attribute2):
-    intutive_description = ['_id', '_name', '_type', '_class', '_parameters', '_units', '_desc', 'res_']
-    # intutive_description = ['_id', '_name']
+
+def remove_intuitive_description(attribute1, attribute2):
+    intuitive_description = ['_id', '_name', '_type', '_class', '_parameters', '_units', '_desc', 'res_']
     tokens1 = attribute1.lower().replace('_', ' ').split()
     tokens2 = attribute2.lower().replace('_', ' ').split()
     if attribute2.lower() in attribute1.lower() and len(tokens1) > 1 and len(tokens2) == 1:
-        for el in intutive_description:
+        for el in intuitive_description:
             if not (attribute2.lower() in el.replace('_', '').lower()):
                 attribute1 = attribute1.replace(el, '')
     return attribute1
+
 
 def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
 
@@ -252,12 +243,8 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
             else:
                 attribute1 = el[0][2]
 
-            attribute1 = remove_intutive_description(attribute1, attribute2)
-            # if el[0][2] == 'published_units' and attribute2 == 'Unit':
-            #     print("for published_units ", attribute1, attribute2)
+            attribute1 = remove_intuitive_description(attribute1, attribute2)
             semantic_sim, signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2, False)
-            # if el[0][2] == 'published_units' and attribute2 == 'Unit':
-            #      print(el, " sem is ", semantic_sim, "sig is ", signal)
             if signal and semantic_sim >= 0.85:
                 matchings_to_keep.append(el)
         return matchings_to_keep
