@@ -1,6 +1,7 @@
 import time
 
 from dataanalysis import dataanalysis as da
+from math import isinf
 
 from enum import Enum
 from knowledgerepr.fieldnetwork import Relation
@@ -409,6 +410,8 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
                 info2 = network.get_info_for([candidate_nid])
                 (_, _, sn1, fn1) = info1[0]
                 (_, _, sn2, fn2) = info2[0]
+                if isinf(float(ref_x_min)) or isinf(float(ref_x_max)) or isinf(float(candidate_x_max)) or isinf(float(candidate_x_min)):
+                    continue
                 if candidate_x_min >= ref_x_min and candidate_x_max <= ref_x_max:
                     # inclusion relation
                     if candidate_x_min >= 0:
