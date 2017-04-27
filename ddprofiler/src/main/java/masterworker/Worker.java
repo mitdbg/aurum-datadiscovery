@@ -89,9 +89,8 @@ public class Worker {
 
 	}
 
-	public String processTask(String dbName, String pathToSources) {
-		System.out.println("about to process: " + pathToSources);	
-		readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+	public String processTask(TaskPackage task) {
+		c.submitTask(task);
 		return "OK";
 	}
 	

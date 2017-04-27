@@ -5,6 +5,7 @@
 package comm;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
+import core.TaskPackage;
 import core.WorkerTask;
 import masterworker.Master;
 import masterworker.Worker;
@@ -55,9 +57,22 @@ public class WebHandler extends HttpServlet {
     Map<String, String[]> parameters = request.getParameterMap();
     String[] actionIdValues = parameters.get("actionid");
     String actionId = actionIdValues[0];
+    
+    //sending an object
+    if (actionId == "processTaskOnWorker") {
+    	ObjectInputStream objIn = new ObjectInputStream(request.getInputStream());
+    	try {
+			worker.processTask((TaskPackage)objIn.readObject());
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+    }
+    
     String result = handleAction(actionId, parameters);
     response.setContentType("text");
     response.getWriter().println(result);
+    
+    
   }
 
   private String handleAction(String action, Map<String, String[]> parameters) {
@@ -87,9 +102,11 @@ public class WebHandler extends HttpServlet {
     	String[] taskName = parameters.get("taskName");
     	return master.taskComplete(workerAddr[0], taskName[0]);
     case "processTaskOnWorker":
-      dbName = parameters.get("dbName");
-      String[] pathToSources = parameters.get("source");
-      return worker.processTask(dbName[0], pathToSources[0]);
+    	
+    	return "OK";
+//      dbName = parameters.get("dbName");
+//      String[] pathToSources = parameters.get("source");
+//      return worker.processTask(dbName[0], pathToSources[0]);
     case "stopWorker":
       return worker.stop();
 

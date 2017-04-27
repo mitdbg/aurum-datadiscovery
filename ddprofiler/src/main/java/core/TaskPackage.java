@@ -2,7 +2,7 @@ package core;
 
 import inputoutput.conn.DBType;
 
-public class TaskPackage {
+public class TaskPackage implements java.io.Serializable {
 
   private String dbName;
 	
@@ -32,6 +32,8 @@ public class TaskPackage {
     this.name = name;
     this.separator = separator;
     this.type = type;
+
+
   }
 
   private TaskPackage(String dbName, DBType dbType, String ip, String port, String dbname,
@@ -91,5 +93,15 @@ public class TaskPackage {
   public String getUsername() { return username; }
 
   public String getPassword() { return password; }
+
+  public int getId() {
+    if (this.type == TaskPackageType.CSV) {
+      String hashString = this.type.toString() + this.dbName + this.path + this.name + this.separator;
+      return hashString.hashCode();
+    } else {
+      String hashString = this.type.toString () + this.dbName + this.ip + this.port + this.str;
+      return hashString.hashCode();
+    }
+  }
 
 }
