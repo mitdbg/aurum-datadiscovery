@@ -370,8 +370,8 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    # input = "uniprotcore.owl"
-    # output = "cache_onto/uniprot.pkl"
+    # input = "merck_dlc.owl"
+    # output = "cache_onto/dlc.pkl"
     #
     # parse_ontology(input, output)
     #
@@ -379,7 +379,7 @@ if __name__ == '__main__':
 
     o = OntoHandler()
 
-    o.load_ontology("cache_onto/uniprot.pkl")
+    o.load_ontology("cache_onto/dlc.pkl")
 
     total = 0
     nodesc = 0

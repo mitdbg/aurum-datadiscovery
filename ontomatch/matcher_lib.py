@@ -10,6 +10,7 @@ from knowledgerepr.networkbuilder import LSHRandomProjectionsIndex
 from dataanalysis import dataanalysis as da
 import operator
 from collections import namedtuple
+import numpy as np
 
 
 class MatchingType(Enum):
@@ -489,6 +490,8 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
                         svs.append(sv)
             names.append(('class', (kr_name, original_cl_name), svs))
 
+    print("N equals: " + str(len(names)))
+
     pos_matchings = []
     neg_matchings = []
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
@@ -510,6 +513,234 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
     et = time.time()
     print("l52: " + str(et - st))
     return pos_matchings, neg_matchings
+
+
+def find_relation_class_attr_name_sem_matchings_lsh2(network, kr_handlers,
+                                                semantic_sim_threshold=0.5,
+                                                sensitivity_neg_signal=0.5,
+                                                negative_signal_threshold=0.4,
+                                                penalize_unknown_word=False,
+                                                add_exact_matches=True):
+    # Index for minhashes
+    # lsh_index = MinHashLSH(threshold=0.1, num_perm=100)
+
+    # lsh_index = LSHRandomProjectionsIndex(100, projection_count=30)
+    lsh_index = LSHForest(random_state=42)
+
+    mh_cache = dict()
+
+    rel_vec = dict()
+    vecs = []
+    index = 0
+
+    # Retrieve relation names
+    seen_fields = set()
+    for (db_name, source_name, field_name, _) in network.iterate_values():
+        orig_field_name = field_name
+        key_seen = source_name + field_name
+        if key_seen not in seen_fields:
+            seen_fields.add(key_seen)  # seen already
+            field_name = nlp.camelcase_to_snakecase(field_name)
+            field_name = field_name.replace('-', ' ')
+            field_name = field_name.replace('_', ' ')
+            field_name = field_name.lower()
+            for token in field_name.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        rel_vec[index] = (db_name, source_name, orig_field_name, token, True)
+                        vecs.append(sv)
+                        index += 1
+                        neg_sv = [(-1 * el) for el in sv]
+                        rel_vec[index] = (db_name, source_name, orig_field_name, token, False)
+                        vecs.append(neg_sv)
+                        index += 1
+
+    lsh_index.fit(vecs)
+
+    matches = defaultdict(lambda: defaultdict(list))
+
+    mh_cache = dict()
+
+    cla_vec = dict()
+    cla_vecs = []
+    index = 0
+
+    # Retrieve class names
+    for kr_name, kr_handler in kr_handlers.items():
+        all_classes = kr_handler.classes()
+        for cl in all_classes:
+            original_cl_name = cl
+            # cl = nlp.camelcase_to_snakecase(cl)
+            cl = cl.replace('-', ' ')
+            cl = cl.replace('_', ' ')
+            cl = cl.lower()
+            for token in cl.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+
+                        cla_vec[index] = (original_cl_name, token)
+                        index += 1
+                        cla_vecs.append(sv)
+
+    distances, indices = lsh_index.kneighbors(cla_vecs, n_neighbors=3)
+
+    cla_vecs = None  # gc
+
+    cla_idx = 0
+    for el_distance, el_index in zip(distances, indices):
+        for distance, index in zip(el_distance, el_index):
+            sim = 1 - distance
+            if sim > 0.6:
+                match = rel_vec[index]
+                original_cl_name, token = cla_vec[cla_idx]
+                matches[original_cl_name][token].append(match)
+        cla_idx += 1
+
+    ######
+
+    pos_matching_count = defaultdict(int)
+    neg_matching_count = defaultdict(int)
+
+    for cla_name, v in matches.items():
+        for cla_token, v2 in v.items():
+            for db_name, source_name, fn, token, pos in v2:
+                key = db_name, source_name, fn, cla_name
+                if pos:
+                    pos_matching_count[key] += 1
+                else:
+                    neg_matching_count[key] += 1
+
+    pos_matchings = []
+    neg_matchings = []
+
+    for matching, count in pos_matching_count.items():
+        db_name, source_name, fn, cla_name = matching
+        tokens_sch = 0
+        original_field_name = fn
+        fn = fn.replace('-', ' ')
+        fn = fn.replace('_', ' ')
+        fn = fn.lower()
+        for token in fn.split():
+            if token not in stopwords.words('english'):
+                tokens_sch += 1
+        tokens_cla = 0
+        original_cla_name = cla_name
+        cla_name = cla_name.replace('-', ' ')
+        cla_name = cla_name.replace('_', ' ')
+        cla_name = cla_name.lower()
+        for token in cla_name.split():
+            if token not in stopwords.words('english'):
+                tokens_cla += 1
+        num_tokens = tokens_sch * tokens_cla  # num comparisons
+        ratio = float(count / min(tokens_sch, tokens_cla))  # positive comparisons / num comparisons
+        if ratio > 0.8:
+            match = ((db_name, source_name, original_field_name), ("efo", original_cla_name))
+            pos_matchings.append(match)
+
+    for matching, count in neg_matching_count.items():
+        db_name, source_name, fn, cla_name = matching
+        tokens_sch = 0
+        original_field_name = fn
+        fn = fn.replace('-', ' ')
+        fn = fn.replace('_', ' ')
+        fn = fn.lower()
+        for token in fn.split():
+            if token not in stopwords.words('english'):
+                tokens_sch += 1
+        tokens_cla = 0
+        original_cla_name = cla_name
+        cla_name = cla_name.replace('-', ' ')
+        cla_name = cla_name.replace('_', ' ')
+        cla_name = cla_name.lower()
+        for token in cla_name.split():
+            if token not in stopwords.words('english'):
+                tokens_cla += 1
+        num_tokens = tokens_sch * tokens_cla  # num comparisons
+        ratio = float(count / min(tokens_sch, tokens_cla))  # positive comparisons / num comparisons
+        if ratio > 0.5:
+            match = ((db_name, original_field_name, fn), ("efo", original_cla_name))
+            neg_matchings.append(match)
+
+
+    ######
+
+    return pos_matchings, None
+
+
+def find_relation_class_attr_name_sem_matchings_lsh(network, kr_handlers,
+                                                semantic_sim_threshold=0.5,
+                                                sensitivity_neg_signal=0.5,
+                                                negative_signal_threshold=0.4,
+                                                penalize_unknown_word=False,
+                                                add_exact_matches=True):
+
+    # Index for minhashes
+    lsh_index = MinHashLSH(threshold=semantic_sim_threshold, num_perm=100)
+
+    mh_cache = dict()
+
+    # Retrieve relation names
+    seen_fields = set()
+    for (db_name, source_name, field_name, _) in network.iterate_values():
+        orig_field_name = field_name
+        key_seen = source_name + field_name
+        if key_seen not in seen_fields:
+            seen_fields.add(key_seen)  # seen already
+            field_name = nlp.camelcase_to_snakecase(field_name)
+            field_name = field_name.replace('-', ' ')
+            field_name = field_name.replace('_', ' ')
+            field_name = field_name.lower()
+            for token in field_name.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        if (db_name, source_name, orig_field_name, token) in mh_cache:
+                            lsh_index.insert((db_name, source_name, orig_field_name, token),
+                                             mh_cache[(db_name, source_name, orig_field_name, token)])
+                        else:
+                            mh_obj = MinHash(num_perm=100)
+                            bucketized_sv = [(el * 10000000) for el in sv]
+                            mh_array = np.asarray(bucketized_sv, dtype=np.int32)
+                            mh_obj.hashvalues = mh_array
+                            lsh_index.insert((db_name, source_name, orig_field_name, token), mh_obj)
+                            mh_cache[(db_name, source_name, orig_field_name, token)] = mh_obj
+
+    matches = defaultdict(list)
+
+    mh_cache = dict()
+
+    # Retrieve class names
+    for kr_name, kr_handler in kr_handlers.items():
+        all_classes = kr_handler.classes()
+        for cl in all_classes:
+            original_cl_name = cl
+            #cl = nlp.camelcase_to_snakecase(cl)
+            cl = cl.replace('-', ' ')
+            cl = cl.replace('_', ' ')
+            cl = cl.lower()
+            for token in cl.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        mh_obj = None
+                        if (original_cl_name, token) in mh_cache:
+                            mh_obj = mh_cache[(original_cl_name, token)]
+                        else:
+                            mh_obj = MinHash(num_perm=100)
+                            bucketized_sv = [(el * 10000000) for el in sv]
+                            mh_array = np.asarray(bucketized_sv, dtype=np.int32)
+                            mh_obj.hashvalues = mh_array
+                            mh_cache[(original_cl_name, token)] = mh_obj
+                        N = lsh_index.query(mh_obj)
+                        for n in N:
+                            match = (token, n)
+                            matches[original_cl_name].append(match)
+
+    print(str(len(matches)))
+
+    return None, None
 
 
 def find_relation_class_attr_name_matching(network, kr_handlers, minhash_sim_threshold=0.5):
@@ -638,6 +869,282 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
     et = time.time()
     print("l42: " + str(et - st))
     return pos_matchings, neg_matchings
+
+
+from sklearn.neighbors import LSHForest
+
+
+def find_relation_class_name_sem_matchings_lsh2(network, kr_handlers,
+                                           sem_sim_threshold=0.5,
+                                           negative_signal_threshold=0.4,
+                                           sensitivity_neg_signal=0.5,
+                                           penalize_unknown_word=False,
+                                           add_exact_matches=True):
+    # Index for minhashes
+    #lsh_index = MinHashLSH(threshold=0.1, num_perm=100)
+
+    #lsh_index = LSHRandomProjectionsIndex(100, projection_count=30)
+    lsh_index = LSHForest(random_state=42)
+
+    mh_cache = dict()
+
+    rel_vec = dict()
+    vecs = []
+    index = 0
+
+    seen_sources = set()
+    for (db_name, source_name, _, _) in network.iterate_values():
+        original_source_name = source_name
+        if source_name not in seen_sources:
+            seen_sources.add(source_name)  # seen already
+            source_name = source_name.replace('-', ' ')
+            source_name = source_name.replace('_', ' ')
+            source_name = source_name.lower()
+            for token in source_name.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+
+                        rel_vec[index] = (db_name, original_source_name, token, True)
+                        vecs.append(sv)
+                        index += 1
+                        neg_sv = [(-1 * el) for el in sv]
+                        rel_vec[index] = (db_name, original_source_name, token, False)
+                        vecs.append(neg_sv)
+                        index += 1
+
+    lsh_index.fit(vecs)
+
+    matches = defaultdict(lambda: defaultdict(list))
+
+    mh_cache = dict()
+
+    cla_vec = dict()
+    cla_vecs = []
+    index = 0
+
+    # Retrieve class names
+    for kr_name, kr_handler in kr_handlers.items():
+        all_classes = kr_handler.classes()
+        for cl in all_classes:
+            original_cl_name = cl
+            cl = nlp.camelcase_to_snakecase(cl)
+            cl = cl.replace('-', ' ')
+            cl = cl.replace('_', ' ')
+            cl = cl.lower()
+            for token in cl.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        cla_vec[index] = (original_cl_name, token)
+                        index += 1
+                        cla_vecs.append(sv)
+
+    distances, indices = lsh_index.kneighbors(cla_vecs, n_neighbors=3)
+
+    cla_idx = 0
+    for el_distance, el_index in zip(distances, indices):
+        for distance, index in zip(el_distance, el_index):
+            sim = 1 - distance
+            if sim > 0.7:
+                match = rel_vec[index]
+                original_cl_name, token = cla_vec[cla_idx]
+                matches[original_cl_name][token].append(match)
+        cla_idx += 1
+
+    pos_matching_count = defaultdict(int)
+    neg_matching_count = defaultdict(int)
+
+    for cla_name, v in matches.items():
+        for cla_token, v2 in v.items():
+            for db_name, source_name, _, pos in v2:
+                key = db_name, source_name, "_", cla_name
+                if pos:
+                    pos_matching_count[key] += 1
+                else:
+                    neg_matching_count[key] += 1
+
+    pos_matchings = []
+    neg_matchings = []
+
+    for matching, count in pos_matching_count.items():
+        db_name, source_name, fn, cla_name = matching
+        tokens_sch = 0
+        original_source_name = source_name
+        source_name = source_name.replace('-', ' ')
+        source_name = source_name.replace('_', ' ')
+        source_name = source_name.lower()
+        for token in source_name.split():
+            if token not in stopwords.words('english'):
+                tokens_sch += 1
+        tokens_cla = 0
+        original_cla_name = cla_name
+        cla_name = cla_name.replace('-', ' ')
+        cla_name = cla_name.replace('_', ' ')
+        cla_name = cla_name.lower()
+        for token in cla_name.split():
+            if token not in stopwords.words('english'):
+                tokens_cla += 1
+        num_tokens = tokens_sch * tokens_cla  # num comparisons
+        ratio = float(count / min(tokens_sch, tokens_cla))  # positive comparisons / num comparisons
+        if ratio > 0.5:
+            match = (db_name, original_source_name, "_ ==>> ", "efo", original_cla_name)
+            pos_matchings.append(match)
+
+    for matching, count in neg_matching_count.items():
+        db_name, source_name, fn, cla_name = matching
+        tokens_sch = 0
+        original_source_name = source_name
+        source_name = source_name.replace('-', ' ')
+        source_name = source_name.replace('_', ' ')
+        source_name = source_name.lower()
+        for token in source_name.split():
+            if token not in stopwords.words('english'):
+                tokens_sch += 1
+        tokens_cla = 0
+        original_cla_name = cla_name
+        cla_name = cla_name.replace('-', ' ')
+        cla_name = cla_name.replace('_', ' ')
+        cla_name = cla_name.lower()
+        for token in cla_name.split():
+            if token not in stopwords.words('english'):
+                tokens_cla += 1
+        num_tokens = tokens_sch * tokens_cla  # num comparisons
+        ratio = float(count / min(tokens_sch, tokens_cla))  # positive comparisons / num comparisons
+        if ratio > 0.5:
+            match = (db_name, original_source_name, "_ ==>> ", "efo", original_cla_name)
+            neg_matchings.append(match)
+
+    # real_m = set()
+    # for a, v in matches.items():
+    #     for k, v2 in v.items():
+    #         for (b, c, d, pos) in v2:
+    #             real_m.add((a, b, c, d))
+    #             if not pos:
+    #                print(str(a) + " - " + str(b) + " - " + str(c) + " - " + str(d) + " - " + str(pos))
+    #for m in real_m:
+    #    print(str(m))
+
+    # print(str(len(matches)))
+
+    return pos_matchings, neg_matchings
+
+
+def find_relation_class_name_sem_matchings_lsh(network, kr_handlers,
+                                           sem_sim_threshold=0.5,
+                                           negative_signal_threshold=0.4,
+                                           sensitivity_neg_signal=0.5,
+                                           penalize_unknown_word=False,
+                                           add_exact_matches=True):
+    # Index for minhashes
+    #lsh_index = MinHashLSH(threshold=0.1, num_perm=100)
+
+    lsh_index = LSHRandomProjectionsIndex(100, projection_count=30)
+
+    mh_cache = dict()
+
+    seen_sources = set()
+    for (db_name, source_name, _, _) in network.iterate_values():
+        original_source_name = source_name
+        if source_name not in seen_sources:
+            seen_sources.add(source_name)  # seen already
+            source_name = source_name.replace('-', ' ')
+            source_name = source_name.replace('_', ' ')
+            source_name = source_name.lower()
+            for token in source_name.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        if (db_name, original_source_name, token, _) in mh_cache:
+                            lsh_index.index(mh_cache[(db_name, original_source_name, token, True)],
+                                             (db_name, original_source_name, token, True))
+                            lsh_index.index(mh_cache[(db_name, original_source_name, token, False)],
+                                            (db_name, original_source_name, token, False))
+                            # lsh_index.insert((db_name, original_source_name, token, True),
+                            #                  mh_cache[(db_name, original_source_name, token, True)])
+                            # lsh_index.insert((db_name, original_source_name, token, False),
+                            #                  mh_cache[(db_name, original_source_name, token, False)])
+                        else:
+                            # index positive
+                            #mh_obj = MinHash(num_perm=100)
+                            #bucketized_sv = [(el * 10000000) for el in sv]
+                            #mh_array = np.asarray(bucketized_sv, dtype=np.int32)
+                            #mh_obj.hashvalues = mh_array
+                            #sv = [1000000 * el for el in sv]
+                            lsh_index.index(sv, (db_name, original_source_name, token, True))
+                            #lsh_index.insert((db_name, original_source_name, token, True), mh_obj)
+                            #mh_cache[(db_name, original_source_name, token, True)] = mh_obj
+                            mh_cache[(db_name, original_source_name, token, True)] = sv
+                            # rotate vector and index negative
+                            #mh_obj_neg = MinHash(num_perm=100)
+                            #bucketized_sv_neg = [(-1 * (el * 10000000)) for el in sv]
+                            #mh_array_neg = np.asarray(bucketized_sv_neg, dtype=np.int32)
+                            #mh_obj_neg.hashvalues = mh_array_neg
+                            neg_sv = [(-1 * el) for el in sv]
+                            lsh_index.index(neg_sv, (db_name, original_source_name, token, False))
+                            #lsh_index.insert((db_name, original_source_name, token, False), mh_obj_neg)
+                            #mh_cache[(db_name, original_source_name, token, False)] = mh_obj_neg
+                            mh_cache[(db_name, original_source_name, token, False)] = neg_sv
+
+    matches = defaultdict(lambda: defaultdict(list))
+
+    mh_cache = dict()
+
+    # Retrieve class names
+    for kr_name, kr_handler in kr_handlers.items():
+        all_classes = kr_handler.classes()
+        for cl in all_classes:
+            original_cl_name = cl
+            cl = nlp.camelcase_to_snakecase(cl)
+            cl = cl.replace('-', ' ')
+            cl = cl.replace('_', ' ')
+            cl = cl.lower()
+            for token in cl.split():
+                if token not in stopwords.words('english'):
+                    sv = glove_api.get_embedding_for_word(token)
+                    if sv is not None:
+                        # mh_obj = None
+                        # if (original_cl_name, token) in mh_cache:
+                        #     mh_obj = mh_cache[(original_cl_name, token)]
+                        # else:
+                        #     mh_obj = MinHash(num_perm=100)
+                        #     bucketized_sv = [(el * 10000000) for el in sv]
+                        #     mh_array = np.asarray(bucketized_sv, dtype=np.int32)
+                        #     mh_obj.hashvalues = mh_array
+                        #     mh_cache[(original_cl_name, token)] = mh_obj
+
+                        #N = lsh_index.query(mh_obj)
+                        #sv = [1000000 * el for el in sv]
+                        N = lsh_index.query(sv)
+
+                        # mh_obj_neg = MinHash(num_perm=100)
+                        # bucketized_sv_neg = [(el * -10000000) for el in sv]
+                        # mh_array_neg = np.asarray(bucketized_sv_neg, dtype=np.int32)
+                        # mh_obj_neg.hashvalues = mh_array_neg
+                        #
+                        # N_neg = lsh_index.query(mh_obj_neg)
+                        #
+                        # if len(N_neg) > 0:
+                        #     for n in N_neg:
+                        #         print(n)
+
+                        for array, key, distance in N:
+                            match = key
+                            matches[original_cl_name][token].append(match)
+
+    real_m = set()
+    for a, v in matches.items():
+        for k, v2 in v.items():
+            for (b, c, d, pos) in v2:
+                real_m.add((a, b, c, d))
+                #if not pos:
+                #    print(str(a) + " - " + str(b) + " - " + str(c) + " - " + str(d) + " - " + str(pos))
+    for m in real_m:
+        print(str(m))
+
+    print(str(len(matches)))
+
+    return None, None
 
 
 def find_relation_class_name_matchings(network, kr_handlers, minhash_sim_threshold=0.5):

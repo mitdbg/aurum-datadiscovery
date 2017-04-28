@@ -276,8 +276,8 @@ class SSAPI:
 
         combined_list = list_from_dict(combined_matchings)
 
-        #combined_matchings = matcherlib.summarize_matchings_to_ancestor(self, combined_list, summarize_or_remove=True)
-        combined_matchings = combined_list
+        combined_matchings = matcherlib.summarize_matchings_to_ancestor(self, combined_list, summarize_or_remove=True)
+        #combined_matchings = combined_list
 
         return combined_matchings
 
@@ -573,48 +573,46 @@ def test_e2e(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
     om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
     #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
-    hand = om.kr_handlers["uniprot"]
+    # hand = om.kr_handlers["uniprot"]
+    #
+    # all_classes = hand.classes()
 
-    all_classes = hand.classes()
-
-    print("Finding matchings...")
-    st = time.time()
-    matchings = om.find_matchings()
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et-st))
-
-    #matchings = matcherlib.summarize_matchings_to_ancestor(om)
-
-    print("Writing MATCHINGS output to disk...")
-    with open('output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
-        for k in matchings:
-            #lines = k.print_serial()
-            #for l in lines:
-            print(str(k))
-            f.write(str(k) + '\n')
-    print("Writing MATCHINGS output to disk...OK")
+    # print("Finding matchings...")
+    # st = time.time()
+    # matchings = om.find_matchings()
+    # et = time.time()
+    # print("Finding matchings...OK")
+    # print("Took: " + str(et-st))
+    #
+    # print("Writing MATCHINGS output to disk...")
+    # with open('matchings_chembl_drugbank2', 'w') as f:
+    #     for k in matchings:
+    #         #lines = k.print_serial()
+    #         #for l in lines:
+    #         print(str(k))
+    #         f.write(str(k) + '\n')
+    # print("Writing MATCHINGS output to disk...OK")
 
     matchings = []
     line = 0
-    with open("output_chembl_and_drugcentral_allonto_6.1", 'r') as f:
-        lines = f.readlines()
-        for l in lines:
+    with open("matchings_chembl_drugbank2", 'r') as f:
+        #lines = f.readlines()
+        for l in f:
             tokens = l.split("==>>")
             sch = tokens[0]
             cla = tokens[1]
-            sch_tokens = sch.split("%%%")
+            sch_tokens = sch.split(",")
             sch_tokens = [t.strip() for t in sch_tokens]
-            cla_tokens = cla.split("%%%")
+            cla_tokens = cla.split(",")
             cla_tokens = [t.strip() for t in cla_tokens]
-            matching_format = (((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1])), cla_tokens[2])
+            matching_format = ((((sch_tokens[0], sch_tokens[1], sch_tokens[2]), (cla_tokens[0], cla_tokens[1]))), "bla")
             matchings.append(matching_format)
             print(line)
             line += 1
@@ -627,7 +625,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('links_output_chembl_and_drugcentral_allonto_6.1', 'w') as f:
+    with open('links_chembl_drugcentral2', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -1515,13 +1513,237 @@ def test(path_to_serialized_model):
 
 def take_links():
     total_cross_links = 0
-    with open("links_output_chembl_and_drugcentral_allonto_6.1", 'r') as f:
+    with open("links_chembl_drugcentral2", 'r') as f:
         for line in f:
             if 'drugcentral' in line and 'chembl_22' in line:
                 total_cross_links += 1
                 print(line)
     print("TOTAL: " + str(total_cross_links))
 
+
+def test_lsh_quality(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings_lsh2(om.network,
+                                                                                                   om.kr_handlers,
+                                                                                                   semantic_sim_threshold=0.5,
+                                                                                                   negative_signal_threshold=0.5,
+                                                                                                   add_exact_matches=True,
+                                                                                                   penalize_unknown_word=False)
+    e = time.time()
+    print("L52 LSH took (chembl-efo): " + str(e - s))
+
+    # here we read l42 from raw and compare
+
+    from ontomatch import sem_prop_benchmarking as spb
+
+    orig_l52 = spb.read("raw/" + "l52_05")
+
+    # parsed_l52 = []
+    # for el in orig_l52:
+    #     sch, cla = el.split("==>>")
+    #     db, src, f = sch.split("%%%")
+    #     onto, cla = cla.split("%%%")
+    #     match = ((db, src, f), (onto, cla))
+    #     parsed_l52.append(match)
+
+
+    l52 = set(orig_l52)
+
+    not_found = []
+
+    for m in l52_matchings:
+        if m not in l52:
+            not_found.append(m)
+
+    print("Total original: " + str(len(l52)))
+    print("Total found: " + str(len(l52_matchings)))
+    print("Not found: " + str(len(not_found)))
+
+
+def test_l42_lsh(path_to_serialized_model):
+    # Deserialize model
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(om.network,
+                                                                                              om.kr_handlers,
+                                                                                              semantic_sim_threshold=0.5,
+                                                                                              negative_signal_threshold=0.5,
+                                                                                              add_exact_matches=False,
+                                                                                              penalize_unknown_word=True)
+    e = time.time()
+    print("L52 normal took (chembl-efo): " + str(e - s))
+
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings_lsh2(om.network,
+                                                                                              om.kr_handlers,
+                                                                                              semantic_sim_threshold=0.5,
+                                                                                              negative_signal_threshold=0.5,
+                                                                                              add_exact_matches=False,
+                                                                                              penalize_unknown_word=True)
+    e = time.time()
+    print("L52 LSH took (chembl-efo): " + str(e - s))
+
+    # Deserialize model
+    network = fieldnetwork.deserialize_network("../models/chembl_drugcentral/")
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(om.network,
+                                                                                              om.kr_handlers,
+                                                                                              semantic_sim_threshold=0.5,
+                                                                                              negative_signal_threshold=0.5,
+                                                                                              add_exact_matches=False,
+                                                                                              penalize_unknown_word=True)
+    e = time.time()
+    print("L52 normal took (chembl_drugcentral-efo): " + str(e - s))
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings_lsh2(om.network,
+                                                                                                   om.kr_handlers,
+                                                                                                   semantic_sim_threshold=0.5,
+                                                                                                   negative_signal_threshold=0.5,
+                                                                                                   add_exact_matches=False,
+                                                                                                   penalize_unknown_word=True)
+    e = time.time()
+    print("L52 LSH took (chembl_drugcentral-efo): " + str(e - s))
+
+    # Deserialize model
+    network = fieldnetwork.deserialize_network("../models/chembl_drugcentral/")
+    # Create client
+    store_client = StoreHandler()
+
+    # Load glove model
+    print("Loading language model...")
+    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    glove_api.load_model(path_to_glove_model)
+    print("Loading language model...OK")
+
+    # Retrieve indexes
+    schema_sim_index = io.deserialize_object(path_to_serialized_model + 'schema_sim_index.pkl')
+    content_sim_index = io.deserialize_object(path_to_serialized_model + 'content_sim_index.pkl')
+
+    # Create ontomatch api
+    om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
+    # Load parsed ontology
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)
+    om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
+    om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
+    om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(om.network,
+                                                                                              om.kr_handlers,
+                                                                                              semantic_sim_threshold=0.5,
+                                                                                              negative_signal_threshold=0.5,
+                                                                                              add_exact_matches=False,
+                                                                                              penalize_unknown_word=True)
+    e = time.time()
+    print("L52 normal took (chembl_drugcentral-allonto): " + str(e - s))
+
+    s = time.time()
+    l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings_lsh2(om.network,
+                                                                                                   om.kr_handlers,
+                                                                                                   semantic_sim_threshold=0.5,
+                                                                                                   negative_signal_threshold=0.5,
+                                                                                                   add_exact_matches=False,
+                                                                                                   penalize_unknown_word=True)
+    e = time.time()
+    print("L52 LSH took (chembl_drugcentral-allonto): " + str(e - s))
+
+    exit()
+
+    # s = time.time()
+    # l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(om.network, om.kr_handlers,
+    #                                                                                          sem_sim_threshold=0.5,
+    #                                                                                          sensitivity_neg_signal=0.4,
+    #                                                                                          add_exact_matches=False,
+    #                                                                                          penalize_unknown_word=True)
+    # e = time.time()
+    # print("Normal took: " + str((e - s)))
+    #
+    # print("normal POS l42")
+    # for pos in l42_matchings:
+    #     print(str(pos))
+    #
+    # print("normal NEG l42")
+    # for neg in neg_l42_matchings:
+    #     print(str(neg))
+
+    s = time.time()
+    l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings_lsh2(om.network, om.kr_handlers,
+                                                                                         sem_sim_threshold=0.5,
+                                                                                         sensitivity_neg_signal=0.4,
+                                                                                         add_exact_matches=False,
+                                                                                         penalize_unknown_word=True)
+    e = time.time()
+    print("LSH took: " + str((e - s)))
+
+    print("lsh POS l42")
+    for pos in l42_matchings:
+        print(str(pos))
+
+    print("lsh NEG l42")
+    for neg in neg_l42_matchings:
+        print(str(neg))
+
+    return
 
 if __name__ == "__main__":
 
@@ -1558,8 +1780,41 @@ if __name__ == "__main__":
     # test("../models/chembl22/")
     # exit()
 
-    #take_links()
-    #exit()
+    take_links()
+    exit()
+
+    # print("Loading language model...")
+    # path_to_glove_model = "../glove/glove.6B.100d.txt"
+    # glove_api.load_model(path_to_glove_model)
+    # print("Loading language model...OK")
+    #
+    # lsh_index = LSHRandomProjectionsIndex(100, projection_count=1000)
+    #
+    # sv1 = glove_api.get_embedding_for_word("cat")
+    # sv2 = glove_api.get_embedding_for_word("dog")
+    #
+    # sim = glove_api.semantic_distance(sv1, sv2)
+    # print("original distance: " + str(sim))
+    #
+    # lsh_index.index(sv1, "cat")
+    # lsh_index.index(sv2, "dog")
+    #
+    # N = lsh_index.query(sv1)
+    # for n in N:
+    #     print(str(n))
+    # N = lsh_index.query(sv2)
+    #
+    # for n in N:
+    #     print(str(n))
+    #
+    # exit()
+
+    # test_lsh_quality("../models/chembl22/")
+    # exit()
+    #
+    #
+    # test_l42_lsh("../models/chembl22/")
+    # exit()
 
     test_e2e("../models/chembl_drugcentral/")
     exit()
