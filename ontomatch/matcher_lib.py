@@ -109,7 +109,7 @@ class SimpleTrie:
 
             # Does the max representing child cuts?
             ratio_cut = float(max_repr / num_seqs)
-            if ratio_cut > 0.35:  # if cuts, keep digging
+            if ratio_cut > 0.4:  # if cuts, keep digging
                 return summarize_seq(num_seqs, subtree[chosen_child], chosen_child)
             else:  # i then summarize
                 matchings = self._reduce_matchings(subtree, set())
@@ -186,7 +186,69 @@ class Matching:
         return relation_matchings
 
 
+
+# double check for better recall
+def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
+                                          penalize_unknown_word=True,
+                                          add_exact_matches=True):
+    def getSVS(attribute):
+        svs = []
+        field_name = attribute
+        field_name = nlp.camelcase_to_snakecase(field_name)
+        field_name = field_name.lower()
+        field_name = field_name.replace('_', ' ')
+        for token in field_name.split():
+            if token not in stopwords.words('english'):
+                sv = glove_api.get_embedding_for_word(token)
+                if sv is not None:
+                    svs.append(sv)
+        return svs, field_name
+
+    svs1, field_name1 = getSVS(attribute1)
+    svs2, field_name2 = getSVS(attribute2)
+
+    if not add_exact_matches:
+        ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
+        svs_rel = removed_banned_vectors(ban_index1, svs1)
+        svs_cla = removed_banned_vectors(ban_index2, svs2)
+    else:
+        svs_rel = svs1
+        svs_cla = svs2
+
+    semantic_sim, neg_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
+                                                              penalize_unknown_word=penalize_unknown_word,
+                                                              add_exact_matches=add_exact_matches)
+    return semantic_sim, neg_signal
+
+
+def remove_intuitive_description(attribute1, attribute2):
+    intuitive_description = ['_id', '_name', '_type', '_class', '_parameters', '_units', '_desc', 'res_']
+    tokens1 = attribute1.lower().replace('_', ' ').split()
+    tokens2 = attribute2.lower().replace('_', ' ').split()
+    if attribute2.lower() in attribute1.lower() and len(tokens1) > 1 and len(tokens2) == 1:
+        for el in intuitive_description:
+            if not (attribute2.lower() in el.replace('_', '').lower()):
+                attribute1 = attribute1.replace(el, '')
+    return attribute1
+
+
 def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, summarize_or_remove=True, summary_ratio=0.8):
+
+    def get_sem_similar_matchings_from(matchings):
+        matchings_to_keep = []
+        for el in matchings:
+            # double check using the semantic
+            attribute2 = el[1][1]
+            if el[0][2] == '_':
+                attribute1 = el[0][1]
+            else:
+                attribute1 = el[0][2]
+
+            attribute1 = remove_intuitive_description(attribute1, attribute2)
+            semantic_sim, signal = double_check_sem_signal_attr_sch_sch(attribute1, attribute2, False)
+            if signal and semantic_sim >= 0.85:
+                matchings_to_keep.append(el)
+        return matchings_to_keep
 
     def summarize(matchings, handler):
         sequences = list()
@@ -215,6 +277,9 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
                 new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
                 if summarize_or_remove:
                     summ_matchings.append(new_match)
+                    semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+                    for el in semantically_similar_matchings:
+                        summ_matchings.append(el)
                     return summ_matchings
                 else:
                     summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
@@ -224,12 +289,17 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
         if summarize_or_remove:
             sch, cla = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # don't add -> breaking precision...
-            return []  # could not summarize -> remove
+            # return []  # could not summarize -> remove
+            semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+            return semantically_similar_matchings  # could not summarize -> remove
         else:
             summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
             sch, cla = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
             summ_matchings.append(new_match)
+            semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
+            for el in semantically_similar_matchings:
+                summ_matchings.append(el)
             return summ_matchings  # could not summarize, return original
 
     def compute_fanout(matchings):
