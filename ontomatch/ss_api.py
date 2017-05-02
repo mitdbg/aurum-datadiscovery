@@ -1747,80 +1747,8 @@ def test_l42_lsh(path_to_serialized_model):
 
 if __name__ == "__main__":
 
-    #test_find_semantic_sim()
-    #exit()
-
-    #test_fuzzy("../models/chembl21/")
-    #exit()
-
-    #compute_coh_groups("../models/chembl22/")
-    #exit()
-
-    #test_5_n_52("../models/chembl22/")
-    #exit()
-
-    # test_chembl_annotations("../models/chembl22/")
-    # exit()
-    #
-    # debug_neg_signal("../models/chembl22/")
-    # exit()
-    #
-    # print_table_attrs_for("../models/chembl22/")
-    # exit()
-
-    # try_descr("../models/chembl22/")
-    # exit()
-    #
-    # can_l6_cancel_l42_and_l52("../models/chembl22/")
-    # exit()
-    #
-    # test_l6("../models/chembl22/")
-    # exit()
-
-    # test("../models/chembl22/")
-    # exit()
-
-    take_links()
-    exit()
-
-    # print("Loading language model...")
-    # path_to_glove_model = "../glove/glove.6B.100d.txt"
-    # glove_api.load_model(path_to_glove_model)
-    # print("Loading language model...OK")
-    #
-    # lsh_index = LSHRandomProjectionsIndex(100, projection_count=1000)
-    #
-    # sv1 = glove_api.get_embedding_for_word("cat")
-    # sv2 = glove_api.get_embedding_for_word("dog")
-    #
-    # sim = glove_api.semantic_distance(sv1, sv2)
-    # print("original distance: " + str(sim))
-    #
-    # lsh_index.index(sv1, "cat")
-    # lsh_index.index(sv2, "dog")
-    #
-    # N = lsh_index.query(sv1)
-    # for n in N:
-    #     print(str(n))
-    # N = lsh_index.query(sv2)
-    #
-    # for n in N:
-    #     print(str(n))
-    #
-    # exit()
-
-    # test_lsh_quality("../models/chembl22/")
-    # exit()
-    #
-    #
-    # test_l42_lsh("../models/chembl22/")
-    # exit()
-
     test_e2e("../models/chembl_drugcentral/")
     exit()
-
-    #test("../models/massdata/")
-    #exit()
 
     print("SSAPI")
 
