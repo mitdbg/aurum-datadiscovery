@@ -1,6 +1,7 @@
 package masterworker;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -9,13 +10,16 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 
 import comm.WebServer;
+import core.Catalog;
 import core.Conductor;
 import core.TaskPackage;
 import core.config.ProfilerConfig;
@@ -32,39 +36,71 @@ public class Master {
 
 	// tasks
 	private Map<Integer, TaskPackage> tasks;
-	
-	//completion of tasks
-	private Map<Integer, Boolean> taskStatus;
+
+	// completion of tasks
+	private Map<Integer, Boolean> taskToStatus;
 
 	// catalog
-	private Map<Integer, String> catalog = new HashMap<Integer, String>();
+	private Catalog catalog;
 
 	public Master(ProfilerConfig pc, Conductor c) {
 		this.pc = pc;
 		this.c = c;
 		this.workers = new HashMap<String, WorkerStatus>();
 		this.dbName = pc.getString(ProfilerConfig.DB_NAME);
+		this.tasks = new HashMap<Integer, TaskPackage>();
+		this.taskToStatus = new HashMap<Integer, Boolean>();
+
+		// Setup catalog
+
+		File catalogFile = new File("tasks.catalog");
+		FileInputStream fin = null;
+		ObjectInputStream ois = null;
+		try {
+			if (catalogFile.exists()) {
+				fin = new FileInputStream(catalogFile);
+				ois = new ObjectInputStream(fin);
+
+				this.catalog = (Catalog) ois.readObject();
+			} else {
+				this.catalog = new Catalog();
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			if (fin != null) {
+				try {
+					fin.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (ois != null) {
+				try {
+					ois.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
 	}
 
 	public void start(String sourcePath) {
 		pendingWork = true;
-		// split up work
-		tasks = new HashMap<Integer, TaskPackage>();
 
-		//
-		//for (String task : tasks.keySet()) {
-		//	if (catalog.containsKey(task)) {
-				// see if user wants to re-execute, otherwise, ignore
-		//	}
-		//}
-		//
 		String dbName = pc.getString(ProfilerConfig.DB_NAME);
 		String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
 		String separator = pc.getString(ProfilerConfig.CSV_SEPARATOR);
+		// split up work
 		readDirectoryAndCreateTasks(dbName, c, pathToSources, separator);
-		
-		//tasks.put(sourcePath, true);// for simplicity just putting all work into
-									// one task
+
+		for (Integer taskId : tasks.keySet()) {
+			if (catalog.taskCompleted(taskId)) {
+				// see if user wants to re-execute, otherwise, ignore
+			}
+		}
 
 		Master master = this;
 
@@ -74,6 +110,7 @@ public class Master {
 										// something to do with how
 										// WebServer.init() is setup
 			public void run() {
+				System.out.println("starting with master: " + master.toString());
 				WebServer ws = new WebServer(pc, c, master);
 				ws.init();
 			}
@@ -127,35 +164,45 @@ public class Master {
 		WorkerStatus newWorkerStatus = new WorkerStatus(false);
 		workers.put(workerAddr, newWorkerStatus);
 
-		System.out.println("workders: " + workers.toString());
-
+		System.out.println("workers: " + workers.toString());
+		
+		System.out.println("tasks: " + tasks.toString());
+		System.out.println("tasks statuses: " + taskToStatus.toString());
 		// give worker chunk of work to process
 		for (Integer taskId : tasks.keySet()) {
-			if (taskStatus.get(taskId)) {// check if this task still needs to be done
+			if (!taskToStatus.get(taskId)) {// check if this task still needs to be
+											// done
 				processPathOnWorker(taskId, workerAddr);
 				return "OK";
 			}
 		}
 		// no more work to do
-		pendingWork = false;
+		//pendingWork = false;
 		return "OK";
 	}
 
-	public String taskComplete(String workerAddr, String taskId) {
+	public String taskComplete(String workerAddr, String taskIds) {
 		// update worker status
-		workers.get(workerAddr).updateStatus(false);
+		Scanner scanner = new Scanner(taskIds);
+    	while (scanner.hasNextInt()) {
+    		taskToStatus.put(scanner.nextInt(), true);
+
+    	}
+    	scanner.close();
+    	
+		//workers.get(workerAddr).updateStatus(false);
 
 		// mark task complete
-		taskStatus.put(Integer.parseInt(taskId), false);
 
 		for (int newTaskId : tasks.keySet()) {
-			if (taskStatus.get(newTaskId)) {// check if this task still needs to be done
+			if (!taskToStatus.get(newTaskId)) {// check if this task still needs to
+											// be done
 
 				processPathOnWorker(newTaskId, workerAddr);
 				return "OK";
 			}
 		}
-		System.out.println("master finished everything");
+		System.out.println("workers finished everything");
 		// no more work to do
 		pendingWork = false;
 		return "OK";
@@ -163,67 +210,58 @@ public class Master {
 
 	private void processPathOnWorker(int taskId, String workerAddr) {
 
-//		HttpClient httpclient = HttpClients.createDefault();
-//
-//		URIBuilder builder = new URIBuilder();
-//		builder.setScheme("http").setHost("localhost:" + workerAddr).setPath("/dd")
-//				.setParameter("actionid", "processTaskOnWorker").setParameter("dbName", dbName)
-//				.setParameter("source", taskPath);
-//
-//		// Execute and get the response.
-//		HttpGet httpget;
-//		try {
-//			httpget = new HttpGet(builder.build());
-//			// System.out.println("TRYING to get response from server at: " +
-//			// httpget.getURI());
-//			// System.out.println("reqeust I'm sending: " + httpget);
-//			Object response = httpclient.execute(httpget);// try to connect to
-//															// worker
-//			System.out.println("response for process task: " + response);
-//		
-//		} catch (URISyntaxException | IOException e) {
-//			e.printStackTrace();
-//		}
 		TaskPackage task = tasks.get(taskId);
-		
+
 		URLConnection conn = null;
-	    Object reply = null;
-	    try {
-	    	
-	        // open URL connection
-	    	URIBuilder builder = new URIBuilder();
-			builder.setScheme("http").setHost("localhost:" + workerAddr).setPath("/dd")
-					.setParameter("actionid", "processTaskOnWorker").setParameter("dbName", dbName);
-	        
+		Object reply = null;
+		try {
+			System.out.println("trying to process path on worker");
+			URIBuilder builder = new URIBuilder();
+			builder.setScheme("http").setHost("localhost:" + workerAddr).setPath("/dd").setParameter("actionid",
+					"processTaskOnWorker");
+
+			// HttpGet httpget = new HttpGet(builder.build());
+
+			// HttpResponse response = (HttpResponse)
+			// httpclient.execute(httpget);// try to connect to master
+
+			// open URL connection
+			// URIBuilder builder = new URIBuilder();
+			// builder.setScheme("http")
+			// .setHost("localhost:" + workerAddr)
+			// .setPath("/dd")
+			// .setParameter("actionid", "processTaskOnWorker")
+			// .setParameter("dbName", dbName);
+			//
 			URL url = builder.build().toURL();
-	        
-	        conn = url.openConnection();
-	        conn.setDoInput(true);
-	        conn.setDoOutput(true);
-	        conn.setUseCaches(false);
-	        // send object
-	        ObjectOutputStream objOut = new ObjectOutputStream(conn.getOutputStream());
-	        objOut.writeObject(task);
-	        objOut.flush();
-	        objOut.close();
-	    } catch (IOException | URISyntaxException ex) {
-	        ex.printStackTrace();
-	        
-	    }
-	    // recieve reply
-	    try {
-	        ObjectInputStream objIn = new ObjectInputStream(conn.getInputStream());
-	        reply = objIn.readObject();
-	        objIn.close();
-	        System.out.println("reply: "+ reply.toString());
-	    } catch (Exception ex) {
-	        // it is ok if we get an exception here
-	        // that means that there is no object being returned
-	        System.out.println("No Object Returned");
-//	        if (!(ex instanceof EOFException))
-//	            ex.printStackTrace();
-//	            System.err.println("*");
-	    }
+			//
+			conn = url.openConnection();
+			conn.setDoInput(true);
+			conn.setDoOutput(true);
+			conn.setUseCaches(false);
+			// // send object
+			ObjectOutputStream objOut = new ObjectOutputStream(conn.getOutputStream());
+			objOut.writeObject(task);
+			objOut.flush();
+			objOut.close();
+
+		} catch (IOException | URISyntaxException ex) {
+			ex.printStackTrace();
+		}
+		// recieve reply
+		try {
+			ObjectInputStream objIn = new ObjectInputStream(conn.getInputStream());
+			reply = objIn.readObject();
+			objIn.close();
+			System.out.println("reply: " + reply.toString());
+		} catch (Exception ex) {
+			// it is ok if we get an exception here
+			// that means that there is no object being returned
+			System.out.println("No Object Returned");
+			// if (!(ex instanceof EOFException))
+			// ex.printStackTrace();
+			// System.err.println("*");
+		}
 	}
 
 	private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources, String separator) {
@@ -239,10 +277,11 @@ public class Master {
 				TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
 				totalFiles++;
 				tasks.put(tp.getId(), tp);
-				taskStatus.put(tp.getId(), false);
-				c.submitTask(tp);
+				taskToStatus.put(tp.getId(), false);// check catalog
+				// c.submitTask(tp);
 			}
 		}
-		//LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
+		// LOG.info("Total files submitted for processing: {} - {}", totalFiles,
+		// tt);
 	}
 }

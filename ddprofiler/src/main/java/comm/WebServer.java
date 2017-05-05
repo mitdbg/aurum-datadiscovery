@@ -24,6 +24,7 @@ public class WebServer {
   public WebServer(ProfilerConfig pc, Conductor c) {
     silenceJettyLogger();
     WebHandler handler = new WebHandler(c);
+    System.out.println("starting server FROM HERE?? NANII!??");
     this.server = new Server(pc.getInt(ProfilerConfig.WEB_SERVER_PORT));
 
     // Configure servletHandler

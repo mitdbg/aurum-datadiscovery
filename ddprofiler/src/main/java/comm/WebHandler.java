@@ -7,6 +7,7 @@ package comm;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -38,23 +39,31 @@ public class WebHandler extends HttpServlet {
 
   //wanted to behave differently depending on master or worker. not sure if I should do this differently
 
-  public WebHandler(Conductor c) { this.c = c; }
+  public WebHandler(Conductor c) { this.c = c; 
+  System.out.println("initializing with out either: ");
+}
   
   public WebHandler(Conductor c, Master m) { 
 	  this.c = c; 
 	  this.master= m;
+	  
+	  System.out.println("initializing with master: "+ master.toString());
   }
   
   public WebHandler(Conductor c, Worker w) { 
 	  this.c = c; 
 	  this.worker = w;
+	  System.out.println("initializing with worker: "+ worker.toString());
+
   }
 
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
+	  System.out.println("GETTING request: "+ request.toString());
     // Get parameter map
     Map<String, String[]> parameters = request.getParameterMap();
+    System.out.println("parameters: "+parameters.toString());
     String[] actionIdValues = parameters.get("actionid");
     String actionId = actionIdValues[0];
     
@@ -62,10 +71,10 @@ public class WebHandler extends HttpServlet {
     if (actionId == "processTaskOnWorker") {
     	ObjectInputStream objIn = new ObjectInputStream(request.getInputStream());
     	try {
-			worker.processTask((TaskPackage)objIn.readObject());
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+			 worker.processTask((TaskPackage)objIn.readObject());
+		  } catch (ClassNotFoundException e) {
+			 e.printStackTrace();
+		  }
     }
     
     String result = handleAction(actionId, parameters);
@@ -75,6 +84,40 @@ public class WebHandler extends HttpServlet {
     
   }
 
+  @Override
+  protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	  System.out.println("GETTING POST");
+	  //System.out.println("getting  post request: "+ request.toString());
+//	    // Get parameter map
+//	    Map<String, String[]> parameters = request.getParameterMap();
+//	    System.out.println("parameters: "+parameters.toString());
+//	    String[] actionIdValues = parameters.get("actionid");
+//	    String actionId = actionIdValues[0];
+//	    
+//	    //sending an object
+//	    String result = "ERR";
+//	    
+//	    if (actionId == "processTaskOnWorker") {
+  	ObjectInputStream objIn = new ObjectInputStream(request.getInputStream());
+
+	    	try {
+
+				 worker.processTask((TaskPackage)objIn.readObject());
+				 //result = "OK";
+			  } catch (ClassNotFoundException e) {
+				 e.printStackTrace();
+			  } 
+	    	objIn.close();
+
+//	    
+//	    response.setContentType("text");
+//	    try {
+//			response.getWriter().println(result);
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+  }
   private String handleAction(String action, Map<String, String[]> parameters) {
     String response = null;
     String[] workerAddr;
@@ -96,13 +139,21 @@ public class WebHandler extends HttpServlet {
       return response;
     case "registerWorker":
     	workerAddr = parameters.get("workerAddr");
+    	System.out.println("Worker from map length: "+  workerAddr.length);
+    	System.out.println("Master: "+ master.toString());
+
+    	System.out.println("Worker from map: "+  workerAddr.toString());
     	return master.registerWorker(workerAddr[0]);
     case "taskComplete":
     	workerAddr = parameters.get("workerAddr");
-    	String[] taskName = parameters.get("taskName");
-    	return master.taskComplete(workerAddr[0], taskName[0]);
-    case "processTaskOnWorker":
+    	String[] taskIds = parameters.get("taskIds");
+    	    	
+    	//System.out.println("test: "+ vals.toString());
+    	System.out.println(" this master: "+ this.master);
     	
+    	return this.master.taskComplete(workerAddr[0], taskIds[0]);
+    case "processTaskOnWorker":
+    	// already handled above
     	return "OK";
 //      dbName = parameters.get("dbName");
 //      String[] pathToSources = parameters.get("source");
@@ -112,7 +163,9 @@ public class WebHandler extends HttpServlet {
 
     	
     // test functions
-
+    case "sayHi":
+    	System.out.println("Hi");
+    	return "OK";
     case "test":
       test();
       return "OK";

@@ -1,8 +1,10 @@
 package masterworker;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -23,12 +25,16 @@ public class Worker {
 
 	private String addr;
 	private String masterAddr;
+	private List<Integer> taskQueue;
 
 	private boolean pendingWork;
+	private ReentrantLock lock;
 
 	public Worker(ProfilerConfig pc, Conductor c) {
 		this.pc = pc;
 		this.c = c;
+		this.taskQueue = new ArrayList<Integer>();
+		this.lock = new ReentrantLock();
 
 		masterAddr = Integer.toString(pc.getInt(ProfilerConfig.MASTER_SERVER_PORT));
 		addr = Integer.toString(pc.getInt(ProfilerConfig.WORKER_SERVER_PORT));
@@ -41,8 +47,8 @@ public class Worker {
 		Worker worker = this;
 
 		Thread server = new Thread() {// Not sure if I should be doing it like
-										// this, but ws.init was hanging
-									// something to do with how WebServer.init() is setup
+			// this, but ws.init was hanging
+			// something to do with how WebServer.init() is setup
 			public void run() {
 				WebServer ws = new WebServer(pc, c, worker);
 				ws.init();
@@ -69,70 +75,71 @@ public class Worker {
 				httpget = new HttpGet(builder.build());
 				//System.out.println("TRYING to get response from server at: " + httpget.getURI());
 				//System.out.println("reqeust I'm sending: " + httpget);
-				HttpResponse response = (HttpResponse) httpclient.execute(httpget);// try to connect to worker
+				HttpResponse response = (HttpResponse) httpclient.execute(httpget);// try to connect to master
 				System.out.println("response: " + response);
 				break;
 			} catch (URISyntaxException | IOException e) {
 				//e.printStackTrace();
 			}
-		}
-			// check for all done
-		while (pendingWork) {
+
 			try {
-				Thread.sleep(3000);
+				Thread.sleep(4000);
 			} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		System.out.println("WOrker done");
+		// check for all done
+		while (pendingWork) {
+
+			lock.lock();
+			System.out.println("taskQueue: "+ taskQueue.toString());
+			if (taskQueue.size() > 0 ) {
+				if (!c.isTherePendingWork()) {
+					// done with this batch
+					notifyMasterDone();
+				}
+			}
+			lock.unlock();
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("Worker done");
 
 	}
 
 	public String processTask(TaskPackage task) {
+		System.out.println("worker trying to process tasks");
+		lock.lock();
+		taskQueue.add(task.getId());
 		c.submitTask(task);
+		lock.unlock();
+
+
 		return "OK";
+
 	}
-	
+
+
 	public String stop() {
 		System.out.println("stopping worker");
 		c.stop();
-	    pendingWork = false;
-	    
-	    return "OK";
+		pendingWork = false;
+
+		return "OK";
 	}
 
-	private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources, String separator) {
-		File folder = new File(pathToSources);
-		File[] filePaths = folder.listFiles();
-		int totalFiles = 0;
-		int tt = 0;
-		for (File f : filePaths) {
-			tt++;
-			if (f.isFile()) {
-				String path = f.getParent() + File.separator;
-				String name = f.getName();
-				TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
-				totalFiles++;
-				c.submitTask(tp);
-			}
+	private void notifyMasterDone() {
+		String taskIdStr = "";
+		for (int taskId : taskQueue) {
+			taskIdStr += Integer.toString(taskId) + " ";
 		}
-		System.out.printf("Total files submitted for processing: %d - %d", totalFiles, tt);
 		
-		 while (c.isTherePendingWork()) {
-		      try {
-		        Thread.sleep(3000);
-		      } catch (InterruptedException e) {
-		        // TODO Auto-generated catch block
-		        e.printStackTrace();
-		      }
-		    }
-		 System.out.println("this one");
-		 
-		 notifyMasterDone(pathToSources);
-	}
-
-	private void notifyMasterDone(String taskName) {
+		taskQueue = new ArrayList<Integer>();
+		
+		System.out.println("task id string: " + taskIdStr);
 		HttpClient httpclient = HttpClients.createDefault();
 
 		URIBuilder builder = new URIBuilder();
@@ -141,7 +148,7 @@ public class Worker {
 		.setPath("/dd")
 		.setParameter("actionid","taskComplete")
 		.setParameter("workerAddr", addr)
-		.setParameter("taskName", taskName);
+		.setParameter("taskIds", taskIdStr);
 
 		while (true) {
 
