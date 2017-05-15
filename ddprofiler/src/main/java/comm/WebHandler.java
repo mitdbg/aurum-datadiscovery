@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
 import core.WorkerTask;
+import masterworker.Master;
+import masterworker.Worker;
 
 public class WebHandler extends HttpServlet {
 
@@ -29,8 +31,22 @@ public class WebHandler extends HttpServlet {
   // Jackson (JSON) serializer
   private ObjectMapper om = new ObjectMapper();
   private Conductor c;
+  private Master master;
+  private Worker worker;
+
+  //wanted to behave differently depending on master or worker. not sure if I should do this differently
 
   public WebHandler(Conductor c) { this.c = c; }
+  
+  public WebHandler(Conductor c, Master m) { 
+	  this.c = c; 
+	  this.master= m;
+  }
+  
+  public WebHandler(Conductor c, Worker w) { 
+	  this.c = c; 
+	  this.worker = w;
+  }
 
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -46,20 +62,38 @@ public class WebHandler extends HttpServlet {
 
   private String handleAction(String action, Map<String, String[]> parameters) {
     String response = null;
-
+    String[] workerAddr;
+    String[] dbName;
+    
+    System.out.println("action: " +action);
+    System.out.println("parameters getting: " + parameters);
     switch (action) {
     case "initStore":
       String[] dbname = parameters.get("dbname");
       initStore(dbname[0]);
       return "OK";
     case "processCSVDataSource":
-      String[] dbName = parameters.get("dbName");
+      dbName = parameters.get("dbName");
       String[] conn = parameters.get("path");
       String[] name = parameters.get("source");
       String[] separator = parameters.get("separator");
       response = processCSVDataSource(dbName[0], conn[0], name[0], separator[0]);
       return response;
+    case "registerWorker":
+    	workerAddr = parameters.get("workerAddr");
+    	return master.registerWorker(workerAddr[0]);
+    case "taskComplete":
+    	workerAddr = parameters.get("workerAddr");
+    	String[] taskName = parameters.get("taskName");
+    	return master.taskComplete(workerAddr[0], taskName[0]);
+    case "processTaskOnWorker":
+      dbName = parameters.get("dbName");
+      String[] pathToSources = parameters.get("source");
+      return worker.processTask(dbName[0], pathToSources[0]);
+    case "stopWorker":
+      return worker.stop();
 
+    	
     // test functions
 
     case "test":
@@ -89,7 +123,8 @@ public class WebHandler extends HttpServlet {
       return "OK";
     return "FAIL";
   }
-
+  
+  
   public boolean initStore(String dbname) {
     // TODO: initialize connection to store
     return true;

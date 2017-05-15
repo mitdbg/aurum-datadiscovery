@@ -14,11 +14,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 
 import core.Conductor;
 import core.config.ProfilerConfig;
+import masterworker.Master;
+import masterworker.Worker;
 
 public class WebServer {
 
   private Server server;
-
+  
   public WebServer(ProfilerConfig pc, Conductor c) {
     silenceJettyLogger();
     WebHandler handler = new WebHandler(c);
@@ -39,6 +41,49 @@ public class WebServer {
     http.setIdleTimeout(30000);
     server.addConnector(http);
   }
+
+  //wanted to behave differently depending on master or worker. not sure if I should do this differently
+	public WebServer(ProfilerConfig pc, Conductor c, Master master) {
+		silenceJettyLogger();
+		WebHandler handler = new WebHandler(c, master);
+		this.server = new Server(pc.getInt(ProfilerConfig.MASTER_SERVER_PORT));
+
+		// Configure servletHandler
+		ServletHandler sHandler = new ServletHandler();
+		ServletHolder sh = new ServletHolder(handler);
+		sHandler.addServletWithMapping(sh, "/dd");
+
+		// Configure all handlers
+		HandlerList handlers = new HandlerList();
+		handlers.setHandlers(new Handler[] { sHandler, new DefaultHandler() });
+		server.setHandler(handlers);
+
+		// Configure connector
+		ServerConnector http = new ServerConnector(server);
+		http.setIdleTimeout(30000);
+		server.addConnector(http);
+	}
+
+	public WebServer(ProfilerConfig pc, Conductor c, Worker worker) {
+		silenceJettyLogger();
+		WebHandler handler = new WebHandler(c, worker);
+		this.server = new Server(pc.getInt(ProfilerConfig.WORKER_SERVER_PORT));
+
+		// Configure servletHandler
+		ServletHandler sHandler = new ServletHandler();
+		ServletHolder sh = new ServletHolder(handler);
+		sHandler.addServletWithMapping(sh, "/dd");
+
+		// Configure all handlers
+		HandlerList handlers = new HandlerList();
+		handlers.setHandlers(new Handler[] { sHandler, new DefaultHandler() });
+		server.setHandler(handlers);
+
+		// Configure connector
+		ServerConnector http = new ServerConnector(server);
+		http.setIdleTimeout(30000);
+		server.addConnector(http);
+	}
 
   public void init() {
     try {

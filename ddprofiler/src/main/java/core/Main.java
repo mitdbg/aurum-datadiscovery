@@ -29,6 +29,8 @@ import core.config.ProfilerConfig;
 import inputoutput.conn.DBType;
 import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
+import masterworker.Master;
+import masterworker.Worker;
 import metrics.Metrics;
 import store.Store;
 import store.StoreFactory;
@@ -42,14 +44,16 @@ public class Main {
     ONLINE(0),
     OFFLINE_FILES(1),
     OFFLINE_DB(2),
-    BENCHMARK(3);
+    BENCHMARK(3), 
+	WORKER (4),
+	MASTER (5);
 
     int mode;
 
     ExecutionMode(int mode) { this.mode = mode; }
   }
 
-  public void startProfiler(ProfilerConfig pc) {
+  public void startProfiler(ProfilerConfig pc){
 
     long start = System.nanoTime();
 
@@ -84,8 +88,30 @@ public class Main {
       // Piggyback property to benchmark system with one file 
       String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+    } else if(executionMode == ExecutionMode.MASTER.mode) {
+    	
+    	//master catalog
+    	// Map<String, String> calogue = new HashMap // stores previously processed files and folders
+    	// (not sure where to store this/ if it should be another data structure/stored on disk)
+    	// check if input files are in catalogue already
+    	
+    	// Find workers
+    	// Split up input files and distribute
+    	// Wait for completion
+    	Master master = new Master(pc, c);
+    	
+      String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+        // send tasks that should be split up
+    	master.start(pathToSources);
+    } else if (executionMode == ExecutionMode.WORKER.mode) {
+    	
+    	//contact leader
+    	// wait for work
+    	// complete work and return
+    	Worker worker = new Worker(pc, c);
+    	worker.start();
     }
-
+    
     while (c.isTherePendingWork()) {
       try {
         Thread.sleep(3000);
