@@ -31,11 +31,14 @@ class Hit(BaseHit):
             return True
         return False
 
-    def __repr__(self):
-        to_print = (
-            str(self.db_name) + '.' + str(self.source_name) + '.' +
-            str(self.field_name) + ' ' + str(self.nid) + ' ' + str(self.score))
-        return to_print
+    def __dict__(self):
+        return self._asdict()
+
+    # def __repr__(self):
+    #     to_print = (
+    #         str(self.db_name) + '.' + str(self.source_name) + '.' +
+    #         str(self.field_name) + ' ' + str(self.nid) + ' ' + str(self.score))
+    #     return to_print
 
     def __str__(self):
         return self.__repr__()
@@ -307,6 +310,37 @@ class DRS:
             else:
                 self._idx_table = 0
                 raise StopIteration
+
+    def __dict__(self):
+        '''
+        prepares a dictionary to return for jsonification with the api
+        '''
+        mode = self.mode  # save state
+        sources = {}
+        edges = []
+        self.set_fields_mode()
+
+        # order fields under sources
+        for x in self:
+            table = x.source_name
+
+            # create a new source_res if necessary
+            if not sources.get(table, None):
+                source_res = x.__dict__()
+                sources[table] = {
+                    'source_res': source_res,
+                    'field_res': []}
+
+            sources[table]['field_res'].append(x.__dict__())
+
+        # convert edges into a dict
+        for edge in self.get_provenance().prov_graph().edges():
+            origin = edge[0].__dict__()
+            destination = edge[1].__dict__()
+            edges.append((origin, destination))
+
+        self._mode = mode
+        return {'sources': sources, 'edges': edges}
 
     @property
     def data(self):
