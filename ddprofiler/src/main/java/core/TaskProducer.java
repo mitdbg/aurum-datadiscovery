@@ -46,7 +46,7 @@ public class TaskProducer implements Worker {
         this.doWork = false;
     }
 
-    private void submitSubTasks(Map<Attribute, Values> data, String dbName, String path, String sourceName) {
+    private void submitSubTasks(Map<Attribute, Values> data, String dbName, String path, String sourceName, boolean done) {
         int seed = 0; // To get a unique task ID
         for (Entry<Attribute, Values> entry : data.entrySet()) {
             // Get the tracker from the column header
@@ -63,9 +63,12 @@ public class TaskProducer implements Worker {
             );
             seed++;
 
-            // Submit the subTask to the conductor
-            this.conductor.submitSubTask(wst);
+            // Submit the subTask to the conductor, and mark as done reading if done
             tracker.submitChunk();
+            if (done) {
+                tracker.finishReading();
+            }
+            this.conductor.submitSubTask(wst);
         }
     }
 
@@ -88,31 +91,29 @@ public class TaskProducer implements Worker {
                 LOG.info("TaskProducer: {} processing: {}", workerName, c.getSourceName());
 
                 // Read initial records to figure out attribute types
-                Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
-                if(initData == null) {
+                Map<Attribute, Values> initData, data, nextData;
+                initData = pa.readRows(numRecordChunk);
+                if (initData == null) {
                     LOG.warn("No data read from: {}", c.getSourceName());
                     task.close();
                 }
 
-                this.submitSubTasks(initData, c.getDBName(), c.getPath(), c.getSourceName());
+                nextData = pa.readRows(numRecordChunk);
+                this.submitSubTasks(initData, c.getDBName(), c.getPath(), c.getSourceName(), nextData == null);
 
                 // Consume all remaining records from the connector
-                Map<Attribute, Values> data = pa.readRows(numRecordChunk);
+                data = nextData;
                 int records = 0;
-                while(data != null) {
+                while (data != null) {
                     records = records + data.size();
                     Conductor.recordsPerSecond.mark(records);
 
                     // Submit the subTasks to the conductor
-                    this.submitSubTasks(data, c.getDBName(), c.getPath(), c.getSourceName());
+                    nextData = pa.readRows(numRecordChunk);
+                    this.submitSubTasks(data, c.getDBName(), c.getPath(), c.getSourceName(), nextData == null);
 
                     // Read next chunk of data
-                    data = pa.readRows(numRecordChunk);
-                }
-
-                // Notify all the trackers that we're done reading
-                for (Attribute attribute : initData.keySet()) {
-                    attribute.getTracker().finishReading();
+                    data = nextData;
                 }
 
                 // Close the task
