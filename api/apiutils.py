@@ -1,12 +1,16 @@
 import matplotlib.pyplot as plt
 from collections import namedtuple
 from collections import defaultdict
+from collections import OrderedDict
 from enum import Enum
 import binascii
 import networkx as nx
 import time
 import numpy as np
 from bitarray import bitarray
+import sys
+
+python_version = (sys.version_info[0], sys.version_info[1], sys.version_info[2])
 
 global_origin_id = 0
 
@@ -32,13 +36,10 @@ class Hit(BaseHit):
         return False
 
     def __dict__(self):
-        return self._asdict()
-
-    # def __repr__(self):
-    #     to_print = (
-    #         str(self.db_name) + '.' + str(self.source_name) + '.' +
-    #         str(self.field_name) + ' ' + str(self.nid) + ' ' + str(self.score))
-    #     return to_print
+        if python_version == (3, 5, 0):
+            return OrderedDict(zip(self._fields, self))
+        else:
+            return self._asdict()
 
     def __str__(self):
         return self.__repr__()
