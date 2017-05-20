@@ -249,4 +249,19 @@ class TestAlgebraHelpers(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+
+    print("HERE")
+    from main import init_system
+    from api.apiutils import Relation
+
+    api, reporting = init_system("/Users/ra-mit/development/discovery_proto/models/dwh2/")
+
+    table = "Fac_building.csv"  # The table of interest
+    table_drs = api.drs_from_table(table)  # We get the representation of that table in DRS
+    similar_tables = api.similar_content_to(table_drs)
+
+    print(str(similar_tables.__dict__()))
+
+    hit = Hit(1, params[0], params[0], params[0], -1)
+
