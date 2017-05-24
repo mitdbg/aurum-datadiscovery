@@ -1,13 +1,14 @@
 import time
 
 from dataanalysis import dataanalysis as da
+from math import isinf
 
 from enum import Enum
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
-from nearpy.hashes import RandomBinaryProjections
+from nearpy.hashes import RandomBinaryProjections, RandomBinaryProjectionTree
 from nearpy.hashes import RandomDiscretizedProjections
-from nearpy.distances import CosineDistance
+from nearpy.distances import CosineDistance, EuclideanDistance, ManhattanDistance
 from sklearn.decomposition import TruncatedSVD
 from datasketch import MinHash, MinHashLSH
 
@@ -75,9 +76,11 @@ def lsa_dimensionality_reduction(tfidf):
 
 class LSHRandomProjectionsIndex:
 
-    def __init__(self, num_features):
+    def __init__(self, num_features, projection_count=30):
         self.num_features = num_features
-        self.rbp = RandomBinaryProjections('default', 30)
+        #self.rbp = RandomDiscretizedProjections('default', projection_count, bin_width=100)
+        self.rbp = RandomBinaryProjections('default', projection_count)
+        #self.rbp = RandomBinaryProjectionTree('default', projection_count, 1)
         self.text_engine = Engine(num_features, lshashes=[self.rbp], distance=CosineDistance())
 
     def index(self, vector, key):
@@ -409,6 +412,8 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
                 info2 = network.get_info_for([candidate_nid])
                 (_, _, sn1, fn1) = info1[0]
                 (_, _, sn2, fn2) = info2[0]
+                if isinf(float(ref_x_min)) or isinf(float(ref_x_max)) or isinf(float(candidate_x_max)) or isinf(float(candidate_x_min)):
+                    continue
                 if candidate_x_min >= ref_x_min and candidate_x_max <= ref_x_max:
                     # inclusion relation
                     if candidate_x_min >= 0:

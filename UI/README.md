@@ -11,4 +11,7 @@
 ----
 ## Start Project
 $ `npm install`
-$ `npm start`
+$ `npm run watch`
+
+## Build for Production
+$ `npm run build`

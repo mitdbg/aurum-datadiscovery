@@ -51,18 +51,16 @@ class Report:
             Relation.CONTENT_SIM)
         # FIXME: counting twice (both directions), so /2. Once edges works, we
         # can modify it
-        total_content_sim_relations = len(
-            [x for x in content_sim_relations_gen]) / 2
+        total_content_sim_relations = len([x for x in content_sim_relations_gen])
         self.__num_content_sim_relations = total_content_sim_relations
 
         schema_sim_relations_gen = self.__network.enumerate_relation(
             Relation.SCHEMA_SIM)
-        total_schema_sim_relations = len(
-            [x for x in schema_sim_relations_gen]) / 2
+        total_schema_sim_relations = len([x for x in schema_sim_relations_gen])
         self.__num_schema_sim_relations = total_schema_sim_relations
 
         pkfk_relations_gen = self.__network.enumerate_relation(Relation.PKFK)
-        total_pkfk_relations = len([x for x in pkfk_relations_gen]) / 2
+        total_pkfk_relations = len([x for x in pkfk_relations_gen])
         self.__num_pkfk_relations = total_pkfk_relations
 
         return self

@@ -43,5 +43,13 @@ def curate_tokens(tokens):
     tokens = list(set(tokens))
     return tokens
 
+
+def curate_string(string):
+    snake = camelcase_to_snakecase(string)
+    snake = snake.replace('_', ' ')
+    snake = snake.replace('-', ' ')
+    snake.lower()
+    return snake
+
 if __name__ == "__main__":
     print("NLP Utils")

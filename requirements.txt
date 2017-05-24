@@ -11,7 +11,7 @@ colorama==0.3.7
 cycler==0.9.0
 dataset==0.6.2
 datasketch==0.2.4
-decorator==4.0.5
+decorator==4.0.*
 Django==1.10.5
 editdistance==0.2
 elasticsearch==2.3.0

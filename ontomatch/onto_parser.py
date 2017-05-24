@@ -4,9 +4,11 @@ import pickle
 import sys
 import rdflib
 from dataanalysis import nlp_utils as nlp
+from ontomatch.ss_utils import minhash
+
 
 # We are serializing highly nested structures here...
-sys.setrecursionlimit(100000)
+sys.setrecursionlimit(50000)
 
 
 class OntoHandler:
@@ -15,6 +17,9 @@ class OntoHandler:
         self.ontology_name = None
         self.o = None
         self.objectProperties = []
+        self.class_hierarchy = []
+        self.class_hierarchy_signatures = []
+        self.map_classname_class = dict()
 
     def parse_ontology(self, file):
         """
@@ -26,6 +31,11 @@ class OntoHandler:
         ont = ontospy.Ontospy(file)
         self.o = ont
         self.objectProperties = self.o.objectProperties  # cache this
+        self.obtain_class_hierarchy_and_signatures()
+
+    def obtain_class_hierarchy_and_signatures(self):
+        self.class_hierarchy = self.__get_class_levels_hierarchy()  # preprocess this
+        self.class_hierarchy_signatures = self.compute_classes_signatures()
 
     def store_ontology(self, path):
         """
@@ -36,6 +46,8 @@ class OntoHandler:
         """
         f = open(path, 'wb')
         pickle.dump(self.o, f)
+        pickle.dump(self.class_hierarchy, f)
+        pickle.dump(self.class_hierarchy_signatures, f)
         f.close()
 
     def load_ontology(self, path):
@@ -46,7 +58,15 @@ class OntoHandler:
         """
         f = open(path, 'rb')
         self.o = pickle.load(f)
+        self.class_hierarchy = pickle.load(f)
+        self.class_hierarchy_signatures = pickle.load(f)
         self.objectProperties = self.o.objectProperties
+        self.map_classname_class = dict()
+        for c in self.o.classes:
+            label = c.bestLabel().title()
+            self.map_classname_class[label] = c
+        f.close()
+        #self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
 
     def classes(self):
         """
@@ -54,7 +74,13 @@ class OntoHandler:
         :param o:
         :return:
         """
-        return [x.bestLabel() for x in self.o.classes]
+        return [x.bestLabel().title() for x in self.o.classes]
+
+    def class_and_descr(self):
+        for x in self.o.classes:
+            class_name = x.bestLabel().title()
+            descr = x.bestDescription()
+            yield (class_name, descr)
 
     def classes_id(self):
         """
@@ -70,7 +96,7 @@ class OntoHandler:
         :return:
         """
         c = self.o.getClass(id=class_id)
-        name = c.bestLabel()
+        name = c.bestLabel().title()  # title to avoid rdflib types
         return name
 
     def id_of_class(self, class_name):
@@ -86,21 +112,133 @@ class OntoHandler:
         else:
             return -1
 
+    def fake(self):
+        return self.__get_class_levels_hierarchy()
+
+    def get_class_from_name(self, class_name):
+        if class_name in self.map_classname_class:
+            return self.map_classname_class[class_name]
+        else:
+            return None
+
+    def ancestors_of_class(self, c):
+        """
+        Ancestors of given class
+        """
+        class_from_name = self.get_class_from_name(c)
+        if class_from_name is None:
+            return []
+        ancestors = [el for el in reversed(class_from_name.ancestors())]
+        return ancestors
+
+    def name_of_sequence(self, seq):
+        seq_name = []
+        for s in seq:
+            name = s.bestLabel().title()
+            seq_name.append(name)
+        return seq_name
+
+    def descendants_of_class(self, c):
+        """
+        Descendants of given class
+        """
+        return list(self.__get_descendants_of_class(c))
+
+    def __get_ancestors_of_class(self, c):
+        ancestors = set(c.parents())
+        for parent in c.parents():
+            ancestors |= self.__get_ancestors_of_class(parent)
+        return ancestors
+
+    def __get_descendants_of_class(self, c):
+        descendants = set(c.children())
+        for child in c.children():
+            descendants |= self.__get_descendants_of_class(child)
+        return descendants
+
+    def get_properties_all_of(self, c):
+        properties = self.o.getInferredPropertiesForClass(c)
+        props = []
+        for hierarchy_props in properties:
+            for p in hierarchy_props.values():
+                props.extend(p)
+        return props
+
+    def __get_class_levels_hierarchy(self):
+
+        flatten = []
+
+        for c in self.o.classes:
+            if len(c.children()) > 0:
+                el = (c.bestLabel().title(), [(ch.id, ch.bestLabel().title()) for ch in c.children()])
+                flatten.append(el)
+        return flatten
+
+    def __get_class_levels_hierarchy2(self, element=None):
+        if not element:  # then levels is also None, create a list
+            levels = [(self.ontology_name, [(top.id, top.bestLabel().title())
+                                            for top in self.o.toplayer])]  # name of top-level level is onto name
+            for x in self.o.toplayer:
+                print(str(len(levels)))
+                levels.extend(self.__get_class_levels_hierarchy2(element=x))
+            return levels
+
+        if not element.children():
+            return []
+
+        levels = [(element.bestLabel().title(), [(child.id, child.bestLabel().title())
+                                                 for child in element.children()])]  # name of parent
+        for sub in element.children():
+            levels.extend(self.__get_class_levels_hierarchy2(element=sub))
+        return levels
+
     def class_levels_count(self):
         """
         Return the number of levels in the class hierarchy. This is equivalent to nodes in a tree.
         :return:
         """
-        # TODO:
-        return
+        return len(self.class_hierarchy)
 
-    def class_hierarchy_iterator(self, class_id=False):
+    def class_hierarchy_iterator(self):
         """
         Returns lists of classes that are at the same level of the hierarhcy, i.e., node in a tree
         :return:
         """
-        # TODO; if class_id is given then it retursn lists of classes ids, if not, then class names
-        return
+        for level in self.class_hierarchy:
+            name = level[0]  # str with the name of the level (parent name)
+            classes = level[1]  # [(id, class_name)]
+            yield name, classes
+
+    def compute_classes_signatures(self):
+        """
+        Return a minhash signature of the class-names per class hierarchy level
+        :return:
+        """
+        st = time.time()
+        mh_time = 0
+        class_hierarchy_signatures = []
+        for level_name, list_classes in self.class_hierarchy_iterator():
+            if len(list_classes) < 10:
+                continue  # filter out short classes
+            ch = [el[1] for el in list_classes]
+            smh = time.time()
+            mh = minhash(ch)
+            emh = time.time()
+            mh_time += (emh - smh)
+            chs = (level_name, mh)
+            class_hierarchy_signatures.append(chs)
+        et = time.time()
+        total_time = et - st
+        print("Total time signatures: " + str(total_time))
+        print("Total time mh: " + str(mh_time))
+        print("Ratio: " + str(mh_time/total_time))
+        return class_hierarchy_signatures
+
+    def get_classes_signatures(self, filter=None):
+        if filter is None:
+            return self.class_hierarchy_signatures
+        else:
+            return [el for el in self.class_hierarchy_signatures]
 
     def parents_of_class(self, class_name, class_id=False):
         """
@@ -132,12 +270,16 @@ class OntoHandler:
             c = self.o.getClass(id=class_name)
         else:
             c = self.o.getClass(match=class_name)[0]
-        properties = self.o.getInferredPropertiesForClass(c)
-        props = []
-        for k, v in properties.items():
-            for el in v:
-                props.append(el)
-        return props
+        return self.get_properties_all_of(c)
+
+    def get_class_data_signatures(self):
+        signatures = []
+        for cid in self.classes_id():
+            data = self.instances_of(cid, class_id=True)
+            sig = minhash(data)
+            class_name = self.name_of_class(cid)
+            signatures.append((class_name, sig))
+        return signatures
 
     def instances_of(self, class_name, class_id=False):
         """
@@ -199,6 +341,10 @@ class OntoHandler:
 
         label = c.bestLabel()
         descr = c.bestDescription()
+
+        if descr is None or descr == "":
+            return False, 'no descr here'  # we won't harness enough context...
+
         # Get class name, description -> bow, properties -> bow
         pnouns = nlp.get_proper_nouns(descr)
         nouns = nlp.get_nouns(descr)
@@ -214,46 +360,40 @@ class OntoHandler:
         return True, ret
 
 
+def parse_ontology(input_ontology_path, output_parsed_ontology_path):
+    s = time.time()
+    o = OntoHandler()
+    o.parse_ontology(input_ontology_path)
+    o.store_ontology(output_parsed_ontology_path)
+    e = time.time()
+    print("Parse ontology took: " + str(e - s))
+
 if __name__ == '__main__':
 
-    owl_file = 'dbpedia_2016-04.owl'
-    #owl_file = 'efo.owl'
+    # input = "merck_dlc.owl"
+    # output = "cache_onto/dlc.pkl"
+    #
+    # parse_ontology(input, output)
+    #
+    # exit()
+
     o = OntoHandler()
 
+    o.load_ontology("cache_onto/dlc.pkl")
 
-    s = time.time()
-    o.parse_ontology(owl_file)
-    e = time.time()
-    print("Parse: " + str(e - s))
+    total = 0
+    nodesc = 0
+    for c in o.o.classes:
+        total += 1
+        label = c.bestLabel()
+        print(str(label))
+        print(str(label.title()))
+        descr = c.bestDescription()
+        if descr == "":
+            nodesc += 1
 
-    o.store_ontology("cache_onto/dbpedia.pkl")
+    for c in o.classes():
+        print(str(c))
 
-    exit()
-
-
-
-
-    s = time.time()
-    file = "cache_onto/go.pkl"
-    o.load_ontology(file)
-    e = time.time()
-    print("Load: " + str(e - s))
-
-    """
-    print("classes")
-    for c in o.classes_id():
-        name = o.name_of_class(c)
-        print(name)
-        data = o.instances_of(c, class_id=True)
-        if len(data) > 0:
-            print(data)
-
-        print("Gonna get bow for: " + str(c))
-        s, bow = o.bow_repr_of(c, class_id=True)
-        if s:
-            if len(bow[1]) > 0:
-                print(bow)
-    """
-    stats = o.o.stats()
-    for name, value in stats:
-        print(str(name) + " -> " + str(value))
+    print(str(nodesc) + "/" + str(total) + " no descr")
+    # EFO output: 18604/19230 no descr
