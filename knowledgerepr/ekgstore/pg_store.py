@@ -26,17 +26,32 @@ class PGStore:
         con = dataset.connect(connection_string)
         return con
 
-    def new_node(self, node_id):
+    """
+    WRITE
+    """
+
+    def new_node(self, node_id=None, uniqueness_ratio=None):
         try:
-            self.nodes_table.insert(dict(node_id=node_id))
+            self.nodes_table.insert(dict(node_id=node_id, uniqueness_ratio=uniqueness_ratio))
         except sqlalchemy.exc.IntegrityError:
             print("attempt to insert duplicate key")
 
-    def new_edge(self, source_node_id, target_node_id):
+    def new_edge(self, source_node_id=None, target_node_id=None, relation_type=None, weight=None):
         try:
-            self.edges_table.insert(dict(source_node_id=source_node_id, target_node_id=target_node_id))
+            self.edges_table.insert(dict(source_node_id=source_node_id,
+                                         target_node_id=target_node_id,
+                                         relation_type=relation_type,
+                                         weight=weight))
         except sqlalchemy.exc.IntegrityError:
             print("attempt to insert duplicate key")
+
+    """
+    READ
+    """
+
+    def connected_to(self, nid):
+        results = self.edges_table.find(source_node_id=nid)
+        return results
 
 if __name__ == "__main__":
     print("pg store")

@@ -1,0 +1,83 @@
+from api.apiutils import DRS
+from api.annotation import MRS
+from api.apiutils import Operation
+from api.apiutils import Hit
+from api.apiutils import Relation
+
+from knowledgerepr import EKGapi
+from knowledgerepr.ekgstore.pg_store import PGStore
+
+
+class GIndexEKG(EKGapi):
+
+    def __init__(self, config=None):
+        self.backend_type = EKGapi.BackEndType.G_INDEX
+        self.pg = PGStore(db_ip=config.host,
+                          db_port=config.port,
+                          db_name=config.db_name,
+                          db_user=config.db_user,
+                          db_passwd=config.db_passwd)
+
+    """
+    WRITE OPS
+    """
+
+    def init(self, fields: (int, str, str, str, int, int, str)):
+        print("Building schema relation...")
+        for (nid, db_name, sn_name, fn_name, total_values, unique_values, data_type) in fields:
+            #self.__id_names[nid] = (db_name, sn_name, fn_name, data_type)
+            #self.__source_ids[sn_name].append(nid)
+            uniqueness_ratio = None
+            if float(total_values) > 0:
+                uniqueness_ratio = float(unique_values) / float(total_values)
+            self.pg.new_node(node_id=nid, uniqueness_ratio=uniqueness_ratio)
+        print("Building schema relation...OK")
+
+    def add_node(self, nid, uniqueness_ratio=None):
+        self.pg.new_node(node_id=nid, uniqueness_ratio=uniqueness_ratio)
+
+    def add_edge(self, node_src, node_target, relation, score):
+        self.pg.new_edge(source_node_id=node_src, target_node_id=node_target, relation_type=relation, weight=score)
+
+    """
+    READ OPS
+    """
+
+    def neighbors_id(self, hit: Hit, relation: Relation) -> DRS:
+        # nid = None
+        # if isinstance(hit, Hit):
+        #     nid = str(hit.nid)
+        # if isinstance(hit, str):
+        #     nid = hit
+        # nid = str(nid)
+        # data = []
+        # neighbours = self.pg.connected_to(nid)
+        # for k, v in neighbours.items():
+        #     if relation in v:
+        #         score = v[relation]['score']
+        #         (db_name, source_name, field_name, data_type) = self.__id_names[k]
+        #         data.append(Hit(k, db_name, source_name, field_name, score))
+        # op = self.get_op_from_relation(relation)
+        # o_drs = DRS(data, Operation(op, params=[hit]))
+        # return o_drs
+        return
+
+    def md_neighbors_id(self, hit: Hit, md_neighbors: MRS, relation: Relation) -> DRS:
+        return
+
+    """
+    ANALYTICAL OPS
+    """
+
+    def topk_nodes_by_degree(self, topk):
+        return
+
+    def enumerate_edges_of_type(self, relation):
+        return
+
+    """
+    UTILS
+    """
+
+    def print_edges_of_type(self, relation):
+        return
