@@ -8,35 +8,85 @@
 //============================================================================
 
 #include <iostream>
+#include <sstream>
+#include <iterator>
 #include <unordered_map>
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <string>
 #include <new>  // std::nothrow
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 using namespace std;
-
-// Testing iface with Python
-
-extern "C" void myprint(void);
-
-extern "C" void myprint() {
-
-    printf("hellow world from graph index\n");
-}
-
-extern "C" int add_one(int i) {
-    return i + 1;
-}
 
 /***
 ** Interface
 ***/
+
+
 // Global variables
 std::unordered_map<int, std::unordered_map<int, char> > g;
 int number_edges;
 
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+vector<string> split(string &s, char delim) {
+    vector<string> tokens;
+    split(s, delim, back_inserter(tokens));
+    return tokens;
+}
+
 extern "C" {
+
+    void serialize_graph_to_disk(char* input_path) {
+        string path = input_path;
+        cout << "Serializing graph to: " + path << endl;
+        ofstream f;
+        f.open(path);
+        for ( auto it = g.begin(); it != g.end(); ++it) {
+            int src = it->first;
+            unordered_map<int, char> sub = it->second;
+            for ( auto it2 = sub.begin(); it2 != sub.end(); ++it2) {
+                int tgt = it2->first;
+                char type = it2->second;
+                string ser = std::to_string(src) + "-" + std::to_string(tgt) + "-" + std::to_string(type) + "\n";
+                cout << ser << endl;
+                f << ser;
+            }
+        }
+        f.close();
+    }
+
+    void deserialize_graph(char* input_path) {
+        string path = input_path;
+        cout << "Deserializing graph to: " + path << endl;
+        string line;
+        ifstream f(path);
+        if (f.is_open()) {
+            while (getline(f, line)) {
+                vector<string> tokens = split(line, '-');
+                string src = tokens[0];
+                string tgt = tokens[1];
+                string type = tokens[2];
+                cout << src + " . " + tgt + " . " + type << '\n';
+                // TODO: transform to int and char first
+//                add_node(src);
+//                add_node(tgt);
+//                add_edge(src, tgt, type);
+            }
+        }
+        f.close();
+    }
 
     int get_num_nodes() {
         return g.size();
@@ -172,6 +222,23 @@ private:
     std::unordered_map<int, std::unordered_map<int, char> > g;
     int number_edges;
 };
+
+/**
+** Some basic testing
+**/
+
+// Testing iface with Python
+
+extern "C" void myprint(void);
+
+extern "C" void myprint() {
+
+    printf("hellow world from graph index\n");
+}
+
+extern "C" int add_one(int i) {
+    return i + 1;
+}
 
 int main() {
 

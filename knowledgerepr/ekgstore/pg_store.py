@@ -1,5 +1,4 @@
-import dataset
-import sqlalchemy
+import psycopg2 as db
 
 
 class PGStore:
@@ -11,10 +10,7 @@ class PGStore:
         self.db_user = db_user
         self.db_passwd = db_passwd
         self.con = self.connect()
-        #self.nodes_table = self.con['nodes']
-        self.nodes_table = self.con.create_table('nodes', primary_id='node_id', primary_type='Integer')
-        #self.edges_table = self.con['edges']
-        self.edges_table = self.con.create_table('edges')
+        self.cur = self.con.cursor()
 
     def connect(self):
         connection_string = "postgresql://" +\
@@ -23,51 +19,129 @@ class PGStore:
                              self.db_ip + ":" + \
                              self.db_port + "/" + \
                              self.db_name
-        con = dataset.connect(connection_string)
+        con = db.connect(connection_string)
         return con
+
+    def init_schema(self):
+        self.cur.execute("CREATE TABLE nodes (node_id integer PRIMARY KEY, "
+                         "node_name varchar, "
+                         "table_name varchar, "
+                         "unique_ratio real);")
+        self.cur.execute("CREATE TABLE edges (source_node_id integer, "
+                         "target_node_id integer, "
+                         "relation_type smallint, "
+                         "weight real);")
+        self.con.commit()
+
+    def reset_cursor(self):
+        self.cur.close()
+        self.cur = self.con.cursor()
+
+    def close_con(self):
+        self.cur.close()
+        self.con.close()
+
+    def rollback(self):
+        self.con.rollback()
+
+    def commit(self):
+        self.con.commit()
 
     """
     WRITE
     """
 
-    def new_node(self, node_id=None, uniqueness_ratio=None):
-        try:
-            self.nodes_table.insert(dict(node_id=node_id, uniqueness_ratio=uniqueness_ratio))
-        except sqlalchemy.exc.IntegrityError:
-            print("attempt to insert duplicate key")
+    def new_node(self, node_id=None, node_name=None, table_name=None, unique_ratio=None):
+        self.cur.execute("insert into nodes (node_id, node_name, table_name, unique_ratio) "
+                         "values (%s, %s, %s, %s)",
+                         (node_id, node_name, table_name, unique_ratio))
 
     def new_edge(self, source_node_id=None, target_node_id=None, relation_type=None, weight=None):
-        try:
-            self.edges_table.insert(dict(source_node_id=source_node_id,
-                                         target_node_id=target_node_id,
-                                         relation_type=relation_type,
-                                         weight=weight))
-        except sqlalchemy.exc.IntegrityError:
-            print("attempt to insert duplicate key")
+        self.cur.execute("insert into edges (source_node_id, target_node_id, relation_type, weight) "
+                         "values (%s, %s, %s, %s)",
+                         (source_node_id, target_node_id, relation_type, weight))
 
     """
     READ
     """
 
-    def connected_to(self, nid):
-        results = self.edges_table.find(source_node_id=nid)
+    def connected_to(self, nid, relation_type):
+        self.cur.execute("select target_node_id from edges where source_node_id = %s and relation_type = %s",
+                         (nid, relation_type))
+        results = []
+        res = self.cur.fetchmany(size=10)
+        while res:
+            for el in res:
+                results.append(el)
+            res = self.cur.fetchmany(size=10)
+        return results
+
+    def paths(self, source_id, target_id, relation_type=1):
+        self.cur.execute("WITH RECURSIVE transitive_closure (src, tgt, path_string) AS "
+                         "(SELECT e.source_node_id, "
+                         "e.target_node_id, e.source_node_id || %(dot_str)s || e.target_node_id || %(dot_str)s"
+                         "AS path_string FROM edges e WHERE e.source_node_id = %(source_id)s"
+                         "UNION "
+                         "SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || %(dot_str)s "
+                         "AS path_string FROM edges "
+                         "AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt "
+                         "WHERE tc.path_string NOT LIKE %(perc_str)s || e.target_node_id || %(dotperc_str)s ) "
+                         "SELECT * FROM transitive_closure tc WHERE tc.tgt = %(tid)s",
+                         {'dot_str': '.',
+                          'source_id': source_id,
+                          'perc_str': '%',
+                          'dotperc_str': '.%',
+                          'tid': target_id})
+
+        results = []
+        res = self.cur.fetchmany(size=10)
+        while res:
+            for el in res:
+                results.append(el)
+            res = self.cur.fetchmany(size=10)
         return results
 
 if __name__ == "__main__":
     print("pg store")
 
-    store = PGStore("localhost", "5432", "test10", "postgres", "admin")
+    store = PGStore("localhost", "5432", "test_py", "postgres", "admin")
+
+    cons_to = store.connected_to(23, 1)
+    for el in cons_to:
+        print(str(el))
+
+    import time
+    stime = time.time()
+
+    paths = store.paths(0, 8, 1)
+    for el in paths:
+        print(str(el))
+    etime = time.time()
+    print("path-query time: " + str(etime-stime))
+
+    store.close_con()
+    exit()
 
     import networkx as nx
 
-    nodes = 10
-    edge_propability = 0.5  # fairly populated graph
-    random_g = nx.fast_gnp_random_graph(nodes, edge_propability)
+    nodes = 100
+    edge_probability = 0.2  # fairly populated graph
+    random_g = nx.fast_gnp_random_graph(nodes, edge_probability)
 
     for src_id, tgt_id in random_g.edges():
-        store.new_node(src_id)
-        store.new_node(tgt_id)
-        store.new_edge(src_id, tgt_id)
+        try:
+            store.new_node(node_id=src_id, node_name=str(src_id), table_name="test", unique_ratio=0.9)
+        except db.IntegrityError:
+            store.rollback()
+        try:
+            store.new_node(node_id=tgt_id, node_name=str(tgt_id), table_name="test", unique_ratio=0.9)
+        except db.IntegrityError:
+            store.rollback()
+        store.new_edge(source_node_id=src_id, target_node_id=tgt_id, relation_type=1, weight=0.55)
+        store.commit()
+
+    store.close_con()
+    print("Done!")
 
 """  TEST
 with recursive r as (select source_node_id, target_node_id from edges where source_node_id = 0
@@ -86,7 +160,6 @@ WITH RECURSIVE transitive_closure (src, tgt, path_string) AS
    WHERE e.source_node_id = 0 --source_node
 
    UNION
-
 
    SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string
    FROM edges AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt
