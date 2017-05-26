@@ -3,9 +3,10 @@ from api.annotation import MRS
 from api.apiutils import Operation
 from api.apiutils import Hit
 from api.apiutils import Relation
-
 from knowledgerepr import EKGapi
 from knowledgerepr.ekgstore.pg_store import PGStore
+
+import ctypes
 
 
 class GIndexEKG(EKGapi):
@@ -81,3 +82,10 @@ class GIndexEKG(EKGapi):
 
     def print_edges_of_type(self, relation):
         return
+
+
+if __name__ == "__main__":
+
+    import ctypes
+    testlib = ctypes.CDLL("testlib.so")
+    testlib.myprint()
