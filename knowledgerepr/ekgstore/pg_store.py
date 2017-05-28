@@ -125,7 +125,7 @@ if __name__ == "__main__":
     import networkx as nx
 
     nodes = 100
-    edge_probability = 0.2  # fairly populated graph
+    edge_probability = 0.5  # fairly populated graph
     random_g = nx.fast_gnp_random_graph(nodes, edge_probability)
 
     for src_id, tgt_id in random_g.edges():
@@ -139,6 +139,10 @@ if __name__ == "__main__":
             store.rollback()
         store.new_edge(source_node_id=src_id, target_node_id=tgt_id, relation_type=1, weight=0.55)
         store.commit()
+
+    # paths = nx.all_shortest_paths(random_g, source=0, target=1)
+    # for p in paths:
+    #     print(str(p))
 
     store.close_con()
     print("Done!")

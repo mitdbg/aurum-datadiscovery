@@ -48,46 +48,6 @@ vector<string> split(string &s, char delim) {
 
 extern "C" {
 
-    void serialize_graph_to_disk(char* input_path) {
-        string path = input_path;
-        cout << "Serializing graph to: " + path << endl;
-        ofstream f;
-        f.open(path);
-        for ( auto it = g.begin(); it != g.end(); ++it) {
-            int src = it->first;
-            unordered_map<int, char> sub = it->second;
-            for ( auto it2 = sub.begin(); it2 != sub.end(); ++it2) {
-                int tgt = it2->first;
-                char type = it2->second;
-                string ser = std::to_string(src) + "-" + std::to_string(tgt) + "-" + std::to_string(type) + "\n";
-                cout << ser << endl;
-                f << ser;
-            }
-        }
-        f.close();
-    }
-
-    void deserialize_graph(char* input_path) {
-        string path = input_path;
-        cout << "Deserializing graph to: " + path << endl;
-        string line;
-        ifstream f(path);
-        if (f.is_open()) {
-            while (getline(f, line)) {
-                vector<string> tokens = split(line, '-');
-                string src = tokens[0];
-                string tgt = tokens[1];
-                string type = tokens[2];
-                cout << src + " . " + tgt + " . " + type << '\n';
-                // TODO: transform to int and char first
-//                add_node(src);
-//                add_node(tgt);
-//                add_edge(src, tgt, type);
-            }
-        }
-        f.close();
-    }
-
     int get_num_nodes() {
         return g.size();
     }
@@ -150,8 +110,178 @@ extern "C" {
         return n.size();
     }
 
+    vector<int> neighbors_local(int id, char type) {
+        vector<int> n;
+        unordered_map<int, char> nodes_map = g[id];
+        for ( auto it = nodes_map.begin(); it != nodes_map.end(); ++it) {
+            if ((it->second & type) == 1) {
+                n.push_back(it->first);
+            }
+        }
+        return n;
+    }
+
     void release_array(int32_t *input) {
         free(input);
+    }
+
+    int all_paths(int source_id, int target_id, char type, int max_hops) {
+        cout << "find path from " + to_string(source_id) + " to: " + to_string(target_id) << endl;
+        int level = 0;
+        vector<int> next_level;
+        next_level.push_back(source_id);
+        unordered_map<int, int> seen;
+        seen[source_id] = level;
+        unordered_map<int, vector<int> > pred;
+        pred[source_id];
+//        cout << "before while: " + to_string(next_level.size()) << endl;
+        while (next_level.size() > 0) {
+            level += 1;
+            vector<int> this_level = next_level;
+//            cout << "before clear: " + to_string(next_level.size()) << endl;
+            next_level.clear();
+//            cout << "after clear: " + to_string(next_level.size()) << endl;
+//            for (int a = 0; a < next_level.size(); a++) {
+//                cout << "next_level: " + to_string(a) << endl;
+//            }
+            //for(auto it = this_level.begin(); it != this_level.end(); ++it) {
+            for(int i = 0; i < this_level.size(); i++) {
+                int el = this_level[i];
+                vector<int> neighbors = neighbors_local(el, type);
+                //for (auto it2 = neighbors.begin(); it2 != neighbors.end(); ++it2) {
+                for(int j = 0; j < neighbors.size(); j++) {
+                    int n = neighbors[j];
+                    if (seen.count(n) == 0) {
+                        vector<int> els;
+                        els.push_back(el);
+                        pred[n] = els;
+                        seen[n] = level;
+                        next_level.push_back(n);
+                    }
+                    else if (seen[n] == level) {
+                        pred[n].push_back(el);
+                    }
+                }
+            }
+            if (max_hops <= level){
+                break;
+            }
+        }
+        if(pred.count(target_id) == 0) {
+            return 0;
+        }
+        cout << "A" << endl;
+        vector<vector<int> > stack;
+        vector<int> tuple;
+        tuple.push_back(target_id);
+        tuple.push_back(0);
+        stack.push_back(tuple);
+        int top = 0;
+        vector<vector<int> > results;
+        cout << "B" << endl;
+        while (top >= 0) {
+            vector<int> t = stack[top];
+            int node = t[0];
+            int i = t[1];
+            cout << "C" << endl;
+            if(node == source_id) {
+                vector<int> result;
+                cout << "D1 - " + to_string(top) << endl;
+                //for(int j = top; j == 0; j--) {
+                for(int k = 0; k < top + 1; k++) {
+                    int j = (top) - k;
+                    cout << "D2 - " + to_string(j) << endl;
+                    vector<int> jt = stack[j];
+                    cout << "D3" << endl;
+                    int el = jt[0];
+                    cout << "D4" << endl;
+                    result.push_back(el);
+                }
+                results.push_back(result);
+            }
+            if(pred[node].size() > i) {
+                top += 1;
+                vector<int> new_tuple;
+                new_tuple.push_back(pred[node][i]);
+                new_tuple.push_back(0);
+                if(top == stack.size()) {
+                    cout << "E" << endl;
+                    stack.push_back(new_tuple);
+                }
+                else {
+                    cout << "F" << endl;
+                    stack[top] = new_tuple;
+                }
+            }
+            else {
+                cout << "G" << endl;
+                stack[(top - 1)][1] += 1;
+                cout << "H" << endl;
+                top -= 1;
+            }
+        }
+
+        cout << "Num found paths: " + to_string(results.size()) << endl;
+        for(int i = 0; i < results.size(); i++) {
+            vector<int> result = results[i];
+            cout << "---" << endl;
+            for (int j =0; j < result.size(); j++) {
+                cout << to_string(result[j]) << endl;
+            }
+        }
+        return 1;
+//        else {
+//            vector<int> paths = pred[target_id];
+//            //for(auto it = paths.begin(); it != paths.end(); ++it) {
+//            for(int i = 0; i < paths.size(); i++) {
+//                int el = paths[i];
+//                cout << "path: " + to_string(el) << endl;
+//            }
+//            return 1;
+//        }
+    }
+
+    void serialize_graph_to_disk(char* input_path) {
+        string path = input_path;
+        cout << "Serializing graph to: " + path << endl;
+        ofstream f;
+        f.open(path);
+        for ( auto it = g.begin(); it != g.end(); ++it) {
+            int src = it->first;
+            unordered_map<int, char> sub = it->second;
+            for ( auto it2 = sub.begin(); it2 != sub.end(); ++it2) {
+                int tgt = it2->first;
+                char type = it2->second;
+                string ser = std::to_string(src) + "-" + std::to_string(tgt) + "-" + std::to_string(type) + "\n";
+                cout << ser << endl;
+                f << ser;
+            }
+        }
+        f.close();
+    }
+
+    void deserialize_graph(char* input_path) {
+        string path = input_path;
+        cout << "Deserializing graph to: " + path << endl;
+        string line;
+        ifstream f(path);
+        if (f.is_open()) {
+            while (getline(f, line)) {
+                vector<string> tokens = split(line, '-');
+                string src = tokens[0];
+                string tgt = tokens[1];
+                string type = tokens[2];
+                // cout << src + " . " + tgt + " . " + type << '\n';
+                // TODO: transform to int and char first
+                int src_id = stoi(src);
+                int tgt_id = stoi(tgt);
+                char type_ch = (char)(stoi(type));
+                add_node(src_id);
+                add_node(tgt_id);
+                add_edge(src_id, tgt_id, type_ch);
+            }
+        }
+        f.close();
     }
 
 }
