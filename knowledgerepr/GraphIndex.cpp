@@ -126,7 +126,7 @@ extern "C" {
         free(input);
     }
 
-    int all_paths(int source_id, int target_id, char type, int max_hops) {
+    int all_paths(int32_t** output, int source_id, int target_id, char type, int max_hops) {
         cout << "find path from " + to_string(source_id) + " to: " + to_string(target_id) << endl;
         int level = 0;
         vector<int> next_level;
@@ -207,23 +207,127 @@ extern "C" {
         }
 
         cout << "Num found paths: " + to_string(results.size()) << endl;
+        int total_paths_plus_nodes = 0;
         for(int i = 0; i < results.size(); i++) {
+            total_paths_plus_nodes += 1;
             vector<int> result = results[i];
             cout << "---" << endl;
             for (int j =0; j < result.size(); j++) {
+                total_paths_plus_nodes += 1;
+                cout << to_string(result[j]) << endl;
+            }
+        }
+
+        // copy to array
+        int32_t* array = (int32_t*) malloc(total_paths_plus_nodes * sizeof(int32_t));
+        int ptr = -1;
+        //int array[n.size()];
+        for(int i = 0; i < results.size(); i++) {
+            ptr += 1;
+            array[ptr] = -1; // Indicating init of path
+            vector<int> result = results[i];
+            for (int j =0; j < result.size(); j++) {
+                ptr += 1;
+                array[ptr] = result[j];
+            }
+        }
+
+        *output = array;
+        return total_paths_plus_nodes;
+    }
+
+    int internal_all_paths(int source_id, int target_id, char type, int max_hops) {
+        cout << "find path from " + to_string(source_id) + " to: " + to_string(target_id) << endl;
+        int level = 0;
+        vector<int> next_level;
+        next_level.push_back(source_id);
+        unordered_map<int, int> seen;
+        seen[source_id] = level;
+        unordered_map<int, vector<int> > pred;
+        pred[source_id];
+//        cout << "before while: " + to_string(next_level.size()) << endl;
+        while (next_level.size() > 0) {
+            level += 1;
+            vector<int> this_level = next_level;
+//            cout << "before clear: " + to_string(next_level.size()) << endl;
+            next_level.clear();
+//            cout << "after clear: " + to_string(next_level.size()) << endl;
+//            for (int a = 0; a < next_level.size(); a++) {
+//                cout << "next_level: " + to_string(a) << endl;
+//            }
+            //for(auto it = this_level.begin(); it != this_level.end(); ++it) {
+            for(int i = 0; i < this_level.size(); i++) {
+                int el = this_level[i];
+                vector<int> neighbors = neighbors_local(el, type);
+                //for (auto it2 = neighbors.begin(); it2 != neighbors.end(); ++it2) {
+                for(int j = 0; j < neighbors.size(); j++) {
+                    int n = neighbors[j];
+                    if (seen.count(n) == 0) {
+                        vector<int> els;
+                        els.push_back(el);
+                        pred[n] = els;
+                        seen[n] = level;
+                        next_level.push_back(n);
+                    }
+                    else if (seen[n] == level) {
+                        pred[n].push_back(el);
+                    }
+                }
+            }
+            if (max_hops <= level){
+                break;
+            }
+        }
+        if(pred.count(target_id) == 0) {
+            return 0;
+        }
+        vector<array<int, 2> > stack;
+        array<int, 2> tuple = {target_id, 0};
+        stack.push_back(tuple);
+        int top = 0;
+        vector<vector<int> > results;
+        while (top >= 0) {
+            array<int, 2> t = stack[top];
+            int node = t[0];
+            int i = t[1];
+            if(node == source_id) {
+                vector<int> result;
+                for(int k = 0; k < top + 1; k++) {
+                    int j = (top) - k;
+                    array<int, 2> jt = stack[j];
+                    int el = jt[0];
+                    result.push_back(el);
+                }
+                results.push_back(result);
+            }
+            if(pred[node].size() > i) {
+                top += 1;
+                array<int, 2> new_tuple = {pred[node][i], 0};
+                if(top == stack.size()) {
+                    stack.push_back(new_tuple);
+                }
+                else {
+                    stack[top] = new_tuple;
+                }
+            }
+            else {
+                stack[(top - 1)][1] += 1;
+                top -= 1;
+            }
+        }
+
+        cout << "Num found paths: " + to_string(results.size()) << endl;
+        int total_paths_plus_nodes = 0;
+        for(int i = 0; i < results.size(); i++) {
+            total_paths_plus_nodes += 1;
+            vector<int> result = results[i];
+            cout << "---" << endl;
+            for (int j =0; j < result.size(); j++) {
+                total_paths_plus_nodes += 1;
                 cout << to_string(result[j]) << endl;
             }
         }
         return 1;
-//        else {
-//            vector<int> paths = pred[target_id];
-//            //for(auto it = paths.begin(); it != paths.end(); ++it) {
-//            for(int i = 0; i < paths.size(); i++) {
-//                int el = paths[i];
-//                cout << "path: " + to_string(el) << endl;
-//            }
-//            return 1;
-//        }
     }
 
     void serialize_graph_to_disk(char* input_path) {
@@ -366,7 +470,7 @@ int main() {
     cout << nnodes << endl;
     cout << nedges << endl;
 
-    all_paths(0, 10, 1, 10);
+    internal_all_paths(0, 10, 1, 10);
 
 
 //    class GraphIndex g;

@@ -6,7 +6,27 @@ from api.apiutils import Relation
 from knowledgerepr import EKGapi
 from knowledgerepr.ekgstore.pg_store import PGStore
 
-import ctypes
+from ctypes import *
+
+global gI
+gI = None
+
+def load_and_config_library(libname):
+    global gI
+    gI = cdll.LoadLibrary(libname)
+    gI.neighbors.argtypes = [POINTER(POINTER(c_int32))]
+    gI.neighbors.restype = int
+    gI.all_paths.argtypes = [POINTER(POINTER(c_int32))]
+    gI.all_paths.restype = int
+    gI.release_array.argtypes = [POINTER(c_int32)]
+    gI.release_array.restype = None
+    gI.serialize_graph_to_disk.argtypes = [c_char_p]
+    gI.serialize_graph_to_disk.restype = None
+
+
+def get_gI_path(path: str):
+    p = c_char_p(path.encode('utf-8'))
+    return p
 
 
 class GIndexEKG(EKGapi):
@@ -86,6 +106,25 @@ class GIndexEKG(EKGapi):
 
 if __name__ == "__main__":
 
-    import ctypes
-    testlib = ctypes.CDLL("testlib.so")
-    testlib.myprint()
+    load_and_config_library("graph_index.so")
+
+    # examples on how to use gI
+
+    nodes = gI.get_num_nodes()
+    print("Nodes: " + str(nodes))
+    edges = gI.get_num_edges()
+    print("Edges: " + str(edges))
+
+    output = POINTER(c_int32)()
+
+    output_size = gI.all_paths(output, 1, 345, 1, 30)
+
+    print("Python output: ")
+    for idx in range(output_size):
+        print(str(output[idx]))
+
+    gI.release_array(output)
+
+    path = get_gI_path("whatever_path")
+
+    gI.serialize_graph_to_disk(path)
