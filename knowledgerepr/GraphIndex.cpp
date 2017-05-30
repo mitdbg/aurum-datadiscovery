@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <array>
 using namespace std;
 
 /***
@@ -170,53 +171,37 @@ extern "C" {
         if(pred.count(target_id) == 0) {
             return 0;
         }
-        cout << "A" << endl;
-        vector<vector<int> > stack;
-        vector<int> tuple;
-        tuple.push_back(target_id);
-        tuple.push_back(0);
+        vector<array<int, 2> > stack;
+        array<int, 2> tuple = {target_id, 0};
         stack.push_back(tuple);
         int top = 0;
         vector<vector<int> > results;
-        cout << "B" << endl;
         while (top >= 0) {
-            vector<int> t = stack[top];
+            array<int, 2> t = stack[top];
             int node = t[0];
             int i = t[1];
-            cout << "C" << endl;
             if(node == source_id) {
                 vector<int> result;
-                cout << "D1 - " + to_string(top) << endl;
-                //for(int j = top; j == 0; j--) {
                 for(int k = 0; k < top + 1; k++) {
                     int j = (top) - k;
-                    cout << "D2 - " + to_string(j) << endl;
-                    vector<int> jt = stack[j];
-                    cout << "D3" << endl;
+                    array<int, 2> jt = stack[j];
                     int el = jt[0];
-                    cout << "D4" << endl;
                     result.push_back(el);
                 }
                 results.push_back(result);
             }
             if(pred[node].size() > i) {
                 top += 1;
-                vector<int> new_tuple;
-                new_tuple.push_back(pred[node][i]);
-                new_tuple.push_back(0);
+                array<int, 2> new_tuple = {pred[node][i], 0};
                 if(top == stack.size()) {
-                    cout << "E" << endl;
                     stack.push_back(new_tuple);
                 }
                 else {
-                    cout << "F" << endl;
                     stack[top] = new_tuple;
                 }
             }
             else {
-                cout << "G" << endl;
                 stack[(top - 1)][1] += 1;
-                cout << "H" << endl;
                 top -= 1;
             }
         }
@@ -372,53 +357,65 @@ extern "C" int add_one(int i) {
 
 int main() {
 
-    class GraphIndex g;
+    string path = "random_graph_test.txt";
+     char* p = (char*)path.c_str();
+    deserialize_graph(p);
 
-    g.add_node(0);
-    g.add_node(1);
-    g.add_node(2);
-    g.add_edge(0, 1, 33);
-    int nn = g.get_num_nodes();
-    int e = g.get_num_edges();
+    int nnodes = get_num_nodes();
+    int nedges = get_num_edges();
+    cout << nnodes << endl;
+    cout << nedges << endl;
 
-    vector<int> neighbors = g.neighbors(0, 33);
-
-    for (auto it = neighbors.begin(); it != neighbors.end(); ++it) {
-        cout << *it << endl;
-    }
-
-    cout << nn << endl;
-    cout << e << endl;
+    all_paths(0, 10, 1, 10);
 
 
-    class GraphIndex lite;
-
-    int num_nodes = 10000;
-
-    for (int i = 0; i < num_nodes; i++) {
-        g.add_node(i);
-    }
-
-    for (int i = 0; i < num_nodes; i++) {
-        for (int j = 0; j < num_nodes; j++) {
-            g.add_edge(i, j, 1);
-        }
-    }
-
-    for (int i = 0; i < num_nodes; i++) {
-        for (int j = 0; j < num_nodes; j++) {
-            g.add_edge(i, j, 2);
-        }
-    }
-
-    int numnodes = g.get_num_nodes();
-    int numedges = g.get_num_edges();
-
-    cout << numnodes << endl;
-    cout << numedges << endl;
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    cout << "done" << endl;
+//    class GraphIndex g;
+//
+//    g.add_node(0);
+//    g.add_node(1);
+//    g.add_node(2);
+//    g.add_edge(0, 1, 33);
+//    int nn = g.get_num_nodes();
+//    int e = g.get_num_edges();
+//
+//    vector<int> neighbors = g.neighbors(0, 33);
+//
+//    for (auto it = neighbors.begin(); it != neighbors.end(); ++it) {
+//        cout << *it << endl;
+//    }
+//
+//    cout << nn << endl;
+//    cout << e << endl;
+//
+//
+//    class GraphIndex lite;
+//
+//    int num_nodes = 10000;
+//
+//    for (int i = 0; i < num_nodes; i++) {
+//        g.add_node(i);
+//    }
+//
+//    for (int i = 0; i < num_nodes; i++) {
+//        for (int j = 0; j < num_nodes; j++) {
+//            g.add_edge(i, j, 1);
+//        }
+//    }
+//
+//    for (int i = 0; i < num_nodes; i++) {
+//        for (int j = 0; j < num_nodes; j++) {
+//            g.add_edge(i, j, 2);
+//        }
+//    }
+//
+//    int numnodes = g.get_num_nodes();
+//    int numedges = g.get_num_edges();
+//
+//    cout << numnodes << endl;
+//    cout << numedges << endl;
+//
+//    std::this_thread::sleep_for(std::chrono::seconds(10));
+//    cout << "done" << endl;
 
 }
 
