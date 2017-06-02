@@ -41,14 +41,11 @@ public class Worker {
 	}
 
 	public void start() {
-		System.out.println("STARTING WORKER");
 		pendingWork = true;
 
 		Worker worker = this;
 
-		Thread server = new Thread() {// Not sure if I should be doing it like
-			// this, but ws.init was hanging
-			// something to do with how WebServer.init() is setup
+		Thread server = new Thread() {
 			public void run() {
 				WebServer ws = new WebServer(pc, c, worker);
 				ws.init();
@@ -57,7 +54,6 @@ public class Worker {
 
 		server.start();
 
-		System.out.println("get here");
 		// try to connect to leader
 		HttpClient httpclient = HttpClients.createDefault();
 
@@ -73,10 +69,8 @@ public class Worker {
 			HttpGet httpget;
 			try {
 				httpget = new HttpGet(builder.build());
-				//System.out.println("TRYING to get response from server at: " + httpget.getURI());
-				//System.out.println("reqeust I'm sending: " + httpget);
+
 				HttpResponse response = (HttpResponse) httpclient.execute(httpget);// try to connect to master
-				System.out.println("response: " + response);
 				break;
 			} catch (URISyntaxException | IOException e) {
 				//e.printStackTrace();
@@ -89,57 +83,43 @@ public class Worker {
 			}
 		}
 		// check for all done
-		while (pendingWork) {
-
-			lock.lock();
-			System.out.println("taskQueue: "+ taskQueue.toString());
+		while (pendingWork) {			
 			if (taskQueue.size() > 0 ) {
 				if (!c.isTherePendingWork()) {
 					// done with this batch
-					notifyMasterDone();
+					getWork();
 				}
 			}
-			lock.unlock();
 			try {
 				Thread.sleep(3000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Worker done");
-
 	}
 
 	public String processTask(TaskPackage task) {
-		System.out.println("worker trying to process tasks");
-		lock.lock();
 		taskQueue.add(task.getId());
 		c.submitTask(task);
-		lock.unlock();
-
 
 		return "OK";
-
 	}
 
 
 	public String stop() {
-		System.out.println("stopping worker");
 		c.stop();
 		pendingWork = false;
 
 		return "OK";
 	}
 
-	private void notifyMasterDone() {
+	private void getWork() {
 		String taskIdStr = "";
 		for (int taskId : taskQueue) {
 			taskIdStr += Integer.toString(taskId) + " ";
 		}
 		
-		taskQueue = new ArrayList<Integer>();
-		
-		System.out.println("task id string: " + taskIdStr);
+		taskQueue = new ArrayList<Integer>();		
 		HttpClient httpclient = HttpClients.createDefault();
 
 		URIBuilder builder = new URIBuilder();
@@ -155,13 +135,10 @@ public class Worker {
 			HttpGet httpget;
 			try {
 				httpget = new HttpGet(builder.build());
-				//System.out.println("TRYING to get response from server at: " + httpget.getURI());
-				//System.out.println("reqeust I'm sending: " + httpget);
 				HttpResponse response = (HttpResponse) httpclient.execute(httpget);// try to connect to worker
-				System.out.println("response: " + response);
 				break;
 			} catch (URISyntaxException | IOException e) {
-				//e.printStackTrace();
+				e.printStackTrace();
 			}
 		}
 	}

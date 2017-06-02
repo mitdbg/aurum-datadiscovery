@@ -44,16 +44,16 @@ public class Main {
     ONLINE(0),
     OFFLINE_FILES(1),
     OFFLINE_DB(2),
-    BENCHMARK(3), 
-	WORKER (4),
-	MASTER (5);
+    BENCHMARK(3),
+	WORKER(4),
+	MASTER(5);
 
     int mode;
 
     ExecutionMode(int mode) { this.mode = mode; }
   }
 
-  public void startProfiler(ProfilerConfig pc){
+  public void startProfiler(ProfilerConfig pc) {
 
     long start = System.nanoTime();
 
@@ -63,7 +63,7 @@ public class Main {
 
     // for test purpose, use this and comment above line when elasticsearch is
     // not configured
-    //Store s = StoreFactory.makeNullStore(pc);		
+    //Store s = StoreFactory.makeNullStore(pc);
 
     Conductor c = new Conductor(pc, s);
     c.start();
@@ -86,36 +86,22 @@ public class Main {
     }
     else if(executionMode == ExecutionMode.BENCHMARK.mode) {
       // Piggyback property to benchmark system with one file 
-    	System.out.println("STARTING FROM BENCHMARK");
       String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
-    } else if(executionMode == ExecutionMode.MASTER.mode) {
-    	
-    	//master catalog
-    	// Map<String, String> calogue = new HashMap // stores previously processed files and folders
-    	// (not sure where to store this/ if it should be another data structure/stored on disk)
-    	// check if input files are in catalogue already
-    	
-    	// Find workers
-    	// Split up input files and distribute
-    	// Wait for completion
-    	System.out.println("starting from master block: ");
-    	Master master = new Master(pc, c);
-    	
-      String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-        // send tasks that should be split up
-    	master.start(pathToSources);
     } else if (executionMode == ExecutionMode.WORKER.mode) {
-    	
-    	//contact leader
-    	// wait for work
-    	// complete work and return
-    	System.out.println("starting from workerblock: ");
 
-    	Worker worker = new Worker(pc, c);
-    	worker.start();
-    }
-    
+		System.out.println("starting from workerblock: ");
+
+		Worker worker = new Worker(pc, c);
+		worker.start();
+	} else if (executionMode == ExecutionMode.MASTER.mode) {
+		Master master = new Master(pc, c);
+
+		String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+		// send tasks that should be split up
+		master.start(pathToSources);
+	} 
+
     while (c.isTherePendingWork()) {
       try {
         Thread.sleep(3000);
@@ -124,7 +110,6 @@ public class Main {
         e.printStackTrace();
       }
     }
-    System.out.println("stopping worker since no more work");
 
     c.stop();
     s.tearDownStore();

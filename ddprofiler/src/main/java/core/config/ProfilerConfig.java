@@ -75,6 +75,10 @@ public class ProfilerConfig extends Config {
   private static final String MASTER_SERVER_PORT_DOC =
       "The port where a wokrer server listens";
 
+  public static final String REEXECUTE_TASKS = "reexecutetasks";
+  private static final String REEXECUTE_TASKS_DOC =
+      "The port where a wokrer server listens";
+
   static {
     config =
         new ConfigDef()
