@@ -19,6 +19,7 @@ class OntoHandler:
         self.objectProperties = []
         self.class_hierarchy = []
         self.class_hierarchy_signatures = []
+        self.map_classname_class = dict()
 
     def parse_ontology(self, file):
         """
@@ -60,6 +61,10 @@ class OntoHandler:
         self.class_hierarchy = pickle.load(f)
         self.class_hierarchy_signatures = pickle.load(f)
         self.objectProperties = self.o.objectProperties
+        self.map_classname_class = dict()
+        for c in self.o.classes:
+            label = c.bestLabel().title()
+            self.map_classname_class[label] = c
         f.close()
         #self.class_hierarchy = self.__get_class_levels_hierarchy()  # pre_load this
 
@@ -70,6 +75,12 @@ class OntoHandler:
         :return:
         """
         return [x.bestLabel().title() for x in self.o.classes]
+
+    def class_and_descr(self):
+        for x in self.o.classes:
+            class_name = x.bestLabel().title()
+            descr = x.bestDescription()
+            yield (class_name, descr)
 
     def classes_id(self):
         """
@@ -104,11 +115,28 @@ class OntoHandler:
     def fake(self):
         return self.__get_class_levels_hierarchy()
 
+    def get_class_from_name(self, class_name):
+        if class_name in self.map_classname_class:
+            return self.map_classname_class[class_name]
+        else:
+            return None
+
     def ancestors_of_class(self, c):
         """
         Ancestors of given class
         """
-        return list(self.__get_ancestors_of_class(c))
+        class_from_name = self.get_class_from_name(c)
+        if class_from_name is None:
+            return []
+        ancestors = [el for el in reversed(class_from_name.ancestors())]
+        return ancestors
+
+    def name_of_sequence(self, seq):
+        seq_name = []
+        for s in seq:
+            name = s.bestLabel().title()
+            seq_name.append(name)
+        return seq_name
 
     def descendants_of_class(self, c):
         """
@@ -313,6 +341,10 @@ class OntoHandler:
 
         label = c.bestLabel()
         descr = c.bestDescription()
+
+        if descr is None or descr == "":
+            return False, 'no descr here'  # we won't harness enough context...
+
         # Get class name, description -> bow, properties -> bow
         pnouns = nlp.get_proper_nouns(descr)
         nouns = nlp.get_nouns(descr)
@@ -338,23 +370,30 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    input = "dbpedia_2016-04.owl"
-    output = "cache_onto/dbpedia.pkl"
-
-    parse_ontology(input, output)
-
-    exit()
+    # input = "merck_dlc.owl"
+    # output = "cache_onto/dlc.pkl"
+    #
+    # parse_ontology(input, output)
+    #
+    # exit()
 
     o = OntoHandler()
 
-    o.load_ontology("cache_onto/dbpedia.pkl")
+    o.load_ontology("cache_onto/dlc.pkl")
 
     total = 0
     nodesc = 0
     for c in o.o.classes:
         total += 1
+        label = c.bestLabel()
+        print(str(label))
+        print(str(label.title()))
         descr = c.bestDescription()
         if descr == "":
             nodesc += 1
+
+    for c in o.classes():
+        print(str(c))
+
     print(str(nodesc) + "/" + str(total) + " no descr")
     # EFO output: 18604/19230 no descr

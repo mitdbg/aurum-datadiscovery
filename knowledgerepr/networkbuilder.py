@@ -6,9 +6,9 @@ from math import isinf
 from enum import Enum
 from knowledgerepr.fieldnetwork import Relation
 from nearpy import Engine
-from nearpy.hashes import RandomBinaryProjections
+from nearpy.hashes import RandomBinaryProjections, RandomBinaryProjectionTree
 from nearpy.hashes import RandomDiscretizedProjections
-from nearpy.distances import CosineDistance
+from nearpy.distances import CosineDistance, EuclideanDistance, ManhattanDistance
 from sklearn.decomposition import TruncatedSVD
 from datasketch import MinHash, MinHashLSH
 
@@ -78,7 +78,9 @@ class LSHRandomProjectionsIndex:
 
     def __init__(self, num_features, projection_count=30):
         self.num_features = num_features
+        #self.rbp = RandomDiscretizedProjections('default', projection_count, bin_width=100)
         self.rbp = RandomBinaryProjections('default', projection_count)
+        #self.rbp = RandomBinaryProjectionTree('default', projection_count, 1)
         self.text_engine = Engine(num_features, lshashes=[self.rbp], distance=CosineDistance())
 
     def index(self, vector, key):
