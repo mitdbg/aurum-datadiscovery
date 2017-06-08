@@ -37,22 +37,18 @@ public class NumericalAnalyzer implements NumericalAnalysis {
 
     for (int i = 0; i < analyzers.size(); i++) {
       IntegerDataConsumer dc = (IntegerDataConsumer)analyzers.get(i);
-      synchronized (dc) {
-        dc.feedIntegerData(records);
-      }
+      dc.feedIntegerData(records);
     }
 
     return false;
   }
 
   @Override
-  public boolean feedFloatData(List<Float> records) {
+  synchronized public boolean feedFloatData(List<Float> records) {
 
     for (int i = 0; i < analyzers.size(); i++) {
       FloatDataConsumer dc = (FloatDataConsumer)analyzers.get(i);
-      synchronized (dc) {
-        dc.feedFloatData(records);
-      }
+      dc.feedFloatData(records);
     }
 
     return false;

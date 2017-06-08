@@ -136,15 +136,13 @@ public class Conductor {
 
   public boolean submitSubTask(WorkerSubTask task) {
     totalSubTasksSubmitted.incrementAndGet();
-    boolean success = false;
     try {
-      while (!success) {
-        success = subTaskQueue.offer(task, 500, TimeUnit.MILLISECONDS);
-      }
+      while (!subTaskQueue.offer(task, 500, TimeUnit.MILLISECONDS)) {}
+      return true;
     } catch (InterruptedException e) {
       e.printStackTrace();
+      return false;
     }
-    return success;
   }
 
   public WorkerSubTask pullSubTask() {

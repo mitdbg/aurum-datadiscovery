@@ -37,13 +37,13 @@ public class TextualAnalyzer implements TextualAnalysis {
   }
 
   @Override
-  synchronized public boolean feedTextData(List<String> records) {
-    for (int i = 0; i < analyzers.size(); i++) {
-      TextualDataConsumer dc = (TextualDataConsumer)analyzers.get(i);
-      synchronized (dc) {
-        dc.feedTextData(records);
-      }
+  public boolean feedTextData(List<String> records) {
+
+    synchronized (this) {
+      ea.feedTextData(records);
+      ca.feedTextData(records);
     }
+    mh.feedTextData(records);
 
     return false;
   }
