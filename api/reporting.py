@@ -73,3 +73,11 @@ class Report:
 
     def print_pkfk_relations(self):
         self.__network.print_relations(Relation.PKFK)
+
+    def print_all_indexed_tables(self):
+        tables_set = set()
+        for db_name, source_name, field_name, data_type in self.__network.iterate_values():
+            tables_set.add(source_name)
+        for el in tables_set:
+            print(str(el))
+        return tables_set
