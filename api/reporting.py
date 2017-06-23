@@ -81,3 +81,11 @@ class Report:
         for el in tables_set:
             print(str(el))
         return tables_set
+
+    def print_all_columns_of_type(self, type):
+        col_set = set()
+        for db_name, source_name, field_name, data_type in self.__network.iterate_values():
+            print(str(data_type))
+            if data_type == type:
+                col_set.add((db_name, source_name, field_name))
+        return col_set
