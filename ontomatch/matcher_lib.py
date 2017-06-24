@@ -209,8 +209,8 @@ def double_check_sem_signal_attr_sch_sch(attribute1, attribute2,
 
     if not add_exact_matches:
         ban_index1, ban_index2 = get_ban_indexes(field_name1, field_name2)
-        svs_rel = removed_banned_vectors(ban_index1, svs1)
-        svs_cla = removed_banned_vectors(ban_index2, svs2)
+        svs_rel = remove_banned_vectors(ban_index1, svs1)
+        svs_cla = remove_banned_vectors(ban_index2, svs2)
     else:
         svs_rel = svs1
         svs_cla = svs2
@@ -478,7 +478,7 @@ def combine_matchings2(all_matchings):
     return combined_matchings, l4_matchings
 
 
-def removed_banned_vectors (ban_index, svs):
+def remove_banned_vectors(ban_index, svs):
     nSVS  = []
     for iter1 in range(0, len(ban_index)):
         if ban_index[iter1] == 0: # the corresponding vector is not banned
@@ -567,8 +567,8 @@ def find_relation_class_attr_name_sem_matchings(network, kr_handlers,
     for idx_rel in range(0, num_attributes_inserted):  # Compare only with classes
         for idx_class in range(num_attributes_inserted, len(names)):
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][2], names[idx_class][1][1])
-            svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
-            svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
+            svs_rel = remove_banned_vectors(ban_index1, names[idx_rel][2])
+            svs_cla = remove_banned_vectors(ban_index2, names[idx_class][2])
             semantic_sim, strong_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                     penalize_unknown_word=penalize_unknown_word,
                                     add_exact_matches=add_exact_matches,
@@ -923,8 +923,8 @@ def find_relation_class_name_sem_matchings(network, kr_handlers,
     for idx_rel in range(0, num_relations_inserted):  # Compare only with classes
         for idx_class in range(num_relations_inserted, len(names)):
             ban_index1, ban_index2 = get_ban_indexes(names[idx_rel][1][1], names[idx_class][1][1])
-            svs_rel = removed_banned_vectors(ban_index1, names[idx_rel][2])
-            svs_cla = removed_banned_vectors(ban_index2, names[idx_class][2])
+            svs_rel = remove_banned_vectors(ban_index1, names[idx_rel][2])
+            svs_cla = remove_banned_vectors(ban_index2, names[idx_class][2])
             semantic_sim, strong_signal = SS.compute_semantic_similarity(svs_rel, svs_cla,
                                             penalize_unknown_word=penalize_unknown_word,
                                             add_exact_matches=add_exact_matches,

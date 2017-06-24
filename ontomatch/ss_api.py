@@ -103,93 +103,96 @@ class SSAPI:
         all_matchings = defaultdict(list)
 
         # Build content sim
-        self.priv_build_content_sim(0.6)
+        # self.priv_build_content_sim(0.6)
 
         # L1: [class] -> attr.content
-        st = time.time()
-        print("Finding L1 matchings...")
-        kr_class_signatures = []
-        l1_matchings = []
-        for kr_name, kr_handler in self.kr_handlers.items():
-            kr_class_signatures = kr_handler.get_classes_signatures()
-            l1_matchings += self.compare_content_signatures(kr_name, kr_class_signatures)
-
-        print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
-        et = time.time()
-        print("Took: " + str(et-st))
-        all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
+        # st = time.time()
+        # print("Finding L1 matchings...")
+        # kr_class_signatures = []
+        # l1_matchings = []
+        # for kr_name, kr_handler in self.kr_handlers.items():
+        #     kr_class_signatures = kr_handler.get_classes_signatures()
+        #     l1_matchings += self.compare_content_signatures(kr_name, kr_class_signatures)
+        #
+        # print("Finding L1 matchings...OK, "+str(len(l1_matchings))+" found")
+        # et = time.time()
+        # print("Took: " + str(et-st))
+        # all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = l1_matchings
+        all_matchings[MatchingType.L1_CLASSNAME_ATTRVALUE] = []
 
         #for match in l1_matchings:
         #    print(match)
 
         # L2: [class.data] -> attr.content
-        print("Finding L2 matchings...")
-        st = time.time()
-        kr_classdata_signatures = []
-        l2_matchings = []
-        #for kr_name, kr_handler in self.kr_handlers.items():
-        #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
-        #    l2_matchings = self.__compare_content_signatures(kr_name, kr_classdata_signatures)
-        print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-        all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE] = l2_matchings
+        # print("Finding L2 matchings...")
+        # st = time.time()
+        # kr_classdata_signatures = []
+        # l2_matchings = []
+        # #for kr_name, kr_handler in self.kr_handlers.items():
+        # #    kr_classdata_signatures += kr_handler.get_class_data_signatures()
+        # #    l2_matchings = self.__compare_content_signatures(kr_name, kr_classdata_signatures)
+        # print("Finding L2 matchings...OK, " + str(len(l2_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        # all_matchings[MatchingType.L2_CLASSVALUE_ATTRVALUE] = l2_matchings
 
         #for match in l2_matchings:
         #    print(match)
 
         # L3: [class.context] -> relation
-        print("Finding L3 matchings...")
-        st = time.time()
-        #l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
-        l3_matchings = []
-        print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-        all_matchings[MatchingType.L3_CLASSCTX_RELATIONCTX] = l3_matchings
+        # print("Finding L3 matchings...")
+        # st = time.time()
+        # #l3_matchings = matcherlib.find_relation_class_sem_coh_clss_context(self.network, self.kr_handlers)
+        # l3_matchings = []
+        # print("Finding L3 matchings...OK, " + str(len(l3_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        # all_matchings[MatchingType.L3_CLASSCTX_RELATIONCTX] = l3_matchings
 
         #for match in l3_matchings:
         #    print(match)
 
         # L4: [Relation names] -> [Class names] (syntax)
-        print("Finding L4 matchings...")
-        st = time.time()
-        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
-        print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
+        # print("Finding L4 matchings...")
+        # st = time.time()
+        # l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
+        # print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = []
+        #
+        # # L4.2: [Relation names] -> [Class names] (semantic)
+        # print("Finding L42 matchings...")
+        # st = time.time()
+        # l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
+        #                                                                                      sem_sim_threshold=0.5,
+        #                                                                                      add_exact_matches=False,
+        #                                                                                      penalize_unknown_word=True,
+        #                                                                                      negative_signal_threshold=0.5)
+        # print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        #
+        # # summarize structurally l42 before adding
+        # l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
+        #
+        # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
 
-        # L4.2: [Relation names] -> [Class names] (semantic)
-        print("Finding L42 matchings...")
-        st = time.time()
-        l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
-                                                                                             sem_sim_threshold=0.5,
-                                                                                             add_exact_matches=False,
-                                                                                             penalize_unknown_word=True,
-                                                                                             negative_signal_threshold=0.5)
-        print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-
-        # summarize structurally l42 before adding
-        l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
-
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
-
-        print("Does L42 cancel any L4?")
-        print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-        l4_matchings_set = set(l4_matchings)
-        total_cancelled = 0
-        for m in neg_l42_matchings:
-            if m in l4_matchings_set:
-                total_cancelled += 1
-                l4_matchings_set.remove(m)
-        l4_matchings = list(l4_matchings_set)
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
-
-        print("Cancelled: " + str(total_cancelled))
-        print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        # print("Does L42 cancel any L4?")
+        # print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        # l4_matchings_set = set(l4_matchings)
+        # total_cancelled = 0
+        # for m in neg_l42_matchings:
+        #     if m in l4_matchings_set:
+        #         total_cancelled += 1
+        #         l4_matchings_set.remove(m)
+        # l4_matchings = list(l4_matchings_set)
+        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
+        #
+        # print("Cancelled: " + str(total_cancelled))
+        # print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
 
         #for match in l42_matchings:
         #    print(match)
@@ -208,34 +211,35 @@ class SSAPI:
 
         #l52_matchings = []
         # L52: [Attribute names] -> [Class names] (semantic)
-        print("Finding L52 matchings...")
-        st = time.time()
-        l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
-                                                                                semantic_sim_threshold=0.5,
-                                                                                negative_signal_threshold=0.5,
-                                                                                add_exact_matches=False,
-                                                                                penalize_unknown_word=True)
-        print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-
-        # summarize structurally l52 before adding
-        l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
-
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
-
-        print("Does L52 cancel any L5?")
-        print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
-        l5_matchings_set = set(l5_matchings)
-        total_cancelled = 0
-        for m in neg_l52_matchings:
-            if m in l5_matchings_set:
-                total_cancelled += 1
-                l5_matchings_set.remove(m)
-        print("Cancelled: " + str(total_cancelled))
-        l5_matchings = list(l5_matchings_set)
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
-        print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        # print("Finding L52 matchings...")
+        # st = time.time()
+        # l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
+        #                                                                         semantic_sim_threshold=0.5,
+        #                                                                         negative_signal_threshold=0.5,
+        #                                                                         add_exact_matches=False,
+        #                                                                         penalize_unknown_word=True)
+        # print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        #
+        # # summarize structurally l52 before adding
+        # l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
+        #
+        # all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = []
+        #
+        # print("Does L52 cancel any L5?")
+        # print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        # l5_matchings_set = set(l5_matchings)
+        # total_cancelled = 0
+        # for m in neg_l52_matchings:
+        #     if m in l5_matchings_set:
+        #         total_cancelled += 1
+        #         l5_matchings_set.remove(m)
+        # print("Cancelled: " + str(total_cancelled))
+        # l5_matchings = list(l5_matchings_set)
+        # all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+        # print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
 
         ## L6: [Relations] -> [Class names] (semantic groups)
         #print("Finding L6 matchings...")
@@ -248,20 +252,20 @@ class SSAPI:
         l6_matchings = []
         all_matchings[MatchingType.L6_CLASSNAME_RELATION_SEMSIG] = l6_matchings
 
-        # L7: [Attribute names] -> [class names] (content - fuzzy naming)
-        print("Finding L7 matchings...")
-        st = time.time()
-        l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
-        print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-
-        all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
-
-        total_matchings_pre_combined = 0
-        for values in all_matchings.values():
-            total_matchings_pre_combined += len(values)
-        print("ALL_matchings: " + str(total_matchings_pre_combined))
+        # # L7: [Attribute names] -> [class names] (content - fuzzy naming)
+        # print("Finding L7 matchings...")
+        # st = time.time()
+        # l7_matchings = matcherlib.find_hierarchy_content_fuzzy(self.kr_handlers, self.store_client)
+        # print("Finding L7 matchings...OK, " + str(len(l7_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        #
+        # all_matchings[MatchingType.L7_CLASSNAME_ATTRNAME_FUZZY] = l7_matchings
+        #
+        # total_matchings_pre_combined = 0
+        # for values in all_matchings.values():
+        #     total_matchings_pre_combined += len(values)
+        # print("ALL_matchings: " + str(total_matchings_pre_combined))
 
         def list_from_dict(combined):
             l = []
@@ -375,13 +379,42 @@ class SSAPI:
             o = self.kr_handlers[kr_name]
             #print(cla_name)
             #onto_class = o.o.getClass(match=cla_name)[0]
-            onto_class = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            if (kr_name, cla_name) in map_ontoclass_name_to_class:
+                onto_class = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            else:
+                continue
             #print(kr_name, cla_name)
             #print(onto_class)
             if onto_class in map_ontoclass_to_schema:
                 map_ontoclass_to_schema[onto_class].append(schema)
             else:
                 map_ontoclass_to_schema[onto_class] = [schema]
+
+        # entropy of properties of ontology
+        prop_count = defaultdict(int)
+        total_num_classes = 0
+        for k, v in map_ontoclass_name_to_class.items():
+            kr_name, cla_name = k
+            total_num_classes += 1
+            onto_class_obj = map_ontoclass_name_to_class[k]
+            #properties = self.kr_handlers[kr_name].get_properties_only_of(onto_class_obj)
+            # for p in properties:
+            #     for target in p.ranges:
+            #         prop_count[p] += 1
+
+            properties = self.kr_handlers[kr_name].get_properties_only_of(onto_class_obj)
+            for p in properties:
+                if (kr_name, p) in set_object_properties:
+                    for onto_class_obj2 in p.ranges:
+                        if onto_class_obj2 in map_ontoclass_to_schema:
+                            schemas = map_ontoclass_to_schema[onto_class_obj2]
+                            for schema_B in schemas:
+                                prop_count[p] += 1
+
+        ord = sorted(prop_count.items(), key=lambda x: x[1], reverse=True)
+
+        x = 1
+
 
         links = set()
 
@@ -395,19 +428,28 @@ class SSAPI:
             o = self.kr_handlers[kr_name]
             
             #onto_class_A = o.o.getClass(match=cla_name)
-            onto_class_A = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            if (kr_name, cla_name) in map_ontoclass_name_to_class:
+                onto_class_A = map_ontoclass_name_to_class[(kr_name, cla_name)]
+            else:
+                continue
             # find is_a links using hierarchy of ancestors and descendants
             #for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A) + o.descendants_of_class(onto_class_A):
-            for onto_class_B in [onto_class_A] + o.ancestors_of_class(onto_class_A): # asymmetric of is_a relationship
+            for onto_class_B in [onto_class_A] + o.parents_of_class(onto_class_A):  # asymmetric of is_a relationship
                 if onto_class_B in map_ontoclass_to_schema:
                     schemas = map_ontoclass_to_schema[onto_class_B]
                     for schema_B in schemas:
                         if schema_B != schema_A:
-                            if str(schema_A) + str(schema_B) not in seen_links and str(schema_B) + str(schema_A) not in seen_links:
+                            if str(schema_A) + str(schema_B) not in seen_links \
+                                    and str(schema_B) + str(schema_A) not in seen_links\
+                                    and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
                                 seen_links.add(str(schema_A) + str(schema_B))
-                                links.add((schema_A, "is_a", schema_B))
+                                links.add((schema_A, "is_a", schema_B, " - ",
+                                           onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
+                                if onto_class_A.bestLabel().title() == "Record Office" and \
+                                                onto_class_B.bestLabel().title() == "Time Period":
+                                    a = 1
             # find property links
-            properties = o.get_properties_all_of(onto_class_A)
+            properties = o.get_properties_only_of(onto_class_A)
             for p in properties:
                 if (kr_name, p) in set_object_properties:
                     for onto_class_B in p.ranges:
@@ -416,9 +458,17 @@ class SSAPI:
                             for schema_B in schemas:
                                 if schema_B != schema_A:
                                     label = p.bestLabel().title()
-                                    if str(schema_A) + label + str(schema_B) not in seen_links and str(schema_B) + label + str(schema_A) not in links:
+                                    if str(schema_A) + label + str(schema_B) \
+                                            not in seen_links \
+                                            and str(schema_B) + label + str(schema_A) \
+                                            not in links\
+                                            and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
                                         seen_links.add(str(schema_A) + label + str(schema_B))
-                                        links.add((schema_A, (label, repr(p)), schema_B))
+                                        links.add((schema_A, (label, repr(p)), schema_B,
+                                                   onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
+                                        if onto_class_A.bestLabel().title() == "Record Office" and \
+                                                        onto_class_B.bestLabel().title() == "Time Period":
+                                            a = 1
                 
         return list(links)
 
@@ -562,7 +612,7 @@ def test_e2e(path_to_serialized_model):
 
     # Load glove model
     print("Loading language model...")
-    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    path_to_glove_model = "glove/glove.6B.100d.txt"
     glove_api.load_model(path_to_glove_model)
     print("Loading language model...OK")
 
@@ -573,12 +623,12 @@ def test_e2e(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
+    #om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
@@ -592,22 +642,32 @@ def test_e2e(path_to_serialized_model):
     # print("Took: " + str(et-st))
     #
     # print("Writing MATCHINGS output to disk...")
-    # with open('matchings_chembl_drugbank2', 'w') as f:
+    # with open('matchings_mitdwh_dbpedia_l5only', 'w') as f:
     #     for k in matchings:
     #         #lines = k.print_serial()
     #         #for l in lines:
-    #         print(str(k))
+    #         #print(str(k))
     #         f.write(str(k) + '\n')
     # print("Writing MATCHINGS output to disk...OK")
+    # exit()
 
     matchings = []
     line = 0
-    with open("matchings_chembl_drugbank2", 'r') as f:
+    #with open("matchings_mitdwh_dbpedia_l5only", 'r') as f:
+    with open("matchings_massdata_dbpedia", 'r') as f:
         #lines = f.readlines()
         for l in f:
-            tokens = l.split("==>>")
-            sch = tokens[0]
-            cla = tokens[1]
+            #tokens = l.split("==>>")
+            l = l.replace("'", "")
+            tokens = l.split("), (")
+            sch = tokens[0][2:]
+            sch = sch.replace("(", "")
+            sch = sch.replace(")", "")
+            sch = sch.replace("\"", "")
+            cla = tokens[1][:-2]
+            cla = cla.replace("(", "")
+            cla = cla.replace(")", "")
+            cla = cla.replace("\"", "")
             sch_tokens = sch.split(",")
             sch_tokens = [t.strip() for t in sch_tokens]
             cla_tokens = cla.split(",")
@@ -624,11 +684,11 @@ def test_e2e(path_to_serialized_model):
     print("Finding links...OK")
     print("Took: " + str((et-st)))
 
-    print("Writing LINKS output to disk...")
-    with open('links_chembl_drugcentral2', 'w') as f:
-        for l in links:
-            f.write(str(l) + '\n')
-    print("Writing LINKS output to disk...OK")
+    # print("Writing LINKS output to disk...")
+    # with open('links_mitdwh_dbpedia_l5only', 'w') as f:
+    #     for l in links:
+    #         f.write(str(l) + '\n')
+    # print("Writing LINKS output to disk...OK")
 
     for link in links:
         print(link)
@@ -1745,9 +1805,27 @@ def test_l42_lsh(path_to_serialized_model):
 
     return
 
+
+def link_parser(path):
+    print("ll-only")
+    with open(path, 'r') as f:
+        non_is_a = 0
+        is_a = 0
+        for l in f:
+            if l.find("'is_a'") != -1:
+                is_a += 1
+            else:
+                non_is_a += 1
+                print(str(l))
+    print("is-a: " + str(is_a))
+    print("non-is-a: " + str(non_is_a))
+
 if __name__ == "__main__":
 
-    test_e2e("../models/chembl_drugcentral/")
+    # link_parser("OUTPUT_MERCK_LINKS_ONLY")
+    # exit()
+
+    test_e2e("../models/testwithserialdwh/")
     exit()
 
     print("SSAPI")

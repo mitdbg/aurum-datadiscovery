@@ -131,6 +131,16 @@ class OntoHandler:
         ancestors = [el for el in reversed(class_from_name.ancestors())]
         return ancestors
 
+    def parents_of_class(self, c):
+        """
+        Ancestors of given class
+        """
+        class_from_name = self.get_class_from_name(c)
+        if class_from_name is None:
+            return []
+        parents = [el for el in reversed(class_from_name.parents())]
+        return parents
+
     def name_of_sequence(self, seq):
         seq_name = []
         for s in seq:
@@ -163,6 +173,12 @@ class OntoHandler:
             for p in hierarchy_props.values():
                 props.extend(p)
         return props
+
+    def get_properties_only_of(self, c):
+        properties = self.o.getInferredPropertiesForClass(c)
+        props_dic = properties[0]
+        props = list(props_dic.values())
+        return props[0]
 
     def __get_class_levels_hierarchy(self):
 
@@ -240,15 +256,15 @@ class OntoHandler:
         else:
             return [el for el in self.class_hierarchy_signatures]
 
-    def parents_of_class(self, class_name, class_id=False):
-        """
-        Parents of given class
-        :param class_name:
-        :return:
-        """
-        if class_id:
-            return self.o.getClass(id=class_name).parents()
-        return self.o.getClass(match=class_name)[0].parents()
+    # def parents_of_class(self, class_name, class_id=False):
+    #     """
+    #     Parents of given class
+    #     :param class_name:
+    #     :return:
+    #     """
+    #     if class_id:
+    #         return self.o.getClass(id=class_name).parents()
+    #     return self.o.getClass(match=class_name)[0].parents()
 
     def children_of_class(self, class_name, class_id=False):
         """
@@ -260,17 +276,29 @@ class OntoHandler:
             return self.o.getClass(id=class_name).children()
         return self.o.getClass(match=class_name)[0].children()
 
-    def properties_all_of(self, class_name, class_id=False):
-        """
-        All properties associated to the given class (both datatype and object)
-        :param class_name:
-        :return:
-        """
-        if class_id:
-            c = self.o.getClass(id=class_name)
-        else:
-            c = self.o.getClass(match=class_name)[0]
-        return self.get_properties_all_of(c)
+    # def properties_all_of(self, class_name, class_id=False):
+    #     """
+    #     All properties associated to the given class (both datatype and object)
+    #     :param class_name:
+    #     :return:
+    #     """
+    #     if class_id:
+    #         c = self.o.getClass(id=class_name)
+    #     else:
+    #         c = self.o.getClass(match=class_name)[0]
+    #     return self.get_properties_all_of(c)
+    #
+    # def properties_only_of(self, class_name, class_id=False):
+    #     """
+    #     All properties associated to the given class (both datatype and object)
+    #     :param class_name:
+    #     :return:
+    #     """
+    #     if class_id:
+    #         c = self.o.getClass(id=class_name)
+    #     else:
+    #         c = self.o.getClass(match=class_name)[0]
+    #     return self.get_properties_only_of(c)
 
     def get_class_data_signatures(self):
         signatures = []
@@ -370,12 +398,12 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    # input = "merck_dlc.owl"
-    # output = "cache_onto/dlc.pkl"
-    #
-    # parse_ontology(input, output)
-    #
-    # exit()
+    input = "envo.owl"
+    output = "cache_onto/envo.pkl"
+
+    parse_ontology(input, output)
+
+    exit()
 
     o = OntoHandler()
 
