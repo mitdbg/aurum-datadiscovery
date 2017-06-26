@@ -10,6 +10,7 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import core.config.ProfilerConfig;
 import inputoutput.conn.BenchmarkingData;
+import inputoutput.Tracker;
 import preanalysis.Values;
 import store.Store;
 
@@ -49,6 +50,12 @@ public class TaskConsumer implements Worker {
 					continue;
 				}
 
+                                // Continue if another subtask of this task has already failed
+                                Tracker tracker = task.getTracker();
+                                if (tracker.isFailed()) {
+                                    continue;
+                                }
+
 				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getDBName(), task.getPath(), task.getSourceName());
 
 				// Feed values to the analyzer
@@ -72,8 +79,8 @@ public class TaskConsumer implements Worker {
 //				List<WorkerTaskResult> results = wtrf.get();
 
 				// Finish the subtask, and store a summary document if that was the last subtask
-				task.getTracker().processChunk();
-				if (task.getTracker().isDoneProcessing()) {
+				tracker.processChunk();
+				if (tracker.isDoneProcessing()) {
 					WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(
 							task.getDBName(),
 							task.getPath(),
@@ -104,7 +111,8 @@ public class TaskConsumer implements Worker {
 					sb.append(System.lineSeparator());
 				}
 				sb.append(System.lineSeparator());
-				String log = sb.toString();
+				task.getTracker().fail();
+                                String log = sb.toString();
 				this.conductor.submitError(log);
 			}
 		}

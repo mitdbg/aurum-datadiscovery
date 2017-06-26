@@ -14,11 +14,13 @@ public class Tracker {
     private AtomicInteger chunksSubmitted;
     private AtomicInteger chunksProcessed;
     private AtomicBoolean doneReading;
+    private AtomicBoolean failed;
 
     public Tracker() {
         this.chunksSubmitted = new AtomicInteger(0);
         this.chunksProcessed = new AtomicInteger(0);
         this.doneReading = new AtomicBoolean(false);
+        this.failed = new AtomicBoolean(false);
     }
 
     public int getChunksSubmitted() { return chunksSubmitted.get(); }
@@ -33,6 +35,14 @@ public class Tracker {
 
     public void finishReading() {
         doneReading.set(true);
+    }
+
+    public void fail() {
+        failed.set(true);
+    }
+
+    public boolean isFailed() {
+        return failed.get();
     }
 
     public boolean isDoneProcessing() {
