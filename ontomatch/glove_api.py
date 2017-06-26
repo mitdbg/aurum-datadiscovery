@@ -62,7 +62,7 @@ def load_model(path_to_vocab):
 
 if __name__ == "__main__":
     print("glove model")
-    load_model("../glove/glove.6B.100d.txt")
+    load_model("glove/glove.6B.100d.txt")
 
     print(str(semantic_distance(get_embedding_for_word("dog"), get_embedding_for_word("animal"))))
     print(str(semantic_distance(get_embedding_for_word("cat"), get_embedding_for_word("animal"))))

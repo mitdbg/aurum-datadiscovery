@@ -160,12 +160,12 @@ class Matching:
         matchings = []
         for kr_name, values in self.source_level_matchings.items():
             for class_name, ms in values.items():
-                match = ((self.db_name, self.source_name, "_"), (kr_name, class_name))
+                match = ((self.db_name, self.source_name, "_"), (kr_name, class_name), ms)
                 matchings.append(match)
         for attr_name, values in self.attr_matchings.items():
             for kr_name, classes in values.items():
                 for class_name, ms in classes.items():
-                    match = ((self.db_name, self.source_name, attr_name), (kr_name, class_name))
+                    match = ((self.db_name, self.source_name, attr_name), (kr_name, class_name), ms)
                     matchings.append(match)
         return matchings
 

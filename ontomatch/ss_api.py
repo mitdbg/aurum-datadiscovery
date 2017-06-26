@@ -209,37 +209,37 @@ class SSAPI:
         #for match in l5_matchings:
         #    print(match)
 
-        #l52_matchings = []
+        l52_matchings = []
         # L52: [Attribute names] -> [Class names] (semantic)
-        # print("Finding L52 matchings...")
-        # st = time.time()
-        # l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
-        #                                                                         semantic_sim_threshold=0.5,
-        #                                                                         negative_signal_threshold=0.5,
-        #                                                                         add_exact_matches=False,
-        #                                                                         penalize_unknown_word=True)
-        # print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
-        # et = time.time()
-        # print("Took: " + str(et - st))
+        print("Finding L52 matchings...")
+        st = time.time()
+        l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
+                                                                                semantic_sim_threshold=0.5,
+                                                                                negative_signal_threshold=0.5,
+                                                                                add_exact_matches=False,
+                                                                                penalize_unknown_word=True)
+        print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+
+        # summarize structurally l52 before adding
+        l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
+
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
+        # all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = []
         #
-        # # summarize structurally l52 before adding
-        # l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
-        #
-        # all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = []
-        #
-        # print("Does L52 cancel any L5?")
-        # print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
-        # l5_matchings_set = set(l5_matchings)
-        # total_cancelled = 0
-        # for m in neg_l52_matchings:
-        #     if m in l5_matchings_set:
-        #         total_cancelled += 1
-        #         l5_matchings_set.remove(m)
-        # print("Cancelled: " + str(total_cancelled))
-        # l5_matchings = list(l5_matchings_set)
-        # all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
-        # print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        print("Does L52 cancel any L5?")
+        print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        l5_matchings_set = set(l5_matchings)
+        total_cancelled = 0
+        for m in neg_l52_matchings:
+            if m in l5_matchings_set:
+                total_cancelled += 1
+                l5_matchings_set.remove(m)
+        print("Cancelled: " + str(total_cancelled))
+        l5_matchings = list(l5_matchings_set)
+        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+        print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
 
         ## L6: [Relations] -> [Class names] (semantic groups)
         #print("Finding L6 matchings...")
@@ -628,33 +628,34 @@ def test_e2e(path_to_serialized_model):
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
     #om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
+    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
     # all_classes = hand.classes()
 
-    # print("Finding matchings...")
-    # st = time.time()
-    # matchings = om.find_matchings()
-    # et = time.time()
-    # print("Finding matchings...OK")
-    # print("Took: " + str(et-st))
-    #
-    # print("Writing MATCHINGS output to disk...")
-    # with open('matchings_mitdwh_dbpedia_l5only', 'w') as f:
-    #     for k in matchings:
-    #         #lines = k.print_serial()
-    #         #for l in lines:
-    #         #print(str(k))
-    #         f.write(str(k) + '\n')
-    # print("Writing MATCHINGS output to disk...OK")
+    print("Finding matchings...")
+    st = time.time()
+    matchings = om.find_matchings()
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et-st))
+
+    print("Writing MATCHINGS output to disk...")
+    with open('matchings_envo_sem', 'w') as f:
+        for k in matchings:
+            #lines = k.print_serial()
+            #for l in lines:
+            #print(str(k))
+            f.write(str(k) + '\n')
+    print("Writing MATCHINGS output to disk...OK")
     # exit()
 
     matchings = []
     line = 0
     #with open("matchings_mitdwh_dbpedia_l5only", 'r') as f:
-    with open("matchings_massdata_dbpedia", 'r') as f:
+    with open("matchings_envo_sem", 'r') as f:
         #lines = f.readlines()
         for l in f:
             #tokens = l.split("==>>")
@@ -684,11 +685,11 @@ def test_e2e(path_to_serialized_model):
     print("Finding links...OK")
     print("Took: " + str((et-st)))
 
-    # print("Writing LINKS output to disk...")
-    # with open('links_mitdwh_dbpedia_l5only', 'w') as f:
-    #     for l in links:
-    #         f.write(str(l) + '\n')
-    # print("Writing LINKS output to disk...OK")
+    print("Writing LINKS output to disk...")
+    with open('links_envo_sem', 'w') as f:
+        for l in links:
+            f.write(str(l) + '\n')
+    print("Writing LINKS output to disk...OK")
 
     for link in links:
         print(link)
@@ -1825,7 +1826,7 @@ if __name__ == "__main__":
     # link_parser("OUTPUT_MERCK_LINKS_ONLY")
     # exit()
 
-    test_e2e("../models/testwithserialdwh/")
+    test_e2e("../models/envo/")
     exit()
 
     print("SSAPI")
