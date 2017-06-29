@@ -243,8 +243,6 @@ public class Conductor {
             String msg = ep.getErrorLog();
             Utils.appendLineToFile(errorLogFile, msg);
             LOG.warn(msg);
-            totalProcessedTasks
-                .incrementAndGet(); // other processed/failed task
             totalFailedTasks++;
           }
         } catch (InterruptedException e) {

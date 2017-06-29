@@ -46,6 +46,6 @@ public class Tracker {
     }
 
     public boolean isDoneProcessing() {
-        return doneReading.get() && chunksProcessed.get() == chunksSubmitted.get();
+        return chunksProcessed.get() == chunksSubmitted.get() && doneReading.compareAndSet(true, false);
     }
 }

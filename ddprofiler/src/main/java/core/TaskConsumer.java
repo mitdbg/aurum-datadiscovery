@@ -40,6 +40,14 @@ public class TaskConsumer implements Worker {
 		this.doWork = false;
 	}
 
+	private void processFailedTracker(Tracker tracker) {
+		tracker.processChunk();
+		if (tracker.isDoneProcessing()) {
+			conductor.notifyProcessedColumn();
+		}
+		conductor.notifyProcessedSubTask();
+	}
+
 	@Override
 	public void run() {
 
@@ -53,7 +61,8 @@ public class TaskConsumer implements Worker {
                                 // Continue if another subtask of this task has already failed
                                 Tracker tracker = task.getTracker();
                                 if (tracker.isFailed()) {
-                                    continue;
+        			 	processFailedTracker(tracker);
+	                        	continue;
                                 }
 
 				DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getDBName(), task.getPath(), task.getSourceName());
@@ -73,10 +82,10 @@ public class TaskConsumer implements Worker {
 				indexer.indexData(task.getDBName(), task.getPath(), task.getAttribute(), task.getValues());
 
 				// Get results and wrap them in a Result object
-//				List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
-//				WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
+				// List<WorkerTaskResult> rs = WorkerTaskResultHolder.makeFakeOne();
+				// WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(rs);
 
-//				List<WorkerTaskResult> results = wtrf.get();
+				// List<WorkerTaskResult> results = wtrf.get();
 
 				// Finish the subtask, and store a summary document if that was the last subtask
 				tracker.processChunk();
@@ -111,9 +120,9 @@ public class TaskConsumer implements Worker {
 					sb.append(System.lineSeparator());
 				}
 				sb.append(System.lineSeparator());
-				task.getTracker().fail();
                                 String log = sb.toString();
 				this.conductor.submitError(log);
+				processFailedTracker(task.getTracker());
 			}
 		}
 		LOG.info("THREAD: {} stopping", workerName);
