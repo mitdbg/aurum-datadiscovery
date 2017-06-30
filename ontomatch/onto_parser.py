@@ -398,8 +398,8 @@ def parse_ontology(input_ontology_path, output_parsed_ontology_path):
 
 if __name__ == '__main__':
 
-    input = "envo.owl"
-    output = "cache_onto/envo.pkl"
+    input = "merck_dlc.owl"
+    output = "cache_onto/dlc.pkl"
 
     parse_ontology(input, output)
 

@@ -157,15 +157,23 @@ class Matching:
         return string_repr
 
     def get_matchings(self):
+        def get_matching_code(ms):
+            code_value = 0
+            for m in ms:
+                code_value += m.value
+            return code_value
+
         matchings = []
         for kr_name, values in self.source_level_matchings.items():
             for class_name, ms in values.items():
-                match = ((self.db_name, self.source_name, "_"), (kr_name, class_name), ms)
+                mcode = get_matching_code(ms)
+                match = ((self.db_name, self.source_name, "_"), (kr_name, class_name), mcode)
                 matchings.append(match)
         for attr_name, values in self.attr_matchings.items():
             for kr_name, classes in values.items():
                 for class_name, ms in classes.items():
-                    match = ((self.db_name, self.source_name, attr_name), (kr_name, class_name), ms)
+                    mcode = get_matching_code(ms)
+                    match = ((self.db_name, self.source_name, attr_name), (kr_name, class_name), mcode)
                     matchings.append(match)
         return matchings
 
@@ -254,7 +262,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
         sequences = list()
         seq_corresponding_matching = defaultdict(list)
         for el in matchings:
-            sch, cla = el
+            try:
+                sch, cla = el
+            except ValueError:
+                sch, cla, mtype = el
             class_name = cla[1]
             onto_name = cla[0]
             if handler is None:
@@ -287,7 +298,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
                     return summ_matchings
 
         if summarize_or_remove:
-            sch, cla = list(matching_to_be_summarized)[0]
+            try:
+                sch, cla = list(matching_to_be_summarized)[0]
+            except ValueError:
+                sch, cla, mtype = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # don't add -> breaking precision...
             # return []  # could not summarize -> remove
             semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
@@ -305,7 +319,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
     def compute_fanout(matchings):
         fanout = defaultdict(lambda: defaultdict(list))
         for m in matchings:
-            sch, cla = m
+            try:
+                sch, cla = m
+            except ValueError:
+                sch, cla, mtype = m
             onto_name = cla[0]
             fanout[sch][onto_name].append(m)
         ordered = sorted(fanout.items(), key=lambda x: len(x[1].values()), reverse=True)

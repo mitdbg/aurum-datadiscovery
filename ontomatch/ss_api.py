@@ -153,32 +153,32 @@ class SSAPI:
         #    print(match)
 
         # L4: [Relation names] -> [Class names] (syntax)
-        # print("Finding L4 matchings...")
-        # st = time.time()
-        # l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
-        # print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
-        # et = time.time()
-        # print("Took: " + str(et - st))
-        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = []
+        print("Finding L4 matchings...")
+        st = time.time()
+        l4_matchings = matcherlib.find_relation_class_name_matchings(self.network, self.kr_handlers, minhash_sim_threshold=0.2)
+        print("Finding L4 matchings...OK, " + str(len(l4_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
+        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = []
         #
         # # L4.2: [Relation names] -> [Class names] (semantic)
-        # print("Finding L42 matchings...")
-        # st = time.time()
-        # l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
-        #                                                                                      sem_sim_threshold=0.5,
-        #                                                                                      add_exact_matches=False,
-        #                                                                                      penalize_unknown_word=True,
-        #                                                                                      negative_signal_threshold=0.5)
-        # print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
-        # et = time.time()
-        # print("Took: " + str(et - st))
-        #
-        # # summarize structurally l42 before adding
-        # l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
-        #
-        # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
+        print("Finding L42 matchings...")
+        st = time.time()
+        l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
+                                                                                             sem_sim_threshold=0.5,
+                                                                                             add_exact_matches=False,
+                                                                                             penalize_unknown_word=True,
+                                                                                             negative_signal_threshold=0.5)
+        print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+        et = time.time()
+        print("Took: " + str(et - st))
+
+        # summarize structurally l42 before adding
+        l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
+
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
+        # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
 
         # print("Does L42 cancel any L4?")
         # print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
@@ -440,8 +440,9 @@ class SSAPI:
                     for schema_B in schemas:
                         if schema_B != schema_A:
                             if str(schema_A) + str(schema_B) not in seen_links \
-                                    and str(schema_B) + str(schema_A) not in seen_links\
-                                    and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
+                                    and str(schema_B) + str(schema_A) not in seen_links:
+                                    # and str(schema_B) + str(schema_A) not in seen_links\
+                                    # and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
                                 seen_links.add(str(schema_A) + str(schema_B))
                                 links.add((schema_A, "is_a", schema_B, " - ",
                                            onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
@@ -629,27 +630,28 @@ def test_e2e(path_to_serialized_model):
     #om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
     om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
+    # om.add_krs([("dlc", "cache_onto/dlc.pkl")], parsed=True)
     #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
     # all_classes = hand.classes()
 
-    print("Finding matchings...")
-    st = time.time()
-    matchings = om.find_matchings()
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et-st))
-
-    print("Writing MATCHINGS output to disk...")
-    with open('matchings_envo_sem', 'w') as f:
-        for k in matchings:
-            #lines = k.print_serial()
-            #for l in lines:
-            #print(str(k))
-            f.write(str(k) + '\n')
-    print("Writing MATCHINGS output to disk...OK")
+    # print("Finding matchings...")
+    # st = time.time()
+    # matchings = om.find_matchings()
+    # et = time.time()
+    # print("Finding matchings...OK")
+    # print("Took: " + str(et-st))
+    #
+    # print("Writing MATCHINGS output to disk...")
+    # with open('matchings_envo_sem', 'w') as f:
+    #     for k in matchings:
+    #         #lines = k.print_serial()
+    #         #for l in lines:
+    #         #print(str(k))
+    #         f.write(str(k) + '\n')
+    # print("Writing MATCHINGS output to disk...OK")
     # exit()
 
     matchings = []
