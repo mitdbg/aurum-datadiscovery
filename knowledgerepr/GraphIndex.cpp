@@ -206,15 +206,15 @@ extern "C" {
             }
         }
 
-        cout << "Num found paths: " + to_string(results.size()) << endl;
+        //cout << "Num found paths: " + to_string(results.size()) << endl;
         int total_paths_plus_nodes = 0;
         for(int i = 0; i < results.size(); i++) {
             total_paths_plus_nodes += 1;
             vector<int> result = results[i];
-            cout << "---" << endl;
+            //cout << "---" << endl;
             for (int j =0; j < result.size(); j++) {
                 total_paths_plus_nodes += 1;
-                cout << to_string(result[j]) << endl;
+                //cout << to_string(result[j]) << endl;
             }
         }
 
@@ -354,20 +354,26 @@ extern "C" {
         cout << "Deserializing graph to: " + path << endl;
         string line;
         ifstream f(path);
+        bool first = true;
         if (f.is_open()) {
             while (getline(f, line)) {
-                vector<string> tokens = split(line, '-');
+                if(first) {
+                    first = false;
+                    continue;
+                }
+                vector<string> tokens = split(line, ',');
                 string src = tokens[0];
                 string tgt = tokens[1];
                 string type = tokens[2];
-                // cout << src + " . " + tgt + " . " + type << '\n';
+//                cout << src + " . " + tgt + " . " + type << '\n';
                 // TODO: transform to int and char first
                 int src_id = stoi(src);
                 int tgt_id = stoi(tgt);
-                char type_ch = (char)(stoi(type));
+                //char type_ch = (char)(stoi(type));
+                char type_ch = (char)(stoi("1"));
                 add_node(src_id);
                 add_node(tgt_id);
-                add_edge(src_id, tgt_id, type_ch);
+                add_edge(src_id, tgt_id, type_ch); // FIXME: pass right type
             }
         }
         f.close();

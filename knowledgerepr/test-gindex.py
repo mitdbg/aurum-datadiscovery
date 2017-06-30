@@ -12,8 +12,7 @@ mylib.release_array.restype = None
 
 
 
-
-path = c_char_p("random_graph_test1000.txt".encode('utf-8'))
+path = c_char_p("/Users/ra-mit/Downloads/graph-1.csv".encode('utf-8'))
 mylib.deserialize_graph(path)
 
 
@@ -37,13 +36,14 @@ print("Nodes: " + str(nodes))
 edges = mylib.get_num_edges()
 print("Edges: " + str(edges))
 
+# PATH QUERY
 stime = time.time()
 
 output = POINTER(c_int32)()
 
-output_size = mylib.all_paths(output, 1, 345, 1, 30)
+output_size = mylib.all_paths(output, 1, 0, 0, 30)
 
-print("Python output: ")
+print("Python output, total paths: " + str(output_size))
 for idx in range(output_size):
     print(str(output[idx]))
 
@@ -52,7 +52,50 @@ mylib.release_array(output)
 etime = time.time()
 print("Total time: " + str(etime-stime))
 
+# NEIGHBOR QUERY
+array = POINTER(c_int32)()
+
+size = mylib.neighbors(array, 0, 0)
+
+print("size: " + str(size))
+print("Neighbors: ")
+
+for idx in range(size):
+    print(str(array[idx]))
+
+mylib.release_array(array)
+
 exit()
+
+
+def path_query(src_id, tgt_id, type, max_hops):
+    stime = time.time()
+    output = POINTER(c_int32)()
+    output_size = mylib.all_paths(output, src_id, tgt_id, type, max_hops)
+
+    print("Python output, total paths: " + str(output_size))
+    for idx in range(output_size):
+        print(str(output[idx]))
+
+    mylib.release_array(output)
+
+    etime = time.time()
+    print("Total time: " + str(etime - stime))
+
+
+def neighbor_query(src_id, type):
+    array = POINTER(c_int32)()
+
+    size = mylib.neighbors(array, src_id, type)
+
+    print("size: " + str(size))
+    print("Neighbors: " + str(array))
+
+    for idx in range(size):
+        print(str(array[idx]))
+
+    mylib.release_array(array)
+
 
 path = c_char_p("random_graph_test.txt".encode('utf-8'))
 
