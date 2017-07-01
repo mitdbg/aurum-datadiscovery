@@ -200,24 +200,35 @@ public class Conductor {
             totalColumns,
             totalFailedTasks
     );
-//    LOG.info("Added: {} cols", numCols);
   }
 
   public void notifyProcessedSubTask() {
-    totalProcessedSubTasks.incrementAndGet();
+    int num = totalProcessedSubTasks.incrementAndGet();
     m.mark();
-//    LOG.info("Processed: {}/{} tasks and {}/{} subtasks, {} failed tasks",
-//            totalProcessedTasks,
-//            totalTasksSubmitted,
-//            totalProcessedSubTasks,
-//            totalSubTasksSubmitted,
-//            totalFailedTasks
-//    );
+    if (num % 2000 == 0) {
+      LOG.info("Processed: {}/{} tasks, {}/{} subtasks, and {}/{} columns; {} failed tasks",
+            totalProcessedTasks,
+            totalTasksSubmitted,
+            totalProcessedSubTasks,
+            totalSubTasksSubmitted,
+            totalProcessedColumns,
+            totalColumns,
+            totalFailedTasks
+      );
+    }
   }
 
   public void notifyProcessedColumn() {
     totalProcessedColumns.incrementAndGet();
-//    LOG.info("Columns processed: {}/{} ", totalProcessedColumns, totalColumns);
+    LOG.info("Processed: {}/{} tasks, {}/{} subtasks, and {}/{} columns; {} failed tasks",
+            totalProcessedTasks,
+            totalTasksSubmitted,
+            totalProcessedSubTasks,
+            totalSubTasksSubmitted,
+            totalProcessedColumns,
+            totalColumns,
+            totalFailedTasks
+    );
   }
 
   class ErrorConsumer implements Runnable {

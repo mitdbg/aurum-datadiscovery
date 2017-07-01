@@ -136,6 +136,7 @@ public class TaskProducer implements Worker {
                 sb.append(System.lineSeparator());
                 String log = sb.toString();
                 this.conductor.submitError(log);
+                this.conductor.notifyProcessedTask(0);
             }
         }
         LOG.info("THREAD: {} stopping", workerName);
