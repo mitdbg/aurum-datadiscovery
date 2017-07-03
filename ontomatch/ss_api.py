@@ -162,7 +162,7 @@ class SSAPI:
         all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings
         # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = []
         #
-        # # L4.2: [Relation names] -> [Class names] (semantic)
+        # L4.2: [Relation names] -> [Class names] (semantic)
         print("Finding L42 matchings...")
         st = time.time()
         l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
@@ -180,19 +180,19 @@ class SSAPI:
         all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
         # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
 
-        # print("Does L42 cancel any L4?")
-        # print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-        # l4_matchings_set = set(l4_matchings)
-        # total_cancelled = 0
-        # for m in neg_l42_matchings:
-        #     if m in l4_matchings_set:
-        #         total_cancelled += 1
-        #         l4_matchings_set.remove(m)
-        # l4_matchings = list(l4_matchings_set)
-        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
-        #
-        # print("Cancelled: " + str(total_cancelled))
-        # print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        print("Does L42 cancel any L4?")
+        print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        l4_matchings_set = set(l4_matchings)
+        total_cancelled = 0
+        for m in neg_l42_matchings:
+            if m in l4_matchings_set:
+                total_cancelled += 1
+                l4_matchings_set.remove(m)
+        l4_matchings = list(l4_matchings_set)
+        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
+
+        print("Cancelled: " + str(total_cancelled))
+        print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
 
         #for match in l42_matchings:
         #    print(match)
@@ -403,6 +403,7 @@ class SSAPI:
             #         prop_count[p] += 1
 
             properties = self.kr_handlers[kr_name].get_properties_only_of(onto_class_obj)
+            # properties = self.kr_handlers[kr_name].get_properties_all_of(onto_class_obj)
             for p in properties:
                 if (kr_name, p) in set_object_properties:
                     for onto_class_obj2 in p.ranges:
@@ -440,9 +441,9 @@ class SSAPI:
                     for schema_B in schemas:
                         if schema_B != schema_A:
                             if str(schema_A) + str(schema_B) not in seen_links \
-                                    and str(schema_B) + str(schema_A) not in seen_links:
-                                    # and str(schema_B) + str(schema_A) not in seen_links\
-                                    # and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
+                                    and str(schema_B) + str(schema_A) not in seen_links\
+                                    and str(schema_B) + str(schema_A) not in seen_links\
+                                    and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
                                 seen_links.add(str(schema_A) + str(schema_B))
                                 links.add((schema_A, "is_a", schema_B, " - ",
                                            onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
@@ -451,6 +452,7 @@ class SSAPI:
                                     a = 1
             # find property links
             properties = o.get_properties_only_of(onto_class_A)
+            # properties = o.get_properties_all_of(onto_class_A)
             for p in properties:
                 if (kr_name, p) in set_object_properties:
                     for onto_class_B in p.ranges:
@@ -624,40 +626,41 @@ def test_e2e(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    #om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    #om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
+    om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
+    #om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
     # om.add_krs([("dlc", "cache_onto/dlc.pkl")], parsed=True)
-    #om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
     # all_classes = hand.classes()
 
-    # print("Finding matchings...")
-    # st = time.time()
-    # matchings = om.find_matchings()
-    # et = time.time()
-    # print("Finding matchings...OK")
-    # print("Took: " + str(et-st))
-    #
-    # print("Writing MATCHINGS output to disk...")
-    # with open('matchings_envo_sem', 'w') as f:
-    #     for k in matchings:
-    #         #lines = k.print_serial()
-    #         #for l in lines:
-    #         #print(str(k))
-    #         f.write(str(k) + '\n')
-    # print("Writing MATCHINGS output to disk...OK")
-    # exit()
+    print("Finding matchings...")
+    st = time.time()
+    matchings = om.find_matchings()
+    et = time.time()
+    print("Finding matchings...OK")
+    print("Took: " + str(et-st))
+
+    print("Writing MATCHINGS output to disk...")
+    with open('matchings_us2_chem_sem', 'w') as f:
+        for k in matchings:
+            #lines = k.print_serial()
+            #for l in lines:
+            #print(str(k))
+            f.write(str(k) + '\n')
+    print("Writing MATCHINGS output to disk...OK")
+
+    exit()
 
     matchings = []
     line = 0
     #with open("matchings_mitdwh_dbpedia_l5only", 'r') as f:
-    with open("matchings_envo_sem", 'r') as f:
+    with open("matchings_us2_chem_sem", 'r') as f:
         #lines = f.readlines()
         for l in f:
             #tokens = l.split("==>>")
@@ -688,7 +691,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('links_envo_sem', 'w') as f:
+    with open('links_us2_chem_sem', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -1828,7 +1831,7 @@ if __name__ == "__main__":
     # link_parser("OUTPUT_MERCK_LINKS_ONLY")
     # exit()
 
-    test_e2e("../models/envo/")
+    test_e2e("../models/chembl_drugcentral/")
     exit()
 
     print("SSAPI")
