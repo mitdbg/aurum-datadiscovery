@@ -1,0 +1,11 @@
+# ddprofiler
+FROM openjdk:8
+
+COPY . /aurum
+
+RUN cd /aurum/ddprofiler && ./gradlew clean fatJar
+
+WORKDIR /aurum/ddprofiler
+
+# CMD ["java", "-jar", "build/libs/ddprofiler.jar", "--execution.mode 1", "--sources.folder.path /csvs/mitdwhdata/"]
+CMD java -jar build/libs/ddprofiler.jar --execution.mode 1 --store.server elasticsearch --sources.folder.path /csvs/mitdwhdata/
