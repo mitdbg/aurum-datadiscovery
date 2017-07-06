@@ -1,0 +1,10 @@
+.git
+
+ddprofiler/.gradle
+ddprofiler/build
+UI/node_modules
+data
+
+venv
+
+.vagrant
