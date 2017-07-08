@@ -163,36 +163,36 @@ class SSAPI:
         # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = []
         #
         # L4.2: [Relation names] -> [Class names] (semantic)
-        print("Finding L42 matchings...")
-        st = time.time()
-        l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
-                                                                                             sem_sim_threshold=0.5,
-                                                                                             add_exact_matches=False,
-                                                                                             penalize_unknown_word=True,
-                                                                                             negative_signal_threshold=0.5)
-        print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
+        # print("Finding L42 matchings...")
+        # st = time.time()
+        # l42_matchings, neg_l42_matchings = matcherlib.find_relation_class_name_sem_matchings(self.network, self.kr_handlers,
+        #                                                                                      sem_sim_threshold=0.5,
+        #                                                                                      add_exact_matches=False,
+        #                                                                                      penalize_unknown_word=True,
+        #                                                                                      negative_signal_threshold=0.5)
+        # print("Finding L42 matchings...OK, " + str(len(l42_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
+        #
+        # # summarize structurally l42 before adding
+        # l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
+        #
+        # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
+        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
 
-        # summarize structurally l42 before adding
-        l42_matchings = matcherlib.summarize_matchings_to_ancestor(self, l42_matchings, summarize_or_remove=True)
+        # print("Does L42 cancel any L4?")
+        # print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        # l4_matchings_set = set(l4_matchings)
+        # total_cancelled = 0
+        # for m in neg_l42_matchings:
+        #     if m in l4_matchings_set:
+        #         total_cancelled += 1
+        #         l4_matchings_set.remove(m)
+        # l4_matchings = list(l4_matchings_set)
+        # all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
 
-        all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = l42_matchings
-        # all_matchings[MatchingType.L42_CLASSNAME_RELATIONNAME_SEM] = []
-
-        print("Does L42 cancel any L4?")
-        print("Original L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
-        l4_matchings_set = set(l4_matchings)
-        total_cancelled = 0
-        for m in neg_l42_matchings:
-            if m in l4_matchings_set:
-                total_cancelled += 1
-                l4_matchings_set.remove(m)
-        l4_matchings = list(l4_matchings_set)
-        all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN] = l4_matchings  # update with corrections
-
-        print("Cancelled: " + str(total_cancelled))
-        print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
+        # print("Cancelled: " + str(total_cancelled))
+        # print("Resulting L4: " + str(len(all_matchings[MatchingType.L4_CLASSNAME_RELATIONNAME_SYN])))
 
         #for match in l42_matchings:
         #    print(match)
@@ -211,35 +211,35 @@ class SSAPI:
 
         l52_matchings = []
         # L52: [Attribute names] -> [Class names] (semantic)
-        print("Finding L52 matchings...")
-        st = time.time()
-        l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
-                                                                                semantic_sim_threshold=0.5,
-                                                                                negative_signal_threshold=0.5,
-                                                                                add_exact_matches=False,
-                                                                                penalize_unknown_word=True)
-        print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
-        et = time.time()
-        print("Took: " + str(et - st))
-
-        # summarize structurally l52 before adding
-        l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
-
-        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
-        # all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = []
+        # print("Finding L52 matchings...")
+        # st = time.time()
+        # l52_matchings, neg_l52_matchings = matcherlib.find_relation_class_attr_name_sem_matchings(self.network, self.kr_handlers,
+        #                                                                         semantic_sim_threshold=0.5,
+        #                                                                         negative_signal_threshold=0.5,
+        #                                                                         add_exact_matches=False,
+        #                                                                         penalize_unknown_word=True)
+        # print("Finding L52 matchings...OK, " + str(len(l52_matchings)) + " found")
+        # et = time.time()
+        # print("Took: " + str(et - st))
         #
-        print("Does L52 cancel any L5?")
-        print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
-        l5_matchings_set = set(l5_matchings)
-        total_cancelled = 0
-        for m in neg_l52_matchings:
-            if m in l5_matchings_set:
-                total_cancelled += 1
-                l5_matchings_set.remove(m)
-        print("Cancelled: " + str(total_cancelled))
-        l5_matchings = list(l5_matchings_set)
-        all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
-        print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        # # summarize structurally l52 before adding
+        # l52_matchings = matcherlib.summarize_matchings_to_ancestor(self, l52_matchings, summarize_or_remove=True)
+        #
+        # all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = l52_matchings
+        all_matchings[MatchingType.L52_CLASSNAME_ATTRNAME_SEM] = []
+        #
+        # print("Does L52 cancel any L5?")
+        # print("Original L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
+        # l5_matchings_set = set(l5_matchings)
+        # total_cancelled = 0
+        # for m in neg_l52_matchings:
+        #     if m in l5_matchings_set:
+        #         total_cancelled += 1
+        #         l5_matchings_set.remove(m)
+        # print("Cancelled: " + str(total_cancelled))
+        # l5_matchings = list(l5_matchings_set)
+        # all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN] = l5_matchings
+        # print("Resulting L5: " + str(len(all_matchings[MatchingType.L5_CLASSNAME_ATTRNAME_SYN])))
 
         ## L6: [Relations] -> [Class names] (semantic groups)
         #print("Finding L6 matchings...")
@@ -442,36 +442,30 @@ class SSAPI:
                         if schema_B != schema_A:
                             if str(schema_A) + str(schema_B) not in seen_links \
                                     and str(schema_B) + str(schema_A) not in seen_links\
-                                    and str(schema_B) + str(schema_A) not in seen_links\
-                                    and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
+                                    and str(schema_B) + str(schema_A) not in seen_links:
+                                    #and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
                                 seen_links.add(str(schema_A) + str(schema_B))
                                 links.add((schema_A, "is_a", schema_B, " - ",
                                            onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
-                                if onto_class_A.bestLabel().title() == "Record Office" and \
-                                                onto_class_B.bestLabel().title() == "Time Period":
-                                    a = 1
-            # find property links
-            properties = o.get_properties_only_of(onto_class_A)
-            # properties = o.get_properties_all_of(onto_class_A)
-            for p in properties:
-                if (kr_name, p) in set_object_properties:
-                    for onto_class_B in p.ranges:
-                        if onto_class_B in map_ontoclass_to_schema:
-                            schemas = map_ontoclass_to_schema[onto_class_B]
-                            for schema_B in schemas:
-                                if schema_B != schema_A:
-                                    label = p.bestLabel().title()
-                                    if str(schema_A) + label + str(schema_B) \
-                                            not in seen_links \
-                                            and str(schema_B) + label + str(schema_A) \
-                                            not in links\
-                                            and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
-                                        seen_links.add(str(schema_A) + label + str(schema_B))
-                                        links.add((schema_A, (label, repr(p)), schema_B,
-                                                   onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
-                                        if onto_class_A.bestLabel().title() == "Record Office" and \
-                                                        onto_class_B.bestLabel().title() == "Time Period":
-                                            a = 1
+            # # find property links
+            # properties = o.get_properties_only_of(onto_class_A)
+            # # properties = o.get_properties_all_of(onto_class_A)
+            # for p in properties:
+            #     if (kr_name, p) in set_object_properties:
+            #         for onto_class_B in p.ranges:
+            #             if onto_class_B in map_ontoclass_to_schema:
+            #                 schemas = map_ontoclass_to_schema[onto_class_B]
+            #                 for schema_B in schemas:
+            #                     if schema_B != schema_A:
+            #                         label = p.bestLabel().title()
+            #                         if str(schema_A) + label + str(schema_B) \
+            #                                 not in seen_links \
+            #                                 and str(schema_B) + label + str(schema_A) \
+            #                                 not in links\
+            #                                 and onto_class_A.bestLabel().title() != onto_class_B.bestLabel().title():
+            #                             seen_links.add(str(schema_A) + label + str(schema_B))
+            #                             links.add((schema_A, (label, repr(p)), schema_B,
+            #                                        onto_class_A.bestLabel().title(), onto_class_B.bestLabel().title()))
                 
         return list(links)
 
@@ -626,14 +620,14 @@ def test_e2e(path_to_serialized_model):
     # Create ontomatch api
     om = SSAPI(network, store_client, schema_sim_index, content_sim_index)
     # Load parsed ontology
-    om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
+    # om.add_krs([("efo", "cache_onto/efo.pkl")], parsed=True)
     #om.add_krs([("clo", "cache_onto/clo.pkl")], parsed=True)
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
-    om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
+    # om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    #om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
+    om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
     # om.add_krs([("dlc", "cache_onto/dlc.pkl")], parsed=True)
-    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    # om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
@@ -647,7 +641,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str(et-st))
 
     print("Writing MATCHINGS output to disk...")
-    with open('matchings_us2_chem_sem', 'w') as f:
+    with open('matchings_envo_syn', 'w') as f:
         for k in matchings:
             #lines = k.print_serial()
             #for l in lines:
@@ -660,7 +654,7 @@ def test_e2e(path_to_serialized_model):
     matchings = []
     line = 0
     #with open("matchings_mitdwh_dbpedia_l5only", 'r') as f:
-    with open("matchings_us2_chem_sem", 'r') as f:
+    with open("matchings_envo_sem", 'r') as f:
         #lines = f.readlines()
         for l in f:
             #tokens = l.split("==>>")
@@ -691,7 +685,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('links_us2_chem_sem', 'w') as f:
+    with open('links_envo_sem', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -1577,13 +1571,65 @@ def test(path_to_serialized_model):
         print(str(s))
 
 
-def take_links():
-    total_cross_links = 0
-    with open("links_chembl_drugcentral2", 'r') as f:
+def take_matchings(path):
+    total_matchings = 0
+    t = 0
+    seen_attr = set()
+    seen_class = set()
+    with open(path, 'r') as f:
         for line in f:
-            if 'drugcentral' in line and 'chembl_22' in line:
+            # (('db', 's', 'a'), ('kr', 'c'), co)
+            l = line.replace("'", "")
+            l = l.replace("(", "")
+            l = l.replace(")", "")
+            tokens = l.split(",")
+            db = (tokens[0]).rstrip().strip()
+            source = (tokens[1]).rstrip().strip()
+            attr = (tokens[2]).rstrip().strip()
+            cla = (tokens[4]).rstrip().strip()
+            if db + source + attr not in seen_attr and cla not in seen_class and 'uniprot' in line:
+                # if 'uniprot' in line:
+                #     t += 1
+                seen_attr.add(db + source + attr)
+                seen_class.add(cla)
+                print(line)
+                total_matchings += 1
+    print("total selected: " + str(total_matchings))
+    print(str(t))
+
+
+def take_links(path):
+    total_cross_links = 0
+    seen_pairs = set()
+    seen_tables = set()
+    with open(path, 'r') as f:
+        for line in f:
+            # if 'drugcentral' in line and 'chembl_22' in line:
+            # (('db1', 's1', 'a1'), ('p', 'p-url'), ('db2', 's2', 'a2'), 'cla1', 'cla2')
+            l = line.replace("'", "")
+            l = l.replace("(", "")
+            l = l.replace(")", "")
+            tokens = l.split(",")
+            s1 = (tokens[1]).rstrip().strip()
+            s2 = (tokens[5]).rstrip().strip()
+            cla1 = (tokens[7]).rstrip().strip()
+            cla2 = (tokens[8]).rstrip().strip()
+
+            # if s1 not in seen_tables and s2 not in seen_tables and cla1 not in seen_pairs and cla2 not in seen_pairs\
+            #         and s1 != s2:
+            if s1 + s2 not in seen_tables and s2 + s1 not in seen_tables and s1 != s2:
+            #if s1 + s2 not in seen_tables:
+                seen_tables.add(s1 + s2)
+                seen_tables.add(s2 + s1)
+                #seen_tables.add(s2)
+                # seen_tables.add(s1)
+                # seen_tables.add(s2)
+            # if cla1 not in seen_pairs or cla2 not in seen_pairs:
+                seen_pairs.add(cla1)
+                seen_pairs.add(cla2)
                 total_cross_links += 1
                 print(line)
+
     print("TOTAL: " + str(total_cross_links))
 
 
@@ -1826,12 +1872,63 @@ def link_parser(path):
     print("is-a: " + str(is_a))
     print("non-is-a: " + str(non_is_a))
 
+
+def links_to_csv(path):
+    with open(path, 'r') as f:
+        for line in f:
+            l = line.replace("'", "")
+            l = l.replace("(", "")
+            l = l.replace(")", "")
+            tokens = l.split(",")
+            if len(tokens) < 3:
+                continue
+            d1 = (tokens[0]).rstrip().strip()
+            s1 = (tokens[1]).rstrip().strip()
+            a1 = (tokens[2]).rstrip().strip()
+            d2 = (tokens[4]).rstrip().strip()
+            s2 = (tokens[5]).rstrip().strip()
+            a2 = (tokens[6]).rstrip().strip()
+
+            s = s1 + "." + a1 + "," + s2 + "." + a2
+
+            print(s)
+
+
+def matchings_to_csv(path):
+    with open(path, 'r') as f:
+        for line in f:
+            l = line.replace("'", "")
+            l = l.replace("(", "")
+            l = l.replace(")", "")
+            tokens = l.split(",")
+            if len(tokens) < 3:
+                continue
+            d1 = (tokens[0]).rstrip().strip()
+            s1 = (tokens[1]).rstrip().strip()
+            a1 = (tokens[2]).rstrip().strip()
+            cla = (tokens[4]).rstrip().strip()
+
+            s = s1 + "." + a1 + "," + cla
+
+            print(s)
+
+
 if __name__ == "__main__":
 
     # link_parser("OUTPUT_MERCK_LINKS_ONLY")
     # exit()
 
-    test_e2e("../models/chembl_drugcentral/")
+    # links_to_csv("/Users/ra-mit/temp/sem-link")
+    matchings_to_csv("/Users/ra-mit/temp/sem-mat")
+    exit()
+    #
+    # take_matchings("matchings_us2_chem_syn")
+    # exit()
+    #
+    take_links("links_envo_sem")
+    exit()
+
+    test_e2e("../models/envo/")
     exit()
 
     print("SSAPI")

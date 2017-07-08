@@ -173,3 +173,23 @@ WITH RECURSIVE transitive_closure (src, tgt, path_string) AS
   FROM transitive_closure tc
   WHERE tc.tgt = 7;
 """
+
+""" WORKING VERSION MAX-HOPS
+WITH RECURSIVE transitive_closure (src, tgt, path_string, it) AS
+  (
+
+   SELECT e.source_node_id, e.target_node_id,
+   e.source_node_id || '.' || e.target_node_id || '.' AS path_string, 0 as it
+   FROM edges e
+   WHERE e.source_node_id = 0 --source_node
+
+   UNION
+
+   SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string, it + 1
+   FROM edges AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt
+   WHERE tc.path_string NOT LIKE '%' || e.target_node_id || '.%' AND it < 2
+  )
+  SELECT *
+  FROM transitive_closure tc
+  WHERE tc.tgt = 7;
+"""

@@ -422,6 +422,14 @@ class FieldNetwork:
         return o_drs
 
 
+def serialize_network_to_csv(network, path):
+    G = network._get_underlying_repr_graph()
+    with open(path, 'w') as f:
+        for src,tgt in G.edges_iter(data=False):
+            s = str(src) + "," + str(tgt) + "," + "1"
+            f.write(s)
+
+
 def serialize_network(network, path):
     """
     Serialize the meta schema index

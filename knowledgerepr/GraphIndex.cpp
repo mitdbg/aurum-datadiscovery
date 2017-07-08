@@ -20,6 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <ctime>
 using namespace std;
 
 /***
@@ -127,7 +128,8 @@ extern "C" {
     }
 
     int all_paths(int32_t** output, int source_id, int target_id, char type, int max_hops) {
-        cout << "find path from " + to_string(source_id) + " to: " + to_string(target_id) << endl;
+        //cout << "find path from " + to_string(source_id) + " to: " + to_string(target_id) << endl;
+        clock_t begin = clock();
         int level = 0;
         vector<int> next_level;
         next_level.push_back(source_id);
@@ -231,6 +233,10 @@ extern "C" {
                 array[ptr] = result[j];
             }
         }
+
+        clock_t end = clock();
+        double secs = double(end - begin) / CLOCKS_PER_SEC;
+        cout << secs << endl;
 
         *output = array;
         return total_paths_plus_nodes;

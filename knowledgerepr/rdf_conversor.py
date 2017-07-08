@@ -29,6 +29,9 @@ def create_rdf_graph_from_csv(csv_path):
     g = Graph()
     c = 0
     for source, target, rtype in yield_triple(csv_path):
+        source = source.rstrip().strip()
+        target = target.rstrip().strip()
+        rtype = rtype.rstrip().strip()
         c += 1
         if c % 25000 == 0:
             print(str(c))
@@ -36,7 +39,7 @@ def create_rdf_graph_from_csv(csv_path):
         o = rdflib.term.URIRef("http://ex.org/" + rtype)
         t = rdflib.term.URIRef("http://ex.org/" + target)
         g.add((s, o, t))
-    pp.pprint(g.serialize(destination="test.n3", format='n3'))
+    g.serialize(destination="test.rdf", format='xml')
 
 
 if __name__ == "__main__":

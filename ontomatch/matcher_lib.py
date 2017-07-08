@@ -284,7 +284,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
             root_to_class_name = handler.ancestors_of_class(cutter)
             root_to_class_name = handler.name_of_sequence(root_to_class_name)
             if len(root_to_class_name) > 2:
-                sch, cla = list(matching_to_be_summarized)[0]
+                try:
+                    sch, cla, mtype = list(matching_to_be_summarized)[0]
+                except ValueError:
+                    sch, cla = list(matching_to_be_summarized)[0]
                 new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
                 if summarize_or_remove:
                     summ_matchings.append(new_match)
@@ -308,7 +311,10 @@ def summarize_matchings_to_ancestor(om, matchings, threshold_to_summarize=2, sum
             return semantically_similar_matchings  # could not summarize -> remove
         else:
             summ_matchings = [m for m in matchings if m not in set(matching_to_be_summarized)]
-            sch, cla = list(matching_to_be_summarized)[0]
+            try:
+                sch, cla, mtype = list(matching_to_be_summarized)[0]
+            except ValueError:
+                sch, cla = list(matching_to_be_summarized)[0]
             new_match = (sch, (cla[0], cutter))  # the match that summarizes the previous
             summ_matchings.append(new_match)
             semantically_similar_matchings = get_sem_similar_matchings_from(matchings)
