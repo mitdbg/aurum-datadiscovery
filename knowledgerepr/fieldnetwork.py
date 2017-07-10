@@ -423,10 +423,17 @@ class FieldNetwork:
 
 
 def serialize_network_to_csv(network, path):
+    nodes = set()
     G = network._get_underlying_repr_graph()
-    with open(path, 'w') as f:
-        for src,tgt in G.edges_iter(data=False):
-            s = str(src) + "," + str(tgt) + "," + "1"
+    with open(path + "edges.csv", 'w') as f:
+        for src, tgt in G.edges_iter(data=False):
+            s = str(src) + "," + str(tgt) + "," + "1\n"
+            nodes.add(src)
+            nodes.add(tgt)
+            f.write(s)
+    with open(path + "nodes.csv", 'w') as f:
+        for n in nodes:
+            s = str(n) + "," + "node\n"
             f.write(s)
 
 
