@@ -3,6 +3,11 @@ from knowledgerepr import api_gindex
 import time
 import numpy as np
 
+"""
+Compile g-index library with:
+g++ -dynamiclib -o graph_index.so GraphIndex.cpp
+"""
+
 pairs_src = []
 pairs_tgt = []
 
