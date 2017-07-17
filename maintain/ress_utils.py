@@ -11,9 +11,17 @@ mh_kv = None
 
 def get_random_sample(values_set, perc):
     original_size = len(values_set)
+    # if original_size == 0:
+    #     return np.asarray([])
     sample_size = int(original_size * perc)
-    values_np = np.asarray(list(values_set))
-    sample = np.random.choice(values_np, sample_size, replace=False)
+    # if sample_size == 0:  # in that case sampling yield 0
+    #     return np.asarray(list(values_set))
+    if sample_size == 0:
+        sample_size = 1
+    #values_set = list(values_set)
+    #values_np = np.asarray(list(values_set))
+    #values_np = np.asarray(values_set)
+    sample = np.random.choice(values_set, sample_size, replace=False)
     return sample
 
 
@@ -39,6 +47,7 @@ def compute_and_store_mh(path1, store_path, permutations):
             mh_kv[key] = mh1
     store_file = open(store_path + str(permutations), 'wb')
     pickle.dump(mh_kv, store_file)
+    return mh_kv
 
 
 def deserialize_store_mh(path1):
@@ -59,7 +68,8 @@ def col2col_ress(path1, path2, sample_perc, store_path):
             for c in cols:
                 print("  Col: " + str(c))
                 val1 = set(df1[c].values)
-                val2 = set(df2[c].values)
+                val2 = df2[c].drop_duplicates()
+
                 val2 = get_random_sample(val2, sample_perc)
                 #mh1 = get_mh(val1)
                 mh1 = mh_kv[f+c]
@@ -205,12 +215,84 @@ def format_results_to_dat(path, output_path):
             g.write(s)
 
 
+def obtain_error_data(path_or, path_data, output_path):
+    original = []
+    with open(path_or, 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            js = (tokens[1]).rstrip().strip()
+            original.append(float(js))
+    s100 = []
+    with open(path_data + "s100/mh_scores.csv", 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            est_js = (tokens[-1]).rstrip().strip()
+            s100.append(float(est_js))
+    s75 = []
+    with open(path_data + "s75/mh_scores.csv", 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            est_js = (tokens[-1]).rstrip().strip()
+            s75.append(float(est_js))
+    s50 = []
+    with open(path_data + "s50/mh_scores.csv", 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            est_js = (tokens[-1]).rstrip().strip()
+            s50.append(float(est_js))
+    s25 = []
+    with open(path_data + "s25/mh_scores.csv", 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            est_js = (tokens[-1]).rstrip().strip()
+            s25.append(float(est_js))
+    s10 = []
+    with open(path_data + "s10/mh_scores.csv", 'r') as f:
+        for l in f:
+            tokens = l.split(',')
+            est_js = (tokens[-1]).rstrip().strip()
+            s10.append(float(est_js))
+
+    error_list = []
+    for idx in range(len(original)):
+        js_or = original[idx]
+        js_est_100 = s100[idx]
+        js_est_75 = s75[idx]
+        js_est_50 = s50[idx]
+        js_est_25 = s25[idx]
+        js_est_10 = s10[idx]
+        # e100 = (js_est_100 - js_or) ** 2
+        # e75 = (js_est_75 - js_or) ** 2
+        # e50 = (js_est_50 - js_or) ** 2
+        # e25 = (js_est_25 - js_or) ** 2
+        # e10 = (js_est_10 - js_or) ** 2
+        e100 = abs(js_est_100 - js_or)
+        e75 = abs(js_est_75 - js_or)
+        e50 = abs(js_est_50 - js_or)
+        e25 = abs(js_est_25 - js_or)
+        e10 = abs(js_est_10 - js_or)
+        s = str(idx) + " " + str(e100) + " " + str(e75) + " " + str(e50) + " " + str(e25) + " " + str(e10) + '\n'
+        error_list.append(s)
+        print(s)
+    with open(output_path, 'w') as f:
+        for el in error_list:
+            f.write(el)
+
+
 if __name__ == "__main__":
     print("Utils-RESS")
 
-    format_results_to_dat("/Users/ra-mit/data/ress_exp/results_mh512.csv",
-                          "/Users/ra-mit/data/ress_exp/results_mh512.dat")
+    obtain_error_data("/Users/ra-mit/data/ress_exp/original/js_scores.csv",
+                      "/Users/ra-mit/data/ress_exp/mh512/",
+                      "/Users/ra-mit/data/ress_exp/error.dat")
     exit()
+    #
+    # format_results_to_dat("/Users/ra-mit/data/ress_exp/results_mh512.csv",
+    #                       "/Users/ra-mit/data/ress_exp/results_mh512.dat")
+    # exit()
+
+
+
 
     # thresholds = list()
     # th = 101
@@ -256,8 +338,10 @@ if __name__ == "__main__":
     #     print(str(v))
     # exit()
 
-    # compute_and_store_mh("/Users/ra-mit/data/ress_exp/original/c21/", "/Users/ra-mit/data/ress_exp/mh_kv128.pkl", permutations=128)
-    # exit()
+    # mh_kv = compute_and_store_mh("/Users/ra-mit/data/ress_exp/original/c21/",
+    #                              "/Users/ra-mit/data/ress_exp/mh_kv128.pkl",
+    #                              permutations=512)
+
 
     # print("Compute mh 100")
     # s = time.time()  # 1789(512) 1415(128)
@@ -268,32 +352,45 @@ if __name__ == "__main__":
     # e = time.time()
     # print("mh100: " + str(e - s))
     #
+
     # print("Compute mh 75")
     # s = time.time()  # 1360(512) 1100(128)
-    # col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
-    #              "/Users/ra-mit/data/ress_exp/original/c22/",
+    # col2col_ress("/Users/ra-mit/data/ress_exp/original/c21test/",
+    #              "/Users/ra-mit/data/ress_exp/original/c22test/",
     #              0.75,
     #              "/Users/ra-mit/data/ress_exp/mh512/s75/mh_scores.csv")
     # e = time.time()
     # print("mh75: " + str(e - s))
     #
-    # print("Compute mh 50")
-    # s = time.time()  # 974(512) 805(128)
-    # col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
-    #              "/Users/ra-mit/data/ress_exp/original/c22/",
-    #              0.5,
-    #              "/Users/ra-mit/data/ress_exp/mh512/s50/mh_scores.csv")
-    # e = time.time()
-    # print("mh50: " + str(e - s))
-    #
-    # print("Compute mh 25")
-    # s = time.time()  # 646(512) 500(128)
-    # col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
-    #              "/Users/ra-mit/data/ress_exp/original/c22/",
-    #              0.25,
-    #              "/Users/ra-mit/data/ress_exp/mh512/s25/mh_scores.csv")
-    # e = time.time()
-    # print("mh25: " + str(e - s))
+    # exit()
+
+
+    print("Compute mh 75")
+    s = time.time()  # 1360(512) 1100(128)
+    col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
+                 "/Users/ra-mit/data/ress_exp/original/c22/",
+                 0.75,
+                 "/Users/ra-mit/data/ress_exp/mh512/s75/mh_scores.csv")
+    e = time.time()
+    print("mh75: " + str(e - s))
+
+    print("Compute mh 50")
+    s = time.time()  # 974(512) 805(128)
+    col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
+                 "/Users/ra-mit/data/ress_exp/original/c22/",
+                 0.5,
+                 "/Users/ra-mit/data/ress_exp/mh512/s50/mh_scores.csv")
+    e = time.time()
+    print("mh50: " + str(e - s))
+
+    print("Compute mh 25")
+    s = time.time()  # 646(512) 500(128)
+    col2col_ress("/Users/ra-mit/data/ress_exp/original/c21/",
+                 "/Users/ra-mit/data/ress_exp/original/c22/",
+                 0.25,
+                 "/Users/ra-mit/data/ress_exp/mh512/s25/mh_scores.csv")
+    e = time.time()
+    print("mh25: " + str(e - s))
 
     print("Compute mh 10")
     s = time.time()
