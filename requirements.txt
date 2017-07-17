@@ -71,8 +71,8 @@ rdflib-jsonld==0.4.0
 readline==6.2.4.1
 redis==2.10.5
 requests==2.13.0
-scikit-learn==0.17
 scipy==0.16.1
+scikit-learn==0.17
 simplegeneric==0.8.1
 six==1.10.0
 SPARQLWrapper==1.8.0
