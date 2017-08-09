@@ -21,7 +21,7 @@ networks:
 services:
 
   elasticsearch:
-    image: elasticsearch:2.3.5
+    image: elasticsearch:2.3.3
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data
     ports:
@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-ui
     volumes:
-      - ./data/pickles:/aurum/data/pickles
+      - ./data/models:/aurum/data/models
     ports:
       - 3000:3000
       - 5000:5000
@@ -57,7 +57,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-ddprofiler
     volumes:
-      - ./data/csvs:/csvs
+      - ./data
     networks:
       aurum_net:
         aliases:
@@ -71,7 +71,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-networkbuildercoordinator
     volumes:
-      - ./data/pickles:/output
+      - ./data/models:/output
     networks:
       aurum_net:
         aliases:
@@ -85,7 +85,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-jupyter-notebook
     volumes:
-      - ./data/pickles:/home/jovyan/work/data/pickles
+      - ./data/models
     ports:
       - 8888:8888
     networks:

@@ -1,7 +1,7 @@
 .git
 
-ddprofiler/.gradle
-ddprofiler/build
+#ddprofiler/.gradle
+#ddprofiler/build
 UI/node_modules
 data
 

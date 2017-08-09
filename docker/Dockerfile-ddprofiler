@@ -7,5 +7,12 @@ RUN cd /aurum/ddprofiler && ./gradlew clean fatJar
 
 WORKDIR /aurum/ddprofiler
 
-# CMD ["java", "-jar", "build/libs/ddprofiler.jar", "--execution.mode 1", "--sources.folder.path /csvs/mitdwhdata/"]
-CMD java -jar build/libs/ddprofiler.jar --execution.mode 1 --store.server elasticsearch --sources.folder.path /csvs/mitdwhdata/
+#CMD java -jar build/libs/ddprofiler.jar --db.name <insert-db-name>
+#--execution.mode <1 for csv files, 2 to connect to db> --store.server
+#elasticsearch --sources.folder.path <(only if execution.mode == 1) indicates the
+#path, within data/, where the csv files are stored> 
+
+#CMD java -jar build/libs/ddprofiler.jar --db.name <insert-db-name> --execution.mode 1 --store.server elasticsearch --sources.folder.path <path within data/>
+#CMD java -jar build/libs/ddprofiler.jar --db.name testdb --execution.mode 1 --store.server elasticsearch --sources.folder.path testdata/
+ENTRYPOINT java -jar build/libs/ddprofiler.jar
+
