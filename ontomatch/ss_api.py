@@ -625,36 +625,36 @@ def test_e2e(path_to_serialized_model):
     #om.add_krs([("bao", "cache_onto/bao.pkl")], parsed=True)
     # om.add_krs([("uniprot", "cache_onto/uniprot.pkl")], parsed=True)
     #om.add_krs([("go", "cache_onto/go.pkl")], parsed=True)  # parse again
-    om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
+    # om.add_krs([("envo", "cache_onto/envo.pkl")], parsed=True)
     # om.add_krs([("dlc", "cache_onto/dlc.pkl")], parsed=True)
-    # om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
+    om.add_krs([("dbpedia", "cache_onto/dbpedia.pkl")], parsed=True)
 
     # hand = om.kr_handlers["uniprot"]
     #
     # all_classes = hand.classes()
 
-    print("Finding matchings...")
-    st = time.time()
-    matchings = om.find_matchings()
-    et = time.time()
-    print("Finding matchings...OK")
-    print("Took: " + str(et-st))
-
-    print("Writing MATCHINGS output to disk...")
-    with open('matchings_envo_syn', 'w') as f:
-        for k in matchings:
-            #lines = k.print_serial()
-            #for l in lines:
-            #print(str(k))
-            f.write(str(k) + '\n')
-    print("Writing MATCHINGS output to disk...OK")
-
-    exit()
+    # print("Finding matchings...")
+    # st = time.time()
+    # matchings = om.find_matchings()
+    # et = time.time()
+    # print("Finding matchings...OK")
+    # print("Took: " + str(et-st))
+    #
+    # print("Writing MATCHINGS output to disk...")
+    # with open('matchings_envo_syn', 'w') as f:
+    #     for k in matchings:
+    #         #lines = k.print_serial()
+    #         #for l in lines:
+    #         #print(str(k))
+    #         f.write(str(k) + '\n')
+    # print("Writing MATCHINGS output to disk...OK")
+    #
+    # exit()
 
     matchings = []
     line = 0
     #with open("matchings_mitdwh_dbpedia_l5only", 'r') as f:
-    with open("matchings_envo_sem", 'r') as f:
+    with open("matchings_mitdwh_dbpedia", 'r') as f:
         #lines = f.readlines()
         for l in f:
             #tokens = l.split("==>>")
@@ -685,7 +685,7 @@ def test_e2e(path_to_serialized_model):
     print("Took: " + str((et-st)))
 
     print("Writing LINKS output to disk...")
-    with open('links_envo_sem', 'w') as f:
+    with open('links_mitdwh_dbpedia_raw', 'w') as f:
         for l in links:
             f.write(str(l) + '\n')
     print("Writing LINKS output to disk...OK")
@@ -1919,14 +1919,14 @@ if __name__ == "__main__":
     # exit()
 
     # links_to_csv("/Users/ra-mit/temp/sem-link")
-    matchings_to_csv("/Users/ra-mit/temp/sem-mat")
-    exit()
+    # matchings_to_csv("/Users/ra-mit/temp/sem-mat")
+    # exit()
     #
     # take_matchings("matchings_us2_chem_syn")
     # exit()
     #
-    take_links("links_envo_sem")
-    exit()
+    # take_links("links_envo_sem")
+    # exit()
 
     test_e2e("../models/envo/")
     exit()
