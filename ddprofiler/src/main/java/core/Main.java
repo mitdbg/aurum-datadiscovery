@@ -13,12 +13,17 @@ import java.sql.ResultSetMetaData;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
 import java.util.zip.CRC32;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +37,6 @@ import joptsimple.OptionParser;
 import metrics.Metrics;
 import store.Store;
 import store.StoreFactory;
-
 
 public class Main {
 
@@ -247,18 +251,47 @@ public class Main {
   private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources,
                                            String separator) {
     File folder = new File(pathToSources);
-    File[] filePaths = folder.listFiles();
+    // Get fs scheme to determine how to read files
+    Path p = folder.toPath();
+    String scheme = p.getFileSystem().provider().getScheme();
     int totalFiles = 0;
     int tt = 0;
-    for (File f : filePaths) {
-      tt++;
-      if (f.isFile()) {
-        String path = f.getParent() + File.separator;
-        String name = f.getName();
-        TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
-        totalFiles++;
-        c.submitTask(tp);
-      }
+    if (scheme.equals("fs")) {
+	    File[] filePaths = folder.listFiles();
+	    for (File f : filePaths) {
+	      tt++;
+	      if (f.isFile()) {
+	        String path = f.getParent() + File.separator;
+	        String name = f.getName();
+	        TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
+	        totalFiles++;
+	        c.submitTask(tp);
+	      }
+	    }
+    }
+    else if(scheme.equals("hdfs")) {
+    	Configuration conf = new Configuration();
+    	
+    	try {
+			FileSystem fs = FileSystem.get(conf);
+			org.apache.hadoop.fs.Path hdfsPath = new org.apache.hadoop.fs.Path(pathToSources);
+			RemoteIterator<LocatedFileStatus> it = fs.listFiles(hdfsPath, false);
+			while(it.hasNext()) {
+				LocatedFileStatus lfs = it.next();
+				tt++;
+				if(! lfs.isFile()) {
+					continue;
+				}
+				org.apache.hadoop.fs.Path toFile = lfs.getPath();
+				String name = toFile.getName();
+				TaskPackage tp = TaskPackage.makeHDFSCSVFileTaskPackage(dbName, toFile, name, separator);
+				totalFiles++;
+		        c.submitTask(tp);
+			}
+		} 
+    	catch (IOException e) {
+			e.printStackTrace();
+		}
     }
     LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
   }

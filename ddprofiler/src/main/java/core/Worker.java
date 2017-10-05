@@ -75,6 +75,9 @@ public class Worker implements Runnable {
 			if(tp.getType() == TaskPackageType.CSV) {
 				wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getDBName(), tp.getPath(), tp.getName(), tp.getSeparator());
 			}
+			else if(tp.getType() == TaskPackageType.HDFSCSV) {
+				wt = WorkerTask.makeWorkerTaskForHDFSCSVFile(tp.getDBName(), tp.getHdfsPath(), tp.getName(), tp.getSeparator());
+			}
 			else if(tp.getType() == TaskPackageType.DB) {
 				wt = WorkerTask.makeWorkerTaskForDB(tp.getDBName(), tp.getDBType(), tp.getIp(), tp.getPort(), tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
 			}

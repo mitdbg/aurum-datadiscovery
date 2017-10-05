@@ -8,6 +8,7 @@ public class TaskPackage {
 	
   // CSV properties
   private String path;
+  private org.apache.hadoop.fs.Path hdfs_path;
   private String name;
   private String separator;
 
@@ -23,7 +24,7 @@ public class TaskPackage {
 
   private TaskPackageType type;
 
-  public enum TaskPackageType { CSV, DB, BENCH }
+  public enum TaskPackageType { CSV, DB, BENCH, HDFSCSV }
 
   private TaskPackage(String dbName, String path, String name, String separator,
                       TaskPackageType type) {
@@ -33,6 +34,15 @@ public class TaskPackage {
     this.separator = separator;
     this.type = type;
   }
+  
+  private TaskPackage(String dbName, org.apache.hadoop.fs.Path path, String name, String separator,
+          TaskPackageType type) {
+this.dbName = dbName;
+this.hdfs_path = path;
+this.name = name;
+this.separator = separator;
+this.type = type;
+}
 
   private TaskPackage(String dbName, DBType dbType, String ip, String port, String dbname,
                       String str, String username, String password,
@@ -71,6 +81,8 @@ public class TaskPackage {
   }
 
   public String getPath() { return path; }
+  
+  public org.apache.hadoop.fs.Path getHdfsPath() { return hdfs_path; }
 
   public String getName() { return name; }
 
@@ -91,5 +103,10 @@ public class TaskPackage {
   public String getUsername() { return username; }
 
   public String getPassword() { return password; }
+
+  public static TaskPackage makeHDFSCSVFileTaskPackage(String dbName, org.apache.hadoop.fs.Path toFile, String name,
+		String separator) {
+	return new TaskPackage(dbName, toFile, name, separator, TaskPackageType.HDFSCSV);
+  }
 
 }

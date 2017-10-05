@@ -51,6 +51,9 @@ dependencies {
     compile 'io.dropwizard.metrics:metrics-core:3.1.0'
     // connection pool
     compile 'com.zaxxer:HikariCP:2.6.0'
+    // hadoop hdfs
+    compile 'org.apache.hadoop:hadoop-common:2.8.1'
+    compile 'org.apache.hadoop:hadoop-hdfs:2.8.1'
 
     testCompile 'junit:junit:4.11'
 }
