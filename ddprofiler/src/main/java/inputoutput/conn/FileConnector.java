@@ -86,6 +86,10 @@ public class FileConnector extends Connector {
 			return tableInfo.getTableAttributes();
 		}
 		String[] attributes = fileReader.readNext();
+		if (attributes == null) {
+			return new ArrayList<Attribute>();
+		}
+
 		lineCounter++;
 		
 		List<Attribute> attrList = new ArrayList<Attribute>();

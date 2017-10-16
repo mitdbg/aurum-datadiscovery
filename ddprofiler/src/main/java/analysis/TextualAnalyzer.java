@@ -16,33 +16,34 @@ import analysis.modules.KMinHash;
 
 public class TextualAnalyzer implements TextualAnalysis {
 
+  private static final EntityAnalyzer ea = new EntityAnalyzer();
+
   private List<DataConsumer> analyzers;
   private CardinalityAnalyzer ca;
   private KMinHash mh;
-  private EntityAnalyzer ea;
 
-  private TextualAnalyzer(EntityAnalyzer ea, int pseudoRandomSeed) {
+  private TextualAnalyzer(int pseudoRandomSeed) {
     analyzers = new ArrayList<>();
     mh = new KMinHash(pseudoRandomSeed);
     ca = new CardinalityAnalyzer();
-    this.ea = ea;
     analyzers.add(ca);
     analyzers.add(mh);
     analyzers.add(ea);
   }
 
-  public static TextualAnalyzer makeAnalyzer(EntityAnalyzer ea2, int pseudoRandomSeed) {
-    ea2.clear();
-    return new TextualAnalyzer(ea2, pseudoRandomSeed);
+  public static TextualAnalyzer makeAnalyzer(int pseudoRandomSeed) {
+    ea.clear();
+    return new TextualAnalyzer(pseudoRandomSeed);
   }
 
   @Override
   public boolean feedTextData(List<String> records) {
-    Iterator<DataConsumer> dcs = analyzers.iterator();
-    while (dcs.hasNext()) {
-      TextualDataConsumer dc = (TextualDataConsumer)dcs.next();
-      dc.feedTextData(records);
+
+    synchronized (this) {
+      ea.feedTextData(records);
+      ca.feedTextData(records);
     }
+    mh.feedTextData(records);
 
     return false;
   }

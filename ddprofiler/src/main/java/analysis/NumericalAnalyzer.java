@@ -33,11 +33,10 @@ public class NumericalAnalyzer implements NumericalAnalysis {
   }
 
   @Override
-  public boolean feedIntegerData(List<Long> records) {
+  synchronized public boolean feedIntegerData(List<Long> records) {
 
-    Iterator<DataConsumer> dcs = analyzers.iterator();
-    while (dcs.hasNext()) {
-      IntegerDataConsumer dc = (IntegerDataConsumer)dcs.next();
+    for (int i = 0; i < analyzers.size(); i++) {
+      IntegerDataConsumer dc = (IntegerDataConsumer)analyzers.get(i);
       dc.feedIntegerData(records);
     }
 
@@ -45,11 +44,10 @@ public class NumericalAnalyzer implements NumericalAnalysis {
   }
 
   @Override
-  public boolean feedFloatData(List<Float> records) {
+  synchronized public boolean feedFloatData(List<Float> records) {
 
-    Iterator<DataConsumer> dcs = analyzers.iterator();
-    while (dcs.hasNext()) {
-      FloatDataConsumer dc = (FloatDataConsumer)dcs.next();
+    for (int i = 0; i < analyzers.size(); i++) {
+      FloatDataConsumer dc = (FloatDataConsumer)analyzers.get(i);
       dc.feedFloatData(records);
     }
 

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.TaskPackage;
 import core.WorkerTask;
 import core.WorkerTaskResult;
 import core.config.ProfilerConfig;
@@ -63,8 +62,8 @@ public class AlmostE2ETest {
 
     c.start();
 
-    TaskPackage tp =
-        TaskPackage.makeCSVFileTaskPackage("", path, filename, separator);
+    WorkerTask tp =
+        WorkerTask.makeCSVFileWorkerTask("", path, filename, separator);
     c.submitTask(tp);
     finishTasks(c);
   }

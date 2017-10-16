@@ -4,25 +4,17 @@
  */
 package core;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
-import java.util.zip.CRC32;
 
+import comm.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import comm.WebServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
@@ -70,18 +62,18 @@ public class Main {
       // Start infrastructure for REST server
       WebServer ws = new WebServer(pc, c);
       ws.init();
-    } 
+    }
     else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
       // Run with the configured input parameters and produce results to file
       // (?)
       String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
-    } 
+    }
     else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
       this.readTablesFromDBAndCreateTasks(dbName, c);
     }
     else if(executionMode == ExecutionMode.BENCHMARK.mode) {
-      // Piggyback property to benchmark system with one file 
+      // Piggyback property to benchmark system with one file
       String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
       this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
     }
@@ -255,7 +247,7 @@ public class Main {
       if (f.isFile()) {
         String path = f.getParent() + File.separator;
         String name = f.getName();
-        TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
+        WorkerTask tp = WorkerTask.makeCSVFileWorkerTask(dbName, path, name, separator);
         totalFiles++;
         c.submitTask(tp);
       }
@@ -283,16 +275,16 @@ public class Main {
     try{dbConn.close();} catch (SQLException e) {e.printStackTrace();}
     for (String str : tables) {
       LOG.info("Detected relational table: {}", str);
-      TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, dbType, ip, port, dbname,
+      WorkerTask tp = WorkerTask.makeDBWorkerTask(dbName, dbType, ip, port, dbname,
                                                      str, username, password);
       c.submitTask(tp);
     }
   }
   
   private void benchmarkSystem(Conductor c, String path, String separator) {
-	  TaskPackage tp = TaskPackage.makeBenchmarkTask(path, separator);
+	  WorkerTask tp = WorkerTask.makeBenchmarkTask(path, separator);
 	  // Make sure there's always work to process
-	  while(c.approxQueueLenght() < 30000) {
+	  while(c.approxQueueLength() < 30000) {
 		  c.submitTask(tp);
 	  }
   }

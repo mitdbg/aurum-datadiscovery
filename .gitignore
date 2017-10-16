@@ -68,6 +68,7 @@ ddprofiler/.gitignore
 ddprofiler/.gradle/
 ddprofiler/.project
 ddprofiler/.settings/
+ddprofiler/src/test/python/test/*.dd
 
 # Notes
 notes.sh

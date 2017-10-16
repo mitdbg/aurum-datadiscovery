@@ -77,7 +77,7 @@ public class ProfilerConfig extends Config {
                     WEB_SERVER_PORT_DOC)
             .define(NUM_POOL_THREADS, Type.INT, 4, Importance.LOW,
                     NUM_POOL_THREADS_DOC)
-            .define(NUM_RECORD_READ, Type.INT, 1000, Importance.MEDIUM,
+            .define(NUM_RECORD_READ, Type.INT, 10000, Importance.MEDIUM,
                     NUM_RECORD_READ_DOC)
             .define(STORE_TYPE, Type.INT, 2, Importance.MEDIUM, STORE_TYPE_DOC)
             .define(STORE_SERVER, Type.STRING, "127.0.0.1", Importance.HIGH,

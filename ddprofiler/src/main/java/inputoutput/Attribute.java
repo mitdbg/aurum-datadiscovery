@@ -4,6 +4,10 @@
  */
 package inputoutput;
 
+import analysis.Analysis;
+import analysis.AnalyzerFactory;
+import analysis.modules.EntityAnalyzer;
+
 public class Attribute {
 
   public enum AttributeType {
@@ -14,14 +18,20 @@ public class Attribute {
     UNKNOWN;
   }
 
+  private static final int pseudoRandomSeed = 1;
+
   private String columnName;
   private AttributeType columnType;
   private int columnSize;
+  private Analysis analyzer;
+  private final Tracker tracker;
 
   public Attribute(String column_name) {
     this.columnName = column_name;
     this.columnType = AttributeType.UNKNOWN;
     this.columnSize = -1;
+    this.analyzer = null;
+    this.tracker = new Tracker();
   }
 
   public Attribute(String column_name, String column_type, int column_size) {
@@ -29,6 +39,8 @@ public class Attribute {
     // TODO: swith(column_type) and transform string into enum
     this.columnType = AttributeType.UNKNOWN;
     this.columnSize = column_size;
+    this.analyzer = null;
+    this.tracker = new Tracker();
   }
 
   public String getColumnName() { return columnName; }
@@ -39,8 +51,21 @@ public class Attribute {
 
   public AttributeType getColumnType() { return columnType; }
 
-  public void setColumnType(AttributeType column_type) {
-    this.columnType = column_type;
+  public Analysis getAnalyzer() { return analyzer; }
+
+  public Tracker getTracker() { return tracker; }
+
+  public void setColumnType(AttributeType columnType) {
+    this.columnType = columnType;
+    if(columnType.equals(AttributeType.FLOAT)) {
+      analyzer = AnalyzerFactory.makeNumericalAnalyzer();
+    }
+    else if(columnType.equals(AttributeType.INT)) {
+      analyzer = AnalyzerFactory.makeNumericalAnalyzer();
+    }
+    else if(columnType.equals(AttributeType.STRING)) {
+      analyzer = AnalyzerFactory.makeTextualAnalyzer(pseudoRandomSeed);
+    }
   }
 
   public int getColumnSize() { return columnSize; }

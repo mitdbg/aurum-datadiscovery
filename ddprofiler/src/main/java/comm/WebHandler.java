@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import core.WorkerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.WorkerTask;
 
 public class WebHandler extends HttpServlet {
 
@@ -83,7 +83,7 @@ public class WebHandler extends HttpServlet {
 
   private String processCSVDataSource(String dbName, String path, String name,
                                       String separator) {
-    WorkerTask wt = WorkerTask.makeWorkerTaskForCSVFile(dbName, path, name, separator);
+    WorkerTask wt = WorkerTask.makeCSVFileWorkerTask(dbName, path, name, separator);
     boolean success = true; // c.submitTask(wt);
     if (success)
       return "OK";
