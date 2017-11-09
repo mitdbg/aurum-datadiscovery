@@ -185,6 +185,67 @@ free to say yes, but beware that it may take long times when the models are big.
 
 ## Using the Discovery API
 
-Coming soon...
+The discovery API consists of a collection of primitives that can be combined
+together to write more complex data discovery queries. Consider a scenario in
+which you want to identify buildings at MIT. There is a discovery primitive to
+search for specific values in a column, e.g., "Stata Center". There is another
+primitive to find a column with a specific schema name, e.g., "Building Name".
+If you use any of them individually, you may find a lot of values, with only a
+subset being relevant, e.g., many organizations may have a table that contains a
+columns named "Building Name". Combining both of them makes the purpose more
+specific and therefore narrows down the qualifying data, hopefully yielding
+relevant results.
+
+To use the discovery API it is useful to know about the primitives available and
+about two special objects that we use to connect the primitives together and
+help you navigate the results. These objects are the **API Handler** and the
+**Discovery Result Set (DRS)**. We describe them both next:
+
+**API Handler**: This is the object that you obtain when initializing the API,
+that is:
+
+$> api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+
+The API Handler gives you access to the different primitives available in the
+system, so it should be the first object to inspect when learning how to use the
+system.
+
+The *Discovery Result Set (DRS)* is an object that essentially represents data
+within the discovery system. For example, by creating a DRS over a table in a
+storage system, we are creating a reference to that table, that can be used with
+the primitives. If, for example, we want to identify columns similar to a column
+*A* of interest, we will need to obtain first a reference to column *A* that we
+can use in the API. That reference is the DRS, and we provide several primitives
+to obtain these references. Then, if we run a similarity primitive on column
+*A*, the results will also be available in a DRS object --- this is what allows
+to arbitrarily combine primitives together.
+
+DRS objects have a few functions that help to inspect their content, for
+example, to print the tables they represent or the columns they represent. The
+more nuanced aspect of DRS is that they have an internal state that determines
+whether they represent *tables* or *columns*. This is the most important aspect
+to understand about the Aurum discovery API, really. We explain it in some
+detail next:
+
+Consider the *intersection* primitive, which helps in combining two DRS by
+taking their intersection, e.g., similar content *and* similar schema. It is
+possible to intersect at the table (tables that appear in both DRS) or column
+level (columns that appear in both of them), and this can be achieved by setting
+the status of the input DRS to table or column.
+
+
+### Example Discovery Queries
+
+Soon...
+
+### Ranking Results
+
+Soon...
+
+### Analytical Queries over the Model
+
+Soon...
+
+
 
 
