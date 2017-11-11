@@ -91,7 +91,7 @@ you should use to configure ddprofiler as we show next.
 We are currently building an interface to interact programmatically with the
 profiler, but for now, it is possible to configure it through the command line.
 
-The jar file produced in the previous step accespt a number of flags, of which
+The jar file produced in the previous step accepts a number of flags, of which
 the most relevant ones are:
 
 **--db.name** When you point to a data source (RDBMS or folder), you can give it a name, which will be
