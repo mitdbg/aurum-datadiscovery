@@ -42,6 +42,11 @@ module below. Note this will be changing often as part of the development.
 
 ## Quick Start
 
+```shell
+git clone git@github.com:mitdbg/aurum-datadiscovery.git
+cd aurum-datadiscovery
+```
+
 We explain next how to configure the modules to get a barebones installation. We
 do this in a series of 3 stages.
 
@@ -56,7 +61,9 @@ to install and configure Elasticsearch.
 
 Just go to 'ddprofiler' (/ddprofiler from the project root) and do:
 
+```shell
 $> ./gradlew clean fatJar
+```
 
 Note that the gradle wrapper (gradlew) does not require you to install any
 software; it will handle the entire build process without assistance. A
@@ -72,7 +79,9 @@ https://www.elastic.co/products/elasticsearch
 
 Uncompress it and then simply run from the root directory:
 
+```shell
 $> ./bin/elasticsearch
+```
 
 that will start the server in localhost:9200 by default, which is the address
 you should use to configure ddprofiler as we show next.
@@ -82,7 +91,7 @@ you should use to configure ddprofiler as we show next.
 We are currently building an interface to interact programmatically with the
 profiler, but for now, it is possible to configure it through the command line.
 
-The jar file produced in the previous step accespt a number of flags, of which
+The jar file produced in the previous step accepts a number of flags, of which
 the most relevant ones are:
 
 **--db.name** When you point to a data source (RDBMS or folder), you can give it a name, which will be
@@ -102,7 +111,7 @@ with the files to process (CSV files only for now).
 If you wish to read the tables from a database, then you should configure
 **--execution.mode** to 2, the system will read the configuration from:
 
-ddprofiler/src/main/resources/dbconnector.config
+`ddprofiler/src/main/resources/dbconnector.config`
 
 which you can consult as a template.
 
@@ -110,8 +119,10 @@ A typical usage of the profiler from the command line will look like:
 
 Example:
 
+```shell
 $> java -jar <path_to_ddprofiler.jar> --db.name <name> --execution.mode 1
 --sources.folder.path <path>
+```
 
 You can consult all configuration parameters by appending **--help** or <?> as a
 parameter. In particular you may be interested in changing the default
@@ -140,15 +151,18 @@ need it without affecting any system-wide dependencies.*
 Requires Python 3 (tested with 3.4.2, 3.5.0 and 3.5.1). Use requirements.txt to
 install all the dependencies:
 
-$> pip install -r requirements.txt 
+```shell
+$> pip install -r requirements.txt
+```
 
 In a vanilla linux (debian-based) system, the following packages will need to be installed system-wide:
 
-* sudo apt-get install pkg-config libpng-dev libfreetype6-dev (requirement of matplotlib)
-
-* sudo apt-get install libblas-dev liblapack-dev (speeding up linear algebra operations)
-
-* sudo apt-get install lib32ncurses5-dev
+```shell
+sudo apt-get install \
+     pkg-config libpng-dev libfreetype6-dev `#(requirement of matplotlib)` \
+     libblas-dev liblapack-dev `#(speeding up linear algebra operations)` \
+     lib32ncurses5-dev
+```
 
 Some notes for MAC users:
 
@@ -164,7 +178,9 @@ exactly one parameter, **--opath**, that expects a path to an existing folder
 where you want to store the built model (in the form of Python pickle files).
 For example:
 
+```shell
 $> python networkbuildercoordinatory.py --opath test/testmodel/
+```
 
 Once the model is built, it will be serialized and stored in the provided path.
 
@@ -175,9 +191,10 @@ access it is to deserialize a desired model and constructing an API object with
 that model. The easiest way to do so is by importing init_system() function from
 main. Something like:
 
-$> from main import init_system
-
-$> api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+```python
+from main import init_system
+api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+```
 
 The last parameter of init_system, reporting, controls whether you want to
 create a reporting API that gives you access to statistics about the model. Feel
@@ -204,7 +221,9 @@ help you navigate the results. These objects are the **API Handler** and the
 **API Handler**: This is the object that you obtain when initializing the API,
 that is:
 
-$> api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+```python
+api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+```
 
 The API Handler gives you access to the different primitives available in the
 system, so it should be the first object to inspect when learning how to use the
@@ -245,7 +264,3 @@ Soon...
 ### Analytical Queries over the Model
 
 Soon...
-
-
-
-
