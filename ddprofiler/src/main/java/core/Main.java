@@ -19,10 +19,13 @@ import org.apache.hadoop.fs.RemoteIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import comm.WebServer;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
+import core.config.sources.CSVSource;
+import core.config.sources.PostgresSource;
+import core.config.sources.SourceConfig;
+import core.config.sources.YAMLParser;
 import inputoutput.conn.DBType;
 import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
@@ -49,36 +52,64 @@ public class Main {
 	long start = System.nanoTime();
 
 	// Default is elastic, if we have more in the future, just pass a
-	// property
-	// to configure this
+	// property to configure this
 	Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
 
 	// for test purpose, use this and comment above line when elasticsearch
-	// is
-	// not configured
+	// is not configured
 	// Store s = StoreFactory.makeNullStore(pc);
 
 	Conductor c = new Conductor(pc, s);
 	c.start();
 
-	String dbName = pc.getString(ProfilerConfig.DB_NAME);
-	int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
-	if (executionMode == ExecutionMode.ONLINE.mode) {
-	    // Start infrastructure for REST server
-	    WebServer ws = new WebServer(pc, c);
-	    ws.init();
-	} else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
-	    // Run with the configured input parameters and produce results to
-	    // file
-	    // (?)
-	    String pathToSources = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-	    this.readDirectoryAndCreateTasks(dbName, c, pathToSources, pc.getString(ProfilerConfig.CSV_SEPARATOR));
-	} else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
-	    this.readTablesFromDBAndCreateTasks(dbName, c);
-	} else if (executionMode == ExecutionMode.BENCHMARK.mode) {
-	    // Piggyback property to benchmark system with one file
-	    String pathToSource = pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-	    this.benchmarkSystem(c, pathToSource, pc.getString(ProfilerConfig.CSV_SEPARATOR));
+	// TODO: Configure mode here ?
+	// int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
+	// if (executionMode == ExecutionMode.ONLINE.mode) {
+	// // Start infrastructure for REST server
+	// WebServer ws = new WebServer(pc, c);
+	// ws.init();
+	// }
+
+	// Parsing sources config file
+	String sourceConfigFile = ProfilerConfig.SOURCE_CONFIG_FILE;
+	List<SourceConfig> sourceConfigs = YAMLParser.processSourceConfig(sourceConfigFile);
+
+	for (SourceConfig sourceConfig : sourceConfigs) {
+
+	    String sourceName = sourceConfig.getSourceName();
+	    SourceType sType = sourceConfig.getSourceType();
+	    if (sType == SourceType.csv) {
+		CSVSource csvSource = (CSVSource) sourceConfig;
+		String pathToSources = csvSource.getPath();
+		this.readDirectoryAndCreateTasks(sourceName, c, pathToSources, csvSource.getSeparator());
+	    } else if (sType == SourceType.postgres) {
+		PostgresSource postgresSource = (PostgresSource) sourceConfig;
+		this.readTablesFromDBAndCreateTasks(sourceName, c, postgresSource);
+	    }
+
+	    // int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
+	    // if (executionMode == ExecutionMode.ONLINE.mode) {
+	    // // Start infrastructure for REST server
+	    // WebServer ws = new WebServer(pc, c);
+	    // ws.init();
+	    // } else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
+	    // // Run with the configured input parameters and produce results
+	    // // to
+	    // // file
+	    // // (?)
+	    // String pathToSources =
+	    // pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+	    // this.readDirectoryAndCreateTasks(dbName, c, pathToSources,
+	    // pc.getString(ProfilerConfig.CSV_SEPARATOR));
+	    // } else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
+	    // this.readTablesFromDBAndCreateTasks(dbName, c);
+	    // } else if (executionMode == ExecutionMode.BENCHMARK.mode) {
+	    // // Piggyback property to benchmark system with one file
+	    // String pathToSource =
+	    // pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
+	    // this.benchmarkSystem(c, pathToSource,
+	    // pc.getString(ProfilerConfig.CSV_SEPARATOR));
+	    // }
 	}
 
 	while (c.isTherePendingWork()) {
@@ -204,21 +235,29 @@ public class Main {
 	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
     }
 
-    private void readTablesFromDBAndCreateTasks(String dbName, Conductor c) {
-	Properties dbp = DBUtils.loadDBPropertiesFromFile();
-	String dbTypeStr = dbp.getProperty("db_system_name");
-	DBType dbType = getType(dbTypeStr);
+    private void readTablesFromDBAndCreateTasks(String dbName, Conductor c, PostgresSource pSource) {
+	// Properties dbp = DBUtils.loadDBPropertiesFromFile();
+	// String dbTypeStr = dbp.getProperty("db_system_name");
+	// DBType dbType = getType(dbTypeStr);
 
-	String ip = dbp.getProperty("conn_ip");
-	String port = dbp.getProperty("port");
-	String dbname = dbp.getProperty("conn_path");
-	String username = dbp.getProperty("user_name");
-	String password = dbp.getProperty("password");
-	String dbschema = dbp.getProperty("dbschema");
+	// String ip = dbp.getProperty("conn_ip");
+	// String port = dbp.getProperty("port");
+	// String dbname = dbp.getProperty("conn_path");
+	// String username = dbp.getProperty("user_name");
+	// String password = dbp.getProperty("password");
+	// String dbschema = dbp.getProperty("dbschema");
 
-	LOG.info("Conn to DB on: {}:{}/{}", ip, port, dbname);
+	String ip = pSource.getDb_server_ip();
+	String port = new Integer(pSource.getDb_server_port()).toString();
+	String db_name = pSource.getDatabase_name();
+	String username = pSource.getDb_username();
+	String password = pSource.getDb_password();
+	String dbschema = "default";
 
-	Connection dbConn = DBUtils.getDBConnection(dbType, ip, port, dbname, username, password);
+	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
+
+	// FIXME: remove this enum; simplify this
+	Connection dbConn = DBUtils.getDBConnection(DBType.POSTGRESQL, ip, port, db_name, username, password);
 
 	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
 	try {
@@ -228,7 +267,9 @@ public class Main {
 	}
 	for (String str : tables) {
 	    LOG.info("Detected relational table: {}", str);
-	    TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, dbType, ip, port, dbname, str, username, password);
+	    // FIXME: Remove type
+	    TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, DBType.POSTGRESQL, ip, port, db_name, str, username,
+		    password);
 	    c.submitTask(tp);
 	}
     }

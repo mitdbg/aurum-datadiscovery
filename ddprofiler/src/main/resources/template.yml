@@ -36,9 +36,9 @@ sources:
   type: postgres
   config:
     # The IP where the DB server lives
-    dbserver_ip: localhost
+    db_server_ip: localhost
     # The port
-    dbserver_port: 5432
+    db_server_port: 5432
     # The name of the database
     database_name: chembl_21
     # User and password to access the DB server
