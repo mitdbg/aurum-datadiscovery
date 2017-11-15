@@ -71,13 +71,16 @@ public class Main {
 	// }
 
 	// Parsing sources config file
-	String sourceConfigFile = ProfilerConfig.SOURCE_CONFIG_FILE;
+	String sourceConfigFile = pc.getString(ProfilerConfig.SOURCE_CONFIG_FILE);
+	LOG.info("Using {} as sources file", sourceConfigFile);
 	List<SourceConfig> sourceConfigs = YAMLParser.processSourceConfig(sourceConfigFile);
 
+	LOG.info("Found {} sources to profile", sourceConfigs.size());
 	for (SourceConfig sourceConfig : sourceConfigs) {
 
 	    String sourceName = sourceConfig.getSourceName();
 	    SourceType sType = sourceConfig.getSourceType();
+	    LOG.info("Processing source {} of type {}", sourceName, sType);
 	    if (sType == SourceType.csv) {
 		CSVSource csvSource = (CSVSource) sourceConfig;
 		String pathToSources = csvSource.getPath();
@@ -150,20 +153,11 @@ public class Main {
 	    }
 	}
 
-	// TODO: get properties from file ?
-
-	// TODO: Merge all properties into one single Properties object to be
-	// validated
-	// Pay attention to redefinition of properties and define a priority to
-	// fix
-	// conflicts.
-
 	Properties validatedProperties = validateProperties(commandLineProperties);
 
 	ProfilerConfig pc = new ProfilerConfig(validatedProperties);
 
 	// Start main
-
 	configureMetricsReporting(pc);
 
 	// config logs
@@ -190,21 +184,21 @@ public class Main {
 	}
     }
 
-    private void readDirectoryAndCreateTasks(String dbName, Conductor c, String pathToSources, String separator) {
+    private void readDirectoryAndCreateTasks(String sourceName, Conductor c, String pathToSources, String separator) {
 	File folder = new File(pathToSources);
 	// Get fs scheme to determine how to read files
 	Path p = folder.toPath();
 	String scheme = p.getFileSystem().provider().getScheme();
 	int totalFiles = 0;
 	int tt = 0;
-	if (scheme.equals("fs")) {
+	if (scheme.equals("file")) {
 	    File[] filePaths = folder.listFiles();
 	    for (File f : filePaths) {
 		tt++;
 		if (f.isFile()) {
 		    String path = f.getParent() + File.separator;
 		    String name = f.getName();
-		    TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(dbName, path, name, separator);
+		    TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(sourceName, path, name, separator);
 		    totalFiles++;
 		    c.submitTask(tp);
 		}
@@ -224,7 +218,7 @@ public class Main {
 		    }
 		    org.apache.hadoop.fs.Path toFile = lfs.getPath();
 		    String name = toFile.getName();
-		    TaskPackage tp = TaskPackage.makeHDFSCSVFileTaskPackage(dbName, toFile, name, separator);
+		    TaskPackage tp = TaskPackage.makeHDFSCSVFileTaskPackage(sourceName, toFile, name, separator);
 		    totalFiles++;
 		    c.submitTask(tp);
 		}
@@ -235,7 +229,7 @@ public class Main {
 	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
     }
 
-    private void readTablesFromDBAndCreateTasks(String dbName, Conductor c, PostgresSource pSource) {
+    private void readTablesFromDBAndCreateTasks(String sourceName, Conductor c, PostgresSource pSource) {
 	// Properties dbp = DBUtils.loadDBPropertiesFromFile();
 	// String dbTypeStr = dbp.getProperty("db_system_name");
 	// DBType dbType = getType(dbTypeStr);
@@ -268,8 +262,8 @@ public class Main {
 	for (String str : tables) {
 	    LOG.info("Detected relational table: {}", str);
 	    // FIXME: Remove type
-	    TaskPackage tp = TaskPackage.makeDBTaskPackage(dbName, DBType.POSTGRESQL, ip, port, db_name, str, username,
-		    password);
+	    TaskPackage tp = TaskPackage.makeDBTaskPackage(sourceName, DBType.POSTGRESQL, ip, port, db_name, str,
+		    username, password);
 	    c.submitTask(tp);
 	}
     }

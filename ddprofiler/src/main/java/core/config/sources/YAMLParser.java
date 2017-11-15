@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -12,6 +15,8 @@ import core.SourceType;
 
 public class YAMLParser {
 
+    final private static Logger LOG = LoggerFactory.getLogger(YAMLParser.class.getName());
+
     public static List<SourceConfig> processSourceConfig(String path) {
 	File file = new File(path);
 	Sources srcs = null;
@@ -19,7 +24,9 @@ public class YAMLParser {
 	try {
 	    srcs = mapper.readValue(file, Sources.class);
 	} catch (Exception e) {
+	    LOG.error("While parsing {} file to read sources", file.toPath());
 	    e.printStackTrace();
+	    System.exit(0);
 	}
 	int apiVersion = srcs.getApi_version();
 	assert (apiVersion == 0); // to support api evolution
@@ -38,7 +45,7 @@ public class YAMLParser {
 	    } else if (type == SourceType.postgres) {
 		sc = mapper.convertValue(props, PostgresSource.class);
 	    } else {
-		System.out.println("Unsupported!");
+		LOG.error("Unsupported!");
 		System.exit(0);
 	    }
 	    sc.setSourceName(name);

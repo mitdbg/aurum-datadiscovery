@@ -17,10 +17,6 @@ public class ProfilerConfig extends Config {
     public static final String SOURCE_CONFIG_FILE = "sources";
     private static final String SOURCE_CONFIG_FILE_DOC = "Path to the YAML file with the " + "source configuration";
 
-    // public static final String DB_NAME = "db.name";
-    // public static final String DB_NAME_DOC = "Name used for the data
-    // repository";
-
     public static final String EXECUTION_MODE = "execution.mode";
     private static final String EXECUTION_MODE_DOC = "(online - 0) for server mode "
 	    + "and (offline files - 1) for one-shot read files from directory "
@@ -49,30 +45,17 @@ public class ProfilerConfig extends Config {
     public static final String STORE_PORT = "store.port";
     private static final String STORE_PORT_DOC = "Port where the store listens";
 
-    // public static final String SOURCES_TO_ANALYZE_FOLDER =
-    // "sources.folder.path";
-    // private static final String SOURCES_TO_ANALYZE_FOLDER_DOC = "Path to a
-    // folder with files to analyze";
-
-    // public static final String SOURCES_TO_ANALYZE_DB = "sources.db.path";
-    // private static final String SOURCES_TO_ANALYZE_DB_DOC = "Path to db with
-    // tables to analyze";
-
     public static final String ERROR_LOG_FILE_NAME = "error.logfile.name";
     private static final String ERROR_LOG_FILE_NAME_DOC = "Name of log file "
 	    + "that records the errors while profiling data";
-
-    // public static final String CSV_SEPARATOR = "csv.separator";
-    // private static final String CSV_SEPARATOR_DOC = "The separator used to
-    // split CSV/TSV files";
 
     public static final String REPORT_METRICS_CONSOLE = "console.metrics";
     private static final String REPORT_METRICS_CONSOLE_DOC = "Output metrics to console";
 
     static {
-	config = new ConfigDef().define(SOURCE_CONFIG_FILE, Type.STRING, "", Importance.HIGH, SOURCE_CONFIG_FILE_DOC)
-		// .define(DB_NAME, Type.STRING, "", Importance.HIGH,
-		// DB_NAME_DOC)
+	config = new ConfigDef()
+
+		.define(SOURCE_CONFIG_FILE, Type.STRING, "", Importance.HIGH, SOURCE_CONFIG_FILE_DOC)
 		.define(EXECUTION_MODE, Type.INT, 0, Importance.HIGH, EXECUTION_MODE_DOC)
 		.define(WEB_SERVER_PORT, Type.INT, 8080, Importance.MEDIUM, WEB_SERVER_PORT_DOC)
 		.define(NUM_POOL_THREADS, Type.INT, 4, Importance.LOW, NUM_POOL_THREADS_DOC)
@@ -81,14 +64,8 @@ public class ProfilerConfig extends Config {
 		.define(STORE_SERVER, Type.STRING, "127.0.0.1", Importance.HIGH, STORE_SERVER_DOC)
 		.define(STORE_HTTP_PORT, Type.INT, 9200, Importance.HIGH, STORE_HTTP_PORT_DOC)
 		.define(STORE_PORT, Type.INT, 9300, Importance.HIGH, STORE_PORT_DOC)
-		// .define(SOURCES_TO_ANALYZE_FOLDER, Type.STRING, ".",
-		// Importance.LOW, SOURCES_TO_ANALYZE_FOLDER_DOC)
-		// .define(SOURCES_TO_ANALYZE_DB, Type.STRING, ".",
-		// Importance.LOW, SOURCES_TO_ANALYZE_DB_DOC)
 		.define(ERROR_LOG_FILE_NAME, Type.STRING, "error_profiler.log", Importance.MEDIUM,
 			ERROR_LOG_FILE_NAME_DOC)
-		// .define(CSV_SEPARATOR, Type.STRING, ",", Importance.MEDIUM,
-		// CSV_SEPARATOR_DOC)
 		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, Importance.HIGH, REPORT_METRICS_CONSOLE_DOC);
     }
 
