@@ -88,40 +88,28 @@ you should use to configure ddprofiler as we show next.
 
 #### Configuration of ddprofiler
 
-We are currently building an interface to interact programmatically with the
-profiler, but for now, it is possible to configure it through the command line.
+There are two different ways of interacting with the profiler. One is through a
+YAML file, which describes and configures the different data sources to profile.
+The second way is through an interactice interface which we are currently
+working on. We describe next the configuration of sources through the YAML file.
 
 The jar file produced in the previous step accepts a number of flags, of which
-the most relevant ones are:
+the most relevant one is:
 
-**--db.name** When you point to a data source (RDBMS or folder), you can give it a name, which will be
-used in the model to identify such data source.
+**--sources** Which accepts a path to a YAML file in which to configure the
+access to the different data sources, e.g., folder with CSV files or
+JDBC-compatible RDBMS.
 
-**--execution.mode** configures how the profiler will work. The current options
-are: (0) to work online. (1) to read files from a folder. (2) to read the tables
-in a repository of data accessible through JDBC, such as a RDBMS.
-
-If you configure ddprofiler with (1), that is, you want to read a repository of
-CSV files, then you need to set up the following flag as well to indicate the
-path to the folder:
-
-**--sources.folder.path** when execution mode is 1, this option indicates the folder
-with the files to process (CSV files only for now).
-
-If you wish to read the tables from a database, then you should configure
-**--execution.mode** to 2, the system will read the configuration from:
-
-`ddprofiler/src/main/resources/dbconnector.config`
-
-which you can consult as a template.
+You can find an example template file
+[here](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/resources/template.yml)
+which contains documentation to explain how to use it. 
 
 A typical usage of the profiler from the command line will look like:
 
 Example:
 
 ```shell
-$> java -jar <path_to_ddprofiler.jar> --db.name <name> --execution.mode 1
---sources.folder.path <path>
+$> java -jar <path_to_ddprofiler.jar> --sources <path_to_sources.yml> 
 ```
 
 You can consult all configuration parameters by appending **--help** or <?> as a
@@ -129,12 +117,13 @@ parameter. In particular you may be interested in changing the default
 elasticsearch ports (consult *--store.http.port* and *--store.port*) in case
 your installation does not use the default ones.
 
-Also, note that you can run ddprofiler as many times as necessary using
-different data sources as input. For example, if you want to index a repository
-of CSV files and a RDBMS, you will need to run ddprofiler two times, each one
-configured to read the data from each source. All data summaries will be created
-and stored in elasticsearch. Only make sure that every time you run ddprofiler
-you use a different **--db.name** to avoid internal conflicts.
+*Note that, although the YAML file accepts any number of data sources, at the
+moment we recommend to profile one single source at a time.* Note, however, that
+you can run ddprofiler as many times as necessary using a YAML with a different
+data source. For example, if you want to index a repository of CSV files and a
+RDBMS, you will need to run ddprofiler two times, each one configured to read
+the data from each source. All data summaries will be created and stored in
+elasticsearch. Only make sure to edit the YAML file appropriately each time.
 
 ### Stage 2: Building a Model
 
