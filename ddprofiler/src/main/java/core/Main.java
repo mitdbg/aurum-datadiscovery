@@ -77,7 +77,6 @@ public class Main {
 
 	LOG.info("Found {} sources to profile", sourceConfigs.size());
 	for (SourceConfig sourceConfig : sourceConfigs) {
-
 	    String sourceName = sourceConfig.getSourceName();
 	    SourceType sType = sourceConfig.getSourceType();
 	    LOG.info("Processing source {} of type {}", sourceName, sType);
@@ -89,30 +88,6 @@ public class Main {
 		PostgresSource postgresSource = (PostgresSource) sourceConfig;
 		this.readTablesFromDBAndCreateTasks(sourceName, c, postgresSource);
 	    }
-
-	    // int executionMode = pc.getInt(ProfilerConfig.EXECUTION_MODE);
-	    // if (executionMode == ExecutionMode.ONLINE.mode) {
-	    // // Start infrastructure for REST server
-	    // WebServer ws = new WebServer(pc, c);
-	    // ws.init();
-	    // } else if (executionMode == ExecutionMode.OFFLINE_FILES.mode) {
-	    // // Run with the configured input parameters and produce results
-	    // // to
-	    // // file
-	    // // (?)
-	    // String pathToSources =
-	    // pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-	    // this.readDirectoryAndCreateTasks(dbName, c, pathToSources,
-	    // pc.getString(ProfilerConfig.CSV_SEPARATOR));
-	    // } else if (executionMode == ExecutionMode.OFFLINE_DB.mode) {
-	    // this.readTablesFromDBAndCreateTasks(dbName, c);
-	    // } else if (executionMode == ExecutionMode.BENCHMARK.mode) {
-	    // // Piggyback property to benchmark system with one file
-	    // String pathToSource =
-	    // pc.getString(ProfilerConfig.SOURCES_TO_ANALYZE_FOLDER);
-	    // this.benchmarkSystem(c, pathToSource,
-	    // pc.getString(ProfilerConfig.CSV_SEPARATOR));
-	    // }
 	}
 
 	while (c.isTherePendingWork()) {
@@ -230,16 +205,6 @@ public class Main {
     }
 
     private void readTablesFromDBAndCreateTasks(String sourceName, Conductor c, PostgresSource pSource) {
-	// Properties dbp = DBUtils.loadDBPropertiesFromFile();
-	// String dbTypeStr = dbp.getProperty("db_system_name");
-	// DBType dbType = getType(dbTypeStr);
-
-	// String ip = dbp.getProperty("conn_ip");
-	// String port = dbp.getProperty("port");
-	// String dbname = dbp.getProperty("conn_path");
-	// String username = dbp.getProperty("user_name");
-	// String password = dbp.getProperty("password");
-	// String dbschema = dbp.getProperty("dbschema");
 
 	String ip = pSource.getDb_server_ip();
 	String port = new Integer(pSource.getDb_server_port()).toString();
@@ -274,17 +239,6 @@ public class Main {
 	while (c.approxQueueLenght() < 30000) {
 	    c.submitTask(tp);
 	}
-    }
-
-    private DBType getType(String type) {
-	if (type.equals("mysql"))
-	    return DBType.MYSQL;
-	else if (type.equals("postgresql"))
-	    return DBType.POSTGRESQL;
-	else if (type.equals("oracle"))
-	    return DBType.ORACLE;
-	else
-	    return null;
     }
 
     public static Properties validateProperties(Properties p) {
