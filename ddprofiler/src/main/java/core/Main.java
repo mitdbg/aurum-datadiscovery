@@ -24,6 +24,7 @@ import core.config.ConfigKey;
 import core.config.ProfilerConfig;
 import core.config.sources.CSVSource;
 import core.config.sources.PostgresSource;
+import core.config.sources.SQLServerSource;
 import core.config.sources.SourceConfig;
 import core.config.sources.YAMLParser;
 import inputoutput.conn.DBType;
@@ -86,7 +87,10 @@ public class Main {
 		this.readDirectoryAndCreateTasks(sourceName, c, pathToSources, csvSource.getSeparator());
 	    } else if (sType == SourceType.postgres) {
 		PostgresSource postgresSource = (PostgresSource) sourceConfig;
-		this.readTablesFromDBAndCreateTasks(sourceName, c, postgresSource);
+		this.readTablesFromPostgresDBAndCreateTasks(sourceName, c, postgresSource);
+	    } else if (sType == SourceType.sqlserver) {
+		SQLServerSource sqlserverSource = (SQLServerSource) sourceConfig;
+		this.readTablesFromSQLServerDBAndCreateTasks(sourceName, c, sqlserverSource);
 	    }
 	}
 
@@ -204,7 +208,7 @@ public class Main {
 	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
     }
 
-    private void readTablesFromDBAndCreateTasks(String sourceName, Conductor c, PostgresSource pSource) {
+    private void readTablesFromPostgresDBAndCreateTasks(String sourceName, Conductor c, PostgresSource pSource) {
 
 	String ip = pSource.getDb_server_ip();
 	String port = new Integer(pSource.getDb_server_port()).toString();
@@ -228,6 +232,35 @@ public class Main {
 	    LOG.info("Detected relational table: {}", str);
 	    // FIXME: Remove type
 	    TaskPackage tp = TaskPackage.makeDBTaskPackage(sourceName, DBType.POSTGRESQL, ip, port, db_name, str,
+		    username, password);
+	    c.submitTask(tp);
+	}
+    }
+
+    private void readTablesFromSQLServerDBAndCreateTasks(String sourceName, Conductor c, SQLServerSource pSource) {
+
+	String ip = pSource.getDb_server_ip();
+	String port = new Integer(pSource.getDb_server_port()).toString();
+	String db_name = pSource.getDatabase_name();
+	String username = pSource.getDb_username();
+	String password = pSource.getDb_password();
+	String dbschema = "default";
+
+	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
+
+	// FIXME: remove this enum; simplify this
+	Connection dbConn = DBUtils.getDBConnection(DBType.SQLSERVER, ip, port, db_name, username, password);
+
+	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
+	try {
+	    dbConn.close();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+	for (String str : tables) {
+	    LOG.info("Detected relational table: {}", str);
+	    // FIXME: Remove type
+	    TaskPackage tp = TaskPackage.makeDBTaskPackage(sourceName, DBType.SQLSERVER, ip, port, db_name, str,
 		    username, password);
 	    c.submitTask(tp);
 	}

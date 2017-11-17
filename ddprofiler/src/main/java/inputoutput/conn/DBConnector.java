@@ -75,6 +75,8 @@ public class DBConnector extends Connector {
 		Class.forName("oracle.jdbc.driver.OracleDriver");
 		cPath = "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)" + "(HOST=" + connIP
 			+ ")(PORT=" + port + ")))" + "(CONNECT_DATA=(SID=" + connectPath + ")))";
+	    } else if (dbType == DBType.SQLSERVER) {
+		cPath = String.format("jdbc:sqlserver://{}:{}; databaseName={};", connIP, port, dbName);
 	    }
 	} catch (ClassNotFoundException cnfe) {
 	    cnfe.printStackTrace();
@@ -146,6 +148,7 @@ public class DBConnector extends Connector {
 	this.initConnector();
     }
 
+    @Deprecated
     @Override
     public void initConnector() throws IOException {
 	String cPath = null;

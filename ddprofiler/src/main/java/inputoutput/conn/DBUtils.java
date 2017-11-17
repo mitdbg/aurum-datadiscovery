@@ -36,6 +36,7 @@ public class DBUtils {
 	return tables;
     }
 
+    @Deprecated
     public static Properties loadDBPropertiesFromFile() {
 	Properties prop = new Properties();
 	try {
@@ -56,6 +57,8 @@ public class DBUtils {
 	    conn = getPOSTGRESQLConnection(connIP, port, dbName, username, password);
 	} else if (type == DBType.ORACLE) {
 	    conn = getOracle10GConnection(connIP, port, dbName, username, password);
+	} else if (type == DBType.SQLSERVER) {
+	    conn = getSQLServerConnection(connIP, port, dbName, username, password);
 	}
 	return conn;
     }
@@ -102,6 +105,23 @@ public class DBUtils {
 			    "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)" + "(HOST=" + connIP
 				    + ")(PORT=" + port + ")))" + "(CONNECT_DATA=(SID=" + dbName + ")))",
 			    username, password);
+	} catch (ClassNotFoundException e) {
+	    e.printStackTrace();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+
+	return conn;
+    }
+
+    private static Connection getSQLServerConnection(String connIP, String port, String dbName, String username,
+	    String password) {
+	Connection conn = null;
+	try {
+	    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	    String connString = String.format("jdbc:sqlserver://{}:{}; databaseName={}; user={}; password={};", connIP,
+		    port, dbName, username, password);
+	    conn = DriverManager.getConnection(connString);
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
 	} catch (SQLException e) {
