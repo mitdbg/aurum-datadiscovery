@@ -44,6 +44,8 @@ public class YAMLParser {
 		sc = mapper.convertValue(props, CSVSource.class);
 	    } else if (type == SourceType.postgres) {
 		sc = mapper.convertValue(props, PostgresSource.class);
+	    } else if (type == SourceType.sqlserver) {
+		sc = mapper.convertValue(props, SQLServerSource.class);
 	    } else {
 		LOG.error("Unsupported!");
 		System.exit(0);
