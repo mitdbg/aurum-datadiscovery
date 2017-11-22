@@ -55,7 +55,7 @@ public class SQLServerSource implements SourceConfig {
 
     @Override
     public SourceType getSourceType() {
-	return SourceType.postgres;
+	return SourceType.sqlserver;
     }
 
 }
