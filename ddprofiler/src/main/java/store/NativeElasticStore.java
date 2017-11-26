@@ -88,24 +88,83 @@ public class NativeElasticStore implements Store {
 		.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) // just default
 		.build();
 
-	String settings = "{"
+	XContentBuilder set = null;
+	try {
+	    set = jsonBuilder().startObject().startObject("analysis");
 
-		+ "\"analysis\": {" + "\"char_filter\": {" + "\"_to-\": {" + "\"type\": \"mapping\","
-		+ "\"mappings\": [\"_=>-\"]" + "}" + "},"
+	    set.startObject("char_filter");
+	    // set.startObject("_to-");
+	    set.startObject("aurum_char_filter");
+	    set.field("type", "mapping").field("mappings").startArray().value("_=>-").value(".csv=> ").endArray();
+	    set.endObject();
+	    set.endObject();
 
-		+ "\"char_filter\": {" + "\"csv_to_none\": {" + "\"type\": \"mapping\"," + "\"mappings\": [\".csv=> \"]"
-		+ "}" + "},"
+	    // set.startObject("char_filter");
+	    // set.startObject("csv_to_none");
+	    // set.field("type", "mapping").field("mappings").startArray().value(".csv=>
+	    // ").endArray();
+	    // set.endObject();
+	    // set.endObject();
 
-		+ "\"filter\": {" + "\"english_stop\": {" + "\"type\": \"stop\"," + "\"stopwords\": \"_english_\""
-		+ "}," + "\"english_stemmer\": {" + "	\"type\": \"stemmer\"," + "	\"language\": \"english\""
-		+ "}," + "\"english_possessive_stemmer\": {" + "	\"type\": \"stemmer\","
-		+ "	\"language\": \"possessive_english\"" + "}" + "},"
+	    set.startObject("filter");
+	    set.startObject("english_stop");
+	    set.field("type", "stop").field("stopwords", "_english_");
+	    set.endObject();
+	    set.startObject("english_stemmer");
+	    set.field("type", "stemmer").field("language", "english");
+	    set.endObject();
+	    set.startObject("english_possessive_stemmer");
+	    set.field("type", "stemmer").field("language", "possessive_english");
+	    set.endObject();
+	    set.endObject(); // closes filter
+	    // set = jsonBuilder().startObject("analysis");
 
-		+ "\"analyzer\": {" + "\"aurum_analyzer\": {" + "\"tokenizer\": \"standard\","
-		+ "\"char_filter\": [\"_to-\", \"csv_to_none\"],"
-		+ "\"filter\": [\"english_possessive_stemmer\", \"lowercase\", \"english_stop\", \"english_stemmer\"]"
-		+ "}" + "}" + "}" // closes analysis
-		+ "}"; // closes object
+	    set.startObject("analyzer");
+	    set.startObject("aurum_analyzer");
+	    set.field("tokenizer", "standard");
+	    set.field("char_filter").startArray().value("aurum_char_filter").endArray();
+	    // .value("_to-").value("csv_to_none").endArray();
+	    set.field("filter").startArray().value("english_possessive_stemmer").value("lowercase")
+		    .value("english_stop").value("english_stemmer").endArray();
+	    set.endObject(); // closes aurum_analyzer
+	    set.endObject(); // closes analyzer
+
+	    set.endObject(); // closes analysis
+	    set.endObject(); // closes object
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+
+	// try {
+	// System.out.println(set.string());
+	// } catch (IOException e) {
+	// e.printStackTrace();
+	// }
+
+	// String settings = "{"
+	//
+	// + "\"analysis\": {" + "\"char_filter\": {" + "\"_to-\": {" + "\"type\":
+	// \"mapping\","
+	// + "\"mappings\": [\"_=>-\"]" + "}" + "},"
+	//
+	// + "\"char_filter\": {" + "\"csv_to_none\": {" + "\"type\": \"mapping\"," +
+	// "\"mappings\": [\".csv=> \"]"
+	// + "}" + "},"
+	//
+	// + "\"filter\": {" + "\"english_stop\": {" + "\"type\": \"stop\"," +
+	// "\"stopwords\": \"_english_\""
+	// + "}," + "\"english_stemmer\": {" + " \"type\": \"stemmer\"," + "
+	// \"language\": \"english\""
+	// + "}," + "\"english_possessive_stemmer\": {" + " \"type\": \"stemmer\","
+	// + " \"language\": \"possessive_english\"" + "}" + "},"
+	//
+	// + "\"analyzer\": {" + "\"aurum_analyzer\": {" + "\"tokenizer\":
+	// \"standard\","
+	// + "\"char_filter\": [\"_to-\", \"csv_to_none\"],"
+	// + "\"filter\": [\"english_possessive_stemmer\", \"lowercase\",
+	// \"english_stop\", \"english_stemmer\"]"
+	// + "}" + "}" + "}" // closes analysis
+	// + "}"; // closes object
 
 	// Create mapping for the indices
 	// index 'text' type 'column'
@@ -117,42 +176,150 @@ public class NativeElasticStore implements Store {
 		+ "\"sourceName\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\"}, "
 		+ "\"columnName\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\", "
 		+ "\"ignore_above\" : 512 }," + "\"text\" : {\"type\" : \"string\", " + "\"store\" : \"no\"," // space
-													      // saving?
+		// saving?
 		+ "\"index\" : \"analyzed\"," + "\"analyzer\" : \"english\"," + "\"term_vector\" : \"yes\"}" + "}" + " "
 		+ "}";
 
+	XContentBuilder text_mapping = null;
+	try {
+	    text_mapping = jsonBuilder().startObject().startObject("properties");
+	    text_mapping.startObject("id");
+	    text_mapping.field("type", "long").field("store", "true").field("index", "false");
+	    text_mapping.endObject();
+	    text_mapping.startObject("dbName");
+	    text_mapping.field("type", "keyword").field("index", "false");
+	    text_mapping.endObject();
+	    text_mapping.startObject("path");
+	    text_mapping.field("type", "keyword").field("index", "false");
+	    text_mapping.endObject();
+	    text_mapping.startObject("sourceName");
+	    text_mapping.field("type", "keyword").field("index", "false");
+	    text_mapping.endObject();
+	    text_mapping.startObject("columnName");
+	    text_mapping.field("type", "keyword").field("index", "false");
+	    text_mapping.field("ignore_above", "512");
+	    text_mapping.endObject();
+	    text_mapping.startObject("text");
+	    text_mapping.field("type", "text").field("store", "false");
+	    text_mapping.field("index", "true").field("analyzer", "english");
+	    text_mapping.field("term_vector", "yes");
+	    text_mapping.endObject();
+
+	    text_mapping.endObject(); // close properties
+	    text_mapping.endObject(); // close mapping
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+
+	try {
+	    System.out.println(text_mapping.string());
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+
 	// index 'profile' type 'column'
-	String profileMapping = "{ \"properties\" : "
+	// String profileMapping = "{ \"properties\" : "
+	//
+	// + "{ \"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
+	// + "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"sourceName\" : {\"type\" : \"string\"," + "\"index\" : \"analyzed\", "
+	// + "\"analyzer\" : \"aurum_analyzer\"},"
+	// + "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"columnName\" : {\"type\" : \"string\", " + "\"index\" : \"analyzed\", "
+	// + "\"analyzer\" : \"aurum_analyzer\"},"
+	//
+	// + "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	//
+	// + "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+	// + "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" :
+	// \"not_analyzed\"},"
+	// + "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," //
+	// array
+	// + "\"minhash\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}," //
+	// array
+	// + "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+	// + "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+	// + "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+	// + "\"median\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
+	// + "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}" + "} }";
 
-		+ "{ \"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-		+ "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-		+ "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-		+ "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-		+ "\"sourceName\" : {\"type\" : \"string\"," + "\"index\" : \"analyzed\", "
-		+ "\"analyzer\" : \"aurum_analyzer\"},"
-		+ "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-		+ "\"columnName\" : {\"type\" : \"string\", " + "\"index\" : \"analyzed\", "
-		+ "\"analyzer\" : \"aurum_analyzer\"},"
+	XContentBuilder profile_mapping = null;
+	try {
+	    profile_mapping = jsonBuilder().startObject().startObject("properties");
+	    profile_mapping.startObject("id");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("dbName");
+	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("path");
+	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("sourceNameNA");
+	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("sourceName");
+	    profile_mapping.field("type", "text").field("index", "true").field("analyzer", "aurum_analyzer");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("columnNameNA");
+	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("columnName");
+	    profile_mapping.field("type", "text").field("index", "true").field("analyzer", "aurum_analyzer");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("dataType");
+	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("totalValues");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("uniqueValues");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("entities");
+	    profile_mapping.field("type", "keyword").field("index", "true");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("minhash");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("minValue");
+	    profile_mapping.field("type", "double").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("maxValue");
+	    profile_mapping.field("type", "double").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("avgValue");
+	    profile_mapping.field("type", "double").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("median");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
+	    profile_mapping.startObject("iqr");
+	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.endObject();
 
-		+ "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-		+ "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
-		+ "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
-		+ "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," // array
-		+ "\"minhash\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}," // array
-		+ "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-		+ "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-		+ "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-		+ "\"median\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-		+ "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}" + "} }";
+	    profile_mapping.endObject(); // close properties
+	    profile_mapping.endObject(); // close mapping
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+
+	try {
+	    System.out.println(text_mapping.string());
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
 
 	// Create indexes and apply settings and mappings
 	IndicesAdminClient admin = client.admin().indices();
 
-	admin.prepareCreate("text");
-	// admin.preparePutMapping("text").setType("column").setSource(textMapping).get();
-	admin.prepareCreate("profile");
-	// .setSettings(settings).get();
-	// admin.preparePutMapping("profile").setType("column").setSource(profileMapping);
+	admin.prepareCreate("text").addMapping("column", text_mapping).get();
+	// admin.preparePutMapping("text").setType("column").setSource(text_mapping).get();
+	admin.prepareCreate("profile").addMapping("column", profile_mapping).setSettings(set).get();
+
+	// admin.preparePutMapping("profile").setType("column").setSource(profile_mapping);
     }
 
     @Override
