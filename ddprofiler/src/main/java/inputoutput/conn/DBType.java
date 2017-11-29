@@ -1,7 +1,6 @@
 package inputoutput.conn;
 
+@Deprecated
 public enum DBType {
-  MYSQL,
-  POSTGRESQL,
-  ORACLE;
+    MYSQL, POSTGRESQL, ORACLE;
 }

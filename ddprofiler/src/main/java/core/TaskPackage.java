@@ -2,6 +2,7 @@ package core;
 
 import inputoutput.conn.DBType;
 
+@Deprecated
 public class TaskPackage {
 
     private String sourceName;
@@ -25,6 +26,7 @@ public class TaskPackage {
 
     private TaskPackageType type;
 
+    @Deprecated
     public enum TaskPackageType {
 	CSV, DB, BENCH, HDFSCSV
     }
