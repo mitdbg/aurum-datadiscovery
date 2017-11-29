@@ -6,9 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
-import core.TaskPackage;
 import core.config.sources.CSVSourceConfig;
 import core.config.sources.SourceConfig;
+import core.tasks.ProfileTask;
+import core.tasks.ProfileTaskFactory;
 
 public class CSVSource implements Source {
 
@@ -34,11 +35,15 @@ public class CSVSource implements Source {
 		String path = f.getParent() + File.separator;
 		String name = f.getName();
 
-		TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(csvConfig.getSourceName(), path, name,
-			csvConfig.getSeparator());
+		ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(csvConfig);
+
+		// TaskPackage tp =
+		// TaskPackage.makeCSVFileTaskPackage(csvConfig.getSourceName(),
+		// path, name,
+		// csvConfig.getSeparator());
 
 		totalFiles++;
-		c.submitTask(tp);
+		c.submitTask(pt);
 	    }
 	}
 

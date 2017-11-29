@@ -8,9 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
-import core.TaskPackage;
 import core.config.sources.PostgresSourceConfig;
 import core.config.sources.SourceConfig;
+import core.tasks.ProfileTask;
+import core.tasks.ProfileTaskFactory;
 import inputoutput.conn.DBType;
 import inputoutput.conn.DBUtils;
 
@@ -47,11 +48,15 @@ public class PostgresSource implements Source {
 	for (String str : tables) {
 	    LOG.info("Detected relational table: {}", str);
 
-	    // FIXME: Remove type
-	    TaskPackage tp = TaskPackage.makeDBTaskPackage(postgresConfig.getSourceName(), DBType.POSTGRESQL, ip, port,
-		    db_name, str, username, password);
+	    ProfileTask pt = ProfileTaskFactory.makePostgresProfileTask(postgresConfig);
 
-	    c.submitTask(tp);
+	    // // FIXME: Remove type
+	    // TaskPackage tp =
+	    // TaskPackage.makeDBTaskPackage(postgresConfig.getSourceName(),
+	    // DBType.POSTGRESQL, ip, port,
+	    // db_name, str, username, password);
+
+	    c.submitTask(pt);
 	}
 
     }

@@ -18,6 +18,7 @@ import com.codahale.metrics.Meter;
 
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
+import core.tasks.ProfileTask;
 import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
 import store.Store;
@@ -29,7 +30,7 @@ public class Conductor {
     private ProfilerConfig pc;
     private File errorLogFile;
 
-    private BlockingQueue<TaskPackage> taskQueue;
+    private BlockingQueue<ProfileTask> taskQueue;
     private List<Worker> activeWorkers;
     private List<Thread> workerPool;
     private BlockingQueue<WorkerTaskResult> results;
@@ -98,7 +99,7 @@ public class Conductor {
 	}
     }
 
-    public boolean submitTask(TaskPackage task) {
+    public boolean submitTask(ProfileTask task) {
 	totalTasksSubmitted++;
 	return taskQueue.add(task);
     }

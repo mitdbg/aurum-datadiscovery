@@ -5,14 +5,14 @@ import core.config.sources.PostgresSourceConfig;
 
 public class ProfileTaskFactory {
 
-    public ProfileTask makeCSVProfileTask(CSVSourceConfig config) {
+    public static ProfileTask makeCSVProfileTask(CSVSourceConfig config) {
 
 	ProfileTask pt = new CSVProfileTask(config);
 
 	return pt;
     }
 
-    public ProfileTask makePostgresProfileTask(PostgresSourceConfig config) {
+    public static ProfileTask makePostgresProfileTask(PostgresSourceConfig config) {
 
 	ProfileTask pt = new PostgresProfileTask(config);
 

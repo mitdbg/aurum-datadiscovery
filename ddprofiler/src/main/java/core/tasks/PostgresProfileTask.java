@@ -54,4 +54,10 @@ public class PostgresProfileTask implements ProfileTask {
 	this.connector.close();
     }
 
+    @Override
+    public String toString() {
+	String sourceName = connector.getSourceName();
+	return taskId + " - " + sourceName;
+    }
+
 }

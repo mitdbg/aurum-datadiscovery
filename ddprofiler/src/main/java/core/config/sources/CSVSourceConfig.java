@@ -22,6 +22,14 @@ public class CSVSourceConfig implements SourceConfig {
 	return separator;
     }
 
+    public void setPath(String path) {
+	this.path = path;
+    }
+
+    public void setSeparator(String separator) {
+	this.separator = separator;
+    }
+
     @Override
     public String getSourceName() {
 	return sourceName;

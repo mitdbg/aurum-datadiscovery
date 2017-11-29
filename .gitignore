@@ -64,7 +64,7 @@ target/
 
 # java related stuff
 ddprofiler/.classpath
-ddprofiler/.gitignore
+# ddprofiler/.gitignore
 ddprofiler/.gradle/
 ddprofiler/.project
 ddprofiler/.settings/

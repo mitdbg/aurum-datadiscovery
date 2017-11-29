@@ -15,11 +15,10 @@ import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.EntityAnalyzer;
-import core.TaskPackage.TaskPackageType;
 import core.config.ProfilerConfig;
+import core.tasks.ProfileTask;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.BenchmarkingConnector;
 import inputoutput.conn.BenchmarkingData;
 import inputoutput.conn.Connector;
 import preanalysis.PreAnalyzer;
@@ -35,11 +34,11 @@ public class Worker implements Runnable {
     private Conductor conductor;
     private boolean doWork = true;
     private String workerName;
-    private WorkerTask task;
+    private ProfileTask task;
     private int numRecordChunk;
     private Store store;
 
-    private BlockingQueue<TaskPackage> taskQueue;
+    private BlockingQueue<ProfileTask> taskQueue;
     private BlockingQueue<ErrorPackage> errorQueue;
 
     // Benchmark variables
@@ -49,7 +48,7 @@ public class Worker implements Runnable {
     // cached object
     private EntityAnalyzer ea;
 
-    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<TaskPackage> taskQueue,
+    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<ProfileTask> taskQueue,
 	    BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
 	this.conductor = conductor;
 	this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
@@ -64,41 +63,49 @@ public class Worker implements Runnable {
 	this.doWork = false;
     }
 
-    private WorkerTask pullTask() {
+    private ProfileTask pullTask() {
 	// Attempt to consume new task
-	WorkerTask wt = null;
+	ProfileTask pt = null;
 	try {
-	    TaskPackage tp = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-	    if (tp == null) {
+	    pt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+	    // TaskPackage tp = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+	    if (pt == null) {
 		return null;
 	    }
-	    // Create real worker task on demand
-	    if (tp.getType() == TaskPackageType.CSV) {
-		wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getSourceName(), tp.getPath(), tp.getFileName(),
-			tp.getSeparator());
-	    } else if (tp.getType() == TaskPackageType.HDFSCSV) {
-		wt = WorkerTask.makeWorkerTaskForHDFSCSVFile(tp.getSourceName(), tp.getHdfsPath(), tp.getFileName(),
-			tp.getSeparator());
-	    } else if (tp.getType() == TaskPackageType.DB) {
-		wt = WorkerTask.makeWorkerTaskForDB(tp.getSourceName(), tp.getDBType(), tp.getIp(), tp.getPort(),
-			tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
-	    } else if (tp.getType() == TaskPackageType.BENCH) {
-		if (first) {
-		    first = false;
-		    // Populate data for benchConnector
-		    benchData = new BenchmarkingData();
-		    char separator = tp.getSeparator().charAt(0);
-		    benchData.populateDataFromCSVFile(tp.getPath(), separator);
-		    float sizeInMB = benchData.approxSizeOfDataInMemory();
-		    System.out.println("SIZE_IN_MB_MEM: " + sizeInMB);
-		}
-		BenchmarkingConnector benchConnector = BenchmarkingConnector.makeOne(benchData);
-		wt = WorkerTask.makeWorkerTaskForBenchmarking(benchConnector);
-	    }
+
+	    // // Create real worker task on demand
+	    // if (tp.getType() == TaskPackageType.CSV) {
+	    // wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getSourceName(),
+	    // tp.getPath(), tp.getFileName(),
+	    // tp.getSeparator());
+	    // } else if (tp.getType() == TaskPackageType.HDFSCSV) {
+	    // wt = WorkerTask.makeWorkerTaskForHDFSCSVFile(tp.getSourceName(),
+	    // tp.getHdfsPath(), tp.getFileName(),
+	    // tp.getSeparator());
+	    // } else if (tp.getType() == TaskPackageType.DB) {
+	    // wt = WorkerTask.makeWorkerTaskForDB(tp.getSourceName(),
+	    // tp.getDBType(), tp.getIp(), tp.getPort(),
+	    // tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
+	    // } else if (tp.getType() == TaskPackageType.BENCH) {
+	    // if (first) {
+	    // first = false;
+	    // // Populate data for benchConnector
+	    // benchData = new BenchmarkingData();
+	    // char separator = tp.getSeparator().charAt(0);
+	    // benchData.populateDataFromCSVFile(tp.getPath(), separator);
+	    // float sizeInMB = benchData.approxSizeOfDataInMemory();
+	    // System.out.println("SIZE_IN_MB_MEM: " + sizeInMB);
+	    // }
+	    // BenchmarkingConnector benchConnector =
+	    // BenchmarkingConnector.makeOne(benchData);
+	    // wt = WorkerTask.makeWorkerTaskForBenchmarking(benchConnector);
+	    // }
+
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
-	return wt;
+
+	return pt;
     }
 
     @Override
