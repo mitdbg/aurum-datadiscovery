@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -312,13 +313,28 @@ public class NativeElasticStore implements Store {
 	    e.printStackTrace();
 	}
 
-	// Create indexes and apply settings and mappings
+	// Obtain indices client
 	IndicesAdminClient admin = client.admin().indices();
 
-	admin.prepareCreate("text").addMapping("column", text_mapping).get();
+	// Check if indices exist already, somehow this op is not idempotent
+	IndicesExistsResponse doesExist = admin.prepareExists("text", "profile").get();
+	if (!doesExist.isExists()) {
+	    LOG.info("Indices do not exist, creating indices and mappings");
+	    // Create indexes and apply settings and mappings
+	    admin.prepareCreate("text").addMapping("column", text_mapping).get();
+	    admin.preparePutMapping("text").setType("column").setSource(text_mapping).get();
+	    admin.prepareCreate("profile").addMapping("column", profile_mapping).setSettings(set).get();
+	    admin.preparePutMapping("profile").setType("column").setSource(profile_mapping).get();
+	} else {
+	    LOG.info("Indices already exist, moving on");
+	}
+	// admin.prepareCreate("text").addMapping("column", text_mapping).get();
+	// //
 	// admin.preparePutMapping("text").setType("column").setSource(text_mapping).get();
-	admin.prepareCreate("profile").addMapping("column", profile_mapping).setSettings(set).get();
-
+	// admin.prepareCreate("profile").addMapping("column",
+	// profile_mapping).setSettings(set).get();
+	//
+	// //
 	// admin.preparePutMapping("profile").setType("column").setSource(profile_mapping);
     }
 
