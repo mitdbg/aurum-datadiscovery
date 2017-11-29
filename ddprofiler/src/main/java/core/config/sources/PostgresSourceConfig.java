@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import core.SourceType;
 
-public class PostgresSource implements SourceConfig {
+public class PostgresSourceConfig implements SourceConfig {
 
     private String sourceName;
 

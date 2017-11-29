@@ -1,35 +1,23 @@
-/**
- * @author Raul - raulcf@csail.mit.edu
- *
- */
 package core;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
-import core.config.sources.CSVSource;
-import core.config.sources.PostgresSource;
+import core.config.sources.CSVSourceConfig;
+import core.config.sources.PostgresSourceConfig;
 import core.config.sources.SourceConfig;
 import core.config.sources.YAMLParser;
-import inputoutput.conn.DBType;
-import inputoutput.conn.DBUtils;
 import joptsimple.OptionParser;
 import metrics.Metrics;
+import sources.CSVSource;
+import sources.PostgresSource;
 import store.Store;
 import store.StoreFactory;
 
@@ -81,12 +69,15 @@ public class Main {
 	    SourceType sType = sourceConfig.getSourceType();
 	    LOG.info("Processing source {} of type {}", sourceName, sType);
 	    if (sType == SourceType.csv) {
-		CSVSource csvSource = (CSVSource) sourceConfig;
-		String pathToSources = csvSource.getPath();
-		this.readDirectoryAndCreateTasks(sourceName, c, pathToSources, csvSource.getSeparator());
+		CSVSourceConfig csvSourceConfig = (CSVSourceConfig) sourceConfig;
+
+		CSVSource csvSource = new CSVSource();
+		csvSource.processSource(csvSourceConfig, c);
 	    } else if (sType == SourceType.postgres) {
-		PostgresSource postgresSource = (PostgresSource) sourceConfig;
-		this.readTablesFromDBAndCreateTasks(sourceName, c, postgresSource);
+		PostgresSourceConfig postgresSourceConfig = (PostgresSourceConfig) sourceConfig;
+
+		PostgresSource postgresSource = new PostgresSource();
+		postgresSource.processSource(postgresSourceConfig, c);
 	    }
 	}
 
@@ -156,88 +147,6 @@ public class Main {
 	int reportConsole = pc.getInt(ProfilerConfig.REPORT_METRICS_CONSOLE);
 	if (reportConsole > 0) {
 	    Metrics.startConsoleReporter(reportConsole);
-	}
-    }
-
-    private void readDirectoryAndCreateTasks(String sourceName, Conductor c, String pathToSources, String separator) {
-	File folder = new File(pathToSources);
-	// Get fs scheme to determine how to read files
-	Path p = folder.toPath();
-	String scheme = p.getFileSystem().provider().getScheme();
-	int totalFiles = 0;
-	int tt = 0;
-	if (scheme.equals("file")) {
-	    File[] filePaths = folder.listFiles();
-	    for (File f : filePaths) {
-		tt++;
-		if (f.isFile()) {
-		    String path = f.getParent() + File.separator;
-		    String name = f.getName();
-		    TaskPackage tp = TaskPackage.makeCSVFileTaskPackage(sourceName, path, name, separator);
-		    totalFiles++;
-		    c.submitTask(tp);
-		}
-	    }
-	} else if (scheme.equals("hdfs")) {
-	    Configuration conf = new Configuration();
-
-	    try {
-		FileSystem fs = FileSystem.get(conf);
-		org.apache.hadoop.fs.Path hdfsPath = new org.apache.hadoop.fs.Path(pathToSources);
-		RemoteIterator<LocatedFileStatus> it = fs.listFiles(hdfsPath, false);
-		while (it.hasNext()) {
-		    LocatedFileStatus lfs = it.next();
-		    tt++;
-		    if (!lfs.isFile()) {
-			continue;
-		    }
-		    org.apache.hadoop.fs.Path toFile = lfs.getPath();
-		    String name = toFile.getName();
-		    TaskPackage tp = TaskPackage.makeHDFSCSVFileTaskPackage(sourceName, toFile, name, separator);
-		    totalFiles++;
-		    c.submitTask(tp);
-		}
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
-	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
-    }
-
-    private void readTablesFromDBAndCreateTasks(String sourceName, Conductor c, PostgresSource pSource) {
-
-	String ip = pSource.getDb_server_ip();
-	String port = new Integer(pSource.getDb_server_port()).toString();
-	String db_name = pSource.getDatabase_name();
-	String username = pSource.getDb_username();
-	String password = pSource.getDb_password();
-	String dbschema = "default";
-
-	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
-
-	// FIXME: remove this enum; simplify this
-	Connection dbConn = DBUtils.getDBConnection(DBType.POSTGRESQL, ip, port, db_name, username, password);
-
-	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
-	try {
-	    dbConn.close();
-	} catch (SQLException e) {
-	    e.printStackTrace();
-	}
-	for (String str : tables) {
-	    LOG.info("Detected relational table: {}", str);
-	    // FIXME: Remove type
-	    TaskPackage tp = TaskPackage.makeDBTaskPackage(sourceName, DBType.POSTGRESQL, ip, port, db_name, str,
-		    username, password);
-	    c.submitTask(tp);
-	}
-    }
-
-    private void benchmarkSystem(Conductor c, String path, String separator) {
-	TaskPackage tp = TaskPackage.makeBenchmarkTask(path, separator);
-	// Make sure there's always work to process
-	while (c.approxQueueLenght() < 30000) {
-	    c.submitTask(tp);
 	}
     }
 

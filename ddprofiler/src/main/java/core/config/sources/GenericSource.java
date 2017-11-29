@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import core.SourceType;
 
-public class Source {
+public class GenericSource {
 
     @JsonProperty
     private String name;

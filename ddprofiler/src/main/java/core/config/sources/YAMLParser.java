@@ -34,16 +34,16 @@ public class YAMLParser {
 	List<SourceConfig> sourceConfigs = new ArrayList<>();
 
 	// Parse every source in the file
-	List<Source> sources = srcs.getSources();
-	for (Source src : sources) {
+	List<GenericSource> sources = srcs.getSources();
+	for (GenericSource src : sources) {
 	    String name = src.getName();
 	    SourceType type = src.getType();
 	    JsonNode props = src.getConfig();
 	    SourceConfig sc = null;
 	    if (type == SourceType.csv) {
-		sc = mapper.convertValue(props, CSVSource.class);
+		sc = mapper.convertValue(props, CSVSourceConfig.class);
 	    } else if (type == SourceType.postgres) {
-		sc = mapper.convertValue(props, PostgresSource.class);
+		sc = mapper.convertValue(props, PostgresSourceConfig.class);
 	    } else {
 		LOG.error("Unsupported!");
 		System.exit(0);
@@ -67,22 +67,22 @@ public class YAMLParser {
 	}
 
 	System.out.println("api_version: " + srcs.getApi_version());
-	List<Source> sources = srcs.getSources();
-	for (Source src : sources) {
+	List<GenericSource> sources = srcs.getSources();
+	for (GenericSource src : sources) {
 	    String name = src.getName();
 	    SourceType type = src.getType();
 	    JsonNode props = src.getConfig();
 	    System.out.println("name: " + name);
 	    System.out.println("type: " + type);
 	    if (type == SourceType.csv) {
-		CSVSource csvSource = mapper.convertValue(props, CSVSource.class);
+		CSVSourceConfig csvSource = mapper.convertValue(props, CSVSourceConfig.class);
 		String path = csvSource.getPath();
 		String separator = csvSource.getSeparator();
 		System.out.println(path);
 		System.out.println(separator);
 	    }
 	    if (type == SourceType.postgres) {
-		PostgresSource postgresSource = mapper.convertValue(props, PostgresSource.class);
+		PostgresSourceConfig postgresSource = mapper.convertValue(props, PostgresSourceConfig.class);
 		String databaseName = postgresSource.getDatabase_name();
 		String db_server_ip = postgresSource.getDb_server_ip();
 		int db_server_port = postgresSource.getDb_server_port();

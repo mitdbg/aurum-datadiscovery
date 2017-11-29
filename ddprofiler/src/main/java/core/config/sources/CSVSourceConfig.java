@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import core.SourceType;
 
-public class CSVSource implements SourceConfig {
+public class CSVSourceConfig implements SourceConfig {
 
     private String sourceName;
 
