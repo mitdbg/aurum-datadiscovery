@@ -11,9 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import core.Main;
+
 public class DBUtils {
 
+    final static private Logger LOG = LoggerFactory.getLogger(Main.class.getName());
+
     public static List<String> getTablesFromDatabase(Connection conn, String dbschema) {
+
 	List<String> tables = new ArrayList<>();
 	String types[] = new String[] { "TABLE", "VIEW" };
 
@@ -36,6 +44,7 @@ public class DBUtils {
 	return tables;
     }
 
+    @Deprecated
     public static Properties loadDBPropertiesFromFile() {
 	Properties prop = new Properties();
 	try {
@@ -56,6 +65,8 @@ public class DBUtils {
 	    conn = getPOSTGRESQLConnection(connIP, port, dbName, username, password);
 	} else if (type == DBType.ORACLE) {
 	    conn = getOracle10GConnection(connIP, port, dbName, username, password);
+	} else if (type == DBType.SQLSERVER) {
+	    conn = getSQLServerConnection(connIP, port, dbName, username, password);
 	}
 	return conn;
     }
@@ -102,6 +113,24 @@ public class DBUtils {
 			    "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)" + "(HOST=" + connIP
 				    + ")(PORT=" + port + ")))" + "(CONNECT_DATA=(SID=" + dbName + ")))",
 			    username, password);
+	} catch (ClassNotFoundException e) {
+	    e.printStackTrace();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+
+	return conn;
+    }
+
+    private static Connection getSQLServerConnection(String connIP, String port, String dbName, String username,
+	    String password) {
+	Connection conn = null;
+	try {
+	    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	    String connString = "jdbc:sqlserver://" + connIP + ":" + port + "; " + "databaseName=" + dbName + "; user="
+		    + username + "; password=" + password + ";";
+	    LOG.info("SQLServer conn string: {}", connString);
+	    conn = DriverManager.getConnection(connString);
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
 	} catch (SQLException e) {
