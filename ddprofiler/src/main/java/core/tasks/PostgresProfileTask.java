@@ -4,14 +4,14 @@ import java.sql.Connection;
 
 import core.SourceType;
 import core.config.sources.PostgresSourceConfig;
-import inputoutput.conn.Connector;
-import inputoutput.conn.DBConnector;
-import inputoutput.conn.DBType;
+import inputoutput.connectors.DBType;
+import inputoutput.connectors.Old_Connector;
+import inputoutput.connectors.Old_DBConnector;
 
 public class PostgresProfileTask implements ProfileTask {
 
     private int taskId;
-    private Connector connector;
+    private Old_Connector connector;
 
     public PostgresProfileTask(PostgresSourceConfig config) {
 
@@ -23,10 +23,10 @@ public class PostgresProfileTask implements ProfileTask {
 	String username = config.getDb_username();
 	String password = config.getDb_password();
 
-	Connection c = DBConnector.getOrCreateConnector(sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName,
+	Connection c = Old_DBConnector.getOrCreateConnector(sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName,
 		username, password);
 
-	DBConnector dbc = new DBConnector(c, sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName, username,
+	Old_DBConnector dbc = new Old_DBConnector(c, sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName, username,
 		password);
 
 	int id = ProfileTaskFactory.computeTaskId(sourceName, tableName);
@@ -45,7 +45,7 @@ public class PostgresProfileTask implements ProfileTask {
     }
 
     @Override
-    public Connector getConnector() {
+    public Old_Connector getConnector() {
 	return connector;
     }
 

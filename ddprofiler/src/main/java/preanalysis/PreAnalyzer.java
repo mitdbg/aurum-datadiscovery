@@ -18,13 +18,13 @@ import org.slf4j.LoggerFactory;
 
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.Connector;
+import inputoutput.connectors.Old_Connector;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 
     final private Logger LOG = LoggerFactory.getLogger(PreAnalyzer.class.getName());
 
-    private Connector c;
+    private Old_Connector c;
     private List<Attribute> attributes;
     private boolean knownDataTypes = false;
 
@@ -238,7 +238,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
      */
 
     @Override
-    public void composeConnector(Connector c) {
+    public void composeConnector(Old_Connector c) {
 	this.c = c;
 	try {
 	    this.attributes = c.getAttributes();

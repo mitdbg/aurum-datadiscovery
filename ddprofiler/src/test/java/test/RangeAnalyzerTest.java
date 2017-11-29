@@ -11,7 +11,7 @@ import org.junit.Test;
 import analysis.modules.RangeAnalyzer;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.Old_FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
@@ -24,7 +24,7 @@ public class RangeAnalyzerTest {
 
   @Test
   public void RangeTest() throws IOException {
-    FileConnector fc = new FileConnector("", path, filename, separator);
+    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
     PreAnalyzer pa = new PreAnalyzer();
     pa.composeConnector(fc);
 

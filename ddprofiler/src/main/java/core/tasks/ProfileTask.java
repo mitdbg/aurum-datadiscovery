@@ -1,13 +1,13 @@
 package core.tasks;
 
 import core.SourceType;
-import inputoutput.conn.Connector;
+import inputoutput.connectors.Old_Connector;
 
 public interface ProfileTask {
 
     public int getTaskId();
 
-    public Connector getConnector();
+    public Old_Connector getConnector();
 
     public SourceType getSourceType();
 

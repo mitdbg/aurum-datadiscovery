@@ -12,8 +12,8 @@ import core.config.sources.SQLServerSourceConfig;
 import core.config.sources.SourceConfig;
 import core.tasks.ProfileTask;
 import core.tasks.ProfileTaskFactory;
-import inputoutput.conn.DBType;
-import inputoutput.conn.DBUtils;
+import inputoutput.connectors.DBType;
+import inputoutput.connectors.DBUtils;
 
 public class SQLServerSource implements Source {
 

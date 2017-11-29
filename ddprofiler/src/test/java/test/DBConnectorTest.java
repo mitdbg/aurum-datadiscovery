@@ -9,14 +9,14 @@ import org.junit.Test;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
-import inputoutput.conn.DBConnector;
-import inputoutput.conn.DBType;
+import inputoutput.connectors.DBType;
+import inputoutput.connectors.Old_DBConnector;
 
 public class DBConnectorTest {
 
 	@Test
 	public void test() {
-		DBConnector conn = new DBConnector();
+		Old_DBConnector conn = new Old_DBConnector();
 		
 		conn.setDB(DBType.MYSQL);
 		conn.setConnIP("localhost");

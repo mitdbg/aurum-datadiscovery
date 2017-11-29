@@ -4,7 +4,7 @@
  *
  */
 
-package inputoutput.conn;
+package inputoutput.connectors;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -17,7 +17,8 @@ import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
 
-public class FileConnector extends Connector {
+@Deprecated
+public class Old_FileConnector extends Old_Connector {
 
     private String dbName;
     private String connectPath;
@@ -30,11 +31,11 @@ public class FileConnector extends Connector {
     private char lineSplitter;
     private List<Record> records;
 
-    public FileConnector() {
+    public Old_FileConnector() {
 	this.lineSplitter = '.';
     }
 
-    public FileConnector(String dbName, String connectPath, String filename, String splitter) throws IOException {
+    public Old_FileConnector(String dbName, String connectPath, String filename, String splitter) throws IOException {
 	this.dbName = dbName;
 	this.connectPath = connectPath;
 	this.sourceName = filename;
@@ -97,6 +98,7 @@ public class FileConnector extends Connector {
 	return attrList;
     }
 
+    @Deprecated
     public List<Record> getRecords(int num) {
 	return records;
     }

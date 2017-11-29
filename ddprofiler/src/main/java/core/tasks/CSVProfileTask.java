@@ -4,23 +4,23 @@ import java.io.IOException;
 
 import core.SourceType;
 import core.config.sources.CSVSourceConfig;
-import inputoutput.conn.Connector;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.Old_Connector;
+import inputoutput.connectors.Old_FileConnector;
 
 public class CSVProfileTask implements ProfileTask {
 
     private int taskId;
-    private Connector connector;
+    private Old_Connector connector;
 
     public CSVProfileTask(CSVSourceConfig conf) {
-	FileConnector fc = null;
+	Old_FileConnector fc = null;
 	String sourceName = conf.getSourceName();
 	String path = conf.getPath();
 	String relationName = conf.getRelationName();
 	String separator = conf.getSeparator();
 
 	try {
-	    fc = new FileConnector(sourceName, path, relationName, separator);
+	    fc = new Old_FileConnector(sourceName, path, relationName, separator);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
@@ -40,7 +40,7 @@ public class CSVProfileTask implements ProfileTask {
     }
 
     @Override
-    public Connector getConnector() {
+    public Old_Connector getConnector() {
 	return connector;
     }
 

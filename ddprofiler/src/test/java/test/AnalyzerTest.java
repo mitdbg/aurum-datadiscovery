@@ -17,8 +17,8 @@ import analysis.modules.Entities;
 import analysis.modules.Range;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.DBConnector;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.Old_DBConnector;
+import inputoutput.connectors.Old_FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
@@ -41,7 +41,7 @@ public class AnalyzerTest {
   @Test
   public void test() throws IOException {
 
-    FileConnector fc = new FileConnector("", path, filename, separator);
+    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
 
     // DBConnector dbc = new DBConnector(db, connIP, port, sourceName,
     // tableName, username, password);

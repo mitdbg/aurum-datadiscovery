@@ -3,7 +3,7 @@
  *
  */
 
-package inputoutput.conn;
+package inputoutput.connectors;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -26,9 +26,9 @@ import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
 
-public class DBConnector extends Connector {
+public class Old_DBConnector extends Old_Connector {
 
-    private static final Logger log = Logger.getLogger(DBConnector.class.getName());
+    private static final Logger log = Logger.getLogger(Old_DBConnector.class.getName());
 
     private String dbName;
     private String connectPath;
@@ -105,11 +105,11 @@ public class DBConnector extends Connector {
 	return connection;
     }
 
-    public DBConnector() {
+    public Old_DBConnector() {
 	this.tbInfo = new TableInfo();
     }
 
-    public DBConnector(Connection conn, String dbName, DBType dbType, String connIP, String port, String connectPath,
+    public Old_DBConnector(Connection conn, String dbName, DBType dbType, String connIP, String port, String connectPath,
 	    String filename, String username, String password) {
 	this.conn = conn;
 	this.dbName = dbName;
@@ -134,7 +134,7 @@ public class DBConnector extends Connector {
     }
 
     @Deprecated
-    public DBConnector(String dbName, DBType dbType, String connIP, String port, String connectPath, String filename,
+    public Old_DBConnector(String dbName, DBType dbType, String connIP, String port, String connectPath, String filename,
 	    String username, String password) throws IOException {
 	this.dbName = dbName;
 	this.db = dbType;

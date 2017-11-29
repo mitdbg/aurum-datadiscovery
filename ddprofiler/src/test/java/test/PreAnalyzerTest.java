@@ -11,9 +11,9 @@ import org.junit.Test;
 
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.DBConnector;
-import inputoutput.conn.DBType;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.DBType;
+import inputoutput.connectors.Old_DBConnector;
+import inputoutput.connectors.Old_FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
@@ -132,7 +132,7 @@ public class PreAnalyzerTest {
   @Test
   public void testPreAnalyzerForTypesCSVFile() throws IOException {
 
-    FileConnector fc = new FileConnector("", path, filename, separator);
+    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
 
     PreAnalyzer pa = new PreAnalyzer();
     pa.composeConnector(fc);
@@ -144,7 +144,7 @@ public class PreAnalyzerTest {
   @Test
   public void testPreAnalyzerForTypesDB() throws IOException {
 
-    DBConnector dbc = new DBConnector("", DBType.MYSQL, connIP, port, sourceName,
+    Old_DBConnector dbc = new Old_DBConnector("", DBType.MYSQL, connIP, port, sourceName,
                                       tableName, username, password);
 
     PreAnalyzer pa = new PreAnalyzer();

@@ -10,8 +10,8 @@ import org.junit.Test;
 
 import core.config.ProfilerConfig;
 import inputoutput.Attribute;
-import inputoutput.conn.Connector;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.Old_Connector;
+import inputoutput.connectors.Old_FileConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
@@ -35,14 +35,14 @@ public class JustReadTest {
       Files.walk(Paths.get(path)).forEach(filePath -> {
         if (Files.isRegularFile(filePath)) {
           String name = filePath.getFileName().toString();
-          FileConnector fc = null;
+          Old_FileConnector fc = null;
           try {
-            fc = new FileConnector("", path, name, separator);
+            fc = new Old_FileConnector("", path, name, separator);
           } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
           }
-          Connector c = fc;
+          Old_Connector c = fc;
           PreAnalyzer pa = new PreAnalyzer();
           pa.composeConnector(c);
 

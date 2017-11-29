@@ -4,7 +4,7 @@
  *
  */
 
-package inputoutput.conn;
+package inputoutput.connectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -24,13 +24,13 @@ import inputoutput.Attribute;
 import inputoutput.Record;
 import metrics.Metrics;
 
-public abstract class Connector {
+public abstract class Old_Connector {
 
-    final private Logger LOG = LoggerFactory.getLogger(Connector.class.getName());
+    final private Logger LOG = LoggerFactory.getLogger(Old_Connector.class.getName());
 
     // Metrics on how many successful and erroneous records are processed
-    private Counter error_records = Metrics.REG.counter((name(Connector.class, "error", "records")));
-    private Counter success_records = Metrics.REG.counter((name(Connector.class, "success", "records")));
+    private Counter error_records = Metrics.REG.counter((name(Old_Connector.class, "error", "records")));
+    private Counter success_records = Metrics.REG.counter((name(Old_Connector.class, "success", "records")));
 
     public abstract String getDBName();
 

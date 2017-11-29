@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import inputoutput.Attribute;
 import inputoutput.Record;
-import inputoutput.conn.FileConnector;
+import inputoutput.connectors.Old_FileConnector;
 
 public class FileConnectorTest {
 
@@ -23,7 +23,7 @@ public class FileConnectorTest {
   @Test
   public void testGetAttributes() throws IOException {
 
-    FileConnector fc = new FileConnector("", path, filename, separator);
+    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
     Vector<Record> rec_list = new Vector<Record>();
     List<Attribute> attributes_of_table = fc.getAttributes();
 
@@ -45,7 +45,7 @@ public class FileConnectorTest {
   @Test
   public void testGetAttrValueMap() throws IOException {
 
-    FileConnector fc = new FileConnector("", path, filename, separator);
+    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
 
     int numRecords = 9;
     Map<Attribute, List<String>> data = null;

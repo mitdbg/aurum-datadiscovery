@@ -19,8 +19,8 @@ import core.config.ProfilerConfig;
 import core.tasks.ProfileTask;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.conn.BenchmarkingData;
-import inputoutput.conn.Connector;
+import inputoutput.connectors.BenchmarkingData;
+import inputoutput.connectors.Old_Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 import store.Store;
@@ -68,38 +68,9 @@ public class Worker implements Runnable {
 	ProfileTask pt = null;
 	try {
 	    pt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-	    // TaskPackage tp = taskQueue.poll(500, TimeUnit.MILLISECONDS);
 	    if (pt == null) {
 		return null;
 	    }
-
-	    // // Create real worker task on demand
-	    // if (tp.getType() == TaskPackageType.CSV) {
-	    // wt = WorkerTask.makeWorkerTaskForCSVFile(tp.getSourceName(),
-	    // tp.getPath(), tp.getFileName(),
-	    // tp.getSeparator());
-	    // } else if (tp.getType() == TaskPackageType.HDFSCSV) {
-	    // wt = WorkerTask.makeWorkerTaskForHDFSCSVFile(tp.getSourceName(),
-	    // tp.getHdfsPath(), tp.getFileName(),
-	    // tp.getSeparator());
-	    // } else if (tp.getType() == TaskPackageType.DB) {
-	    // wt = WorkerTask.makeWorkerTaskForDB(tp.getSourceName(),
-	    // tp.getDBType(), tp.getIp(), tp.getPort(),
-	    // tp.getDBName(), tp.getStr(), tp.getUsername(), tp.getPassword());
-	    // } else if (tp.getType() == TaskPackageType.BENCH) {
-	    // if (first) {
-	    // first = false;
-	    // // Populate data for benchConnector
-	    // benchData = new BenchmarkingData();
-	    // char separator = tp.getSeparator().charAt(0);
-	    // benchData.populateDataFromCSVFile(tp.getPath(), separator);
-	    // float sizeInMB = benchData.approxSizeOfDataInMemory();
-	    // System.out.println("SIZE_IN_MB_MEM: " + sizeInMB);
-	    // }
-	    // BenchmarkingConnector benchConnector =
-	    // BenchmarkingConnector.makeOne(benchData);
-	    // wt = WorkerTask.makeWorkerTaskForBenchmarking(benchConnector);
-	    // }
 
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
@@ -113,7 +84,6 @@ public class Worker implements Runnable {
 
 	while (doWork) {
 	    try {
-
 		// Collection to hold analyzers
 		Map<String, Analysis> analyzers = new HashMap<>();
 
@@ -127,7 +97,7 @@ public class Worker implements Runnable {
 			task.getConnector().getPath(), task.getConnector().getSourceName());
 
 		// Access attributes and attribute type through first read
-		Connector c = task.getConnector();
+		Old_Connector c = task.getConnector();
 		PreAnalyzer pa = new PreAnalyzer();
 		pa.composeConnector(c);
 

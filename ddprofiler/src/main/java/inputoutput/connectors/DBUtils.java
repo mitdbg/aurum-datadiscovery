@@ -1,4 +1,4 @@
-package inputoutput.conn;
+package inputoutput.connectors;
 
 import java.io.IOException;
 import java.io.InputStream;

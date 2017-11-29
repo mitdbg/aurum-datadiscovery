@@ -1,4 +1,4 @@
-package inputoutput.conn;
+package inputoutput.connectors;
 
 public enum ConnectorType {
   DB,
