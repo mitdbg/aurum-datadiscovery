@@ -35,7 +35,12 @@ public class CSVSource implements Source {
 		String path = f.getParent() + File.separator;
 		String name = f.getName();
 
-		ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(csvConfig);
+		// Make the csv config specific to the relation
+		CSVSourceConfig relationCSVConfig = (CSVSourceConfig) csvConfig.selfCopy();
+		relationCSVConfig.setRelationName(name);
+		relationCSVConfig.setPath(path);
+
+		ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(relationCSVConfig);
 
 		// TaskPackage tp =
 		// TaskPackage.makeCSVFileTaskPackage(csvConfig.getSourceName(),

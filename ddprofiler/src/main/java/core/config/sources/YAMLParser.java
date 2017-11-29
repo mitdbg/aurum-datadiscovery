@@ -57,6 +57,7 @@ public class YAMLParser {
 
     public static void main(String args[]) {
 
+	// FIXME: make this a test instead
 	File file = new File("/Users/ra-mit/development/discovery_proto/ddprofiler/src/main/resources/template.yml");
 	Sources srcs = null;
 	ObjectMapper mapper = new ObjectMapper(new YAMLFactory());

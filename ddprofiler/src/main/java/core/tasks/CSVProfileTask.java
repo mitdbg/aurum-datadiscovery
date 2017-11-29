@@ -16,10 +16,11 @@ public class CSVProfileTask implements ProfileTask {
 	FileConnector fc = null;
 	String sourceName = conf.getSourceName();
 	String path = conf.getPath();
+	String relationName = conf.getRelationName();
 	String separator = conf.getSeparator();
 
 	try {
-	    fc = new FileConnector(sourceName, path, sourceName, separator);
+	    fc = new FileConnector(sourceName, path, relationName, separator);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

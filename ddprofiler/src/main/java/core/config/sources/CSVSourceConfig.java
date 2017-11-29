@@ -8,6 +8,8 @@ public class CSVSourceConfig implements SourceConfig {
 
     private String sourceName;
 
+    private String relationName;
+
     @JsonProperty
     private String path;
 
@@ -43,6 +45,24 @@ public class CSVSourceConfig implements SourceConfig {
     @Override
     public SourceType getSourceType() {
 	return SourceType.csv;
+    }
+
+    public String getRelationName() {
+	return relationName;
+    }
+
+    public void setRelationName(String relationName) {
+	this.relationName = relationName;
+    }
+
+    @Override
+    public SourceConfig selfCopy() {
+	CSVSourceConfig copy = new CSVSourceConfig();
+	copy.sourceName = this.sourceName;
+	copy.relationName = this.relationName;
+	copy.path = this.path;
+	copy.separator = this.separator;
+	return copy;
     }
 
 }

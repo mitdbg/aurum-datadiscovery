@@ -45,10 +45,13 @@ public class PostgresSource implements Source {
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
-	for (String str : tables) {
-	    LOG.info("Detected relational table: {}", str);
+	for (String relation : tables) {
+	    LOG.info("Detected relational table: {}", relation);
 
-	    ProfileTask pt = ProfileTaskFactory.makePostgresProfileTask(postgresConfig);
+	    PostgresSourceConfig relationPostgresSourceConfig = (PostgresSourceConfig) postgresConfig.selfCopy();
+	    relationPostgresSourceConfig.setRelationName(relation);
+
+	    ProfileTask pt = ProfileTaskFactory.makePostgresProfileTask(relationPostgresSourceConfig);
 
 	    // // FIXME: Remove type
 	    // TaskPackage tp =

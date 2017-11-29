@@ -19,14 +19,14 @@ public class PostgresProfileTask implements ProfileTask {
 	String dbName = config.getDatabase_name();
 	String connIP = config.getDb_server_ip();
 	String port = new Integer(config.getDb_server_port()).toString();
-	String tableName = null;
+	String tableName = config.getRelationName();
 	String username = config.getDb_username();
 	String password = config.getDb_password();
 
-	Connection c = DBConnector.getOrCreateConnector(dbName, DBType.POSTGRESQL, connIP, port, sourceName, tableName,
+	Connection c = DBConnector.getOrCreateConnector(sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName,
 		username, password);
 
-	DBConnector dbc = new DBConnector(c, dbName, DBType.POSTGRESQL, connIP, port, sourceName, tableName, username,
+	DBConnector dbc = new DBConnector(c, sourceName, DBType.POSTGRESQL, connIP, port, dbName, tableName, username,
 		password);
 
 	int id = ProfileTaskFactory.computeTaskId(sourceName, tableName);
