@@ -4,13 +4,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
 
-import org.apache.hadoop.fs.Path;
-
 import inputoutput.conn.Connector;
 import inputoutput.conn.DBConnector;
 import inputoutput.conn.DBType;
 import inputoutput.conn.FileConnector;
-import inputoutput.conn.HdfsFileConnector;
 
 public class WorkerTask implements Closeable {
 
@@ -38,17 +35,6 @@ public class WorkerTask implements Closeable {
 	    e.printStackTrace();
 	}
 	int id = computeTaskId(path, name);
-	return new WorkerTask(id, fc);
-    }
-
-    public static WorkerTask makeWorkerTaskForHDFSCSVFile(String dbName, Path hdfsPath, String name, String separator) {
-	HdfsFileConnector fc = null;
-	try {
-	    fc = new HdfsFileConnector(dbName, hdfsPath, name, separator);
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
-	int id = computeTaskId(hdfsPath.toString(), name);
 	return new WorkerTask(id, fc);
     }
 

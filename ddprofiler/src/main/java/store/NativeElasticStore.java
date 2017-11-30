@@ -212,12 +212,6 @@ public class NativeElasticStore implements Store {
 	    e.printStackTrace();
 	}
 
-	try {
-	    System.out.println(text_mapping.string());
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
-
 	// index 'profile' type 'column'
 	// String profileMapping = "{ \"properties\" : "
 	//
@@ -303,12 +297,6 @@ public class NativeElasticStore implements Store {
 
 	    profile_mapping.endObject(); // close properties
 	    profile_mapping.endObject(); // close mapping
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
-
-	try {
-	    System.out.println(text_mapping.string());
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}

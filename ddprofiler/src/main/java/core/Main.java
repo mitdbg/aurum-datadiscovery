@@ -12,10 +12,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,28 +176,7 @@ public class Main {
 		    c.submitTask(tp);
 		}
 	    }
-	} else if (scheme.equals("hdfs")) {
-	    Configuration conf = new Configuration();
 
-	    try {
-		FileSystem fs = FileSystem.get(conf);
-		org.apache.hadoop.fs.Path hdfsPath = new org.apache.hadoop.fs.Path(pathToSources);
-		RemoteIterator<LocatedFileStatus> it = fs.listFiles(hdfsPath, false);
-		while (it.hasNext()) {
-		    LocatedFileStatus lfs = it.next();
-		    tt++;
-		    if (!lfs.isFile()) {
-			continue;
-		    }
-		    org.apache.hadoop.fs.Path toFile = lfs.getPath();
-		    String name = toFile.getName();
-		    TaskPackage tp = TaskPackage.makeHDFSCSVFileTaskPackage(sourceName, toFile, name, separator);
-		    totalFiles++;
-		    c.submitTask(tp);
-		}
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
 	}
 	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
     }

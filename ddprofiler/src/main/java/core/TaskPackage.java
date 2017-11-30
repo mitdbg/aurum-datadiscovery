@@ -8,7 +8,6 @@ public class TaskPackage {
 
     // CSV properties
     private String path;
-    private org.apache.hadoop.fs.Path hdfs_path;
     private String fileName;
     private String separator;
 
@@ -32,15 +31,6 @@ public class TaskPackage {
     private TaskPackage(String sourceName, String path, String fileName, String separator, TaskPackageType type) {
 	this.sourceName = sourceName;
 	this.path = path;
-	this.fileName = fileName;
-	this.separator = separator;
-	this.type = type;
-    }
-
-    private TaskPackage(String sourceName, org.apache.hadoop.fs.Path path, String fileName, String separator,
-	    TaskPackageType type) {
-	this.sourceName = sourceName;
-	this.hdfs_path = path;
 	this.fileName = fileName;
 	this.separator = separator;
 	this.type = type;
@@ -86,10 +76,6 @@ public class TaskPackage {
 	return path;
     }
 
-    public org.apache.hadoop.fs.Path getHdfsPath() {
-	return hdfs_path;
-    }
-
     public String getFileName() {
 	return fileName;
     }
@@ -128,11 +114,6 @@ public class TaskPackage {
 
     public String getPassword() {
 	return password;
-    }
-
-    public static TaskPackage makeHDFSCSVFileTaskPackage(String dbName, org.apache.hadoop.fs.Path toFile, String name,
-	    String separator) {
-	return new TaskPackage(dbName, toFile, name, separator, TaskPackageType.HDFSCSV);
     }
 
 }
