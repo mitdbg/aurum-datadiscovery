@@ -20,15 +20,15 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
 import core.SourceType;
-import core.config.sources.PostgresSourceConfig;
+import core.config.sources.SQLServerSourceConfig;
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
 import metrics.Metrics;
 
-public class PostgresConnector implements Connector {
+public class SQLServerConnector implements Connector {
 
-    private PostgresSourceConfig config;
+    private SQLServerSourceConfig config;
 
     private Connection connection;
 
@@ -41,12 +41,11 @@ public class PostgresConnector implements Connector {
     private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
 
-    public PostgresConnector(PostgresSourceConfig config) {
+    public SQLServerConnector(SQLServerSourceConfig config) {
 	this.config = config;
 
 	this.tableInfo = new TableInfo();
 
-	// Create connector first
 	try {
 	    this.initConnector();
 	} catch (ClassNotFoundException | IOException | SQLException e) {
@@ -54,7 +53,7 @@ public class PostgresConnector implements Connector {
 	    e.printStackTrace();
 	}
 
-	// Initialize tableInfo
+	// Initialize tbInfo
 	List<Attribute> attrs = null;
 	try {
 	    attrs = this.getAttributes();
@@ -67,7 +66,7 @@ public class PostgresConnector implements Connector {
 
     @Override
     public SourceType getSourceType() {
-	return SourceType.postgres;
+	return SourceType.sqlserver;
     }
 
     @Override
@@ -78,6 +77,7 @@ public class PostgresConnector implements Connector {
 	String connPath = config.getDatabase_name();
 	String username = config.getDb_username();
 	String password = config.getDb_password();
+	String dbName = config.getDatabase_name();
 
 	String connIdentifier = config.getDatabase_name() + ip + port;
 
@@ -87,7 +87,7 @@ public class PostgresConnector implements Connector {
 	}
 
 	Class.forName("org.postgresql.Driver");
-	String cPath = "jdbc:postgresql://" + ip + ":" + port + "/" + connPath;
+	String cPath = String.format("jdbc:sqlserver://{}:{}; databaseName={};", ip, port, dbName);
 
 	// If no existing pool to handle this db, then we create a new one
 	HikariConfig config = new HikariConfig();

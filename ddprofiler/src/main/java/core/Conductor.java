@@ -3,7 +3,9 @@ package core;
 import static com.codahale.metrics.MetricRegistry.name;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -50,6 +52,10 @@ public class Conductor {
     private AtomicInteger totalColumns = new AtomicInteger();
     private Meter m;
     public static Meter recordsPerSecond;
+
+    // Global cache, FIXME; find better place
+    // TODO: move to some db-specific class
+    public static Map<String, Connection> connectionPools = new HashMap<>();
 
     public Conductor(ProfilerConfig pc, Store s) {
 	this.pc = pc;

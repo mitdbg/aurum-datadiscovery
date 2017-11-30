@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Main;
+import core.SourceType;
 
 public class DBUtils {
 
@@ -56,16 +57,16 @@ public class DBUtils {
 	return prop;
     }
 
-    public static Connection getDBConnection(DBType type, String connIP, String port, String dbName, String username,
-	    String password) {
+    public static Connection getDBConnection(SourceType type, String connIP, String port, String dbName,
+	    String username, String password) {
 	Connection conn = null;
-	if (type == DBType.MYSQL) {
+	if (type == SourceType.mysql) {
 	    conn = getMYSQLConnection(connIP, port, dbName, username, password);
-	} else if (type == DBType.POSTGRESQL) {
+	} else if (type == SourceType.postgres) {
 	    conn = getPOSTGRESQLConnection(connIP, port, dbName, username, password);
-	} else if (type == DBType.ORACLE) {
+	} else if (type == SourceType.oracle11g) {
 	    conn = getOracle10GConnection(connIP, port, dbName, username, password);
-	} else if (type == DBType.SQLSERVER) {
+	} else if (type == SourceType.sqlserver) {
 	    conn = getSQLServerConnection(connIP, port, dbName, username, password);
 	}
 	return conn;

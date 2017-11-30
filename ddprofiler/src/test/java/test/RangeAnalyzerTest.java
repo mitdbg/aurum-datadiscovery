@@ -11,55 +11,57 @@ import org.junit.Test;
 import analysis.modules.RangeAnalyzer;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.Old_FileConnector;
+import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 
 public class RangeAnalyzerTest {
 
-  private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
-  private String filename = "short_cis_course_catalog.csv";
-  private String separator = ",";
-  private int numRecords = 100;
+    private String path = "/Users/ra-mit/Desktop/mitdwhdata/";
+    private String filename = "short_cis_course_catalog.csv";
+    private String separator = ",";
+    private int numRecords = 100;
 
-  @Test
-  public void RangeTest() throws IOException {
-    Old_FileConnector fc = new Old_FileConnector("", path, filename, separator);
-    PreAnalyzer pa = new PreAnalyzer();
-    pa.composeConnector(fc);
+    @Test
+    public void RangeTest() throws IOException {
 
-    Map<Attribute, Values> data = pa.readRows(numRecords);
+	// FIXME: create config on the fly
+	CSVConnector fc = new CSVConnector(null);
+	PreAnalyzer pa = new PreAnalyzer();
+	pa.composeConnector(fc);
 
-    for (Entry<Attribute, Values> a : data.entrySet()) {
-      AttributeType at = a.getKey().getColumnType();
-      RangeAnalyzer ra = new RangeAnalyzer();
-      if (at.equals(AttributeType.FLOAT)) {
-        List<Float> floats = new ArrayList<>();
-        for (Float s : a.getValue().getFloats()) {
-          floats.add(s);
-        }
+	Map<Attribute, Values> data = pa.readRows(numRecords);
 
-        ra.feedFloatData(floats);
+	for (Entry<Attribute, Values> a : data.entrySet()) {
+	    AttributeType at = a.getKey().getColumnType();
+	    RangeAnalyzer ra = new RangeAnalyzer();
+	    if (at.equals(AttributeType.FLOAT)) {
+		List<Float> floats = new ArrayList<>();
+		for (Float s : a.getValue().getFloats()) {
+		    floats.add(s);
+		}
 
-        long q25 = ra.getQuantile(0.25);
-        long q50 = ra.getQuantile(0.5);
-        long q75 = ra.getQuantile(0.75);
-        System.out.println(a.toString());
-        System.out.println(q25 + " - " + q50 + " - " + q75);
-      } else if (at.equals(AttributeType.INT)) {
-        List<Long> integers = new ArrayList<>();
-        for (Long s : a.getValue().getIntegers()) {
-          integers.add(s);
-        }
+		ra.feedFloatData(floats);
 
-        ra.feedIntegerData(integers);
+		long q25 = ra.getQuantile(0.25);
+		long q50 = ra.getQuantile(0.5);
+		long q75 = ra.getQuantile(0.75);
+		System.out.println(a.toString());
+		System.out.println(q25 + " - " + q50 + " - " + q75);
+	    } else if (at.equals(AttributeType.INT)) {
+		List<Long> integers = new ArrayList<>();
+		for (Long s : a.getValue().getIntegers()) {
+		    integers.add(s);
+		}
 
-        long q25 = ra.getQuantile(0.25);
-        long q50 = ra.getQuantile(0.5);
-        long q75 = ra.getQuantile(0.75);
-        System.out.println(a.toString());
-        System.out.println(q25 + " - " + q50 + " - " + q75);
-      }
+		ra.feedIntegerData(integers);
+
+		long q25 = ra.getQuantile(0.25);
+		long q50 = ra.getQuantile(0.5);
+		long q75 = ra.getQuantile(0.75);
+		System.out.println(a.toString());
+		System.out.println(q25 + " - " + q50 + " - " + q75);
+	    }
+	}
     }
-  }
 }

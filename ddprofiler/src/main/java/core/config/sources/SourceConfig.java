@@ -10,6 +10,8 @@ public interface SourceConfig {
 
     public void setSourceName(String sourceName);
 
+    public String getRelationName();
+
     public SourceConfig selfCopy();
 
 }

@@ -8,11 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
+import core.SourceType;
 import core.config.sources.PostgresSourceConfig;
 import core.config.sources.SourceConfig;
 import core.tasks.ProfileTask;
 import core.tasks.ProfileTaskFactory;
-import inputoutput.connectors.DBType;
 import inputoutput.connectors.DBUtils;
 
 public class PostgresSource implements Source {
@@ -37,7 +37,7 @@ public class PostgresSource implements Source {
 	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
 
 	// FIXME: remove this enum; simplify this
-	Connection dbConn = DBUtils.getDBConnection(DBType.POSTGRESQL, ip, port, db_name, username, password);
+	Connection dbConn = DBUtils.getDBConnection(SourceType.postgres, ip, port, db_name, username, password);
 
 	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
 	try {

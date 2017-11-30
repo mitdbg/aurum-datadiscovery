@@ -20,7 +20,7 @@ import core.tasks.ProfileTask;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.connectors.BenchmarkingData;
-import inputoutput.connectors.Old_Connector;
+import inputoutput.connectors.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
 import store.Store;
@@ -93,32 +93,31 @@ public class Worker implements Runnable {
 		    continue;
 		}
 
-		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getConnector().getDBName(),
-			task.getConnector().getPath(), task.getConnector().getSourceName());
+		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(),
+			"path<check>", task.getSourceConfig().getRelationName());
 
 		// Access attributes and attribute type through first read
-		Old_Connector c = task.getConnector();
+		Connector c = task.getConnector();
 		PreAnalyzer pa = new PreAnalyzer();
 		pa.composeConnector(c);
 
-		LOG.info("Worker: {} processing: {}", workerName, c.getSourceName());
+		LOG.info("Worker: {} processing: {}", workerName, task.getSourceConfig().getRelationName());
 
 		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
 		if (initData == null) {
-		    LOG.warn("No data read from: {}", c.getSourceName());
+		    LOG.warn("No data read from: {}", task.getSourceConfig().getRelationName());
 		    task.close();
 		}
 
 		// Read initial records to figure out attribute types etc
 		// FIXME: readFirstRecords(initData, analyzers);
-		readFirstRecords(task.getConnector().getDBName(), task.getConnector().getPath(), initData, analyzers,
-			indexer);
+		readFirstRecords(task.getSourceConfig().getSourceName(), "path<check>", initData, analyzers, indexer);
 
 		// Consume all remaining records from the connector
 		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 		int records = 0;
 		while (data != null) {
-		    indexer.indexData(task.getConnector().getDBName(), task.getConnector().getPath(), data);
+		    indexer.indexData(task.getSourceConfig().getSourceName(), "path<check>", data);
 		    records = records + data.size();
 		    Conductor.recordsPerSecond.mark(records);
 		    // Do the processing
@@ -133,8 +132,8 @@ public class Worker implements Runnable {
 		// FIXME: WorkerTaskResultHolder wtrf = new
 		// WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(),
 		// analyzers);
-		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(c.getDBName(), c.getPath(), c.getSourceName(),
-			c.getAttributes(), analyzers);
+		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(),
+			"path<check>", task.getSourceConfig().getRelationName(), c.getAttributes(), analyzers);
 
 		// List<WorkerTaskResult> rs =
 		// WorkerTaskResultHolder.makeFakeOne();

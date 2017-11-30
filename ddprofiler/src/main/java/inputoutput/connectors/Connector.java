@@ -7,7 +7,6 @@ import java.util.Map;
 
 import core.SourceType;
 import inputoutput.Attribute;
-import inputoutput.Record;
 
 public interface Connector {
 
@@ -19,6 +18,6 @@ public interface Connector {
 
     public List<Attribute> getAttributes() throws IOException, SQLException;
 
-    public Map<Attribute, List<String>> readRows(int num, List<Record> rec_list) throws IOException, SQLException;
+    public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException;
 
 }

@@ -6,11 +6,13 @@ package preanalysis;
 import java.util.List;
 
 import inputoutput.Attribute;
-import inputoutput.connectors.Old_Connector;
+import inputoutput.connectors.Connector;
 
 public interface PreAnalysis {
 
-  public void composeConnector(Old_Connector c);
-  public DataQualityReport getQualityReport();
-  public List<Attribute> getEstimatedDataTypes();
+    public void composeConnector(Connector c);
+
+    public DataQualityReport getQualityReport();
+
+    public List<Attribute> getEstimatedDataTypes();
 }

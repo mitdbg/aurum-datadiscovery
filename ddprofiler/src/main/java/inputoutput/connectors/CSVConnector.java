@@ -89,7 +89,7 @@ public class CSVConnector implements Connector {
     }
 
     @Override
-    public Map<Attribute, List<String>> readRows(int num, List<Record> rec_list) throws IOException, SQLException {
+    public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
 	Map<Attribute, List<String>> data = new LinkedHashMap<>();
 	// Make sure attrs is populated, if not, populate it here
 	if (data.isEmpty()) {

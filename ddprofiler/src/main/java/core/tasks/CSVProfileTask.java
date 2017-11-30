@@ -1,32 +1,37 @@
 package core.tasks;
 
-import java.io.IOException;
-
 import core.SourceType;
 import core.config.sources.CSVSourceConfig;
-import inputoutput.connectors.Old_Connector;
-import inputoutput.connectors.Old_FileConnector;
+import core.config.sources.SourceConfig;
+import inputoutput.connectors.CSVConnector;
+import inputoutput.connectors.Connector;
 
 public class CSVProfileTask implements ProfileTask {
 
     private int taskId;
-    private Old_Connector connector;
+    // private Old_Connector connector;
+    private CSVConnector connector;
+    private CSVSourceConfig config;
 
     public CSVProfileTask(CSVSourceConfig conf) {
-	Old_FileConnector fc = null;
+	this.config = conf;
+	// Old_FileConnector fc = null;
+	CSVConnector fc = null;
 	String sourceName = conf.getSourceName();
 	String path = conf.getPath();
-	String relationName = conf.getRelationName();
-	String separator = conf.getSeparator();
 
-	try {
-	    fc = new Old_FileConnector(sourceName, path, relationName, separator);
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
+	// fc = new Old_FileConnector(sourceName, path, relationName,
+	// separator);
+	fc = new CSVConnector(conf);
+
 	int id = ProfileTaskFactory.computeTaskId(path, sourceName);
 	this.taskId = id;
 	this.connector = fc;
+    }
+
+    @Override
+    public SourceConfig getSourceConfig() {
+	return this.config;
     }
 
     @Override
@@ -40,18 +45,18 @@ public class CSVProfileTask implements ProfileTask {
     }
 
     @Override
-    public Old_Connector getConnector() {
+    public Connector getConnector() {
 	return connector;
     }
 
     @Override
     public void close() {
-	this.connector.close();
+	this.connector.destroyConnector();
     }
 
     @Override
     public String toString() {
-	String sourceName = connector.getSourceName();
+	String sourceName = config.getSourceName() + "/" + config.getRelationName();
 	return taskId + " - " + sourceName;
     }
 
