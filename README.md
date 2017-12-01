@@ -71,9 +71,9 @@ requirement of this process is to have a JVM 8 available in the system. The
 above command will produce a single jar file available in
 'ddprofiler/build/libs/ddprofiler.jar'.
 
-#### Deploying Elasticsearch (tested with 2.3.3)
+#### Deploying Elasticsearch (tested with 6.0.0)
 
-Download the software (note the currently supported version is 2.3.3) from:
+Download the software (note the currently supported version is 6.0.0) from:
 
 https://www.elastic.co/products/elasticsearch
 
@@ -155,10 +155,9 @@ sudo apt-get install \
 
 Some notes for MAC users:
 
-There have been some problems with uWSGI. One quick workaround is to 
-remove the version contraint explained in the requirements.txt file. 
+If you run within a virtualenvironemtn, Matplotlib will fail due to a mismatch with the backend it wants to use. A way of fixing this is to create a file: *~/.matplotlib/matplotlibrc* and add a single line: *backend: TkAgg*.
 
-Note you need to use elasticsearch 2.3.3 in the current version.
+Note you need to use elasticsearch 6.0.0 in the current version.
 
 #### Deployment
 

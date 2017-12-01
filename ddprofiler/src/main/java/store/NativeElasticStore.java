@@ -185,7 +185,7 @@ public class NativeElasticStore implements Store {
 	try {
 	    text_mapping = jsonBuilder().startObject().startObject("properties");
 	    text_mapping.startObject("id");
-	    text_mapping.field("type", "long").field("store", "true").field("index", "false");
+	    text_mapping.field("type", "long").field("store", "true").field("index", "true");
 	    text_mapping.endObject();
 	    text_mapping.startObject("dbName");
 	    text_mapping.field("type", "keyword").field("index", "false");
@@ -244,7 +244,7 @@ public class NativeElasticStore implements Store {
 	try {
 	    profile_mapping = jsonBuilder().startObject().startObject("properties");
 	    profile_mapping.startObject("id");
-	    profile_mapping.field("type", "long").field("index", "false");
+	    profile_mapping.field("type", "long").field("index", "true");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("dbName");
 	    profile_mapping.field("type", "keyword").field("index", "false");
@@ -265,7 +265,7 @@ public class NativeElasticStore implements Store {
 	    profile_mapping.field("type", "text").field("index", "true").field("analyzer", "aurum_analyzer");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("dataType");
-	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.field("type", "keyword").field("index", "true");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("totalValues");
 	    profile_mapping.field("type", "long").field("index", "false");
