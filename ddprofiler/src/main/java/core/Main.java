@@ -45,10 +45,6 @@ public class Main {
 	// property to configure this
 	Store s = StoreFactory.makeStoreOfType(pc.getInt(ProfilerConfig.STORE_TYPE), pc);
 
-	// for test purpose, use this and comment above line when elasticsearch
-	// is not configured
-	// Store s = StoreFactory.makeNullStore(pc);
-
 	Conductor c = new Conductor(pc, s);
 	c.start();
 
@@ -62,7 +58,9 @@ public class Main {
 
 	// Parsing sources config file
 	String sourceConfigFile = pc.getString(ProfilerConfig.SOURCE_CONFIG_FILE);
+	System.out.println("test1");
 	LOG.info("Using {} as sources file", sourceConfigFile);
+	System.out.println("test2");
 	List<SourceConfig> sourceConfigs = YAMLParser.processSourceConfig(sourceConfigFile);
 
 	LOG.info("Found {} sources to profile", sourceConfigs.size());
@@ -153,6 +151,12 @@ public class Main {
 	}
 	ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
 	logbackLogger.setLevel(ch.qos.logback.classic.Level.WARN);
+
+	// org.apache.log4j.Logger root =
+	// org.apache.log4j.Logger.getRootLogger();
+	// org.apache.log4j.Appender appender = new
+	// org.apache.log4j.ConsoleAppender();
+	// root.addAppender(appender);
     }
 
     static private void configureMetricsReporting(ProfilerConfig pc) {

@@ -71,11 +71,9 @@ public class Worker implements Runnable {
 	    if (pt == null) {
 		return null;
 	    }
-
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
-
 	return pt;
     }
 
