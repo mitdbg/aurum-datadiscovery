@@ -11,7 +11,7 @@ import config as c
 
 
 class KWType(Enum):
-    KW_TEXT = 0
+    KW_CONTENT = 0
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
@@ -152,7 +152,7 @@ class StoreHandler:
                        'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
-        if elasticfieldname == KWType.KW_TEXT:
+        if elasticfieldname == KWType.KW_CONTENT:
             index = "text"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"text": keywords}}}
