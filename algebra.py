@@ -21,6 +21,7 @@ class Algebra:
     def __init__(self, network, store_client):
         self._network = network
         self._store_client = store_client
+        self.helper = Helper(network=network, store_client=store_client)
 
     """
     Basic API
@@ -399,7 +400,9 @@ class Algebra:
     Metadata API
     """
 
-    def annotate(self, author: str, text: str, md_class: MDClass,
+    # Hide these for the time-being
+
+    def __annotate(self, author: str, text: str, md_class: MDClass,
                  general_source, ref={"general_target": None, "type": None}) -> MRS:
         """
         Create a new annotation in the elasticsearch graph.
@@ -449,7 +452,7 @@ class Algebra:
                 md_hits.append(res)
             return MRS(md_hits)
 
-    def add_comments(self, author: str, comments: list, md_id: str) -> MRS:
+    def __add_comments(self, author: str, comments: list, md_id: str) -> MRS:
         """
         Add comments to the annotation with the given md_id.
         :param author: identifiable name of user or process
@@ -463,7 +466,7 @@ class Algebra:
             md_comments.append(res)
         return MRS(md_comments)
 
-    def add_tags(self, author: str, tags: list, md_id: str):
+    def __add_tags(self, author: str, tags: list, md_id: str):
         """
         Add tags/keywords to metadata with the given md_id.
         :param md_id: metadata id
@@ -471,7 +474,7 @@ class Algebra:
         """
         return self._store_client.add_tags(author, tags, md_id)
 
-    def md_search(self, general_input=None,
+    def __md_search(self, general_input=None,
                   relation: MDRelation = None) -> MRS:
         """
         Searches for metadata that reference the nodes in the general
@@ -504,7 +507,7 @@ class Algebra:
                                                            relation=store_relation, nid_is_source=nid_is_source))
         return MRS(md_hits)
 
-    def md_keyword_search(self, kw: str, max_results=10) -> MRS:
+    def __md_keyword_search(self, kw: str, max_results=10) -> MRS:
         """
         Performs a keyword search over metadata annotations and comments.
         :param kw: the keyword to search
@@ -565,8 +568,9 @@ class Helper:
 
 class API(Algebra):
     def __init__(self, *args, **kwargs):
+        print(str(type(API)))
+        print(str(type(self)))
         super(API, self).__init__(*args, **kwargs)
-        self.helper = Helper.__init__(*args, **kwargs)
 
 
 if __name__ == '__main__':

@@ -366,7 +366,8 @@ class FieldNetwork:
             # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
                 if not check_membership(n, paths):
-                    t_neighbors = api.drs_from_table_hit(n)
+                    # t_neighbors = api.drs_from_table_hit(n)
+                    t_neighbors = api.make_drs(n)
                     results.extend([(x, n) for x in t_neighbors])
             return results  # note how we include hit as sibling of x here
 
@@ -404,8 +405,10 @@ class FieldNetwork:
 
         # TODO: same src == trg, etc
 
-        src_drs = api.drs_from_table(source)
-        trg_drs = api.drs_from_table(target)
+        # src_drs = api.drs_from_table(source)
+        # trg_drs = api.drs_from_table(target)
+        src_drs = api.make_drs(source)
+        trg_drs = api.make_drs(target)
 
         found_paths = []
         candidates = [(x, None) for x in src_drs]  # tuple carrying candidate and same-table attribute
