@@ -16,7 +16,75 @@ class DoD:
     def __init__(self, network, store_client):
         self.api = API(network=network, store_client=store_client)
 
-    def virtual_schema(self, list_attributes: [str], list_samples: [str]):
+    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str]):
+        # Align schema definition and samples
+        assert len(list_attributes) == len(list_samples)
+        sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
+
+        # Obtain sets that fulfill individual filters
+        filter_drs = dict()
+        for attr in sch_def.keys():
+            drs = self.api.search_attribute(attr)
+            filter_drs[(attr, FilterType.ATTR)] = drs
+
+        for cell in sch_def.values():
+            drs = self.api.search_content(cell)
+            filter_drs[(cell, FilterType.CELL)] = drs
+
+        # We group now into groups that convey multiple filters.
+        # Obtain list of tables ordered from more to fewer filters.
+        table_fulfilled_filters = defaultdict(list)
+        for filter, drs in filter_drs.items():
+            drs.set_table_mode()
+            for table in drs:
+                table_fulfilled_filters[table].append(filter)
+        # sort by value len -> # fulfilling filters
+        a = sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True)
+        table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
+
+        def eager_candidate_exploration():
+            # Eagerly obtain groups of tables that cover as many filters as possible
+            not_found = True
+            while not_found:
+                candidate_group = []
+                candidate_group_filters_covered = set()
+                for i in range(len(list(table_fulfilled_filters.items()))):
+                    table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
+                    # Eagerly add pivot
+                    candidate_group.append(table_pivot)
+                    for el in filters_pivot:
+                        candidate_group_filters_covered.add(el)
+                    # Did it cover all filters?
+                    if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                        yield (candidate_group, candidate_group_filters_covered)  # early stop
+                    for j in range(len(list(table_fulfilled_filters.items()))):
+                        idx = i + j + 1
+                        if idx == len(table_fulfilled_filters.items()):
+                            break
+                        table, filters = list(table_fulfilled_filters.items())[idx]
+                        new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
+                        if new_filters > 0:  # add table only if it adds new filters
+                            candidate_group.append(table)
+                            for el in filters:
+                                candidate_group_filters_covered.add(el)
+                                # Did it cover all filters?
+                                if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                                    yield (candidate_group, candidate_group_filters_covered)  # early stop
+                    yield (candidate_group, candidate_group_filters_covered)
+                    # Cleaning
+                    candidate_group.clear()
+                    candidate_group_filters_covered.clear()
+
+        for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
+            print(candidate_group)
+            print(candidate_group_filters_covered)
+
+
+
+
+
+
+    def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
 
         # Align schema definition and samples
         assert len(list_attributes) == len(list_samples)
@@ -132,6 +200,6 @@ if __name__ == "__main__":
     attrs = ["Mit Id", "Last Name", "Full Name"]
     values = ["968548423", "Kimball", "Kimball, Richard W"]
 
-    joinable_groups = dod.virtual_schema(attrs, values)
+    joinable_groups = dod.virtual_schema_iterative_search(attrs, values)
 
     print(joinable_groups)
