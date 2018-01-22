@@ -57,6 +57,10 @@ class DoD:
                     # Did it cover all filters?
                     if len(candidate_group_filters_covered) == len(filter_drs.items()):
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
+                        # Cleaning
+                        candidate_group.clear()
+                        candidate_group_filters_covered.clear()
+                        continue
                     for j in range(len(list(table_fulfilled_filters.items()))):
                         idx = i + j + 1
                         if idx == len(table_fulfilled_filters.items()):
@@ -78,6 +82,14 @@ class DoD:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print(candidate_group)
             print(candidate_group_filters_covered)
+
+            join_paths = self.joinable(candidate_group)
+
+            join_paths = self.format_join_paths(join_paths)
+
+            for jp in join_paths:
+                print(jp)
+            break
 
 
 
@@ -144,6 +156,8 @@ class DoD:
         return joinable_groups
 
     def joinable(self, group_tables: [str]):
+        # FIXME: intermediate hops are not gonna be added right now
+        # FIXME: although it finds more, it's only returning one jp
         """
         Check whether all the tables in the group can be part of a 'single' join path
         :param group_tables:
@@ -161,7 +175,11 @@ class DoD:
         go_on = True
         while go_on:
             table1 = draw[0]  # choose always same until exhausted
+            if len(remaining_nodes) == 0:
+                break
             table2 = remaining_nodes.pop()
+            if table1 == table2:
+                continue  # no need to join this
             t1 = self.api.make_drs(table1)
             t2 = self.api.make_drs(table2)
             t1.set_table_mode()
@@ -180,10 +198,37 @@ class DoD:
             else:
                 draw.remove(table1)  # this one does not connect to more elements anymore
 
-        if len(remaining_nodes) > 0:
+        if len(join_paths) > 0:
             return join_paths
         else:
             return []  # although we found join paths they did not cover all nodes
+
+    def format_join_paths(self, join_paths):
+        """
+        Transform this into something readable
+        :param join_paths: [(hit, hit)]
+        :return:
+        """
+        formatted_jps = []
+        for jp in join_paths:
+            formatted_jp = ""
+            for hop in jp:
+                hop_str = hop.db_name + "." + hop.source_name + "." + hop.field_name
+                if formatted_jp == "":
+                    formatted_jp += hop_str
+                else:
+                    formatted_jp += " -> " + hop_str
+                # origin, target = hop
+                # if target is None:
+                #     hop_str = origin.db_name + "." + origin.source_name + "." + origin.field_name
+                #     formatted_jp += hop_str + " -> "
+                # else:
+                #     origin_str = origin.db_name + "." + origin.source_name + "." + origin.field_name
+                #     target_str = target.db_name + "." + target.source_name + "." + target.field_name
+                #     hop_str = origin_str + " -> " + target_str
+                #     formatted_jp += ", " + hop_str
+            formatted_jps.append(formatted_jp)
+        return formatted_jps
 
 if __name__ == "__main__":
     print("DoD")
@@ -197,8 +242,10 @@ if __name__ == "__main__":
 
     dod = DoD(network=network, store_client=store_client)
 
-    attrs = ["Mit Id", "Last Name", "Full Name"]
-    values = ["968548423", "Kimball", "Kimball, Richard W"]
+    #attrs = ["Mit Id", "Last Name", "Full Name"]
+    #values = ["968548423", "Kimball", "Kimball, Richard W"]
+    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    values = ["968548423", "kimball", "Mechanical Engineering"]
 
     joinable_groups = dod.virtual_schema_iterative_search(attrs, values)
 

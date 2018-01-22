@@ -6,6 +6,18 @@ def join_ab_on_key(a, b, a_key, b_key):
     return joined
 
 
+def find_key_for(relation, attribute, value):
+    """
+
+    :param relation:
+    :param attribute:
+    :param value:
+    :return:
+    """
+
+    return
+
+
 if __name__ == "__main__":
 
     a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1')
