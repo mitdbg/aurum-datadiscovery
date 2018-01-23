@@ -366,8 +366,8 @@ class FieldNetwork:
             # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
                 if not check_membership(n, paths):
-                    # t_neighbors = api.drs_from_table_hit(n)
-                    t_neighbors = api.make_drs(n)
+                    t_neighbors = api.drs_from_table_hit(n)  # Brought old API
+                    # t_neighbors = api.make_drs(n)  # XXX: this won't take all table neighbors, only the input one
                     results.extend([(x, n) for x in t_neighbors])
             return results  # note how we include hit as sibling of x here
 

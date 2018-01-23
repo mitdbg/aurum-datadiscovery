@@ -249,6 +249,13 @@ class Algebra:
                 '\ne.g.:\n\tmake_drs(1600820766)')
             print(msg)
 
+    def drs_from_table_hit(self, hit: Hit) -> DRS:
+        # TODO: migrated from old ddapi as there's no good swap
+        table = hit.source_name
+        hits = self._network.get_hits_from_table(table)
+        drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+        return drs
+
     def _general_to_drs(self, general_input) -> DRS:
         """
         Given an nid, node, hit, or DRS and convert it to a DRS.

@@ -85,8 +85,9 @@ class DoD:
             print(candidate_group_filters_covered)
 
             join_paths = self.joinable(candidate_group)
-            join_paths = self.annotate_join_paths(join_paths, table_fulfilled_filters)
-            join_paths = self.format_join_paths(join_paths)
+            join_paths = self.tx_join_paths_to_pair_hops(join_paths)
+            annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters)
+            # join_paths = self.format_join_paths(join_paths)
 
             # For each candidate join_path, check whether it can be materialized or not,
             # then show to user (or the other way around)
@@ -187,7 +188,7 @@ class DoD:
             t2 = self.api.make_drs(table2)
             t1.set_table_mode()
             t2.set_table_mode()
-            drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=3)
+            drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=2)
             paths = drs.paths()  # list of lists
             if len(paths) > 0:
                 for path in paths:  # list of Hits
@@ -225,17 +226,29 @@ class DoD:
             formatted_jps.append(formatted_jp)
         return formatted_jps
 
-    def annotate_join_paths(self, join_paths, table_fulfilled_filters):
+    def tx_join_paths_to_pair_hops(self, join_paths):
         """
         1. get join path, 2. annotate with values to check for, then 3. format into [(l,r)]
         :param join_paths:
         :param table_fulfilled_filters:
         :return:
         """
+        join_paths_hops = []
         for jp in join_paths:
+            jp_hops = []
+            pair = []
             for hop in jp:
-                relation = hop.source_name
-                filter_fullfilled = table_fulfilled_filters[relation]
+                pair.append(hop)
+                if len(pair) == 2:
+                    jp_hops.append(tuple(pair))
+                    pair.clear()
+                    pair.append(hop)
+            # Now remove pairs with pointers within same relation
+            jp_hops = [(l, r) for l, r in jp_hops if l.source_name != r.source_name]
+            join_paths_hops.append(jp_hops)
+        return join_paths_hops
+
+    def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters):
         return
 
 
@@ -249,14 +262,14 @@ def test_e2e(dod):
 
 
 def test_joinable(dod):
-    candidate_group = ['Fac_building.csv', 'Space_detail.csv']
+    candidate_group = ['Employee_directory.csv', 'Drupal_employee_directory.csv']
     #candidate_group = ['Se_person.csv', 'Employee_directory.csv', 'Drupal_employee_directory.csv']
     #candidate_group = ['Tip_detail.csv', 'Tip_material.csv']
     join_paths = dod.joinable(candidate_group)
 
-    print("RAW: " + str(len(join_paths)))
-    for el in join_paths:
-        print(el)
+    # print("RAW: " + str(len(join_paths)))
+    # for el in join_paths:
+    #     print(el)
 
     join_paths = dod.format_join_paths(join_paths)
 
@@ -277,6 +290,6 @@ if __name__ == "__main__":
 
     dod = DoD(network=network, store_client=store_client)
 
-    # test_e2e(dod)
+    test_e2e(dod)
 
-    test_joinable(dod)
+    # test_joinable(dod)
