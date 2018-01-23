@@ -330,7 +330,7 @@ class FieldNetwork:
                 sink = DRS([tgt_sibling], Operation(OP.PKFK, params=[prev_c]))
 
                 #The join path at the target has None sibling
-                if tgt != None and tgt_sibling!= None and tgt.nid != tgt_sibling.nid:
+                if tgt is not None and tgt_sibling is not None and tgt.nid != tgt_sibling.nid:
                     o_drs = o_drs.absorb_provenance(sink)
                     linker = DRS([tgt], Operation(OP.TABLE, params=[tgt_sibling]))
                     o_drs.absorb(linker)
@@ -382,8 +382,8 @@ class FieldNetwork:
                     # in case T2 is the target add to the path (sibling, sibling)
                     # Otherwise (C,B)
                     if s.source_name == targets[0].source_name:
-                        next_paths = append_to_paths(paths, (sibling,sibling))
-                    else :
+                        next_paths = append_to_paths(paths, (sibling, sibling))
+                    else:
                         next_paths = append_to_paths(paths, (s, sibling))
                     found_paths.extend(next_paths)
                     return True

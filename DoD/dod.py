@@ -79,19 +79,23 @@ class DoD:
                     candidate_group.clear()
                     candidate_group_filters_covered.clear()
 
+        # Find ways of joining together each group
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print(candidate_group)
             print(candidate_group_filters_covered)
 
             join_paths = self.joinable(candidate_group)
-
+            join_paths = self.annotate_join_paths(join_paths, table_fulfilled_filters)
             join_paths = self.format_join_paths(join_paths)
+
+            # For each candidate join_path, check whether it can be materialized or not,
+            # then show to user (or the other way around)
+
+            # Check JP materialization
 
             for jp in join_paths:
                 print(jp)
             break
-
-
 
 
 
@@ -157,7 +161,6 @@ class DoD:
 
     def joinable(self, group_tables: [str]):
         # FIXME: intermediate hops are not gonna be added right now
-        # FIXME: although it finds more, it's only returning one jp
         """
         Check whether all the tables in the group can be part of a 'single' join path
         :param group_tables:
@@ -192,9 +195,10 @@ class DoD:
                         intermediate_node = hop.source_name
                         if intermediate_node in remaining_nodes:
                             remaining_nodes.remove(intermediate_node)  # found one
-                            join_paths.append(path)  # the join path is useful to cover new nodes
                         elif intermediate_node not in draw:
                             draw.append(intermediate_node)  # intermediate that can join to other nodes later
+                    join_paths.append(path)  # the join path is useful to cover new nodes
+
             else:
                 draw.remove(table1)  # this one does not connect to more elements anymore
 
@@ -218,17 +222,48 @@ class DoD:
                     formatted_jp += hop_str
                 else:
                     formatted_jp += " -> " + hop_str
-                # origin, target = hop
-                # if target is None:
-                #     hop_str = origin.db_name + "." + origin.source_name + "." + origin.field_name
-                #     formatted_jp += hop_str + " -> "
-                # else:
-                #     origin_str = origin.db_name + "." + origin.source_name + "." + origin.field_name
-                #     target_str = target.db_name + "." + target.source_name + "." + target.field_name
-                #     hop_str = origin_str + " -> " + target_str
-                #     formatted_jp += ", " + hop_str
             formatted_jps.append(formatted_jp)
         return formatted_jps
+
+    def annotate_join_paths(self, join_paths, table_fulfilled_filters):
+        """
+        1. get join path, 2. annotate with values to check for, then 3. format into [(l,r)]
+        :param join_paths:
+        :param table_fulfilled_filters:
+        :return:
+        """
+        for jp in join_paths:
+            for hop in jp:
+                relation = hop.source_name
+                filter_fullfilled = table_fulfilled_filters[relation]
+        return
+
+
+def test_e2e(dod):
+    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    values = ["968548423", "kimball", "Mechanical Engineering"]
+
+    joinable_groups = dod.virtual_schema_iterative_search(attrs, values)
+
+    print(joinable_groups)
+
+
+def test_joinable(dod):
+    candidate_group = ['Fac_building.csv', 'Space_detail.csv']
+    #candidate_group = ['Se_person.csv', 'Employee_directory.csv', 'Drupal_employee_directory.csv']
+    #candidate_group = ['Tip_detail.csv', 'Tip_material.csv']
+    join_paths = dod.joinable(candidate_group)
+
+    print("RAW: " + str(len(join_paths)))
+    for el in join_paths:
+        print(el)
+
+    join_paths = dod.format_join_paths(join_paths)
+
+    print("CLEAN: " + str(len(join_paths)))
+    for el in join_paths:
+        print(el)
+
 
 if __name__ == "__main__":
     print("DoD")
@@ -242,11 +277,6 @@ if __name__ == "__main__":
 
     dod = DoD(network=network, store_client=store_client)
 
-    #attrs = ["Mit Id", "Last Name", "Full Name"]
-    #values = ["968548423", "Kimball", "Kimball, Richard W"]
-    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    values = ["968548423", "kimball", "Mechanical Engineering"]
+    # test_e2e(dod)
 
-    joinable_groups = dod.virtual_schema_iterative_search(attrs, values)
-
-    print(joinable_groups)
+    test_joinable(dod)
