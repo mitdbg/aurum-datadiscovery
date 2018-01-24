@@ -36,10 +36,20 @@ class DoD:
         table_fulfilled_filters = defaultdict(list)
         for filter, drs in filter_drs.items():
             drs.set_table_mode()
+            # All these tables fulfill the filter above
             for table in drs:
-                table_fulfilled_filters[table].append(filter)
+                # table_fulfilled_filters[table].append(filter)
+                if filter[1] == FilterType.ATTR:
+                    table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR))
+                elif filter[1] == FilterType.CELL:
+                    columns = [c for c in drs.data]  # copy
+                    for c in columns:
+                        if c.source_name == table:  # filter in this column
+                            table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL))
         # sort by value len -> # fulfilling filters
-        a = sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True)
+
+        # FIXME: broken, need to set the right number of filters, or the candidates are enumerated in the wrong order
+
         table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
 
         def eager_candidate_exploration():
@@ -86,7 +96,7 @@ class DoD:
 
             join_paths = self.joinable(candidate_group)
             join_paths = self.tx_join_paths_to_pair_hops(join_paths)
-            annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters)
+            annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
             # join_paths = self.format_join_paths(join_paths)
 
             # For each candidate join_path, check whether it can be materialized or not,
@@ -94,7 +104,7 @@ class DoD:
 
             # Check JP materialization
 
-            for jp in join_paths:
+            for jp in annotated_join_paths:
                 print(jp)
             break
 
@@ -248,8 +258,22 @@ class DoD:
             join_paths_hops.append(jp_hops)
         return join_paths_hops
 
-    def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters):
-        return
+    def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters, candidate_group):
+        annotated_jps = []
+        for jp in join_paths:
+            # For each hop
+            annotated_jp = []
+            for l, r in jp:
+                # each filter is a (attr, filter-type)
+                # Check if l side is a table in the group or just an intermediary
+                if l.source_name in candidate_group:  # it's a table in group, so retrieve filters
+                    filters = table_fulfilled_filters[l.source_name]
+                else:
+                    filters = None  # indicating no need to check filters for intermediary node
+                annotated_hop = (filters, l, r)
+                annotated_jp.append(annotated_hop)
+            annotated_jps.append(annotated_jp)
+        return annotated_jps
 
 
 def test_e2e(dod):
