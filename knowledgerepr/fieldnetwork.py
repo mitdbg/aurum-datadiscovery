@@ -417,8 +417,8 @@ class FieldNetwork:
 
         dfs_explore(candidates, [x for x in trg_drs], max_hops, paths)
 
-        for p in found_paths:
-            print(p)
+        # for p in found_paths:
+        #     print(p)
 
         o_drs = assemble_table_path_provenance(o_drs, found_paths, relation)
 

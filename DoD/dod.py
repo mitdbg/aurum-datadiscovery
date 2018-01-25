@@ -4,6 +4,7 @@ from enum import Enum
 from collections import defaultdict
 from collections import OrderedDict
 import itertools
+from DoD import data_processing_utils as dpu
 
 
 class FilterType(Enum):
@@ -23,13 +24,16 @@ class DoD:
 
         # Obtain sets that fulfill individual filters
         filter_drs = dict()
+        filter_id = 0
         for attr in sch_def.keys():
             drs = self.api.search_attribute(attr)
-            filter_drs[(attr, FilterType.ATTR)] = drs
+            filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
+            filter_id += 1
 
         for cell in sch_def.values():
             drs = self.api.search_content(cell)
-            filter_drs[(cell, FilterType.CELL)] = drs
+            filter_drs[(cell, FilterType.CELL, filter_id)] = drs
+            filter_id += 1
 
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
@@ -40,17 +44,21 @@ class DoD:
             for table in drs:
                 # table_fulfilled_filters[table].append(filter)
                 if filter[1] == FilterType.ATTR:
-                    table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR))
+                    if filter not in table_fulfilled_filters[table]:
+                        table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR, filter[2]))
                 elif filter[1] == FilterType.CELL:
                     columns = [c for c in drs.data]  # copy
                     for c in columns:
                         if c.source_name == table:  # filter in this column
-                            table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL))
+                            if filter not in table_fulfilled_filters[table]:
+                                table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL, filter[2]))
         # sort by value len -> # fulfilling filters
 
-        # FIXME: broken, need to set the right number of filters, or the candidates are enumerated in the wrong order
-
-        table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
+        # table_fulfilled_filters = {key: list(value) for key, value in table_fulfilled_filters.items()}
+        #table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
+        table_fulfilled_filters = OrderedDict(
+            sorted(table_fulfilled_filters.items(), key=lambda el:
+            len({filter_id for _, _, filter_id in el[1]}), reverse=True))  # length of unique filters
 
         def eager_candidate_exploration():
             # Eagerly obtain groups of tables that cover as many filters as possible
@@ -97,15 +105,16 @@ class DoD:
             join_paths = self.joinable(candidate_group)
             join_paths = self.tx_join_paths_to_pair_hops(join_paths)
             annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
-            # join_paths = self.format_join_paths(join_paths)
+
+            # Check JP materialization
+            print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
+            # for jp in annotated_join_paths:
+            #     print(jp)
 
             # For each candidate join_path, check whether it can be materialized or not,
             # then show to user (or the other way around)
+            valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
 
-            # Check JP materialization
-
-            for jp in annotated_join_paths:
-                print(jp)
             break
 
 
@@ -274,6 +283,16 @@ class DoD:
                 annotated_jp.append(annotated_hop)
             annotated_jps.append(annotated_jp)
         return annotated_jps
+
+    def verify_candidate_join_paths(self, annotated_join_paths):
+        materializable_join_paths = []
+        for filters, l, r in annotated_join_paths:
+            for f in filters:
+                info, filter_type, filter_id = f
+                if filter_id == FilterType.CELL:
+                    key_l = dpu.find_key_for(l.source_name, l.field_name, info[1], info[0])
+                    
+        return materializable_join_paths
 
 
 def test_e2e(dod):
