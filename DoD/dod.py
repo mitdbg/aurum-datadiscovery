@@ -106,6 +106,9 @@ class DoD:
             join_paths = self.tx_join_paths_to_pair_hops(join_paths)
             annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
 
+            # TODO: sort join paths by coverage of filters, or obtain them sorted already. can happen after verification
+            # TODO: probably need the groups, to see if the group is materializable, and not just the individual jps
+
             # Check JP materialization
             print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
             # for jp in annotated_join_paths:
@@ -114,6 +117,8 @@ class DoD:
             # For each candidate join_path, check whether it can be materialized or not,
             # then show to user (or the other way around)
             valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
+
+            print("Found " + str(len(valid_join_paths)) + " materializable join paths")
 
             break
 
@@ -287,32 +292,67 @@ class DoD:
     def verify_candidate_join_paths(self, annotated_join_paths):
         materializable_join_paths = []
         for annotated_join_path in annotated_join_paths:
-            for filters, l, r in annotated_join_path:
-                for f in filters:
-                    info, filter_type, filter_id = f
-                    if filter_id == FilterType.CELL:
-                        attribute = info[1]
-                        cell_value_specified_by_user = info[0]
-                        key_l = dpu.find_key_for(l.source_name, l.field_name,
-                                             attribute, cell_value_specified_by_user)
-                    
+            valid = self.verify_candidate_join_path(annotated_join_path)
+            if valid:
+                materializable_join_paths.append(annotated_join_path)
         return materializable_join_paths
 
     def verify_candidate_join_path(self, annotated_join_path):
-        carrying_values = []
-        for filters, l, r in annotated_join_path:
-            if len(carrying_values) == 0:
-                return False  # non materializable
+        tree_valid_filters = dict()
+        x = 0
+        for filters, l, r in annotated_join_path:  # for each hop
             if filters is not None:
+                cut = x  # saving cut so we can prune later
                 # pre-filter carrying values
                 for info, filter_type, filter_id in filters:
-                    if filter_id == FilterType.CELL:
+                    if filter_type == FilterType.CELL:
                         attribute = info[1]
-                        cell_value_specified_by_user = info[0]
-                        key_l = dpu.find_key_for(l.source_name, l.field_name,
+                        cell_value_specified_by_user = info[0]  # this will always be one (?)
+                        keys_l = dpu.find_key_for(l.source_name, l.field_name,
                                                  attribute, cell_value_specified_by_user)
-                        carrying_values = carrying_values.intersection(set(key_l))
-            # do something with r
+                        # Now update carrying_values with the first filter
+                        to_add = set()
+                        for x, payload in tree_valid_filters.items():
+                            carrying_filters, carrying_values = payload
+                            carrying_values = carrying_values.intersection(set(keys_l))
+                            if len(carrying_values) > 0:  # if keeps it valid, create branch
+                                carrying_filters.add((info, filter_type, filter_id))
+                                x += 1
+                                to_add.add((x, carrying_filters, carrying_values))
+                        # Add the new expansions
+                        for x, carrying_filters, carrying_values in to_add:
+                            tree_valid_filters[x] = (carrying_filters, carrying_values)
+                    elif filter_type == FilterType.ATTR:
+                        continue
+                # At this point we can discard elements that did not make it through this filter
+                for x, payload in tree_valid_filters.items():
+                    if x < cut:
+                        del tree_valid_filters[x]
+            # Now filter with x
+            to_add = set()
+            cut = x
+            for x, payload in tree_valid_filters.items():
+                carrying_filters, carrying_values = payload
+                values_to_carry = set()
+                for carrying_value in carrying_values:
+                    vals = dpu.find_key_for(r.source_name, r.field_name, l.field_name, carrying_value)
+                    values_to_carry.update(set(vals))
+                if len(values_to_carry) > 0:
+                    x += 1
+                    to_add.add((x, carrying_filters, values_to_carry))  # filters remain unchanged in this case
+            # Add new values
+            for x, carrying_filters, carrying_values in to_add:
+                tree_valid_filters[x] = (carrying_filters, carrying_values)
+            # At this point we can discard elements that did not make it through this filter
+            for x, payload in tree_valid_filters.items():
+                if x < cut:
+                    del tree_valid_filters[x]
+        # Check if the join path was valid, also retrieve the number of filters covered by this JP
+        if len(tree_valid_filters.items()) > 0:
+            return True
+        else:
+            return False
+
 
 
 
