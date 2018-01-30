@@ -8,8 +8,8 @@ from DoD import data_processing_utils as dpu
 
 
 class FilterType(Enum):
-    ATTR = 0
-    CELL = 1
+    CELL = 0
+    ATTR = 1
 
 
 class DoD:
@@ -298,68 +298,66 @@ class DoD:
         return materializable_join_paths
 
     def verify_candidate_join_path(self, annotated_join_path):
+        # FIXME: we are not verifying the filters of the very last relation -- will need to add an extra hop for that
         tree_valid_filters = dict()
         x = 0
         for filters, l, r in annotated_join_path:  # for each hop
+            r_path = self.api.helper.get_path_nid(r.nid)
+            l_path = self.api.helper.get_path_nid(l.nid)
+            tree_for_level = dict()
             if filters is not None:
-                cut = x  # saving cut so we can prune later
+                # sort filters so cell type come first
+                filters = sorted(filters, key=lambda x: x[1].value)
                 # pre-filter carrying values
                 for info, filter_type, filter_id in filters:
                     if filter_type == FilterType.CELL:
                         attribute = info[1]
                         cell_value_specified_by_user = info[0]  # this will always be one (?)
-                        l_path = self.api.helper.get_path_nid(l.nid)
                         path = l_path + "/" + l.source_name
                         keys_l = dpu.find_key_for(path, l.field_name,
                                                  attribute, cell_value_specified_by_user)
+                        # Check for the first addition
+                        if len(tree_valid_filters.items()) == 0:
+                            x += 1
+                            tree_for_level[x] = ({(info, filter_type, filter_id)}, set(keys_l))
                         # Now update carrying_values with the first filter
-                        to_add = set()
                         for x, payload in tree_valid_filters.items():
                             carrying_filters, carrying_values = payload
                             carrying_values = carrying_values.intersection(set(keys_l))
                             if len(carrying_values) > 0:  # if keeps it valid, create branch
                                 carrying_filters.add((info, filter_type, filter_id))
                                 x += 1
-                                to_add.add((x, carrying_filters, carrying_values))
-                        # Add the new expansions
-                        for x, carrying_filters, carrying_values in to_add:
-                            tree_valid_filters[x] = (carrying_filters, carrying_values)
+                                tree_for_level[x] = (carrying_filters, carrying_values)
                     elif filter_type == FilterType.ATTR:
-                        continue
-                # At this point we can discard elements that did not make it through this filter
-                for x, payload in tree_valid_filters.items():
-                    if x < cut:
-                        del tree_valid_filters[x]
+                        # attr filters work with everyone, so just append
+                        for x, payload in tree_for_level.items():
+                            carrying_filters, carrying_values = payload
+                            carrying_filters.add((info, filter_type, filter_id))
+                            tree_for_level[x] = (carrying_filters, carrying_values)
             # Now filter with x
-            to_add = set()
-            cut = x
-            for x, payload in tree_valid_filters.items():
+            for x, payload in tree_for_level.items():
                 carrying_filters, carrying_values = payload
                 values_to_carry = set()
                 for carrying_value in carrying_values:
-                    r_path = self.api.helper.get_path_nid(r.nid)
                     path = r_path + "/" + r.source_name
                     vals = dpu.find_key_for(path, r.field_name, l.field_name, carrying_value)
                     values_to_carry.update(set(vals))
                 if len(values_to_carry) > 0:
-                    x += 1
-                    to_add.add((x, carrying_filters, values_to_carry))  # filters remain unchanged in this case
-            # Add new values
-            for x, carrying_filters, carrying_values in to_add:
-                tree_valid_filters[x] = (carrying_filters, carrying_values)
-            # At this point we can discard elements that did not make it through this filter
-            for x, payload in tree_valid_filters.items():
-                if x < cut:
-                    del tree_valid_filters[x]
+                    # here we update the tree at the current level
+                    tree_for_level[x] = (carrying_filters, values_to_carry)
+                else:
+                    del tree_for_level[x]  # no more results here, need to prune
+            tree_valid_filters = tree_for_level
+            if len(tree_valid_filters.items()) == 0:
+                return False, set()  # early stop
         # Check if the join path was valid, also retrieve the number of filters covered by this JP
         if len(tree_valid_filters.items()) > 0:
-            return True
+            unique_filters = set()
+            for k, v in tree_valid_filters.items():
+                unique_filters.update(v[0])
+            return True, len(unique_filters)
         else:
-            return False
-
-
-
-
+            return False, set()
 
 
 def test_e2e(dod):

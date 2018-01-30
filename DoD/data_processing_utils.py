@@ -1,5 +1,7 @@
 import pandas as pd
 
+# Cache reading and transformation of DFs
+cache = dict()
 
 def join_ab_on_key(a, b, a_key, b_key):
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False)
@@ -10,7 +12,14 @@ def find_key_for(relation_path, key, attribute, value):
     """
     select key from relation where attribute = value;
     """
-    df = pd.read_csv(relation_path, encoding='latin1')
+    value = value.lower()
+    # Check if DF in cache
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1')
+        df = df.apply(lambda x: x.astype(str).str.lower())
+        cache[relation_path] = df  # cache for later
     key_value_df = df[df[attribute] == value][[key]]
     return {x[0] for x in key_value_df.values}
 
