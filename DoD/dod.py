@@ -308,7 +308,9 @@ class DoD:
                     if filter_type == FilterType.CELL:
                         attribute = info[1]
                         cell_value_specified_by_user = info[0]  # this will always be one (?)
-                        keys_l = dpu.find_key_for(l.source_name, l.field_name,
+                        l_path = self.api.helper.get_path_nid(l.nid)
+                        path = l_path + "/" + l.source_name
+                        keys_l = dpu.find_key_for(path, l.field_name,
                                                  attribute, cell_value_specified_by_user)
                         # Now update carrying_values with the first filter
                         to_add = set()
@@ -335,7 +337,9 @@ class DoD:
                 carrying_filters, carrying_values = payload
                 values_to_carry = set()
                 for carrying_value in carrying_values:
-                    vals = dpu.find_key_for(r.source_name, r.field_name, l.field_name, carrying_value)
+                    r_path = self.api.helper.get_path_nid(r.nid)
+                    path = r_path + "/" + r.source_name
+                    vals = dpu.find_key_for(path, r.field_name, l.field_name, carrying_value)
                     values_to_carry.update(set(vals))
                 if len(values_to_carry) > 0:
                     x += 1

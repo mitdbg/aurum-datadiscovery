@@ -538,6 +538,10 @@ class Helper:
         info = self._network.get_info_for([nid])
         return info
 
+    def get_path_nid(self, nid) -> str:
+        path_str = self._store_client.get_path_of(nid)
+        return path_str
+
     def help(self):
         """
         Prints general help information, or specific usage information of a function if provided

@@ -58,9 +58,7 @@ public class Main {
 
 	// Parsing sources config file
 	String sourceConfigFile = pc.getString(ProfilerConfig.SOURCE_CONFIG_FILE);
-	System.out.println("test1");
 	LOG.info("Using {} as sources file", sourceConfigFile);
-	System.out.println("test2");
 	List<SourceConfig> sourceConfigs = YAMLParser.processSourceConfig(sourceConfigFile);
 
 	LOG.info("Found {} sources to profile", sourceConfigs.size());
