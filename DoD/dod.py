@@ -286,13 +286,36 @@ class DoD:
 
     def verify_candidate_join_paths(self, annotated_join_paths):
         materializable_join_paths = []
-        for filters, l, r in annotated_join_paths:
-            for f in filters:
-                info, filter_type, filter_id = f
-                if filter_id == FilterType.CELL:
-                    key_l = dpu.find_key_for(l.source_name, l.field_name, info[1], info[0])
+        for annotated_join_path in annotated_join_paths:
+            for filters, l, r in annotated_join_path:
+                for f in filters:
+                    info, filter_type, filter_id = f
+                    if filter_id == FilterType.CELL:
+                        attribute = info[1]
+                        cell_value_specified_by_user = info[0]
+                        key_l = dpu.find_key_for(l.source_name, l.field_name,
+                                             attribute, cell_value_specified_by_user)
                     
         return materializable_join_paths
+
+    def verify_candidate_join_path(self, annotated_join_path):
+        carrying_values = []
+        for filters, l, r in annotated_join_path:
+            if len(carrying_values) == 0:
+                return False  # non materializable
+            if filters is not None:
+                # pre-filter carrying values
+                for info, filter_type, filter_id in filters:
+                    if filter_id == FilterType.CELL:
+                        attribute = info[1]
+                        cell_value_specified_by_user = info[0]
+                        key_l = dpu.find_key_for(l.source_name, l.field_name,
+                                                 attribute, cell_value_specified_by_user)
+                        carrying_values = carrying_values.intersection(set(key_l))
+            # do something with r
+
+
+
 
 
 def test_e2e(dod):
