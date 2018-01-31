@@ -102,27 +102,38 @@ class DoD:
             print(candidate_group)
             print(candidate_group_filters_covered)
 
-            join_paths = self.joinable(candidate_group)
-            join_paths = self.tx_join_paths_to_pair_hops(join_paths)
-            annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
+            # Pre-check
+            # TODO: with a connected components index we can pre-filter many of those groups without checking
 
-            # TODO: sort join paths by coverage of filters, or obtain them sorted already. can happen after verification
-            # TODO: probably need the groups, to see if the group is materializable, and not just the individual jps
+            join_path_groups = self.joinable(candidate_group)
+            if len(join_path_groups) == 0:
+                print("Group: " + str(candidate_group) + " is Non-Joinable")
+                continue
 
-            # Check JP materialization
-            print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
-            # for jp in annotated_join_paths:
-            #     print(jp)
+            # We need that at least one JP from each group is materializable
+            materializable_join_groups = []
+            for join_paths in join_path_groups:
+                join_paths = self.tx_join_paths_to_pair_hops(join_paths)
+                annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
 
-            # For each candidate join_path, check whether it can be materialized or not,
-            # then show to user (or the other way around)
-            valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
+                # Check JP materialization
+                print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
+                # for jp in annotated_join_paths:
+                #     print(jp)
 
-            print("Found " + str(len(valid_join_paths)) + " materializable join paths")
+                # For each candidate join_path, check whether it can be materialized or not,
+                # then show to user (or the other way around)
+                valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
 
-            break
+                print("Found " + str(len(valid_join_paths)) + " materializable join paths")
 
-
+                if len(valid_join_paths) > 0:
+                    materializable_join_groups.append(valid_join_paths)
+                else:
+                    print("Group non-materializable")
+                    break
+            print("Found materializable join-graph")
+            print(str(materializable_join_groups))
 
 
     def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
@@ -196,7 +207,7 @@ class DoD:
         # if we had connected components info, we could check right away whether these are connectable or not
 
         # Algo
-        join_paths = []
+        join_path_groups = []  # store groups, as many as pairs of tables in the group
         draw = list(group_tables)  # we can add nodes from the join paths
         remaining_nodes = set(group_tables)  # if we empty this, success
 
@@ -212,6 +223,7 @@ class DoD:
             t2 = self.api.make_drs(table2)
             t1.set_table_mode()
             t2.set_table_mode()
+            group = []  # stored group of jps for each pair of tables within the group
             drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=2)
             paths = drs.paths()  # list of lists
             if len(paths) > 0:
@@ -222,13 +234,15 @@ class DoD:
                             remaining_nodes.remove(intermediate_node)  # found one
                         elif intermediate_node not in draw:
                             draw.append(intermediate_node)  # intermediate that can join to other nodes later
-                    join_paths.append(path)  # the join path is useful to cover new nodes
-
+                    group.append(path)  # the join path is useful to cover new nodes
             else:
                 draw.remove(table1)  # this one does not connect to more elements anymore
-
-        if len(join_paths) > 0:
-            return join_paths
+            if len(group) > 0:  # if we don't find at least one JP for each pair, then the join graph won't be valid
+                join_path_groups.append(group)
+            else:
+                return []  # join path won't be valid. could refine by allowing some deterioration (?)
+        if len(join_path_groups) > 0:
+            return join_path_groups
         else:
             return []  # although we found join paths they did not cover all nodes
 
@@ -274,6 +288,8 @@ class DoD:
 
     def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters, candidate_group):
         annotated_jps = []
+        l = None  # memory for last hop
+        r = None
         for jp in join_paths:
             # For each hop
             annotated_jp = []
@@ -287,22 +303,26 @@ class DoD:
                 annotated_hop = (filters, l, r)
                 annotated_jp.append(annotated_hop)
             annotated_jps.append(annotated_jp)
+        # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
+        if r.source_name in candidate_group:
+            filters = table_fulfilled_filters[r.source_name]
+            annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
+            last_hop = annotated_jps[-1]
+            last_hop.append(annotated_hop)
         return annotated_jps
 
     def verify_candidate_join_paths(self, annotated_join_paths):
         materializable_join_paths = []
         for annotated_join_path in annotated_join_paths:
-            valid = self.verify_candidate_join_path(annotated_join_path)
+            valid, filters = self.verify_candidate_join_path(annotated_join_path)
             if valid:
                 materializable_join_paths.append(annotated_join_path)
         return materializable_join_paths
 
     def verify_candidate_join_path(self, annotated_join_path):
-        # FIXME: we are not verifying the filters of the very last relation -- will need to add an extra hop for that
         tree_valid_filters = dict()
         x = 0
         for filters, l, r in annotated_join_path:  # for each hop
-            r_path = self.api.helper.get_path_nid(r.nid)
             l_path = self.api.helper.get_path_nid(l.nid)
             tree_for_level = dict()
             if filters is not None:
@@ -334,22 +354,31 @@ class DoD:
                             carrying_filters, carrying_values = payload
                             carrying_filters.add((info, filter_type, filter_id))
                             tree_for_level[x] = (carrying_filters, carrying_values)
-            # Now filter with x
-            for x, payload in tree_for_level.items():
-                carrying_filters, carrying_values = payload
-                values_to_carry = set()
-                for carrying_value in carrying_values:
-                    path = r_path + "/" + r.source_name
-                    vals = dpu.find_key_for(path, r.field_name, l.field_name, carrying_value)
-                    values_to_carry.update(set(vals))
-                if len(values_to_carry) > 0:
-                    # here we update the tree at the current level
-                    tree_for_level[x] = (carrying_filters, values_to_carry)
-                else:
+            # Now filter with r
+            if r is not None:  # if none, we processed the last step already, so time to check the tree
+                r_path = self.api.helper.get_path_nid(r.nid)
+                x_to_remove = set()
+                for x, payload in tree_for_level.items():
+                    carrying_filters, carrying_values = payload
+                    values_to_carry = set()
+                    for carrying_value in carrying_values:
+                        path = r_path + "/" + r.source_name
+                        #vals = dpu.find_key_for(path, r.field_name, l.field_name, carrying_value)
+                        exists = dpu.is_value_in_column(carrying_value, path, r.field_name)
+                        if exists:
+                            #values_to_carry.update(set(vals))
+                            values_to_carry.add(carrying_value)  # this one checks
+                    if len(values_to_carry) > 0:
+                        # here we update the tree at the current level
+                        tree_for_level[x] = (carrying_filters, values_to_carry)
+                    else:
+                        x_to_remove.add(x)
+                # remove if any
+                for x in x_to_remove:
                     del tree_for_level[x]  # no more results here, need to prune
-            tree_valid_filters = tree_for_level
-            if len(tree_valid_filters.items()) == 0:
-                return False, set()  # early stop
+                tree_valid_filters = tree_for_level
+                if len(tree_valid_filters.items()) == 0:
+                    return False, set()  # early stop
         # Check if the join path was valid, also retrieve the number of filters covered by this JP
         if len(tree_valid_filters.items()) > 0:
             unique_filters = set()

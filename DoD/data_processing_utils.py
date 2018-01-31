@@ -3,6 +3,7 @@ import pandas as pd
 # Cache reading and transformation of DFs
 cache = dict()
 
+
 def join_ab_on_key(a, b, a_key, b_key):
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False)
     return joined
@@ -20,19 +21,33 @@ def find_key_for(relation_path, key, attribute, value):
         df = pd.read_csv(relation_path, encoding='latin1')
         df = df.apply(lambda x: x.astype(str).str.lower())
         cache[relation_path] = df  # cache for later
-    key_value_df = df[df[attribute] == value][[key]]
+    try:
+        key_value_df = df[df[attribute] == value][[key]]
+    except KeyError:
+        print("wtf")
+        a = 1
     return {x[0] for x in key_value_df.values}
+
+
+def is_value_in_column(value, relation_path, column):
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1')
+        df = df.apply(lambda x: x.astype(str).str.lower())
+        cache[relation_path] = df  # cache for later
+    return value in df[column].unique()
 
 
 if __name__ == "__main__":
 
-    # # JOIN
-    # a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1')
-    # b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1')
-    #
-    # a_key = 'Mit Id'
-    # b_key = 'Mit Id'
-    # joined = join_ab_on_key(a, b, a_key, b_key)
+    # JOIN
+    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1')
+    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1')
+
+    a_key = 'Mit Id'
+    b_key = 'Mit Id'
+    joined = join_ab_on_key(a, b, a_key, b_key)
 
     # Find KEY
     path = "/Users/ra-mit/data/mitdwhdata/Warehouse_users.csv"
