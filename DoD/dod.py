@@ -106,6 +106,7 @@ class DoD:
             # TODO: with a connected components index we can pre-filter many of those groups without checking
 
             join_path_groups = self.joinable(candidate_group)
+            print("Join path groups: " + str(len(join_path_groups)))
             if len(join_path_groups) == 0:
                 print("Group: " + str(candidate_group) + " is Non-Joinable")
                 continue
@@ -133,7 +134,20 @@ class DoD:
                     print("Group non-materializable")
                     break
             print("Found materializable join-graph")
-            print(str(materializable_join_groups))
+            jps = []
+            for group in materializable_join_groups:
+                group_new = []
+                for opt in group:
+                    opt_new = []
+                    for filters, l, r in opt:
+                        tuple = (l, r)
+                        opt_new.append(tuple)
+                    group_new.append(opt_new)
+                jps.append(group_new)
+            print("RESULT: " + str(jps))
+
+            # print(str(materializable_join_groups))
+            break
 
 
     def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
