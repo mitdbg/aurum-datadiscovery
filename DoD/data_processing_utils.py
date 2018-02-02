@@ -1,11 +1,12 @@
 import pandas as pd
+from DoD.dod import FilterType
 
 # Cache reading and transformation of DFs
 cache = dict()
 
 
-def join_ab_on_key(a, b, a_key, b_key):
-    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False)
+def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str):
+    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('_x', ''))
     return joined
 
 
@@ -38,8 +39,33 @@ def is_value_in_column(value, relation_path, column):
         cache[relation_path] = df  # cache for later
     return value in df[column].unique()
 
-def materialize_join_path(jp):
-    return
+
+def materialize_join_path(jp_with_filters, dod):
+    filters, jp = jp_with_filters
+    attributes_to_project = set()
+    for f in filters:
+        f_type = f[1].value
+        if f_type is FilterType.ATTR.value:
+            attributes_to_project.add(f[0][0])
+        elif f_type is FilterType.CELL.value:
+            attributes_to_project.add(f[0][1])
+
+    df = None
+    for l, r in jp:
+        l_path = dod.api.helper.get_path_nid(l.nid)
+        r_path = dod.api.helper.get_path_nid(r.nid)
+        l_key = l.field_name
+        r_key = r.field_name
+        print("Joining: " + str(l.source_name) + " with: " + str(r.source_name))
+        if df is None:  # first iteration
+            l = cache[l_path + '/' + l.source_name]
+            r = cache[r_path + '/' + r.source_name]
+        else:  # roll the partially joint
+            l = df
+            r = cache[r_path + '/' + r.source_name]
+        df = join_ab_on_key(l, r, l_key, r_key)
+    df = df[list(attributes_to_project)]
+    return df
 
 
 if __name__ == "__main__":

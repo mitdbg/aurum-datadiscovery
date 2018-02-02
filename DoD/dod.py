@@ -159,14 +159,18 @@ class DoD:
             clean_jp = []
             for annotated_jp in materializable_join_groups[0]:
                 jp = []
+                filters = set()
                 for filter, l, r in annotated_jp:
                     jp.append((l,r))
-                clean_jp.append(jp)
+                    filters.update(filter)
+                clean_jp.append((filters, jp))
             sample = clean_jp[0]
             print("Sample JP: ")
             print(str(sample))
 
-            materialized_virtual_schema = dpu.materialize_join_path(sample)
+            materialized_virtual_schema = dpu.materialize_join_path(sample, self)
+
+            print(materialized_virtual_schema.head(2))
 
             # print("Found materializable join-graph")
             # print("Found: " + str(len(materializable_join_groups[0])))
