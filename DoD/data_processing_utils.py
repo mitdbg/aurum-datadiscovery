@@ -38,6 +38,9 @@ def is_value_in_column(value, relation_path, column):
         cache[relation_path] = df  # cache for later
     return value in df[column].unique()
 
+def materialize_join_path(jp):
+    return
+
 
 if __name__ == "__main__":
 
