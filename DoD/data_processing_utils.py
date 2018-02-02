@@ -21,7 +21,7 @@ def find_key_for(relation_path, key, attribute, value):
     else:
         df = pd.read_csv(relation_path, encoding='latin1')
         df = df.apply(lambda x: x.astype(str).str.lower())
-        cache[relation_path] = df  # cache for later
+        # cache[relation_path] = df  # cache for later
     try:
         key_value_df = df[df[attribute] == value][[key]]
     except KeyError:
@@ -56,13 +56,28 @@ def materialize_join_path(jp_with_filters, dod):
         r_path = dod.api.helper.get_path_nid(r.nid)
         l_key = l.field_name
         r_key = r.field_name
-        print("Joining: " + str(l.source_name) + " with: " + str(r.source_name))
+        print("Joining: " + str(l.source_name) + "." + str(l_key) + " with: " + str(r.source_name) + "." + str(r_key))
         if df is None:  # first iteration
-            l = cache[l_path + '/' + l.source_name]
-            r = cache[r_path + '/' + r.source_name]
+            path = l_path + '/' + l.source_name
+            if path in cache:
+                l = cache[path]
+            else:
+                df = pd.read_csv(path, encoding='latin1')
+                l = df.apply(lambda x: x.astype(str).str.lower())
+            path = r_path + '/' + r.source_name
+            if path in cache:
+                r = cache[path]
+            else:
+                df = pd.read_csv(path, encoding='latin1')
+                r = df.apply(lambda x: x.astype(str).str.lower())
         else:  # roll the partially joint
             l = df
-            r = cache[r_path + '/' + r.source_name]
+            path = r_path + '/' + r.source_name
+            if path in cache:
+                r = cache[path]
+            else:
+                df = pd.read_csv(path, encoding='latin1')
+                r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key)
     df = df[list(attributes_to_project)]
     return df

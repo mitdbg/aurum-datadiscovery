@@ -164,33 +164,12 @@ class DoD:
                     jp.append((l,r))
                     filters.update(filter)
                 clean_jp.append((filters, jp))
-            sample = clean_jp[0]
+
             print("Sample JP: ")
-            print(str(sample))
+            for mjp in clean_jp:
+                materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
+                yield materialized_virtual_schema
 
-            materialized_virtual_schema = dpu.materialize_join_path(sample, self)
-
-            print(materialized_virtual_schema.head(2))
-
-            # print("Found materializable join-graph")
-            # print("Found: " + str(len(materializable_join_groups[0])))
-            # print(str(materializable_join_groups[0][0]))
-
-
-            # jps = []
-            # for group in materializable_join_groups:
-            #     group_new = []
-            #     for opt in group:
-            #         opt_new = []
-            #         for filters, l, r in opt:
-            #             tuple = (l, r)
-            #             opt_new.append(tuple)
-            #         group_new.append(opt_new)
-            #     jps.append(group_new)
-            # print("RESULT: " + str(jps))
-
-            # print(str(materializable_join_groups))
-            break
 
 
     def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
@@ -505,13 +484,17 @@ class DoD:
             return False, set()
 
 
-def test_e2e(dod):
+def test_e2e(dod, number_jps=5):
     attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     values = ["968548423", "kimball", "Mechanical Engineering"]
 
-    joinable_groups = dod.virtual_schema_iterative_search(attrs, values)
-
-    print(joinable_groups)
+    i = 0
+    for mjp in dod.virtual_schema_iterative_search(attrs, values):
+        print("JP: " + str(i))
+        i += 1
+        print(mjp.head(2))
+        if i > number_jps:
+            break
 
 
 def test_joinable(dod):
@@ -543,6 +526,6 @@ if __name__ == "__main__":
 
     dod = DoD(network=network, store_client=store_client)
 
-    test_e2e(dod)
+    test_e2e(dod, number_jps=10)
 
     # test_joinable(dod)
