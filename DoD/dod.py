@@ -17,7 +17,7 @@ class DoD:
     def __init__(self, network, store_client):
         self.api = API(network=network, store_client=store_client)
 
-    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str]):
+    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
         # Align schema definition and samples
         assert len(list_attributes) == len(list_samples)
         sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
@@ -102,13 +102,27 @@ class DoD:
 
         # Find ways of joining together each group
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
-            print(candidate_group)
-            print(candidate_group_filters_covered)
+            print("")
+            print("Exploring: " + str(candidate_group))
+            print("Which covers: " + str(candidate_group_filters_covered))
+            num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
+            print("#Filters: " + str(num_unique_filters))
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
 
             group_with_all_relations, join_path_groups = self.joinable(candidate_group)
+            if debug_enumerate_all_jps:
+                print("Join paths which cover candidate group:")
+                for jp in group_with_all_relations:
+                    print(jp)
+                print("Join graphs which cover candidate group: ")
+                for i, group in enumerate(join_path_groups):
+                    print("Group: " + str(i))
+                    for el in group:
+                        print(el)
+                continue  # We are just interested in all JPs for all candidate groups
+
             if len(join_path_groups) == 0:
                 print("Group: " + str(candidate_group) + " is Non-Joinable")
                 continue
@@ -161,7 +175,7 @@ class DoD:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
-                    jp.append((l,r))
+                    jp.append((l, r))
                     filters.update(filter)
                 clean_jp.append((filters, jp))
 
@@ -488,8 +502,11 @@ def test_e2e(dod, number_jps=5):
     attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     values = ["968548423", "kimball", "Mechanical Engineering"]
 
+    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
+
     i = 0
-    for mjp in dod.virtual_schema_iterative_search(attrs, values):
+    for mjp in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=True):
         print("JP: " + str(i))
         i += 1
         print(mjp.head(2))
