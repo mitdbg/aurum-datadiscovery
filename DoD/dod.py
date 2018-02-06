@@ -61,6 +61,9 @@ class DoD:
             len({filter_id for _, _, filter_id in el[1]}), reverse=True))  # length of unique filters
 
         def eager_candidate_exploration():
+            def clear_state():
+                candidate_group.clear()
+                candidate_group_filters_covered.clear()
             # Eagerly obtain groups of tables that cover as many filters as possible
             not_found = True
             while not_found:
@@ -77,8 +80,7 @@ class DoD:
                         candidate_group = sorted(candidate_group)
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
-                        candidate_group.clear()
-                        candidate_group_filters_covered.clear()
+                        clear_state()
                         continue
                     for j in range(len(list(table_fulfilled_filters.items()))):
                         idx = i + j + 1
@@ -94,11 +96,12 @@ class DoD:
                                 if len(candidate_group_filters_covered) == len(filter_drs.items()):
                                     candidate_group = sorted(candidate_group)
                                     yield (candidate_group, candidate_group_filters_covered)  # early stop
+                                    clear_state()
+                                    continue
                     candidate_group = sorted(candidate_group)
                     yield (candidate_group, candidate_group_filters_covered)
                     # Cleaning
-                    candidate_group.clear()
-                    candidate_group_filters_covered.clear()
+                    clear_state()
 
         # Find ways of joining together each group
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
@@ -502,8 +505,8 @@ def test_e2e(dod, number_jps=5):
     attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     values = ["968548423", "kimball", "Mechanical Engineering"]
 
-    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
+    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
     for mjp in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=True):
