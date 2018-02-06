@@ -104,6 +104,7 @@ class DoD:
                     clear_state()
 
         # Find ways of joining together each group
+        cache_unjoinable_pairs = set()
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
             print("Exploring: " + str(candidate_group))
@@ -111,10 +112,12 @@ class DoD:
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("#Filters: " + str(num_unique_filters))
 
+            if len(candidate_group) == 1:
+                a = 1  # TODO: handle individual tables at the end
+
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
-
-            group_with_all_relations, join_path_groups = self.joinable(candidate_group)
+            group_with_all_relations, join_path_groups = self.joinable(candidate_group, cache_unjoinable_pairs)
             if debug_enumerate_all_jps:
                 print("Join paths which cover candidate group:")
                 for jp in group_with_all_relations:
@@ -248,14 +251,21 @@ class DoD:
 
         return joinable_groups
 
-    def joinable(self, group_tables: [str]):
+    def joinable(self, group_tables: [str], cache_unjoinable_pairs: set):
         """
         Check whether there is join graph that connects the tables in the group. This boils down to check
         whether there is a set of join paths which connect all tables.
         :param group_tables:
+        :param cache_unjoinable_pairs: this set contains pairs of tables that do not join with each other
         :return:
         """
         assert len(group_tables) > 1
+
+        # Check first with the cache whether these are unjoinable
+        for table1, table2 in itertools.combinations(group_tables, 2):
+            if (table1, table2) in cache_unjoinable_pairs or (table2, table1) in cache_unjoinable_pairs:
+                print(table1 + " unjoinable to: " + table2 + " skipping...")
+                return [], []
 
         # if not the size of group_tables, there won't be unique jps with all tables. that may not be good though
         max_hops = 2
@@ -271,6 +281,9 @@ class DoD:
             drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
             paths = drs.paths()  # list of lists
             group = []
+            if len(paths) == 0:  # then store this info, these tables do not join
+                cache_unjoinable_pairs.add((table1, table2))
+                cache_unjoinable_pairs.add((table2, table1))
             for p in paths:
                 tables_covered = set(group_tables)
                 for hop in p:
