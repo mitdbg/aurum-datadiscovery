@@ -22,6 +22,8 @@ class DoD:
         assert len(list_attributes) == len(list_samples)
         sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
 
+        sch_def = OrderedDict(sorted(sch_def.items(), key=lambda x: x[0], reverse=True))
+
         # Obtain sets that fulfill individual filters
         filter_drs = dict()
         filter_id = 0
@@ -60,29 +62,40 @@ class DoD:
             sorted(table_fulfilled_filters.items(), key=lambda el:
             (len({filter_id for _, _, filter_id in el[1]}), el[0]), reverse=True))  # len of unique filters, then lexico
 
-        if debug_enumerate_all_jps:
-            for el in table_fulfilled_filters.items():
-                print(el)
-            return
+        # Ordering filters for more determinism
+        for k, v in table_fulfilled_filters.items():
+            v = sorted(v, key=lambda el: (el[2], el[0][0]), reverse=True)  # sort by id, then filter_name
+            table_fulfilled_filters[k] = v
+
+        # if debug_enumerate_all_jps:
+        #     #for el in table_fulfilled_filters.items():
+        #     for i in range(len(list(table_fulfilled_filters.items()))):
+        #         el = list(table_fulfilled_filters.items())[i]
+        #         print(el)
+        #     return
 
         def eager_candidate_exploration():
             def clear_state():
                 candidate_group.clear()
                 candidate_group_filters_covered.clear()
             # Eagerly obtain groups of tables that cover as many filters as possible
-            not_found = True
-            while not_found:
+            go_on = True
+            while go_on:
                 candidate_group = []
                 candidate_group_filters_covered = set()
                 for i in range(len(list(table_fulfilled_filters.items()))):
                     table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
+                    if table_pivot == "Zpm_rooms_load.csv":
+                        a = 1
                     # Eagerly add pivot
                     candidate_group.append(table_pivot)
-                    for el in filters_pivot:
-                        candidate_group_filters_covered.add(el)
+                    candidate_group_filters_covered.update(filters_pivot)
                     # Did it cover all filters?
                     if len(candidate_group_filters_covered) == len(filter_drs.items()):
                         candidate_group = sorted(candidate_group)
+                        print("1: " + str(table_pivot))
+                        if len(candidate_group) == 1:
+                            a = 1
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
                         clear_state()
@@ -94,28 +107,48 @@ class DoD:
                         table, filters = list(table_fulfilled_filters.items())[idx]
                         new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
+                            if table == "Zpm_rooms_load.csv":
+                                a = 1
                             candidate_group.append(table)
-                            for el in filters:
-                                candidate_group_filters_covered.add(el)
-                                # Did it cover all filters?
-                                if len(candidate_group_filters_covered) == len(filter_drs.items()):
-                                    candidate_group = sorted(candidate_group)
-                                    yield (candidate_group, candidate_group_filters_covered)  # early stop
-                                    clear_state()
-                                    continue
+
+                            candidate_group_filters_covered.update(filters)
+                            if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                                candidate_group = sorted(candidate_group)
+                                print("2: " + str(table_pivot))
+                                if len(candidate_group) == 1:
+                                    a = 1
+                                yield (candidate_group, candidate_group_filters_covered)
+                                clear_state()
+                                # Re-add the current pivot, only necessary in this case
+                                candidate_group.append(table_pivot)
+                                candidate_group_filters_covered.update(filters_pivot)
+
+                            # for el in filters:
+                            #     candidate_group_filters_covered.add(el)
+                            #     # Did it cover all filters?
+                            #     if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                            #         candidate_group = sorted(candidate_group)
+                            #         yield (candidate_group, candidate_group_filters_covered)  # early stop
+                            #         clear_state()
+                            #         continue
                     candidate_group = sorted(candidate_group)
+                    print("3: " + str(table_pivot))
+                    if len(candidate_group) == 1:
+                        a = 1
                     yield (candidate_group, candidate_group_filters_covered)
                     # Cleaning
                     clear_state()
+                go_on = False  # finished exploring all groups
 
         # Find ways of joining together each group
         cache_unjoinable_pairs = defaultdict(int)
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
             print("Exploring: " + str(candidate_group))
-            print("Which covers: " + str(candidate_group_filters_covered))
+            # print("Which covers: " + str(candidate_group_filters_covered))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("#Filters: " + str(num_unique_filters))
+            continue
 
             if len(candidate_group) == 1:
                 print("Finished enumeraing groups")
@@ -271,7 +304,7 @@ class DoD:
         """
         assert len(group_tables) > 1
 
-        # Check first with the cache whether these are unjoinable
+        # # Check first with the cache whether these are unjoinable
         for table1, table2 in itertools.combinations(group_tables, 2):
             if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
                 # We count the attempt
