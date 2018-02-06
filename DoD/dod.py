@@ -148,15 +148,11 @@ class DoD:
             # print("Which covers: " + str(candidate_group_filters_covered))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("#Filters: " + str(num_unique_filters))
-            continue
+            # continue
 
             if len(candidate_group) == 1:
-                print("Finished enumeraing groups")
-                cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
-                                                            key=lambda x: x[1], reverse=True))
-                for k, v in cache_unjoinable_pairs.items():
-                    print(str(k) + " => " + str(v))
-                break
+                print(str(candidate_group))
+                continue  # avoid the joinable for a 1-table group
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
@@ -232,6 +228,13 @@ class DoD:
             for mjp in clean_jp:
                 materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
                 yield materialized_virtual_schema
+
+        print("Finished enumerating groups")
+        cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
+                                                    key=lambda x: x[1], reverse=True))
+        for k, v in cache_unjoinable_pairs.items():
+            print(str(k) + " => " + str(v))
+
 
 
 
