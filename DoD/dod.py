@@ -58,7 +58,7 @@ class DoD:
         #table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
         table_fulfilled_filters = OrderedDict(
             sorted(table_fulfilled_filters.items(), key=lambda el:
-            len({filter_id for _, _, filter_id in el[1]}), reverse=True))  # length of unique filters
+            (len({filter_id for _, _, filter_id in el[1]}), el[0]), reverse=True))  # len of unique filters, then lexico
 
         if debug_enumerate_all_jps:
             for el in table_fulfilled_filters.items():
