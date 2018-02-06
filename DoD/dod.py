@@ -60,6 +60,11 @@ class DoD:
             sorted(table_fulfilled_filters.items(), key=lambda el:
             len({filter_id for _, _, filter_id in el[1]}), reverse=True))  # length of unique filters
 
+        if debug_enumerate_all_jps:
+            for el in table_fulfilled_filters.items():
+                print(el)
+            return
+
         def eager_candidate_exploration():
             def clear_state():
                 candidate_group.clear()
@@ -104,7 +109,7 @@ class DoD:
                     clear_state()
 
         # Find ways of joining together each group
-        cache_unjoinable_pairs = set()
+        cache_unjoinable_pairs = defaultdict(int)
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
             print("Exploring: " + str(candidate_group))
@@ -113,7 +118,12 @@ class DoD:
             print("#Filters: " + str(num_unique_filters))
 
             if len(candidate_group) == 1:
-                a = 1  # TODO: handle individual tables at the end
+                print("Finished enumeraing groups")
+                cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
+                                                            key=lambda x: x[1], reverse=True))
+                for k, v in cache_unjoinable_pairs.items():
+                    print(str(k) + " => " + str(v))
+                break
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
@@ -251,7 +261,7 @@ class DoD:
 
         return joinable_groups
 
-    def joinable(self, group_tables: [str], cache_unjoinable_pairs: set):
+    def joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int)):
         """
         Check whether there is join graph that connects the tables in the group. This boils down to check
         whether there is a set of join paths which connect all tables.
@@ -263,7 +273,10 @@ class DoD:
 
         # Check first with the cache whether these are unjoinable
         for table1, table2 in itertools.combinations(group_tables, 2):
-            if (table1, table2) in cache_unjoinable_pairs or (table2, table1) in cache_unjoinable_pairs:
+            if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
+                # We count the attempt
+                cache_unjoinable_pairs[(table1, table2)] += 1
+                cache_unjoinable_pairs[(table2, table1)] += 1
                 print(table1 + " unjoinable to: " + table2 + " skipping...")
                 return [], []
 
@@ -282,8 +295,8 @@ class DoD:
             paths = drs.paths()  # list of lists
             group = []
             if len(paths) == 0:  # then store this info, these tables do not join
-                cache_unjoinable_pairs.add((table1, table2))
-                cache_unjoinable_pairs.add((table2, table1))
+                cache_unjoinable_pairs[(table1, table2)] += 1
+                cache_unjoinable_pairs[(table2, table1)] += 1
             for p in paths:
                 tables_covered = set(group_tables)
                 for hop in p:
