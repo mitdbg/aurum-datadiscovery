@@ -301,55 +301,6 @@ class DoD:
                     return [], []  # no jps covering all tables and empty groups => no join graph
         return group_with_all_tables, join_path_groups
 
-    def __joinable(self, group_tables: [str]):
-        # FIXME: intermediate hops are not gonna be added right now
-        """
-        Check whether all the tables in the group can be part of a 'single' join path
-        :param group_tables:
-        :return: if yes, a list of valid join paths, if not an empty list
-        """
-        # if we had connected components info, we could check right away whether these are connectable or not
-
-        # Algo
-        join_path_groups = []  # store groups, as many as pairs of tables in the group
-        draw = list(group_tables)  # we can add nodes from the join paths
-        remaining_nodes = set(group_tables)  # if we empty this, success
-
-        go_on = True
-        while go_on:
-            table1 = draw[0]  # choose always same until exhausted
-            if len(remaining_nodes) == 0:
-                break
-            table2 = remaining_nodes.pop()
-            if table1 == table2:
-                continue  # no need to join this
-            t1 = self.api.make_drs(table1)
-            t2 = self.api.make_drs(table2)
-            t1.set_table_mode()
-            t2.set_table_mode()
-            group = []  # stored group of jps for each pair of tables within the group
-            drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=2)
-            paths = drs.paths()  # list of lists
-            if len(paths) > 0:
-                for path in paths:  # list of Hits
-                    for hop in path:
-                        intermediate_node = hop.source_name
-                        if intermediate_node in remaining_nodes:
-                            remaining_nodes.remove(intermediate_node)  # found one
-                        elif intermediate_node not in draw:
-                            draw.append(intermediate_node)  # intermediate that can join to other nodes later
-                    group.append(path)  # the join path is useful to cover new nodes
-            else:
-                draw.remove(table1)  # this one does not connect to more elements anymore
-            if len(group) > 0:  # if we don't find at least one JP for each pair, then the join graph won't be valid
-                join_path_groups.append(group)
-            else:
-                return []  # join path won't be valid. could refine by allowing some deterioration (?)
-        if len(join_path_groups) > 0:
-            return join_path_groups
-        else:
-            return []  # although we found join paths they did not cover all nodes
-
     def format_join_paths(self, join_paths):
         """
         Transform this into something readable
