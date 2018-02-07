@@ -1,5 +1,5 @@
 import pandas as pd
-from DoD.dod import FilterType
+from DoD.utils import FilterType
 
 # Cache reading and transformation of DFs
 cache = dict()

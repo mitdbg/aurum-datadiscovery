@@ -579,8 +579,8 @@ class Helper:
 
 class API(Algebra):
     def __init__(self, *args, **kwargs):
-        print(str(type(API)))
-        print(str(type(self)))
+        # print(str(type(API)))
+        # print(str(type(self)))
         super(API, self).__init__(*args, **kwargs)
 
 

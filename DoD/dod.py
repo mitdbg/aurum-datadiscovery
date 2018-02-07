@@ -5,11 +5,7 @@ from collections import defaultdict
 from collections import OrderedDict
 import itertools
 from DoD import data_processing_utils as dpu
-
-
-class FilterType(Enum):
-    CELL = 0
-    ATTR = 1
+from DoD.utils import FilterType
 
 
 class DoD:
@@ -122,15 +118,6 @@ class DoD:
                                 # Re-add the current pivot, only necessary in this case
                                 candidate_group.append(table_pivot)
                                 candidate_group_filters_covered.update(filters_pivot)
-
-                            # for el in filters:
-                            #     candidate_group_filters_covered.add(el)
-                            #     # Did it cover all filters?
-                            #     if len(candidate_group_filters_covered) == len(filter_drs.items()):
-                            #         candidate_group = sorted(candidate_group)
-                            #         yield (candidate_group, candidate_group_filters_covered)  # early stop
-                            #         clear_state()
-                            #         continue
                     candidate_group = sorted(candidate_group)
                     print("3: " + str(table_pivot))
                     if len(candidate_group) == 1:
