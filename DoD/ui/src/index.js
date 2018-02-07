@@ -1,7 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+//import './index.css';
+import VirtualSchema from './VirtualSchema';
 
 ReactDOM.render(
-  <h1>Hello, world DoD!</h1>,
+  <VirtualSchema />,
   document.getElementById('root')
 );
+
+
