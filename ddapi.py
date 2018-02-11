@@ -448,11 +448,12 @@ class DDAPI:
     Convenience functions
     """
 
-    def serialize_sources_drs(drs: DRS, basedir: str, output_json: str):
+    def serialize_sources_drs(self, drs: DRS, basedir: str, output_json: str):
         """
         Given a DRS as input, it produces a JSON file with the contents of the
         DRS
         """
+        import json
         sources_str = ",".join([str(sn) for (nid, sn, fn, s) in drs])[:-1]
         json_dict = dict()
         json_dict["CSV"] = dict()

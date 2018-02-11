@@ -65,6 +65,19 @@ def query(query):
         return InvalidUsage(res, status_code=400)
         # return res, invalid
 
+@app.route('/export/<export>')
+def export(export):
+    return jsonify("ok!")
+    # try:
+    #     res = eval(query, {"__builtins__": None}, safe_dict)
+    #     res = jsonify(res.__dict__())
+    #
+    #     return res
+    # except Exception as e:
+    #     res = "error: " + str(e)
+    #     return InvalidUsage(res, status_code=400)
+    #     # return res, invalid
+
 
 @app.route('/convert/<input>')
 def convert(input):

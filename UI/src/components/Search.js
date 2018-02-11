@@ -35,6 +35,10 @@ class Search extends React.Component {
     makeRequest(userQuery, this.handleResponse);
   }
 
+  handleExport(e){
+    window.alert("Discovered data has been exported")
+  }
+
   render() {
 
    return (
@@ -45,6 +49,8 @@ class Search extends React.Component {
         placeholder="Search by table, column, or keyword"
         onChange={(e) => this.handleChange(e)}
        />
+       <button type="button"
+       onClick={(e) => this.handleExport(e)}>Export Results</button>
     </header>
     )
   }

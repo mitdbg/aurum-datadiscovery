@@ -16,6 +16,21 @@ export function makeRequest(query, newCallback) {
   httpRequest.send();
 }
 
+export function makeExport(query, newCallback) {
+  callback = newCallback;
+  var url = "http://127.0.0.1:5000/export/" + query;
+
+  httpRequest = new XMLHttpRequest();
+
+  if (!httpRequest) {
+    alert('Giving up :( Cannot create an XMLHTTP instance');
+    return false;
+  }
+  httpRequest.onreadystatechange = ignoreErr;
+  httpRequest.open('GET', url);
+  httpRequest.send();
+}
+
 export function makeConvert(identifier, newCallback) {
   callback = newCallback;
   var url = "http://127.0.0.1:5000/convert/" + identifier;
