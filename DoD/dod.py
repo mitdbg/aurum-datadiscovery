@@ -1,6 +1,5 @@
 from algebra import API
 from api.apiutils import Relation
-from enum import Enum
 from collections import defaultdict
 from collections import OrderedDict
 import itertools
@@ -51,9 +50,6 @@ class DoD:
                             if filter not in table_fulfilled_filters[table]:
                                 table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL, filter[2]))
         # sort by value len -> # fulfilling filters
-
-        # table_fulfilled_filters = {key: list(value) for key, value in table_fulfilled_filters.items()}
-        #table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
         table_fulfilled_filters = OrderedDict(
             sorted(table_fulfilled_filters.items(), key=lambda el:
             (len({filter_id for _, _, filter_id in el[1]}), el[0]), reverse=True))  # len of unique filters, then lexico
@@ -62,13 +58,6 @@ class DoD:
         for k, v in table_fulfilled_filters.items():
             v = sorted(v, key=lambda el: (el[2], el[0][0]), reverse=True)  # sort by id, then filter_name
             table_fulfilled_filters[k] = v
-
-        # if debug_enumerate_all_jps:
-        #     #for el in table_fulfilled_filters.items():
-        #     for i in range(len(list(table_fulfilled_filters.items()))):
-        #         el = list(table_fulfilled_filters.items())[i]
-        #         print(el)
-        #     return
 
         def eager_candidate_exploration():
             def clear_state():
@@ -131,10 +120,10 @@ class DoD:
         cache_unjoinable_pairs = defaultdict(int)
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
-            print("Exploring: " + str(candidate_group))
+            print("Candidate group: " + str(candidate_group))
             # print("Which covers: " + str(candidate_group_filters_covered))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
-            print("#Filters: " + str(num_unique_filters))
+            print("Covers #Filters: " + str(num_unique_filters))
             # continue
 
             if len(candidate_group) == 1:
@@ -160,7 +149,7 @@ class DoD:
                 continue
 
             # We first check if the group_with_all_relations is materializable
-            materializable_join_groups = []
+            materializable_join_paths = []
             if len(group_with_all_relations) > 0:
                 join_paths = self.tx_join_paths_to_pair_hops(group_with_all_relations)
                 annotated_join_paths = self.annotate_join_paths_with_filter(join_paths,
@@ -170,40 +159,45 @@ class DoD:
                 print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
                 valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
                 print("Found " + str(len(valid_join_paths)) + " materializable join paths")
-                materializable_join_groups.append(valid_join_paths)
+                materializable_join_paths.extend(valid_join_paths)
 
-            # in this case no need to check the individual groups
-            if len(materializable_join_groups) == 0:
-                # We need that at least one JP from each group is materializable
-                for join_paths in join_path_groups:
-                    join_paths = self.tx_join_paths_to_pair_hops(join_paths)
-                    annotated_join_paths = self.annotate_join_paths_with_filter(join_paths, table_fulfilled_filters, candidate_group)
+            # We need that at least one JP from each group is materializable
+            print("Processing join graphs...")
+            materializable_join_graphs = dict()
+            for k, v in join_path_groups.items():
+                print("Pair: " + str(k))
+                join_paths = self.tx_join_paths_to_pair_hops(v)
+                annotated_join_paths = self.annotate_join_paths_with_filter(join_paths,
+                                                                            table_fulfilled_filters,
+                                                                            candidate_group)
 
-                    # Check JP materialization
-                    print("Found " + str(len(annotated_join_paths)) + " candidate join paths")
-                    # for jp in annotated_join_paths:
-                    #     print(jp)
+                # Check JP materialization
+                print("Found " + str(len(annotated_join_paths)) + " candidate join paths for join graph")
 
-                    # For each candidate join_path, check whether it can be materialized or not,
-                    # then show to user (or the other way around)
-                    valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
+                # For each candidate join_path, check whether it can be materialized or not,
+                # then show to user (or the other way around)
+                valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
 
-                    print("Found " + str(len(valid_join_paths)) + " materializable join paths")
+                print("Found " + str(len(valid_join_paths)) + " materializable join paths for join graph")
 
-                    if len(valid_join_paths) > 0:
-                        materializable_join_groups.append(valid_join_paths)
-                    else:
-                        print("Group non-materializable")
-                        break
-            if len(materializable_join_groups) == 0:
-                print("Non materializable groups")
-                break
+                if len(valid_join_paths) > 0:
+                    materializable_join_graphs[k] = valid_join_paths
+                else:
+                    print("Group non-materializable")
+                    break
+            print("Processing join graphs...OK")
 
-            print("RESULT")
-            # print(str(materializable_join_groups))
+            # After obtaining materializable join paths and graphs, we check them
+            if len(materializable_join_paths) == 0:
+                if len(materializable_join_graphs.items()) == 0:
+                    print("Non materializable groups")
+                    break
 
+            print("Materializing Join paths only")
+
+            # TODO: only processing entire join paths, need to process join graphs as well
             clean_jp = []
-            for annotated_jp in materializable_join_groups[0]:
+            for annotated_jp in materializable_join_paths:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
@@ -211,7 +205,6 @@ class DoD:
                     filters.update(filter)
                 clean_jp.append((filters, jp))
 
-            print("Sample JP: ")
             for mjp in clean_jp:
                 materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
                 yield materialized_virtual_schema
@@ -221,9 +214,6 @@ class DoD:
                                                     key=lambda x: x[1], reverse=True))
         for k, v in cache_unjoinable_pairs.items():
             print(str(k) + " => " + str(v))
-
-
-
 
     def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
 
@@ -294,7 +284,7 @@ class DoD:
         """
         assert len(group_tables) > 1
 
-        # # Check first with the cache whether these are unjoinable
+        # Check first with the cache whether these are unjoinable
         for table1, table2 in itertools.combinations(group_tables, 2):
             if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
                 # We count the attempt
@@ -308,7 +298,7 @@ class DoD:
 
         group_with_all_tables = []
 
-        join_path_groups = []  # store groups, as many as pairs of tables in the group
+        join_path_groups_dict = dict()  # store groups, as many as pairs of tables in the group
         for table1, table2 in itertools.combinations(group_tables, 2):
             t1 = self.api.make_drs(table1)
             t2 = self.api.make_drs(table2)
@@ -329,13 +319,29 @@ class DoD:
                     group_with_all_tables.append(p)  # this path covers all tables in group
                 else:
                     group.append(p)
-            join_path_groups.append(group)
+            join_path_groups_dict[(table1, table2)] = group
+
+        # Remove invalid combinations from join_path_groups_dict
+        for i in range(len(group_tables)):
+            invalid = False
+            table1 = group_tables[i]
+            for table2 in group_tables[i + 1:]:
+                if len(join_path_groups_dict[(table1, table2)]) == 0:
+                    invalid = True
+            if invalid:
+                # table 1 does not join to all the others, so no join graph here
+                to_remove = set()
+                for k in join_path_groups_dict.keys():
+                    if k[0] == table1:
+                        to_remove.add(k)
+                for el in to_remove:
+                    del join_path_groups_dict[el]
+
         # Now verify that it's possible to obtain a join graph from these jps
         if len(group_with_all_tables) == 0:
-            for el in join_path_groups:
-                if len(el) == 0:
+            if len(join_path_groups_dict.items()) == 0:
                     return [], []  # no jps covering all tables and empty groups => no join graph
-        return group_with_all_tables, join_path_groups
+        return group_with_all_tables, join_path_groups_dict
 
     def format_join_paths(self, join_paths):
         """
@@ -509,7 +515,7 @@ def test_e2e(dod, number_jps=5):
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
-    for mjp in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=True):
+    for mjp in dod.virtual_schema_iterative_search(attrs, values):
         print("JP: " + str(i))
         i += 1
         print(mjp.head(2))

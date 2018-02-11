@@ -79,6 +79,7 @@ def materialize_join_path(jp_with_filters, dod):
                 df = pd.read_csv(path, encoding='latin1')
                 r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key)
+    print("Projecting: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]
     return df
 
