@@ -1,5 +1,5 @@
 import React from 'react';
-import { makeRequest } from '../ajax'
+import { makeRequest, makeExport } from '../ajax'
 
 class Search extends React.Component {
   constructor() {
@@ -36,6 +36,7 @@ class Search extends React.Component {
   }
 
   handleExport(e){
+    makeExport(this.handleResponse);
     window.alert("Discovered data has been exported")
   }
 

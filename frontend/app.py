@@ -53,10 +53,21 @@ app = Flask(__name__)
 CORS(app)
 
 
+memory_tables = set()
+
 @app.route('/query/<query>')
 def query(query):
     try:
         res = eval(query, {"__builtins__": None}, safe_dict)
+
+        # memory tables
+        res.set_table_mode()
+        for t in res:
+            memory_tables.add(t)
+
+        # Repeat query to avoid dead iterator
+        res = eval(query, {"__builtins__": None}, safe_dict)
+
         res = jsonify(res.__dict__())
 
         return res
@@ -65,8 +76,20 @@ def query(query):
         return InvalidUsage(res, status_code=400)
         # return res, invalid
 
-@app.route('/export/<export>')
-def export(export):
+@app.route('/export')
+def export():
+    print("MEMORY: " + str(memory_tables))
+
+    import json
+    sources_str = ",".join([str(sn) for sn in memory_tables])[:-1]
+    json_dict = dict()
+    json_dict["CSV"] = dict()
+    json_dict["CSV"]["dir"] = "./"
+    json_dict["CSV"]["table"] = sources_str
+    json_obj = json.dumps(json_dict)
+    with open("data.json", 'w') as f:
+        f.write(json_obj)
+
     return jsonify("ok!")
     # try:
     #     res = eval(query, {"__builtins__": None}, safe_dict)

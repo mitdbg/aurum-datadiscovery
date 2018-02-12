@@ -16,9 +16,9 @@ export function makeRequest(query, newCallback) {
   httpRequest.send();
 }
 
-export function makeExport(query, newCallback) {
+export function makeExport(newCallback) {
   callback = newCallback;
-  var url = "http://127.0.0.1:5000/export/" + query;
+  var url = "http://127.0.0.1:5000/export";
 
   httpRequest = new XMLHttpRequest();
 
