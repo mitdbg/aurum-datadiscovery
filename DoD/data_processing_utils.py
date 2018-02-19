@@ -6,7 +6,25 @@ cache = dict()
 
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str):
+    # First make sure to remove empty/nan values from join columns
+    # TODO: Generate data event if nan values are found
+    a_valid_index = (a[a_key].dropna()).index
+    b_valid_index = (b[b_key].dropna()).index
+    a = a.iloc[a_valid_index]
+    b = b.iloc[b_valid_index]
+
+    # Normalize join columns
+    a_original = a[a_key].copy()
+    b_original = b[b_key].copy()
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('_x', ''))
+
+    # Recover format of original columns
+    joined[a_key] = a_original
+    joined[b_key] = b_original
+
     return joined
 
 
@@ -14,16 +32,17 @@ def find_key_for(relation_path, key, attribute, value):
     """
     select key from relation where attribute = value;
     """
-    value = value.lower()
+    # normalize this value
+    value = str(value).lower()
     # Check if DF in cache
     if relation_path in cache:
         df = cache[relation_path]
     else:
         df = pd.read_csv(relation_path, encoding='latin1')
-        df = df.apply(lambda x: x.astype(str).str.lower())
+        #df = df.apply(lambda x: x.astype(str).str.lower())
         # cache[relation_path] = df  # cache for later
     try:
-        key_value_df = df[df[attribute] == value][[key]]
+        key_value_df = df[df[attribute].map(lambda x: str(x).lower()) == value][[key]]
     except KeyError:
         print("wtf")
         a = 1
@@ -31,13 +50,15 @@ def find_key_for(relation_path, key, attribute, value):
 
 
 def is_value_in_column(value, relation_path, column):
+    # normalize this value
+    value = str(value).lower()
     if relation_path in cache:
         df = cache[relation_path]
     else:
         df = pd.read_csv(relation_path, encoding='latin1')
-        df = df.apply(lambda x: x.astype(str).str.lower())
+        #df = df.apply(lambda x: x.astype(str).str.lower())
         cache[relation_path] = df  # cache for later
-    return value in df[column].unique()
+    return value in df[column].map(lambda x: str(x).lower()).unique()
 
 
 def materialize_join_path(jp_with_filters, dod):
@@ -62,22 +83,22 @@ def materialize_join_path(jp_with_filters, dod):
             if path in cache:
                 l = cache[path]
             else:
-                df = pd.read_csv(path, encoding='latin1')
-                l = df.apply(lambda x: x.astype(str).str.lower())
+                l = pd.read_csv(path, encoding='latin1')
+                #l = df.apply(lambda x: x.astype(str).str.lower())
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                df = pd.read_csv(path, encoding='latin1')
-                r = df.apply(lambda x: x.astype(str).str.lower())
+                r = pd.read_csv(path, encoding='latin1')
+                #r = df.apply(lambda x: x.astype(str).str.lower())
         else:  # roll the partially joint
             l = df
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                df = pd.read_csv(path, encoding='latin1')
-                r = df.apply(lambda x: x.astype(str).str.lower())
+                r = pd.read_csv(path, encoding='latin1')
+                #r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key)
     print("Projecting: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]

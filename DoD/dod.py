@@ -515,7 +515,7 @@ def test_e2e(dod, number_jps=5):
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
-    for mjp in dod.virtual_schema_iterative_search(attrs, values):
+    for mjp in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         i += 1
         print(mjp.head(2))
