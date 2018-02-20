@@ -5,7 +5,7 @@ from DoD.utils import FilterType
 cache = dict()
 
 
-def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str):
+def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
     # TODO: Generate data event if nan values are found
     a_valid_index = (a[a_key].dropna()).index
@@ -14,12 +14,12 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str):
     b = b.iloc[b_valid_index]
 
     # Normalize join columns
-    a_original = a[a_key].copy()
-    b_original = b[b_key].copy()
+    # a_original = a[a_key].copy()
+    # b_original = b[b_key].copy()
     a[a_key] = a[a_key].apply(lambda x: str(x).lower())
     b[b_key] = b[b_key].apply(lambda x: str(x).lower())
 
-    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('_x', ''))
+    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=(suffix_str, ''))
 
     # # Recover format of original columns
     # FIXME: would be great to do this, but it's broken
@@ -84,6 +84,7 @@ def materialize_join_path(jp_with_filters, dod):
     filters, jp = jp_with_filters
 
     df = None
+    suffix = '_x'
     for l, r in jp:
         l_path = dod.api.helper.get_path_nid(l.nid)
         r_path = dod.api.helper.get_path_nid(r.nid)
@@ -104,6 +105,7 @@ def materialize_join_path(jp_with_filters, dod):
                 r = pd.read_csv(path, encoding='latin1')
                 #r = df.apply(lambda x: x.astype(str).str.lower())
         else:  # roll the partially joint
+            # df = df.add_suffix('_x')  # to make sure column names are unique
             l = df
             path = r_path + '/' + r.source_name
             if path in cache:
@@ -111,7 +113,8 @@ def materialize_join_path(jp_with_filters, dod):
             else:
                 r = pd.read_csv(path, encoding='latin1')
                 #r = df.apply(lambda x: x.astype(str).str.lower())
-        df = join_ab_on_key(l, r, l_key, r_key)
+        df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
+        suffix = suffix + '_x'  # this is to make sure we don't end up with repeated columns
     return df
 
 

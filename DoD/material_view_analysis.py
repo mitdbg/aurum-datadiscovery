@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def inconsistent_value_on_key(df1, df2, key=None):
     missing_keys = []
     non_unique_df1 = set()
