@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections import OrderedDict
 import itertools
 from DoD import data_processing_utils as dpu
+from DoD import material_view_analysis as mva
 from DoD.utils import FilterType
 
 
@@ -206,8 +207,9 @@ class DoD:
                 clean_jp.append((filters, jp))
 
             for mjp in clean_jp:
+                attrs_to_project = dpu.obtain_attributes_to_project(mjp)
                 materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
-                yield materialized_virtual_schema
+                yield materialized_virtual_schema, attrs_to_project
 
         print("Finished enumerating groups")
         cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
@@ -515,12 +517,24 @@ def test_e2e(dod, number_jps=5):
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
-    for mjp in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
+    first = True
+    first_mjp = None
+    most_likely_key = None
+    for mjp, attrs_project in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
         print("JP: " + str(i))
-        i += 1
-        print(mjp.head(2))
-        if i > number_jps:
-            break
+        # i += 1
+        # print(mjp.head(2))
+        # if i > number_jps:
+        #     break
+        if first:
+            first = False
+            first_mjp = mjp
+            most_likely_keys_info = mva.most_likely_key(first_mjp)
+            most_likely_key = most_likely_keys_info[0][0]
+        missing_keys, non_unique_df1, non_unique_df2, conflicting_pair = \
+            mva.inconsistent_value_on_key(first_mjp, mjp, key=most_likely_key)
+        if len(conflicting_pair) > 0:
+            print(str(conflicting_pair))
 
 
 def test_joinable(dod):

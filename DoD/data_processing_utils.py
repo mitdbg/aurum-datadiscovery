@@ -21,9 +21,10 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str):
 
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('_x', ''))
 
-    # Recover format of original columns
-    joined[a_key] = a_original
-    joined[b_key] = b_original
+    # # Recover format of original columns
+    # FIXME: would be great to do this, but it's broken
+    # joined[a_key] = a_original
+    # joined[b_key] = b_original
 
     return joined
 
@@ -61,7 +62,7 @@ def is_value_in_column(value, relation_path, column):
     return value in df[column].map(lambda x: str(x).lower()).unique()
 
 
-def materialize_join_path(jp_with_filters, dod):
+def obtain_attributes_to_project(jp_with_filters):
     filters, jp = jp_with_filters
     attributes_to_project = set()
     for f in filters:
@@ -70,6 +71,17 @@ def materialize_join_path(jp_with_filters, dod):
             attributes_to_project.add(f[0][0])
         elif f_type is FilterType.CELL.value:
             attributes_to_project.add(f[0][1])
+    return attributes_to_project
+
+
+def project(df, attributes_to_project):
+    print("Projecting: " + str(attributes_to_project))
+    df = df[list(attributes_to_project)]
+    return df
+
+
+def materialize_join_path(jp_with_filters, dod):
+    filters, jp = jp_with_filters
 
     df = None
     for l, r in jp:
@@ -100,8 +112,6 @@ def materialize_join_path(jp_with_filters, dod):
                 r = pd.read_csv(path, encoding='latin1')
                 #r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key)
-    print("Projecting: " + str(attributes_to_project))
-    df = df[list(attributes_to_project)]
     return df
 
 
