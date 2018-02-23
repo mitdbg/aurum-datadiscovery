@@ -6,6 +6,9 @@ import itertools
 from DoD import data_processing_utils as dpu
 from DoD import material_view_analysis as mva
 from DoD.utils import FilterType
+import numpy as np
+from functools import reduce
+import operator
 
 
 class DoD:
@@ -36,20 +39,29 @@ class DoD:
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
         table_fulfilled_filters = defaultdict(list)
+        table_nid = dict()  # collect nids -- used later to obtain an access path to the tables
         for filter, drs in filter_drs.items():
             drs.set_table_mode()
             # All these tables fulfill the filter above
             for table in drs:
                 # table_fulfilled_filters[table].append(filter)
                 if filter[1] == FilterType.ATTR:
+                    columns = [c for c in drs.data]  # copy
+                    for c in columns:
+                        if c.source_name == table:
+                            table_nid[table] = c.nid
                     if filter not in table_fulfilled_filters[table]:
                         table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR, filter[2]))
                 elif filter[1] == FilterType.CELL:
                     columns = [c for c in drs.data]  # copy
                     for c in columns:
                         if c.source_name == table:  # filter in this column
+                            table_nid[table] = c.nid
                             if filter not in table_fulfilled_filters[table]:
                                 table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL, filter[2]))
+
+        table_path = obtain_table_paths(table_nid, self)
+
         # sort by value len -> # fulfilling filters
         table_fulfilled_filters = OrderedDict(
             sorted(table_fulfilled_filters.items(), key=lambda el:
@@ -197,8 +209,12 @@ class DoD:
             print("Materializing Join paths only")
 
             # TODO: only processing entire join paths, need to process join graphs as well
+            # Sort materializable_join_paths by likely joining on key
+            materializable_join_paths = rank_materializable_join_paths(
+                materializable_join_paths, table_path)
+
             clean_jp = []
-            for annotated_jp in materializable_join_paths:
+            for annotated_jp, aggr_score, mul_score in materializable_join_paths:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
@@ -507,6 +523,96 @@ class DoD:
             return True, len(unique_filters)
         else:
             return False, set()
+
+
+def rank_materializable_join_paths(materializable_join_paths, table_path):
+
+    def score_for_key(keys_score, target):
+        for c, nunique, score in keys_score:
+            if target == c:
+                return score
+
+    def aggr_avg(scores):
+        scores = np.asarray(scores)
+        return np.average(scores)
+
+    def aggr_mul(scores):
+        return reduce(operator.mul, scores)
+
+    rank_jps = []
+    keys_cache = dict()
+    for mjp in materializable_join_paths:
+        jump_scores = []
+        for filter, l, r in mjp:
+            table = l.source_name
+            if table not in keys_cache:
+                path = table_path[table]
+                table_df = dpu.get_dataframe(path + "/" + table)
+                likely_keys_sorted = mva.most_likely_key(table_df)
+                keys_cache[table] = likely_keys_sorted
+            likely_keys_sorted = keys_cache[table]
+            jump_score = score_for_key(likely_keys_sorted, l.field_name)
+            jump_scores.append(jump_score)
+        jp_score_avg = aggr_avg(jump_scores)
+        jp_score_mul = aggr_mul(jump_scores)
+        rank_jps.append((mjp, jp_score_avg, jp_score_mul))
+    rank_jps = sorted(rank_jps, key=lambda x: x[1], reverse=True)
+    return rank_jps
+
+
+def rank_materializable_join_paths_piece(materializable_join_paths, candidate_group, table_path):
+    # compute rank list of likely keys for each table
+    table_keys = dict()
+    table_field_rank = dict()
+    for table in candidate_group:
+        path = table_path[table]
+        table_df = dpu.get_dataframe(path + "/" + table)
+        likely_keys_sorted = mva.most_likely_key(table_df)
+        # table_keys[table] = {i: key for i, key in enumerate(likely_keys_sorted)}  # i for sorting later
+        table_keys[table] = likely_keys_sorted
+        field_rank = {payload[0]: i for i, payload in enumerate(likely_keys_sorted)}
+        table_field_rank[table] = field_rank
+
+    # 1) Split join paths into its pairs, then 2) sort each pair individually, then 3) assemble again
+
+    num_jumps = sorted([len(x) for x in materializable_join_paths])[-1]
+    jump_joins = {i: [] for i in range(num_jumps)}
+
+    # 1) split
+    for annotated_jp in materializable_join_paths:
+        # for i in range(num_jumps):
+        #     if len(annotated_jp) > i:
+        #         jp = annotated_jp[i]
+        #         filter, l, r = jp
+        #         jump_joins[i].append((filter, l, r))
+        #     else:
+        #         jump_joins[i].append(None)
+        for i, jp in enumerate(annotated_jp):
+            jump_joins[i].append(jp)
+
+    def field_to_rank(table, field):
+        return table_field_rank[table][field]
+
+    # 2) sort
+    for jump, joins in jump_joins.items():
+        joins = sorted(joins, key=lambda x: field_to_rank(x[1].source_name, x[1].field_name))
+        jump_joins[jump] = joins
+
+    # 3) assemble
+    ranked_materialized_join_paths = [[] for _ in range(len(materializable_join_paths))]
+    for jump, joins in jump_joins.items():
+        for i, join in enumerate(joins):
+            ranked_materialized_join_paths[i].append(join)
+
+    return ranked_materialized_join_paths
+
+
+def obtain_table_paths(set_nids, dod):
+    table_path = dict()
+    for table, nid in set_nids.items():
+        path = dod.api.helper.get_path_nid(nid)
+        table_path[table] = path
+    return table_path
 
 
 def test_e2e(dod, number_jps=5):

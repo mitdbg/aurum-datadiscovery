@@ -82,7 +82,6 @@ def project(df, attributes_to_project):
 
 def materialize_join_path(jp_with_filters, dod):
     filters, jp = jp_with_filters
-
     df = None
     suffix = '_x'
     for l, r in jp:
@@ -115,6 +114,12 @@ def materialize_join_path(jp_with_filters, dod):
                 #r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
         suffix = suffix + '_x'  # this is to make sure we don't end up with repeated columns
+    return df
+
+
+def get_dataframe(path):
+    # TODO: only csv is supported
+    df = pd.read_csv(path, encoding='latin1')
     return df
 
 
