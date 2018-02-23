@@ -157,7 +157,7 @@ class DoD:
                         print(el)
                 continue  # We are just interested in all JPs for all candidate groups
 
-            if len(join_path_groups) == 0:
+            if len(join_path_groups) == 0 and len(group_with_all_relations) == 0:
                 print("Group: " + str(candidate_group) + " is Non-Joinable")
                 continue
 
@@ -196,8 +196,23 @@ class DoD:
                 if len(valid_join_paths) > 0:
                     materializable_join_graphs[k] = valid_join_paths
                 else:
-                    print("Group non-materializable")
-                    break
+                    # This pair is non-materializable, but there may be other groups of pairs that cover
+                    # the same tables, therefore we can only continue, we cannot determine at this point that
+                    # the group is non-materializable, not yet.
+                    continue
+            # Verify whether the join_graphs cover the group or not
+            covered_tables = set(candidate_group)
+            for k, _ in materializable_join_graphs.items():
+                (t1, t2) = k
+                covered_tables.remove(t1)
+                covered_tables.remove(t2)
+            if len(covered_tables) > 0:
+                # now we know there are not join graphs in this group, so we explicitly mark it as such
+                materializable_join_graphs.clear()
+            else:
+                # We need to reformat the groups of join paths to a bunch of 'units' jg to rank and materialize
+                break  # FIXME: go on here
+            #
             print("Processing join graphs...OK")
 
             # After obtaining materializable join paths and graphs, we check them
@@ -206,7 +221,7 @@ class DoD:
                     print("Non materializable groups")
                     break
 
-            print("Materializing Join paths only")
+            print("Processing materializable join paths...")
 
             # TODO: only processing entire join paths, need to process join graphs as well
             # Sort materializable_join_paths by likely joining on key
@@ -318,6 +333,11 @@ class DoD:
 
         join_path_groups_dict = dict()  # store groups, as many as pairs of tables in the group
         for table1, table2 in itertools.combinations(group_tables, 2):
+            # if table1 == "Drupal_employee_directory.csv" and\
+            #                 table2 == "Employee_directory.csv" or\
+            #                 table2 == "Drupal_employee_directory.csv" and\
+            #                 table1 == "Employee_directory.csv":
+            #     a = 1
             t1 = self.api.make_drs(table1)
             t2 = self.api.make_drs(table2)
             t1.set_table_mode()
