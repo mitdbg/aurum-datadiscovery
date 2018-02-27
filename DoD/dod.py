@@ -9,6 +9,7 @@ from DoD.utils import FilterType
 import numpy as np
 from functools import reduce
 import operator
+import pickle
 
 
 class DoD:
@@ -261,7 +262,7 @@ class DoD:
 
             import pickle
             with open("check_debug.pkl", 'wb') as f:
-                pickle.dumps(clean_jp, f) 
+                pickle.dump(clean_jp, f)
 
             for mjp in clean_jp:
                 attrs_to_project = dpu.obtain_attributes_to_project(mjp)
@@ -615,7 +616,6 @@ def rank_materializable_join_paths_piece(materializable_join_paths, candidate_gr
         path = table_path[table]
         table_df = dpu.get_dataframe(path + "/" + table)
         likely_keys_sorted = mva.most_likely_key(table_df)
-        # table_keys[table] = {i: key for i, key in enumerate(likely_keys_sorted)}  # i for sorting later
         table_keys[table] = likely_keys_sorted
         field_rank = {payload[0]: i for i, payload in enumerate(likely_keys_sorted)}
         table_field_rank[table] = field_rank
@@ -627,13 +627,6 @@ def rank_materializable_join_paths_piece(materializable_join_paths, candidate_gr
 
     # 1) split
     for annotated_jp in materializable_join_paths:
-        # for i in range(num_jumps):
-        #     if len(annotated_jp) > i:
-        #         jp = annotated_jp[i]
-        #         filter, l, r = jp
-        #         jump_joins[i].append((filter, l, r))
-        #     else:
-        #         jump_joins[i].append(None)
         for i, jp in enumerate(annotated_jp):
             jump_joins[i].append(jp)
 
@@ -707,6 +700,22 @@ def test_joinable(dod):
         print(el)
 
 
+def test_intree(dod):
+    for mjp, attrs in test_dpu(dod):
+        print(mjp.head(2))
+
+
+def test_dpu(dod):
+    with open("check_debug.pkl", 'rb') as f:
+        clean_jp = pickle.load(f)
+
+    for mjp in clean_jp:
+        attrs_to_project = dpu.obtain_attributes_to_project(mjp)
+        # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
+        materialized_virtual_schema = dpu.materialize_join_graph(mjp, dod)
+        yield materialized_virtual_schema, attrs_to_project
+
+
 if __name__ == "__main__":
     print("DoD")
 
@@ -720,5 +729,8 @@ if __name__ == "__main__":
     dod = DoD(network=network, store_client=store_client)
 
     test_e2e(dod, number_jps=10)
+
+    # debug intree mat join
+    # test_intree(dod)
 
     # test_joinable(dod)

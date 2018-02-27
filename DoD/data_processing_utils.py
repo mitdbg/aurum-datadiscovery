@@ -20,7 +20,7 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suf
     a[a_key] = a[a_key].apply(lambda x: str(x).lower())
     b[b_key] = b[b_key].apply(lambda x: str(x).lower())
 
-    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=(suffix_str, ''))
+    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
 
     # # Recover format of original columns
     # FIXME: would be great to do this, but it's broken
@@ -99,6 +99,9 @@ class InTreeNode:
     def get_parent(self):
         return self.parent
 
+    def __hash__(self):
+        return hash(self.node)
+
     def __eq__(self, other):
         # compare with both strings and other nodes
         if type(other) is str:
@@ -126,30 +129,28 @@ def materialize_join_graph(jg_with_filters, dod):
                 node_path = dod.api.helper.get_path_nid(r.nid) + "/" + r.source_name
                 df = get_dataframe(node_path)
                 rnode.set_payload(df)
-                r_parent = None
-                for el in intree.keys():  # find r's parent
-                    if l.source_name == el:
-                        r_parent = el
-                        rnode.add_parent(r_parent)  # add ref
+                r_parent = intree[l.source_name]
+                rnode.add_parent(r_parent)  # add ref
                 # r becomes a leave, and l stops being one
                 if r_parent in leaves:
                     leaves.remove(r_parent)
                 leaves.append(rnode)
+                intree[r.source_name] = rnode
             elif r.source_name in intree.keys():
                 lnode = InTreeNode(l.source_name)  # create node for l
                 node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
                 df = get_dataframe(node_path)
                 lnode.set_payload(df)
-                l_parent = None
-                for el in intree.keys():  # find l's parent
-                    if r.source_name == el:
-                        l_parent = el
-                        lnode.add_parent(l_parent)  # add ref
+                l_parent = intree[r.source_name]
+                lnode.add_parent(l_parent)  # add ref
                 if l_parent in leaves:
                     leaves.remove(l_parent)
                 leaves.append(lnode)
+                intree[l.source_name] = lnode
             else:
-                print("disjoint pair... fix")
+                # FIXME: to implement
+                print("disjoint pair on assembling join in-tree... fix")
+                exit()
         return intree, leaves
 
     def get_join_info_pair(t1, t2, jg):
@@ -161,7 +162,12 @@ def materialize_join_graph(jg_with_filters, dod):
     filters, jg = jg_with_filters
     intree, leaves = build_tree(jg)
     # find groups of leaves with same common ancestor
-    while len(intree) > 1:
+    suffix_str = '_x'
+    go_on = True
+    while go_on:
+        if len(leaves) == 1 and leaves[0].get_parent() is None:
+            go_on = False
+            continue  # we have now converged
         leave_ancestor = defaultdict(list)
         for leave in leaves:
             leave_ancestor[leave.get_parent()].append(leave)
@@ -173,13 +179,14 @@ def materialize_join_graph(jg_with_filters, dod):
                 r_key = r_info.field_name
                 l = k.get_payload()
                 r = child.get_payload()
-                df = join_ab_on_key(l, r, l_key, r_key)
+                df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
+                suffix_str += '_x'
                 k.set_payload(df)  # update payload
                 if child in leaves:
                     leaves.remove(child)  # removed merged children
             # joined all children, now we include joint df on leaves
             leaves.append(k)  # k becomes a new leave
-    materialized_view = list(intree.values())[0]
+    materialized_view = leaves[0].get_payload()  # the last leave is folded onto the in-tree root
     return materialized_view
 
 
