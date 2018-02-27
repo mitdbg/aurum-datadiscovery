@@ -243,14 +243,15 @@ class DoD:
             # Merge join paths and join graphs, at this point the difference is meaningless
             # TODO: are paths necessarily contained in graphs? if so, simplify code above
 
+            all_jgs = materializable_join_graphs + materializable_join_paths
+
             print("Processing materializable join paths...")
 
             # Sort materializable_join_paths by likely joining on key
-            materializable_join_paths = rank_materializable_join_paths(
-                materializable_join_paths, table_path)
+            all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path)
 
             clean_jp = []
-            for annotated_jp, aggr_score, mul_score in materializable_join_paths:
+            for annotated_jp, aggr_score, mul_score in all_jgs_scores:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
@@ -258,9 +259,14 @@ class DoD:
                     filters.update(filter)
                 clean_jp.append((filters, jp))
 
+            import pickle
+            with open("check_debug.pkl", 'wb') as f:
+                pickle.dumps(clean_jp, f) 
+
             for mjp in clean_jp:
                 attrs_to_project = dpu.obtain_attributes_to_project(mjp)
-                materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
+                # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
+                materialized_virtual_schema = dpu.materialize_join_graph(mjp, self)
                 yield materialized_virtual_schema, attrs_to_project
 
         print("Finished enumerating groups")
@@ -566,7 +572,7 @@ class DoD:
             return False, set()
 
 
-def rank_materializable_join_paths(materializable_join_paths, table_path):
+def rank_materializable_join_graphs(materializable_join_paths, table_path):
 
     def score_for_key(keys_score, target):
         for c, nunique, score in keys_score:

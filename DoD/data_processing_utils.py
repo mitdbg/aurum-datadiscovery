@@ -1,5 +1,6 @@
 import pandas as pd
 from DoD.utils import FilterType
+from collections import defaultdict
 
 # Cache reading and transformation of DFs
 cache = dict()
@@ -80,8 +81,106 @@ def project(df, attributes_to_project):
     return df
 
 
+class InTreeNode:
+    def __init__(self, node):
+        self.node = node
+        self.parent = None
+        self.payload = None
+
+    def add_parent(self, parent):
+        self.parent = parent
+
+    def set_payload(self, payload: pd.DataFrame):
+        self.payload = payload
+
+    def get_payload(self):
+        return self.payload
+
+    def get_parent(self):
+        return self.parent
+
+    def __eq__(self, other):
+        # compare with both strings and other nodes
+        if type(other) is str:
+            return self.node == other
+        elif type(other) is InTreeNode:
+            return self.node == other.node
+
+
 def materialize_join_graph(jg_with_filters, dod):
+    def build_tree(jg):
+        # Build in-tree (leaves to root)
+        intree = dict()  # keep reference to all nodes here
+        leaves = []
+        for l, r in jg:
+            if len(intree) == 0:
+                node = InTreeNode(l.source_name)
+                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                df = get_dataframe(node_path)
+                node.set_payload(df)
+                intree[l.source_name] = node
+                leaves.append(node)
+            # now either l or r should be in intree
+            if l.source_name in intree.keys():
+                rnode = InTreeNode(r.source_name)  # create node for r
+                node_path = dod.api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                df = get_dataframe(node_path)
+                rnode.set_payload(df)
+                r_parent = None
+                for el in intree.keys():  # find r's parent
+                    if l.source_name == el:
+                        r_parent = el
+                        rnode.add_parent(r_parent)  # add ref
+                # r becomes a leave, and l stops being one
+                if r_parent in leaves:
+                    leaves.remove(r_parent)
+                leaves.append(rnode)
+            elif r.source_name in intree.keys():
+                lnode = InTreeNode(l.source_name)  # create node for l
+                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                df = get_dataframe(node_path)
+                lnode.set_payload(df)
+                l_parent = None
+                for el in intree.keys():  # find l's parent
+                    if r.source_name == el:
+                        l_parent = el
+                        lnode.add_parent(l_parent)  # add ref
+                if l_parent in leaves:
+                    leaves.remove(l_parent)
+                leaves.append(lnode)
+            else:
+                print("disjoint pair... fix")
+        return intree, leaves
+
+    def get_join_info_pair(t1, t2, jg):
+        # t1 and t2 won't never be the same
+        for l, r in jg:
+            if t1 == l.source_name or t1 == r.source_name and t2 == l.source_name or t2 == r.source_name:
+                return l, r
+
     filters, jg = jg_with_filters
+    intree, leaves = build_tree(jg)
+    # find groups of leaves with same common ancestor
+    while len(intree) > 1:
+        leave_ancestor = defaultdict(list)
+        for leave in leaves:
+            leave_ancestor[leave.get_parent()].append(leave)
+        # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
+        for k, v in leave_ancestor.items():
+            for child in v:
+                l_info, r_info = get_join_info_pair(k, child, jg)
+                l_key = l_info.field_name
+                r_key = r_info.field_name
+                l = k.get_payload()
+                r = child.get_payload()
+                df = join_ab_on_key(l, r, l_key, r_key)
+                k.set_payload(df)  # update payload
+                if child in leaves:
+                    leaves.remove(child)  # removed merged children
+            # joined all children, now we include joint df on leaves
+            leaves.append(k)  # k becomes a new leave
+    materialized_view = list(intree.values())[0]
+    return materialized_view
 
 
 def materialize_join_path(jp_with_filters, dod):
