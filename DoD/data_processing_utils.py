@@ -80,6 +80,10 @@ def project(df, attributes_to_project):
     return df
 
 
+def materialize_join_graph(jg_with_filters, dod):
+    filters, jg = jg_with_filters
+
+
 def materialize_join_path(jp_with_filters, dod):
     filters, jp = jp_with_filters
     df = None
@@ -96,24 +100,20 @@ def materialize_join_path(jp_with_filters, dod):
                 l = cache[path]
             else:
                 l = pd.read_csv(path, encoding='latin1')
-                #l = df.apply(lambda x: x.astype(str).str.lower())
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
                 r = pd.read_csv(path, encoding='latin1')
-                #r = df.apply(lambda x: x.astype(str).str.lower())
         else:  # roll the partially joint
-            # df = df.add_suffix('_x')  # to make sure column names are unique
             l = df
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
                 r = pd.read_csv(path, encoding='latin1')
-                #r = df.apply(lambda x: x.astype(str).str.lower())
         df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
-        suffix = suffix + '_x'  # this is to make sure we don't end up with repeated columns
+        suffix += '_x'  # this is to make sure we don't end up with repeated columns
     return df
 
 

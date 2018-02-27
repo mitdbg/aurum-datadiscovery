@@ -204,26 +204,47 @@ class DoD:
             covered_tables = set(candidate_group)
             for k, _ in materializable_join_graphs.items():
                 (t1, t2) = k
-                covered_tables.remove(t1)
-                covered_tables.remove(t2)
+                if t1 in covered_tables:
+                    covered_tables.remove(t1)
+                if t2 in covered_tables:
+                    covered_tables.remove(t2)
             if len(covered_tables) > 0:
                 # now we know there are not join graphs in this group, so we explicitly mark it as such
                 materializable_join_graphs.clear()
             else:
-                # We need to reformat the groups of join paths to a bunch of 'units' jg to rank and materialize
-                break  # FIXME: go on here
-            #
+                # 1) find key-groups
+                keygroups = defaultdict(list)
+                current_id = 0
+                for keygroup in itertools.combinations(list(materializable_join_graphs.keys()),
+                                                       len(candidate_group) - 1):
+                    for key in keygroup:
+                        keygroups[current_id].append(materializable_join_graphs[key])
+                    current_id += 1
+
+                # 2) for each key-group, enumerate all paths
+                unit_jp = []
+                for _, keygroup in keygroups.items():
+                    # def unpack(packed_list):
+                    #     for el in packed_list:
+                    #         yield [v[0] for v in el]
+                    args = keygroup
+                    for comb in itertools.product(*args):
+                        unit_jp.append(comb)
+
+                # pack units into more compact format
+                materializable_join_graphs = []  # TODO: note we are rewriting the type of a var in scope
+                for unit in unit_jp:
+                    packed_unit = []
+                    for el in unit:
+                        packed_unit.append(el[0])
+                    materializable_join_graphs.append(packed_unit)
             print("Processing join graphs...OK")
 
-            # After obtaining materializable join paths and graphs, we check them
-            if len(materializable_join_paths) == 0:
-                if len(materializable_join_graphs.items()) == 0:
-                    print("Non materializable groups")
-                    break
+            # Merge join paths and join graphs, at this point the difference is meaningless
+            # TODO: are paths necessarily contained in graphs? if so, simplify code above
 
             print("Processing materializable join paths...")
 
-            # TODO: only processing entire join paths, need to process join graphs as well
             # Sort materializable_join_paths by likely joining on key
             materializable_join_paths = rank_materializable_join_paths(
                 materializable_join_paths, table_path)
