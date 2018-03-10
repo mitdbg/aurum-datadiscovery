@@ -158,6 +158,7 @@ class DoD:
                         print(el)
                 continue  # We are just interested in all JPs for all candidate groups
 
+            # if not paths or graphs skip next
             if len(join_path_groups) == 0 and len(group_with_all_relations) == 0:
                 print("Group: " + str(candidate_group) + " is Non-Joinable")
                 continue
@@ -176,6 +177,9 @@ class DoD:
                 materializable_join_paths.extend(valid_join_paths)
 
             # We need that at least one JP from each group is materializable
+            if len(materializable_join_paths) == 0 and len(join_path_groups) == 0:
+                print("No join graphs for this candidate group")
+                continue
             print("Processing join graphs...")
             materializable_join_graphs = dict()
             for k, v in join_path_groups.items():
@@ -212,6 +216,7 @@ class DoD:
             if len(covered_tables) > 0:
                 # now we know there are not join graphs in this group, so we explicitly mark it as such
                 materializable_join_graphs.clear()
+                materializable_join_graphs = list()  # next block of processing expects a list
             else:
                 # 1) find key-groups
                 keygroups = defaultdict(list)
