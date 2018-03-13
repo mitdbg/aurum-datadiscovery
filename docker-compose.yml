@@ -3,7 +3,8 @@
 #
 # 1. docker-compose up -d elasticsearch
 #     Brings up an elasticsearch instance using the data located at data/elasticsearch. This data persists even if you destroy and recreate the elasticsearch Docker container.
-# 2. docker-compose run --rm -T profiler
+# 2*. docker-compose build profiler
+# 2. docker-compose run --rm -T profiler -e "<profiler args here>"
 #     Runs the ddprofiler with the CSVs located in data/csvs. Writes to the above elasticsearch container.
 # 3. docker-compose run --rm -T nbc
 #     Runs networkbuildercoordinator.py with the above elasticsearch and saves its files to data/pickles.
@@ -19,9 +20,8 @@ networks:
     driver: bridge
 
 services:
-
   elasticsearch:
-    image: elasticsearch:2.3.3
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.1
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data
     ports:
@@ -32,23 +32,6 @@ services:
         aliases:
           - elasticsearch
 
-  frontend:
-    depends_on:
-      - elasticsearch
-    image: aurum/frontend
-    build:
-      context: .
-      dockerfile: docker/Dockerfile-ui
-    volumes:
-      - ./data/models:/aurum/data/models
-    ports:
-      - 3000:3000
-      - 5000:5000
-    networks:
-      aurum_net:
-        aliases:
-          - frontend
-
   profiler:
     depends_on:
       - elasticsearch
@@ -57,7 +40,10 @@ services:
       context: .
       dockerfile: docker/Dockerfile-ddprofiler
     volumes:
-      - ./data
+      - ./data:/data
+    ports:
+      - 9200:9200
+      - 9300:9300
     networks:
       aurum_net:
         aliases:
@@ -92,3 +78,22 @@ services:
       aurum_net:
         aliases:
           - notebook
+
+#  frontend:
+#    depends_on:
+#      - elasticsearch
+#    image: aurum/frontend
+#    build:
+#      context: .
+#      dockerfile: docker/Dockerfile-ui
+#    volumes:
+#      - ./data/models:/aurum/data/models
+#    ports:
+#      - 3000:3000
+#      - 5000:5000
+#    networks:
+#      aurum_net:
+#        aliases:
+#          - frontend
+
+
