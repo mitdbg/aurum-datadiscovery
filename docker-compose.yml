@@ -6,6 +6,7 @@
 # 2*. docker-compose build profiler
 # 2. docker-compose run --rm -T profiler -e "<profiler args here>"
 #     Runs the ddprofiler with the CSVs located in data/csvs. Writes to the above elasticsearch container.
+# 3*. docker-compose build nbc
 # 3. docker-compose run --rm -T nbc
 #     Runs networkbuildercoordinator.py with the above elasticsearch and saves its files to data/pickles.
 # 4. docker-compose up notebook
@@ -71,7 +72,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-jupyter-notebook
     volumes:
-      - ./data/models
+      - ./data/models:/data/models
     ports:
       - 8888:8888
     networks:
