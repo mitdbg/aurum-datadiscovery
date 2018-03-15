@@ -20,15 +20,15 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
 import core.SourceType;
-import core.config.sources.SQLServerSourceConfig;
+import core.config.sources.HiveSourceConfig;
 import inputoutput.Attribute;
 import inputoutput.Record;
 import inputoutput.TableInfo;
 import metrics.Metrics;
 
-public class SQLServerConnector implements Connector {
+public class HiveConnector implements Connector {
 
-    private SQLServerSourceConfig config;
+    private HiveSourceConfig config;
 
     private Connection connection;
 
@@ -41,7 +41,7 @@ public class SQLServerConnector implements Connector {
     private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
 
-    public SQLServerConnector(SQLServerSourceConfig config) {
+    public HiveConnector(HiveSourceConfig config) {
 	this.config = config;
 
 	this.tableInfo = new TableInfo();
@@ -72,11 +72,8 @@ public class SQLServerConnector implements Connector {
     @Override
     public void initConnector() throws IOException, ClassNotFoundException, SQLException {
 	// Definition of a conn identifier is here
-	String ip = config.getDb_server_ip();
-	String port = new Integer(config.getDb_server_port()).toString();
-	String connPath = config.getDatabase_name();
-	String username = config.getDb_username();
-	String password = config.getDb_password();
+	String ip = config.getHive_server_ip();
+	String port = new Integer(config.getHive_server_port()).toString();
 	String dbName = config.getDatabase_name();
 
 	String connIdentifier = config.getDatabase_name() + ip + port;
@@ -86,14 +83,12 @@ public class SQLServerConnector implements Connector {
 	    return;
 	}
 
-	Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-	String cPath = String.format("jdbc:sqlserver://{}:{}; databaseName={};", ip, port, dbName);
+	Class.forName("org.apache.hadoop.hive.jdbc.HiveDriver");
+	String cPath = "jdbc:hive2://" + ip + ":" + port + "/" + dbName + ";";
 
 	// If no existing pool to handle this db, then we create a new one
 	HikariConfig config = new HikariConfig();
 	config.setJdbcUrl(cPath);
-	config.setUsername(username);
-	config.setPassword(password);
 	config.addDataSourceProperty("cachePrepStmts", "true");
 	config.addDataSourceProperty("prepStmtCacheSize", "250");
 	config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");

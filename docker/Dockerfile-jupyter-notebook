@@ -4,8 +4,8 @@ FROM jupyter/scipy-notebook
 RUN pip install \
     bitarray \
     dataset \
-    elasticsearch-dsl==2.0.0 \
-    elasticsearch==2.3.0 \
+#    elasticsearch-dsl==2.0.0 \
+    elasticsearch==6.0.0 \
     nltk \
     path.py
 

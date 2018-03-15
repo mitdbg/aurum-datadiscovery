@@ -59,17 +59,12 @@ to install and configure Elasticsearch.
 
 #### Building ddprofiler
 
-Just go to 'ddprofiler' (/ddprofiler from the project root) and do:
+You will need JVM 8 available in the system for this step. From the root directory go to 'ddprofiler' and do:
 
 ```shell
-$> ./gradlew clean fatJar
+$> cd ddprofiler
+$> bash build.sh 
 ```
-
-Note that the gradle wrapper (gradlew) does not require you to install any
-software; it will handle the entire build process without assistance. A
-requirement of this process is to have a JVM 8 available in the system. The
-above command will produce a single jar file available in
-'ddprofiler/build/libs/ddprofiler.jar'.
 
 #### Deploying Elasticsearch (tested with 6.0.0)
 
@@ -109,7 +104,7 @@ A typical usage of the profiler from the command line will look like:
 Example:
 
 ```shell
-$> java -jar <path_to_ddprofiler.jar> --sources <path_to_sources.yml> 
+$> bash run.sh --sources <path_to_sources.yml> 
 ```
 
 You can consult all configuration parameters by appending **--help** or <?> as a

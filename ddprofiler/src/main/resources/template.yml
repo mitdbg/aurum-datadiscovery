@@ -44,3 +44,14 @@ sources:
     # User and password to access the DB server
     db_username: <user name to access the db>
     db_password: <passwd to access the db>
+
+- name: "data_in_hive"
+  type: hive
+  config:
+    # The IP where the DB server lives
+    hive_server_ip: localhost
+    # The port
+    hive_server_port: 10000
+    # The name of the database
+    database_name: hive-data
+

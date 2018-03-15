@@ -68,7 +68,10 @@ public class DBUtils {
 	    conn = getOracle10GConnection(connIP, port, dbName, username, password);
 	} else if (type == SourceType.sqlserver) {
 	    conn = getSQLServerConnection(connIP, port, dbName, username, password);
+	} else if (type == SourceType.hive) {
+	    conn = getHiveConnection(connIP, port, dbName);
 	}
+
 	return conn;
     }
 
@@ -131,6 +134,22 @@ public class DBUtils {
 	    String connString = "jdbc:sqlserver://" + connIP + ":" + port + "; " + "databaseName=" + dbName + "; user="
 		    + username + "; password=" + password + ";";
 	    LOG.info("SQLServer conn string: {}", connString);
+	    conn = DriverManager.getConnection(connString);
+	} catch (ClassNotFoundException e) {
+	    e.printStackTrace();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+
+	return conn;
+    }
+
+    private static Connection getHiveConnection(String connIP, String port, String dbName) {
+	Connection conn = null;
+	try {
+	    Class.forName("org.apache.hadoop.hive.jdbc.HiveDriver");
+	    String connString = "jdbc:hive2://" + connIP + ":" + port + "/" + dbName + ";";
+	    LOG.info("Hive conn string: {}", connString);
 	    conn = DriverManager.getConnection(connString);
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
