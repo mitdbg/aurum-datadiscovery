@@ -491,6 +491,10 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig):
     x_median = np.asarray(medians)
     x_median = x_median.reshape(-1, 1)
 
+    # At this point, we may have not found any points at all, in which case we can safely exit
+    if len(x_median) == 0:
+        return
+
     db_median = DBSCAN(eps=0.1, min_samples=2).fit(x_median)
     labels_median = db_median.labels_
     n_clusters = len(set(labels_median)) - (1 if -1 in labels_median else 0)
