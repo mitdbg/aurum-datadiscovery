@@ -167,7 +167,7 @@ where you want to store the built model (in the form of Python pickle files).
 For example:
 
 ```shell
-$> python networkbuildercoordinatory.py --opath test/testmodel/
+$> python networkbuildercoordinator.py --opath test/testmodel/
 ```
 
 Once the model is built, it will be serialized and stored in the provided path.
