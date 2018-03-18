@@ -52,12 +52,16 @@ public class NativeElasticStore implements Store {
     @Override
     public void initStore() {
 	// Create native client
-	try {
-	    client = new PreBuiltTransportClient(Settings.EMPTY)
-		    .addTransportAddress(new TransportAddress(InetAddress.getByName(storeServer), storePort));
-	} catch (UnknownHostException e) {
-	    e.printStackTrace();
-	}
+try {
+        Settings settings = Settings.builder().put("client.transport.sniff",
+false)
+            .put("client.transport.ignore_cluster_name", true).build();
+        client = new PreBuiltTransportClient(settings)
+            .addTransportAddress(new
+TransportAddress(InetAddress.getByName(storeServer), storePort));
+    } catch (UnknownHostException e) {
+        e.printStackTrace();
+    }
 
 	// Create bulk processor
 	bulkProcessor = BulkProcessor.builder(client, new BulkProcessor.Listener() {
