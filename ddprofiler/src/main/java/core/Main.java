@@ -11,6 +11,7 @@ import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
 import core.config.sources.CSVSourceConfig;
+import core.config.sources.HiveSourceConfig;
 import core.config.sources.PostgresSourceConfig;
 import core.config.sources.SQLServerSourceConfig;
 import core.config.sources.SourceConfig;
@@ -18,6 +19,7 @@ import core.config.sources.YAMLParser;
 import joptsimple.OptionParser;
 import metrics.Metrics;
 import sources.CSVSource;
+import sources.HiveSource;
 import sources.PostgresSource;
 import sources.SQLServerSource;
 import store.Store;
@@ -86,6 +88,13 @@ public class Main {
 
 		// this.readTablesFromSQLServerDBAndCreateTasks(sourceName, c,
 		// sqlserverSource);
+	    } else if (sType == SourceType.hive) {
+		HiveSourceConfig hiveConfig = (HiveSourceConfig) sourceConfig;
+
+		HiveSource hiveSource = new HiveSource();
+
+		hiveSource.processSource(hiveConfig, c);
+
 	    }
 	}
 

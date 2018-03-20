@@ -4,6 +4,7 @@ from collections import defaultdict
 range_syntactic_links = set([el for el in range(50)])  # does not include 50
 range_semantic_links = set([el + 50 for el in range(50)])
 
+
 def process_file(path, min_ratings_per_link=3):
     # Read data into structures
     with open(path, 'r') as f:

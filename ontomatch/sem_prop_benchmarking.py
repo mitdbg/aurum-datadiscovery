@@ -2853,7 +2853,7 @@ if __name__ == "__main__":
 
     # Load glove model
     print("Loading language model...")
-    path_to_glove_model = "../glove/glove.6B.100d.txt"
+    path_to_glove_model = "glove/glove.6B.100d.txt"
     glove_api.load_model(path_to_glove_model)
     print("Loading language model...OK")
 
