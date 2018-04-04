@@ -3,16 +3,9 @@ FROM openjdk:8
 
 COPY . /aurum
 
-RUN cd /aurum/ddprofiler && ./gradlew clean fatJar
+#RUN cd /aurum/ddprofiler && ./gradlew clean fatJar
+RUN cd /aurum/ddprofiler && bash build.sh
 
 WORKDIR /aurum/ddprofiler
 
-#CMD java -jar build/libs/ddprofiler.jar --db.name <insert-db-name>
-#--execution.mode <1 for csv files, 2 to connect to db> --store.server
-#elasticsearch --sources.folder.path <(only if execution.mode == 1) indicates the
-#path, within data/, where the csv files are stored> 
-
-#CMD java -jar build/libs/ddprofiler.jar --db.name <insert-db-name> --execution.mode 1 --store.server elasticsearch --sources.folder.path <path within data/>
-#CMD java -jar build/libs/ddprofiler.jar --db.name testdb --execution.mode 1 --store.server elasticsearch --sources.folder.path testdata/
-ENTRYPOINT java -jar build/libs/ddprofiler.jar
-
+ENTRYPOINT ["/bin/bash", "/aurum/ddprofiler/run.sh", "${*}"]

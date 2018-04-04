@@ -17,12 +17,12 @@ repositories {
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     compile 'ch.qos.logback:logback-classic:1.2.3'
-    //compile 'org.slf4j:log4j-over-slf4j:1.7.25'
     compile 'org.apache.logging.log4j:log4j-api:2.9.1'
     compile 'org.apache.logging.log4j:log4j-core:2.9.1'
-    //compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.10.0'
     compile 'org.apache.logging.log4j:log4j-to-slf4j:2.7'
     compile 'net.sf.jopt-simple:jopt-simple:4.8'
+    // elastic 6
+    compile 'org.elasticsearch.client:transport:6.0.0'
     // jetty + jersey
     compile 'org.eclipse.jetty:jetty-server:9.2.9.v20150224'
     compile 'org.eclipse.jetty:jetty-servlet:9.2.9.v20150224'
@@ -30,19 +30,17 @@ dependencies {
     compile 'org.glassfish.jersey.core:jersey-server:2.22.2'
     compile 'org.glassfish.jersey.core:jersey-common:2.22.2'
     compile 'org.glassfish.jersey.containers:jersey-container-jetty-servlet:2.22.2'
-    // stream summarizer
-    compile 'com.clearspring.analytics:stream:2.9.2'
-    // opennlp
-    compile 'org.apache.opennlp:opennlp-tools:1.6.0'
     // jackson
     compile 'com.fasterxml.jackson.core:jackson-core:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.7.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.4'
     compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.0'
+    // stream summarizer
+    compile 'com.clearspring.analytics:stream:2.9.2'
+    // opennlp
+    compile 'org.apache.opennlp:opennlp-tools:1.6.0'
     // opencsv
     compile 'net.sf.opencsv:opencsv:2.3'
-    // elastic 6
-    compile 'org.elasticsearch.client:transport:6.0.0'
     //count-min sketch
     compile 'com.clearspring.analytics:stream:2.7.0'
     // mysql driver
@@ -54,6 +52,9 @@ dependencies {
     // sqlserver driver 
     compile 'com.microsoft.sqlserver:mssql-jdbc:6.2.2.jre8'
     // hive driver
+    compile ('org.apache.hive:hive-jdbc:2.1.0'){
+        exclude group: 'io.netty', module:'netty-all'
+    }
     compile 'org.apache.hive:hive-jdbc:2.1.0'
     // metrics
     compile 'io.dropwizard.metrics:metrics-core:3.1.0'
@@ -65,6 +66,7 @@ dependencies {
 
 task fatJar(type: Jar) {
     description "Creates self-contained fat jar"
+    zip64 true
     from {
         configurations.compile.collect {
             it.isDirectory() ? it : zipTree(it)

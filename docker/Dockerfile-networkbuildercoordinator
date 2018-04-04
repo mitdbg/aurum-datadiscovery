@@ -19,7 +19,7 @@ RUN pip3 install --upgrade pip
 
 COPY requirements.txt /tmp/
 
-RUN pip3.4 install -r /tmp/requirements.txt --no-cache-dir
+RUN pip3 install -r /tmp/requirements.txt --no-cache-dir
 
 RUN python3 -c "import matplotlib; import matplotlib.pyplot"
 
