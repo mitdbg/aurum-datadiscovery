@@ -42,9 +42,6 @@ services:
       dockerfile: docker/Dockerfile-ddprofiler
     volumes:
       - ./data:/data
-    ports:
-      - 9200:9200
-      - 9300:9300
     networks:
       aurum_net:
         aliases:
