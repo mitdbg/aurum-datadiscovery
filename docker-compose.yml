@@ -4,7 +4,7 @@
 # 1. docker-compose up -d elasticsearch
 #     Brings up an elasticsearch instance using the data located at data/elasticsearch. This data persists even if you destroy and recreate the elasticsearch Docker container.
 # 2*. docker-compose build profiler
-# 2. docker-compose run --rm -T profiler -e "<profiler args here>"
+# 2. docker-compose up profiler
 #     Runs the ddprofiler with the CSVs located in data/csvs. Writes to the above elasticsearch container.
 # 3*. docker-compose build nbc
 # 3. docker-compose run --rm -T nbc
@@ -42,6 +42,7 @@ services:
       dockerfile: docker/Dockerfile-ddprofiler
     volumes:
       - ./data:/data
+    command: ""  # "<profiler args here>"
     networks:
       aurum_net:
         aliases:
