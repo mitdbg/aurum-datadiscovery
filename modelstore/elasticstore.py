@@ -123,7 +123,7 @@ class StoreHandler:
             hits = res['hits']['hits']
             for h in hits:
                 toret = []
-                toret.append(h['_id'])
+                toret.append(str(h['_id']))
                 toret.append(h['_source']['sourceName'])
                 toret.append(h['_source']['columnName'])
                 for attr in attrs:
@@ -173,7 +173,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 
@@ -207,7 +207,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 
