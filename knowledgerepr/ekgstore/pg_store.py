@@ -77,12 +77,12 @@ class PGStore:
         return results
 
     def paths(self, source_id, target_id, relation_type=1):
-        self.cur.execute("WITH RECURSIVE transitive_closure (src, tgt, path_string) AS "
+        self.cur.execute("WITH RECURSIVE transitive_closure (_src, tgt, path_string) AS "
                          "(SELECT e.source_node_id, "
                          "e.target_node_id, e.source_node_id || %(dot_str)s || e.target_node_id || %(dot_str)s"
                          "AS path_string FROM edges e WHERE e.source_node_id = %(source_id)s"
                          "UNION "
-                         "SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || %(dot_str)s "
+                         "SELECT tc._src, e.target_node_id, tc.path_string || e.target_node_id || %(dot_str)s "
                          "AS path_string FROM edges "
                          "AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt "
                          "WHERE tc.path_string NOT LIKE %(perc_str)s || e.target_node_id || %(dotperc_str)s ) "
@@ -155,7 +155,7 @@ select source_node_id from r;
 """
 
 """ WORKING VERSION
-WITH RECURSIVE transitive_closure (src, tgt, path_string) AS
+WITH RECURSIVE transitive_closure (_src, tgt, path_string) AS
   (
 
    SELECT e.source_node_id, e.target_node_id,
@@ -165,7 +165,7 @@ WITH RECURSIVE transitive_closure (src, tgt, path_string) AS
 
    UNION
 
-   SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string
+   SELECT tc._src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string
    FROM edges AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt
    WHERE tc.path_string NOT LIKE '%' || e.target_node_id || '.%'
   )
@@ -175,7 +175,7 @@ WITH RECURSIVE transitive_closure (src, tgt, path_string) AS
 """
 
 """ WORKING VERSION MAX-HOPS
-WITH RECURSIVE transitive_closure (src, tgt, path_string, it) AS
+WITH RECURSIVE transitive_closure (_src, tgt, path_string, it) AS
   (
 
    SELECT e.source_node_id, e.target_node_id,
@@ -185,7 +185,7 @@ WITH RECURSIVE transitive_closure (src, tgt, path_string, it) AS
 
    UNION
 
-   SELECT tc.src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string, it + 1
+   SELECT tc._src, e.target_node_id, tc.path_string || e.target_node_id || '.' AS path_string, it + 1
    FROM edges AS e JOIN transitive_closure AS tc ON e.source_node_id = tc.tgt
    WHERE tc.path_string NOT LIKE '%' || e.target_node_id || '.%' AND it < 2
   )

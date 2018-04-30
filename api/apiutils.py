@@ -643,14 +643,14 @@ class DRS:
 
         def get_score_continuous_path(pg, src, nodes_already_visited):
             """
-            Traverse graph from src forming a score path
+            Traverse graph from _src forming a score path
             :param pg:
             :param src:
             :return:
             """
             current_score = float(src.score)
             ns = [x for x in pg.neighbors(src) if x not in nodes_already_visited]  # skip already visited nodes
-            #ns = [x for x in pg.neighbors(src)]
+            #ns = [x for x in pg.neighbors(_src)]
             if len(ns) == 1:
                 nodes_already_visited.add(ns[0])
                 current_score = current_score + get_score_continuous_path(pg, ns[0], nodes_already_visited)

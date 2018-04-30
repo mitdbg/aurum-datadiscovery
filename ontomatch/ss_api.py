@@ -1673,9 +1673,9 @@ def test_lsh_quality(path_to_serialized_model):
     # parsed_l52 = []
     # for el in orig_l52:
     #     sch, cla = el.split("==>>")
-    #     db, src, f = sch.split("%%%")
+    #     db, _src, f = sch.split("%%%")
     #     onto, cla = cla.split("%%%")
-    #     match = ((db, src, f), (onto, cla))
+    #     match = ((db, _src, f), (onto, cla))
     #     parsed_l52.append(match)
 
 

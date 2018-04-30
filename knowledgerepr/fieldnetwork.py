@@ -298,7 +298,7 @@ class FieldNetwork:
 
         o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
 
-        # TODO: same src == trg, etc
+        # TODO: same _src == trg, etc
 
         path = []
 
@@ -403,7 +403,7 @@ class FieldNetwork:
 
         o_drs = DRS([], Operation(OP.NONE))  # Carrier of provenance
 
-        # TODO: same src == trg, etc
+        # TODO: same _src == trg, etc
 
         # src_drs = api.drs_from_table(source)
         # trg_drs = api.drs_from_table(target)

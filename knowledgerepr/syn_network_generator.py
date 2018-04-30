@@ -48,7 +48,7 @@ def generate_network_with(num_nodes=10, num_nodes_per_table=2, num_schema_sim=5,
     # num schema sim
     gen_schema_sim = gen_pairs_relation(0, num_schema_sim)
     for src, trg in gen_schema_sim:
-        #print(str(src) + " - " + str(trg))
+        #print(str(_src) + " - " + str(trg))
         fn.add_relation(src, trg, Relation.SCHEMA_SIM, 0.2)
 
     # num content sim
