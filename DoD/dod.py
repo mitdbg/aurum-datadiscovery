@@ -27,6 +27,7 @@ class DoD:
         # Obtain sets that fulfill individual filters
         filter_drs = dict()
         filter_id = 0
+        # TODO: ask user for the alternatives found, so they can pick one
         for attr in sch_def.keys():
             drs = self.api.search_attribute(attr)
             filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
@@ -84,8 +85,6 @@ class DoD:
                 candidate_group_filters_covered = set()
                 for i in range(len(list(table_fulfilled_filters.items()))):
                     table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
-                    if table_pivot == "Zpm_rooms_load.csv":
-                        a = 1
                     # Eagerly add pivot
                     candidate_group.append(table_pivot)
                     candidate_group_filters_covered.update(filters_pivot)
@@ -93,8 +92,6 @@ class DoD:
                     if len(candidate_group_filters_covered) == len(filter_drs.items()):
                         candidate_group = sorted(candidate_group)
                         print("1: " + str(table_pivot))
-                        if len(candidate_group) == 1:
-                            a = 1
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
                         clear_state()
@@ -106,16 +103,12 @@ class DoD:
                         table, filters = list(table_fulfilled_filters.items())[idx]
                         new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
-                            if table == "Zpm_rooms_load.csv":
-                                a = 1
                             candidate_group.append(table)
 
                             candidate_group_filters_covered.update(filters)
                             if len(candidate_group_filters_covered) == len(filter_drs.items()):
                                 candidate_group = sorted(candidate_group)
                                 print("2: " + str(table_pivot))
-                                if len(candidate_group) == 1:
-                                    a = 1
                                 yield (candidate_group, candidate_group_filters_covered)
                                 clear_state()
                                 # Re-add the current pivot, only necessary in this case
@@ -123,8 +116,6 @@ class DoD:
                                 candidate_group_filters_covered.update(filters_pivot)
                     candidate_group = sorted(candidate_group)
                     print("3: " + str(table_pivot))
-                    if len(candidate_group) == 1:
-                        a = 1
                     yield (candidate_group, candidate_group_filters_covered)
                     # Cleaning
                     clear_state()
@@ -721,13 +712,24 @@ def test_dpu(dod):
         yield materialized_virtual_schema, attrs_to_project
 
 
+def init_dod(path_to_serialized_model):
+    from knowledgerepr import fieldnetwork
+    from modelstore.elasticstore import StoreHandler
+    # basic test
+    store_client = StoreHandler()
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    dod = DoD(network=network, store_client=store_client)
+    return dod
+
+
 if __name__ == "__main__":
     print("DoD")
 
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
+    #path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
+    path_to_serialized_model = "/Users/ra/dev/aurum-datadiscovery/models/mit_small/"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 

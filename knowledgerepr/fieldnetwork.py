@@ -455,15 +455,15 @@ def serialize_network(network, path):
     path = path + '/'  # force separator
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    nx.write_gpickle(G, path + "graph.pickle")
-    nx.write_gpickle(id_to_field_info, path + "id_info.pickle")
-    nx.write_gpickle(table_to_ids, path + "table_ids.pickle")
+    nx.write_gpickle(G, path + "/graph.pickle")
+    nx.write_gpickle(id_to_field_info, path + "/id_info.pickle")
+    nx.write_gpickle(table_to_ids, path + "/table_ids.pickle")
 
 
 def deserialize_network(path):
-    G = nx.read_gpickle(path + "graph.pickle")
-    id_to_info = nx.read_gpickle(path + "id_info.pickle")
-    table_to_ids = nx.read_gpickle(path + "table_ids.pickle")
+    G = nx.read_gpickle(path + "/graph.pickle")
+    id_to_info = nx.read_gpickle(path + "/id_info.pickle")
+    table_to_ids = nx.read_gpickle(path + "/table_ids.pickle")
     network = FieldNetwork(G, id_to_info, table_to_ids)
     return network
 
