@@ -91,8 +91,9 @@ public class Worker implements Runnable {
 		    continue;
 		}
 
-		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(),
-			"path<check>", task.getSourceConfig().getRelationName());
+		String path = task.getSourceConfig().getPath();
+		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(), path,
+			task.getSourceConfig().getRelationName());
 
 		// Access attributes and attribute type through first read
 		Connector c = task.getConnector();
@@ -109,13 +110,13 @@ public class Worker implements Runnable {
 
 		// Read initial records to figure out attribute types etc
 		// FIXME: readFirstRecords(initData, analyzers);
-		readFirstRecords(task.getSourceConfig().getSourceName(), "path<check>", initData, analyzers, indexer);
+		readFirstRecords(task.getSourceConfig().getSourceName(), path, initData, analyzers, indexer);
 
 		// Consume all remaining records from the connector
 		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 		int records = 0;
 		while (data != null) {
-		    indexer.indexData(task.getSourceConfig().getSourceName(), "path<check>", data);
+		    indexer.indexData(task.getSourceConfig().getSourceName(), path, data);
 		    records = records + data.size();
 		    Conductor.recordsPerSecond.mark(records);
 		    // Do the processing
@@ -130,8 +131,8 @@ public class Worker implements Runnable {
 		// FIXME: WorkerTaskResultHolder wtrf = new
 		// WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(),
 		// analyzers);
-		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(),
-			"path<check>", task.getSourceConfig().getRelationName(), c.getAttributes(), analyzers);
+		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(), path,
+			task.getSourceConfig().getRelationName(), c.getAttributes(), analyzers);
 
 		// List<WorkerTaskResult> rs =
 		// WorkerTaskResultHolder.makeFakeOne();

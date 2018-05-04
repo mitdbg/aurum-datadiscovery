@@ -38,7 +38,7 @@ safe_dict['_general_to_drs'] = api._general_to_drs
 # safe_dict['db'] = NA
 safe_dict['source'] = KWType.KW_TABLE  # table/file/source name
 safe_dict['field'] = KWType.KW_SCHEMA  # colum names/fields
-safe_dict['content'] = KWType.KW_TEXT
+safe_dict['content'] = KWType.KW_CONTENT
 
 
 # short names for Relations

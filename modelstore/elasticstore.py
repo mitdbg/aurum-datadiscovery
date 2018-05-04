@@ -11,7 +11,7 @@ import config as c
 
 
 class KWType(Enum):
-    KW_TEXT = 0
+    KW_CONTENT = 0
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
@@ -49,9 +49,10 @@ class StoreHandler:
                                          ]
                             )
         hits = res['hits']['hits']
-        if len(hits) > 0:
-            # TODO: handle some error here, nids should be unique
-            print("ERROR: nid not unique when querying for path?")
+        # FIXME: check the below
+        # if len(hits) > 0:
+        #     # TODO: handle some error here, nids should be unique
+        #     print("ERROR: nid not unique when querying for path?")
         hit = hits[0]
         path = hit['_source']['path']
         return path
@@ -152,7 +153,7 @@ class StoreHandler:
                        'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
-        if elasticfieldname == KWType.KW_TEXT:
+        if elasticfieldname == KWType.KW_CONTENT:
             index = "text"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"text": keywords}}}

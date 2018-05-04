@@ -25,6 +25,8 @@ public class SQLServerSourceConfig implements SourceConfig {
     @JsonProperty
     private String db_password;
 
+    private String path;
+
     public String getDb_server_ip() {
 	return db_server_ip;
     }
@@ -48,6 +50,13 @@ public class SQLServerSourceConfig implements SourceConfig {
     @Override
     public String getSourceName() {
 	return sourceName;
+    }
+
+    @Override
+    public String getPath() {
+	path = "jdbc:sqlserver://" + db_server_ip + ":" + db_server_port + "; " + "databaseName=" + database_name
+		+ "; user=" + db_username + "; password=" + db_password + ";";
+	return path;
     }
 
     @Override
