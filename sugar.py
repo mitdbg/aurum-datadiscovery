@@ -21,7 +21,7 @@ api = API(network, store_client)
 # To specify what parts of a file will be searched
 source = KWType.KW_TABLE  # table/file/source name
 field = KWType.KW_SCHEMA  # colum names/fields
-content = KWType.KW_TEXT  # content of the columns
+content = KWType.KW_CONTENT  # content of the columns
 
 # Short variables for Relation
 # These represent edge types in the graph
@@ -45,7 +45,7 @@ intersection = api.intersection
 union = api.union
 difference = api.difference
 
-
+@DeprecationWarning
 def search(kws, contexts=[source, field, content]):
     try:
         if isinstance(contexts, KWType):
@@ -73,7 +73,7 @@ def search(kws, contexts=[source, field, content]):
             '\n\tsearch(\'school\', [source, field, content])')
         print(msg)
 
-
+@DeprecationWarning
 def neighbors(i_drs, relations=Relation, exclude_origin=True):
     try:
         i_drs = api.make_drs(i_drs)
@@ -112,7 +112,7 @@ def neighbors(i_drs, relations=Relation, exclude_origin=True):
             '\n\tneighbors([1600820766, my_drs], exclude_origin=False)')
         print(msg)
 
-
+@DeprecationWarning
 def path(drs_a, drs_b, relation=pkfk):
     try:
         drs_a = make_drs(drs_a)
@@ -133,7 +133,7 @@ def path(drs_a, drs_b, relation=pkfk):
         )
         print(msg)
 
-
+@DeprecationWarning
 def provenance(i_drs):
     try:
         return i_drs.get_provenance().prov_graph().edges()

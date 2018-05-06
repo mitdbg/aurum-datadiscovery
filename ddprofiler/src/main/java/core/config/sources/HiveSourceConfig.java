@@ -17,6 +17,9 @@ public class HiveSourceConfig implements SourceConfig {
     private int hive_server_port;
 
     @JsonProperty
+    private String path;
+
+    @JsonProperty
     private String database_name;
 
     // @JsonProperty
@@ -36,6 +39,12 @@ public class HiveSourceConfig implements SourceConfig {
     public String getDatabase_name() {
 	return database_name;
     }
+
+    @Override
+    public String getPath() {
+	return path;
+    }
+
     //
     // public String getDb_username() {
     // return db_username;

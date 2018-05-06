@@ -330,7 +330,7 @@ class FieldNetwork:
                 sink = DRS([tgt_sibling], Operation(OP.PKFK, params=[prev_c]))
 
                 #The join path at the target has None sibling
-                if tgt != None and tgt_sibling!= None and tgt.nid != tgt_sibling.nid:
+                if tgt is not None and tgt_sibling is not None and tgt.nid != tgt_sibling.nid:
                     o_drs = o_drs.absorb_provenance(sink)
                     linker = DRS([tgt], Operation(OP.TABLE, params=[tgt_sibling]))
                     o_drs.absorb(linker)
@@ -366,7 +366,8 @@ class FieldNetwork:
             # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
                 if not check_membership(n, paths):
-                    t_neighbors = api.drs_from_table_hit(n)
+                    t_neighbors = api.drs_from_table_hit(n)  # Brought old API
+                    # t_neighbors = api.make_drs(n)  # XXX: this won't take all table neighbors, only the input one
                     results.extend([(x, n) for x in t_neighbors])
             return results  # note how we include hit as sibling of x here
 
@@ -381,8 +382,8 @@ class FieldNetwork:
                     # in case T2 is the target add to the path (sibling, sibling)
                     # Otherwise (C,B)
                     if s.source_name == targets[0].source_name:
-                        next_paths = append_to_paths(paths, (sibling,sibling))
-                    else :
+                        next_paths = append_to_paths(paths, (sibling, sibling))
+                    else:
                         next_paths = append_to_paths(paths, (s, sibling))
                     found_paths.extend(next_paths)
                     return True
@@ -404,8 +405,10 @@ class FieldNetwork:
 
         # TODO: same src == trg, etc
 
-        src_drs = api.drs_from_table(source)
-        trg_drs = api.drs_from_table(target)
+        # src_drs = api.drs_from_table(source)
+        # trg_drs = api.drs_from_table(target)
+        src_drs = api.make_drs(source)
+        trg_drs = api.make_drs(target)
 
         found_paths = []
         candidates = [(x, None) for x in src_drs]  # tuple carrying candidate and same-table attribute
@@ -414,8 +417,8 @@ class FieldNetwork:
 
         dfs_explore(candidates, [x for x in trg_drs], max_hops, paths)
 
-        for p in found_paths:
-            print(p)
+        # for p in found_paths:
+        #     print(p)
 
         o_drs = assemble_table_path_provenance(o_drs, found_paths, relation)
 
