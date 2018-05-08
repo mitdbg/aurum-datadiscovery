@@ -458,6 +458,7 @@ class DRS:
     def intersection(self, drs):
         # Reset ranking
         self._ranked = False
+        result = DRS([], Operation(OP.NONE))
         new_data = []
         # FIXME: There are more efficient ways of doing this
         if drs.mode == DRSMode.TABLE:
@@ -473,12 +474,14 @@ class DRS:
             my_data = set(self.data)
             new_data = list(merging_data.intersection(my_data))
         # We set the new data into our DRS again
-        self.set_data(new_data)
+        # self.set_data(new_data)
+        result.set_data(new_data)
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
-        self.absorb_provenance(drs, annotate_and_edges=True)
-        return self
+        # self.absorb_provenance(drs, annotate_and_edges=True)
+        result.absorb_provenance(drs, annotate_and_edges=True)
+        return result
 
     def union(self, drs):
         # Reset ranking
