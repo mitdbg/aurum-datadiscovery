@@ -66,7 +66,16 @@ class Relation(Enum):
     CONTAINER = 15
 
     def from_metadata(self):
-        return self.value >= 10
+        if self == \
+                Relation.MEANS_SAME or self == \
+                Relation.MEANS_DIFF or self == \
+                Relation.SUBCLASS or self == \
+                Relation.SUPERCLASS or self == \
+                Relation.MEMBER or self == \
+                Relation.CONTAINER:
+            return True
+        else:
+            return False
 
 
 class OP(Enum):
@@ -481,6 +490,7 @@ class DRS:
         # FIXME: or alternatively perform a more fine-grained merging
         # self.absorb_provenance(drs, annotate_and_edges=True)
         result.absorb_provenance(drs, annotate_and_edges=True)
+        result.absorb_provenance(self, annotate_and_edges=True)
         return result
 
     def union(self, drs):
