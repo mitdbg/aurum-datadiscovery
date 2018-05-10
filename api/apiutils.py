@@ -489,34 +489,42 @@ class DRS:
         # FIXME: perhaps we need to do some garbage collection of the prov graph at some point
         # FIXME: or alternatively perform a more fine-grained merging
         # self.absorb_provenance(drs, annotate_and_edges=True)
-        result.absorb_provenance(drs, annotate_and_edges=True)
         result.absorb_provenance(self, annotate_and_edges=True)
+        result.absorb_provenance(drs, annotate_and_edges=True)
         return result
 
     def union(self, drs):
         # Reset ranking
         self._ranked = False
+        result = DRS([], Operation(OP.NONE))
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = merging_data.union(my_data)
-        self.set_data(list(new_data))
+        # self.set_data(list(new_data))
+        result.set_data(list(new_data))
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov
         # graph at some point
-        self.absorb_provenance(drs)
-        return self
+        # self.absorb_provenance(drs)
+        result.absorb_provenance(self)
+        result.absorb_provenance(drs)
+        return result
 
     def set_difference(self, drs):
         # Reset ranking
         self._ranked = False
+        result = DRS([], Operation(OP.NONE))
         merging_data = set(drs.data)
         my_data = set(self.data)
         new_data = my_data - merging_data
-        self.set_data(list(new_data))
+        # self.set_data(list(new_data))
+        result.set_data(list(new_data))
         # Merge provenance
         # FIXME: perhaps we need to do some garbage collection of the prov
         # graph at some point
-        self.absorb_provenance(drs)
+        # self.absorb_provenance(drs)
+        result.absorb_provenance(self)
+        result.absorb_provenance(drs)
         return self
 
     """
