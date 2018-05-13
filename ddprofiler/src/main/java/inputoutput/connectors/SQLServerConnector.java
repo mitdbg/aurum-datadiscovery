@@ -87,7 +87,7 @@ public class SQLServerConnector implements Connector {
 	}
 
 	Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-	String cPath = String.format("jdbc:sqlserver://{}:{}; databaseName={};", ip, port, dbName);
+	String cPath = "jdbc:sqlserver://"+ip+":"+port+"; databaseName="+dbName;
 
 	// If no existing pool to handle this db, then we create a new one
 	HikariConfig config = new HikariConfig();
