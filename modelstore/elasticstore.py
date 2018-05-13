@@ -11,7 +11,7 @@ import config as c
 
 
 class KWType(Enum):
-    KW_TEXT = 0
+    KW_CONTENT = 0
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
@@ -49,7 +49,7 @@ class StoreHandler:
                                          ]
                             )
         hits = res['hits']['hits']
-        if len(hits) > 0:
+        if len(hits) > 1:
             # TODO: handle some error here, nids should be unique
             print("ERROR: nid not unique when querying for path?")
         hit = hits[0]
@@ -123,7 +123,7 @@ class StoreHandler:
             hits = res['hits']['hits']
             for h in hits:
                 toret = []
-                toret.append(h['_id'])
+                toret.append(str(h['_id']))
                 toret.append(h['_source']['sourceName'])
                 toret.append(h['_source']['columnName'])
                 for attr in attrs:
@@ -152,7 +152,7 @@ class StoreHandler:
                        'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
-        if elasticfieldname == KWType.KW_TEXT:
+        if elasticfieldname == KWType.KW_CONTENT:
             index = "text"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"text": keywords}}}
@@ -173,7 +173,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 
@@ -207,7 +207,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 

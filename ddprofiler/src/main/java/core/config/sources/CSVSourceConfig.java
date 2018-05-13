@@ -16,6 +16,7 @@ public class CSVSourceConfig implements SourceConfig {
     @JsonProperty
     private String separator;
 
+    @Override
     public String getPath() {
 	return path;
     }

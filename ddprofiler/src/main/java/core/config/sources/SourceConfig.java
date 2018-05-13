@@ -12,6 +12,8 @@ public interface SourceConfig {
 
     public String getRelationName();
 
+    public String getPath();
+
     public SourceConfig selfCopy();
 
 }
