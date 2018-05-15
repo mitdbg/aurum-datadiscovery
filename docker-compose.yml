@@ -78,6 +78,19 @@ services:
         aliases:
           - notebook
 
+  neo4j:
+    image: neo4j:3.3
+    volumes:
+      - ./neo4j-data:/data
+      - ./neo4j-logs:/logs
+    ports:
+      - 7474:7474
+      - 7687:7687
+    networks:
+      aurum_net:
+        aliases:
+          - neo4j
+
 #  frontend:
 #    depends_on:
 #      - elasticsearch
