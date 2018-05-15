@@ -65,6 +65,7 @@ dependencies {
 }
 
 task fatJar(type: Jar) {
+    zip64 true
     description "Creates self-contained fat jar"
     zip64 true
     from {

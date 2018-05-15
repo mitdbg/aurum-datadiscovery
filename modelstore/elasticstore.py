@@ -49,10 +49,9 @@ class StoreHandler:
                                          ]
                             )
         hits = res['hits']['hits']
-        # FIXME: check the below
-        # if len(hits) > 0:
-        #     # TODO: handle some error here, nids should be unique
-        #     print("ERROR: nid not unique when querying for path?")
+        if len(hits) > 1:
+            # TODO: handle some error here, nids should be unique
+            print("ERROR: nid not unique when querying for path?")
         hit = hits[0]
         path = hit['_source']['path']
         return path
