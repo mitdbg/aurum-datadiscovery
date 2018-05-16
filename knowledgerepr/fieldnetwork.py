@@ -443,7 +443,7 @@ def serialize_network_to_csv(network, path):
             f.write(s)
 
 def serialize_network_to_neo4j(network,server="http://neo4j",port=7474,user="neo4j",pwd="aurum"):
-    conn_neo=eo4_cli.GraphDatabase(":".join([server,str(port)]),username=user,password=pwd)
+    conn_neo=neo4_cli.GraphDatabase(":".join([server,str(port)]),username=user,password=pwd)
     
     hit_pattern=re.compile("Hit\(nid='(.*)', db_name='.*', source_name='(.*)', field_name='(.*)', score=(.*)\)")
     sim_labels=conn_neo.labels.create("CONTENT")
