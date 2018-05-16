@@ -58,6 +58,8 @@ services:
     ports:
       - 7474:7474
       - 7687:7687
+    environment:
+      - NEO4J_AUTH=neo4j/aurm
     networks:
       aurum_net:
         aliases:
@@ -81,6 +83,7 @@ services:
   notebook:
     depends_on:
       - elasticsearch
+      - neodb
     image: aurum/notebook
     build:
       context: .
