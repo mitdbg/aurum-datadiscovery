@@ -82,6 +82,9 @@ def main(output_path=None):
     print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
     print("!!6 " + str(end_pkfk - start_pkfk))
 
+    # export network to neo4j
+    fieldnetwork.serialize_network_to_neo4j(network)
+
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
     print("!!7 " + str(end_all - start_all))
