@@ -63,7 +63,7 @@ services:
     networks:
       aurum_net:
         aliases:
-          - neodb
+          - neo4j
 
   nbc:
     depends_on:
