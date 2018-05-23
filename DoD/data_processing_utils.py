@@ -1,10 +1,12 @@
 import pandas as pd
 from DoD.utils import FilterType
 from collections import defaultdict
+import config as C
 
 # Cache reading and transformation of DFs
 cache = dict()
 
+data_separator = C.separator
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
@@ -40,7 +42,7 @@ def find_key_for(relation_path, key, attribute, value):
     if relation_path in cache:
         df = cache[relation_path]
     else:
-        df = pd.read_csv(relation_path, encoding='latin1')
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
         #df = df.apply(lambda x: x.astype(str).str.lower())
         # cache[relation_path] = df  # cache for later
     try:
@@ -57,7 +59,7 @@ def is_value_in_column(value, relation_path, column):
     if relation_path in cache:
         df = cache[relation_path]
     else:
-        df = pd.read_csv(relation_path, encoding='latin1')
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
         #df = df.apply(lambda x: x.astype(str).str.lower())
         cache[relation_path] = df  # cache for later
     return value in df[column].map(lambda x: str(x).lower()).unique()
@@ -205,19 +207,19 @@ def materialize_join_path(jp_with_filters, dod):
             if path in cache:
                 l = cache[path]
             else:
-                l = pd.read_csv(path, encoding='latin1')
+                l = pd.read_csv(path, encoding='latin1', sep=data_separator)
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                r = pd.read_csv(path, encoding='latin1')
+                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
         else:  # roll the partially joint
             l = df
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                r = pd.read_csv(path, encoding='latin1')
+                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
         df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
         suffix += '_x'  # this is to make sure we don't end up with repeated columns
     return df
@@ -225,15 +227,15 @@ def materialize_join_path(jp_with_filters, dod):
 
 def get_dataframe(path):
     # TODO: only csv is supported
-    df = pd.read_csv(path, encoding='latin1')
+    df = pd.read_csv(path, encoding='latin1', sep=data_separator)
     return df
 
 
 if __name__ == "__main__":
 
     # JOIN
-    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1')
-    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1')
+    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1', sep=data_separator)
+    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1', sep=data_separator)
 
     a_key = 'Mit Id'
     b_key = 'Mit Id'
