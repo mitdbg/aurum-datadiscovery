@@ -14,8 +14,9 @@ import pickle
 
 class DoD:
 
-    def __init__(self, network, store_client):
+    def __init__(self, network, store_client, csv_separator=","):
         self.api = API(network=network, store_client=store_client)
+        dpu.configure_csv_separator(csv_separator)
 
     def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
         # Align schema definition and samples

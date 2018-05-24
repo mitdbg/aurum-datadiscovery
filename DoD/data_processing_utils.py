@@ -8,6 +8,12 @@ cache = dict()
 
 data_separator = C.separator
 
+
+def configure_csv_separator(separator):
+    global data_separator
+    data_separator = separator
+
+
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
     # TODO: Generate data event if nan values are found
