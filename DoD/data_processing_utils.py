@@ -1,6 +1,8 @@
 import pandas as pd
-from DoD.utils import FilterType
 from collections import defaultdict
+import editdistance
+
+from DoD.utils import FilterType
 import config as C
 
 # Cache reading and transformation of DFs
@@ -84,7 +86,18 @@ def obtain_attributes_to_project(jp_with_filters):
 
 
 def project(df, attributes_to_project):
-    print("Projecting: " + str(attributes_to_project))
+    # print("Project requested: " + str(attributes_to_project))
+    # actual_attribute_names = df.columns
+    # mapping = dict()
+    # for req in attributes_to_project:
+    #     candidate, score = None, 1000
+    #     for c in actual_attribute_names:
+    #         d = editdistance.eval(req, c)
+    #         if d < score:
+    #             candidate, score = c, d
+    #     mapping[req] = candidate
+    # print("Projecting on: " + str(mapping.values()))
+    print("Project: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]
     return df
 
@@ -126,7 +139,7 @@ def materialize_join_graph(jg_with_filters, dod):
         for l, r in jg:
             if len(intree) == 0:
                 node = InTreeNode(l.source_name)
-                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                 df = get_dataframe(node_path)
                 node.set_payload(df)
                 intree[l.source_name] = node
@@ -134,7 +147,7 @@ def materialize_join_graph(jg_with_filters, dod):
             # now either l or r should be in intree
             if l.source_name in intree.keys():
                 rnode = InTreeNode(r.source_name)  # create node for r
-                node_path = dod.api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
                 df = get_dataframe(node_path)
                 rnode.set_payload(df)
                 r_parent = intree[l.source_name]
@@ -146,7 +159,7 @@ def materialize_join_graph(jg_with_filters, dod):
                 intree[r.source_name] = rnode
             elif r.source_name in intree.keys():
                 lnode = InTreeNode(l.source_name)  # create node for l
-                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                 df = get_dataframe(node_path)
                 lnode.set_payload(df)
                 l_parent = intree[r.source_name]
@@ -203,8 +216,8 @@ def materialize_join_path(jp_with_filters, dod):
     df = None
     suffix = '_x'
     for l, r in jp:
-        l_path = dod.api.helper.get_path_nid(l.nid)
-        r_path = dod.api.helper.get_path_nid(r.nid)
+        l_path = dod.aurum_api.helper.get_path_nid(l.nid)
+        r_path = dod.aurum_api.helper.get_path_nid(r.nid)
         l_key = l.field_name
         r_key = r.field_name
         print("Joining: " + str(l.source_name) + "." + str(l_key) + " with: " + str(r.source_name) + "." + str(r_key))

@@ -15,7 +15,7 @@ import pickle
 class DoD:
 
     def __init__(self, network, store_client, csv_separator=","):
-        self.api = API(network=network, store_client=store_client)
+        self.aurum_api = API(network=network, store_client=store_client)
         dpu.configure_csv_separator(csv_separator)
 
     def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
@@ -29,12 +29,12 @@ class DoD:
         filter_drs = dict()
         filter_id = 0
         for attr in sch_def.keys():
-            drs = self.api.search_attribute(attr)
+            drs = self.aurum_api.search_attribute(attr)
             filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
             filter_id += 1
 
         for cell in sch_def.values():
-            drs = self.api.search_content(cell)
+            drs = self.aurum_api.search_content(cell)
             filter_drs[(cell, FilterType.CELL, filter_id)] = drs
             filter_id += 1
 
@@ -85,17 +85,13 @@ class DoD:
                 candidate_group_filters_covered = set()
                 for i in range(len(list(table_fulfilled_filters.items()))):
                     table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
-                    if table_pivot == "Zpm_rooms_load.csv":
-                        a = 1
                     # Eagerly add pivot
                     candidate_group.append(table_pivot)
                     candidate_group_filters_covered.update(filters_pivot)
                     # Did it cover all filters?
                     if len(candidate_group_filters_covered) == len(filter_drs.items()):
                         candidate_group = sorted(candidate_group)
-                        print("1: " + str(table_pivot))
-                        if len(candidate_group) == 1:
-                            a = 1
+                        # print("1: " + str(table_pivot))
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
                         clear_state()
@@ -107,25 +103,18 @@ class DoD:
                         table, filters = list(table_fulfilled_filters.items())[idx]
                         new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
-                            if table == "Zpm_rooms_load.csv":
-                                a = 1
                             candidate_group.append(table)
-
                             candidate_group_filters_covered.update(filters)
                             if len(candidate_group_filters_covered) == len(filter_drs.items()):
                                 candidate_group = sorted(candidate_group)
-                                print("2: " + str(table_pivot))
-                                if len(candidate_group) == 1:
-                                    a = 1
+                                # print("2: " + str(table_pivot))
                                 yield (candidate_group, candidate_group_filters_covered)
                                 clear_state()
                                 # Re-add the current pivot, only necessary in this case
                                 candidate_group.append(table_pivot)
                                 candidate_group_filters_covered.update(filters_pivot)
                     candidate_group = sorted(candidate_group)
-                    print("3: " + str(table_pivot))
-                    if len(candidate_group) == 1:
-                        a = 1
+                    # print("3: " + str(table_pivot))
                     yield (candidate_group, candidate_group_filters_covered)
                     # Cleaning
                     clear_state()
@@ -136,20 +125,15 @@ class DoD:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
             print("Candidate group: " + str(candidate_group))
-            # print("Which covers: " + str(candidate_group_filters_covered))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
-            # continue
 
             if len(candidate_group) == 1:
-                # print(str(candidate_group))
                 table = candidate_group[0]
                 path = table_path[table]
-                # print(str(path))
                 materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
                 attrs_to_project = dpu.obtain_attributes_to_project((candidate_group_filters_covered, None))
                 yield materialized_virtual_schema, attrs_to_project
-                # continue  # avoid the joinable for a 1-table group
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
@@ -319,11 +303,11 @@ class DoD:
             #                 table2 == "Drupal_employee_directory.csv" and\
             #                 table1 == "Employee_directory.csv":
             #     a = 1
-            t1 = self.api.make_drs(table1)
-            t2 = self.api.make_drs(table2)
+            t1 = self.aurum_api.make_drs(table1)
+            t2 = self.aurum_api.make_drs(table2)
             t1.set_table_mode()
             t2.set_table_mode()
-            drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+            drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
             paths = drs.paths()  # list of lists
             group = []
             if len(paths) == 0:  # then store this info, these tables do not join
@@ -439,7 +423,7 @@ class DoD:
         tree_valid_filters = dict()
         x = 0
         for filters, l, r in annotated_join_path:  # for each hop
-            l_path = self.api.helper.get_path_nid(l.nid)
+            l_path = self.aurum_api.helper.get_path_nid(l.nid)
             tree_for_level = dict()
 
             # Before checking for filters, translate carrying values into hook attribute in l
@@ -495,7 +479,7 @@ class DoD:
                             tree_for_level[x] = (carrying_filters, carrying_values)
             # Now filter with r
             if r is not None:  # if none, we processed the last step already, so time to check the tree
-                r_path = self.api.helper.get_path_nid(r.nid)
+                r_path = self.aurum_api.helper.get_path_nid(r.nid)
                 x_to_remove = set()
                 for x, payload in tree_for_level.items():
                     carrying_filters, carrying_values = payload
@@ -603,7 +587,7 @@ def rank_materializable_join_paths_piece(materializable_join_paths, candidate_gr
 def obtain_table_paths(set_nids, dod):
     table_path = dict()
     for table, nid in set_nids.items():
-        path = dod.api.helper.get_path_nid(nid)
+        path = dod.aurum_api.helper.get_path_nid(nid)
         table_path[table] = path
     return table_path
 
@@ -627,6 +611,9 @@ def test_e2e(dod, number_jps=5):
         # print(mjp.head(2))
         # if i > number_jps:
         #     break
+
+        proj_view = dpu.project(mjp, attrs_project)
+
         if first:
             first = False
             first_mjp = mjp
