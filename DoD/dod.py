@@ -598,8 +598,8 @@ def obtain_table_paths(set_nids, dod):
 def test_e2e(dod, number_jps=5):
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     # values = ["968548423", "kimball", "Mechanical Engineering"]
-    attrs = ["c_name", "c_phone", "name"]
-    values = ["Customer#000000001", "25-989-741-2988", "BRAZIL"]
+    attrs = ["c_name", "c_phone", "n_name", "l_tax"]
+    values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]

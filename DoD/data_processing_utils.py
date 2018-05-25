@@ -177,7 +177,7 @@ def materialize_join_graph(jg_with_filters, dod):
     def get_join_info_pair(t1, t2, jg):
         # t1 and t2 won't never be the same
         for l, r in jg:
-            if t1 == l.source_name or t1 == r.source_name and t2 == l.source_name or t2 == r.source_name:
+            if (t1 == l.source_name or t1 == r.source_name) and (t2 == l.source_name or t2 == r.source_name):
                 return l, r
 
     filters, jg = jg_with_filters
@@ -191,7 +191,8 @@ def materialize_join_graph(jg_with_filters, dod):
             continue  # we have now converged
         leave_ancestor = defaultdict(list)
         for leave in leaves:
-            leave_ancestor[leave.get_parent()].append(leave)
+            if leave.get_parent() is not None:  # never add the parent's parent, which does not exist
+                leave_ancestor[leave.get_parent()].append(leave)
         # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
         for k, v in leave_ancestor.items():
             for child in v:
@@ -206,7 +207,8 @@ def materialize_join_graph(jg_with_filters, dod):
                 if child in leaves:
                     leaves.remove(child)  # removed merged children
             # joined all children, now we include joint df on leaves
-            leaves.append(k)  # k becomes a new leave
+            if k not in leaves:  # avoid re-adding parent element
+                leaves.append(k)  # k becomes a new leave
     materialized_view = leaves[0].get_payload()  # the last leave is folded onto the in-tree root
     return materialized_view
 
