@@ -252,7 +252,10 @@ class DoD:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
-                    jp.append((l, r))
+                    # To drag filters along, there's a leaf special tuple where r may be None
+                    # since we don't need it at this point anymore, we check for its existence and do not include it
+                    if r is not None:
+                        jp.append((l, r))
                     filters.update(filter)
                 clean_jp.append((filters, jp))
 
@@ -595,8 +598,8 @@ def obtain_table_paths(set_nids, dod):
 def test_e2e(dod, number_jps=5):
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     # values = ["968548423", "kimball", "Mechanical Engineering"]
-    attrs = ["name", "c_phone"]
-    values = ["Customer#000000001", "25-989-741-2988"]
+    attrs = ["c_name", "c_phone", "name"]
+    values = ["Customer#000000001", "25-989-741-2988", "BRAZIL"]
 
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
