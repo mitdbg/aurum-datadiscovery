@@ -29,7 +29,7 @@ class DoD:
         filter_drs = dict()
         filter_id = 0
         for attr in sch_def.keys():
-            drs = self.aurum_api.search_attribute(attr)
+            drs = self.aurum_api.search_exact_attribute(attr)
             filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
             filter_id += 1
 
