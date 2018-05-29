@@ -29,12 +29,12 @@ class DoD:
         filter_drs = dict()
         filter_id = 0
         for attr in sch_def.keys():
-            drs = self.aurum_api.search_exact_attribute(attr)
+            drs = self.aurum_api.search_exact_attribute(attr, max_results=50)
             filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
             filter_id += 1
 
         for cell in sch_def.values():
-            drs = self.aurum_api.search_content(cell)
+            drs = self.aurum_api.search_content(cell, max_results=50)
             filter_drs[(cell, FilterType.CELL, filter_id)] = drs
             filter_id += 1
 
@@ -52,14 +52,16 @@ class DoD:
                     for c in columns:
                         if c.source_name == table:
                             table_nid[table] = c.nid
-                    if filter not in table_fulfilled_filters[table]:
+                    # if filter not in table_fulfilled_filters[table]:
+                    if filter[2] not in [id for _,_,id in table_fulfilled_filters[table]]:
                         table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR, filter[2]))
                 elif filter[1] == FilterType.CELL:
                     columns = [c for c in drs.data]  # copy
                     for c in columns:
                         if c.source_name == table:  # filter in this column
                             table_nid[table] = c.nid
-                            if filter not in table_fulfilled_filters[table]:
+                            # if filter not in table_fulfilled_filters[table]:
+                            if filter[2] not in [id for _, _, id in table_fulfilled_filters[table]]:
                                 table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL, filter[2]))
 
         table_path = obtain_table_paths(table_nid, self)
@@ -75,6 +77,19 @@ class DoD:
             table_fulfilled_filters[k] = v
 
         def eager_candidate_exploration():
+            def covers_filters(candidate_filters, all_filters):
+                all_filters_set = set([id for _, _, id in filter_drs.keys()])
+                candidate_filters_set = set([id for _, _, id in candidate_filters])
+                if len(candidate_filters_set) == len(all_filters_set):
+                    return True
+                return False
+
+            def compute_size_filter_ix(filters, candidate_group_filters_covered):
+                new_fs_set = set([id for _,_,id in filters])
+                candidate_fs_set = set([id for _,_,id in candidate_group_filters_covered])
+                ix_size = len(new_fs_set.union(candidate_fs_set)) - len(candidate_fs_set)
+                return ix_size
+
             def clear_state():
                 candidate_group.clear()
                 candidate_group_filters_covered.clear()
@@ -89,7 +104,8 @@ class DoD:
                     candidate_group.append(table_pivot)
                     candidate_group_filters_covered.update(filters_pivot)
                     # Did it cover all filters?
-                    if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                    # if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                    if covers_filters(candidate_group_filters_covered, filter_drs.items()):
                         candidate_group = sorted(candidate_group)
                         # print("1: " + str(table_pivot))
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
@@ -101,11 +117,13 @@ class DoD:
                         if idx == len(table_fulfilled_filters.items()):
                             break
                         table, filters = list(table_fulfilled_filters.items())[idx]
-                        new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
+                        # new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
+                        new_filters = compute_size_filter_ix(filters, candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
                             candidate_group.append(table)
                             candidate_group_filters_covered.update(filters)
-                            if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                            if covers_filters(candidate_group_filters_covered, filter_drs.items()):
+                            # if len(candidate_group_filters_covered) == len(filter_drs.items()):
                                 candidate_group = sorted(candidate_group)
                                 # print("2: " + str(table_pivot))
                                 yield (candidate_group, candidate_group_filters_covered)
@@ -134,6 +152,7 @@ class DoD:
                 materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
                 attrs_to_project = dpu.obtain_attributes_to_project((candidate_group_filters_covered, None))
                 yield materialized_virtual_schema, attrs_to_project
+                continue  # to go to the next group
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
@@ -416,8 +435,12 @@ class DoD:
 
     def verify_candidate_join_paths(self, annotated_join_paths):
         materializable_join_paths = []
+        total_jps = len(annotated_join_paths)
+        i = 0
         for annotated_join_path in annotated_join_paths:
+            print("Verifying " + str(i) + "/" + str(total_jps), end="", flush=True)
             valid, filters = self.verify_candidate_join_path(annotated_join_path)
+            i += 1
             if valid:
                 materializable_join_paths.append(annotated_join_path)
         return materializable_join_paths
@@ -596,10 +619,10 @@ def obtain_table_paths(set_nids, dod):
 
 
 def test_e2e(dod, number_jps=5):
-    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    # values = ["968548423", "kimball", "Mechanical Engineering"]
-    attrs = ["c_name", "c_phone", "n_name", "l_tax"]
-    values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
+    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    values = ["968548423", "kimball", "Mechanical Engineering"]
+    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
+    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
@@ -667,8 +690,9 @@ if __name__ == "__main__":
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
-    sep = "|"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
+    sep = ","
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 
