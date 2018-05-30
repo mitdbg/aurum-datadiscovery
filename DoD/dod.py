@@ -18,13 +18,7 @@ class DoD:
         self.aurum_api = API(network=network, store_client=store_client)
         dpu.configure_csv_separator(csv_separator)
 
-    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
-        # Align schema definition and samples
-        assert len(list_attributes) == len(list_samples)
-        sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
-
-        sch_def = OrderedDict(sorted(sch_def.items(), key=lambda x: x[0], reverse=True))
-
+    def individual_filters(self, sch_def):
         # Obtain sets that fulfill individual filters
         filter_drs = dict()
         filter_id = 0
@@ -37,6 +31,33 @@ class DoD:
             drs = self.aurum_api.search_content(cell, max_results=50)
             filter_drs[(cell, FilterType.CELL, filter_id)] = drs
             filter_id += 1
+        return filter_drs
+
+    def joint_filters(self, sch_def):
+        # Obtain sets that fulfill individual filters
+        filter_drs = dict()
+        filter_id = 0
+
+        for attr, cell in sch_def.items():
+            if cell == "":
+                drs = self.aurum_api.search_exact_attribute(attr, max_results=50)
+                filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
+            else:
+                drs_attr = self.aurum_api.search_exact_attribute(attr, max_results=50)
+                drs_cell = self.aurum_api.search_content(cell, max_results=500)
+                drs = self.aurum_api.intersection(drs_attr, drs_cell)
+                filter_drs[(cell, FilterType.CELL, filter_id)] = drs
+            filter_id += 1
+        return filter_drs
+
+    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
+        # Align schema definition and samples
+        assert len(list_attributes) == len(list_samples)
+        sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
+
+        sch_def = OrderedDict(sorted(sch_def.items(), key=lambda x: x[0], reverse=True))
+
+        filter_drs = self.joint_filters(sch_def)
 
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
@@ -619,8 +640,13 @@ def obtain_table_paths(set_nids, dod):
 
 
 def test_e2e(dod, number_jps=5):
-    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    values = ["968548423", "kimball", "Mechanical Engineering"]
+    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    # values = ["", "kimball", "Mechanical Engineering"]
+
+    attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    values = ["Engineering", "", ""]
+
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
