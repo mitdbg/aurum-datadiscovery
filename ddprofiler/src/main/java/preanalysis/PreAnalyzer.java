@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import core.config.ProfilerConfig;
 import inputoutput.Attribute;
 import inputoutput.Attribute.AttributeType;
 import inputoutput.connectors.Connector;
@@ -27,6 +28,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
     private Connector c;
     private List<Attribute> attributes;
     private boolean knownDataTypes = false;
+    private ProfilerConfig pc;
 
     private static final Pattern _DOUBLE_PATTERN = Pattern
 	    .compile("[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
@@ -38,6 +40,10 @@ public class PreAnalyzer implements PreAnalysis, IO {
     private static final Pattern INT_PATTERN = Pattern.compile("^(\\+|-)?\\d+$");
 
     private final static String[] BANNED = { "", "nan" };
+
+    public PreAnalyzer(ProfilerConfig pc) {
+	this.pc = pc;
+    }
 
     /**
      * Implementation of IO interface
@@ -128,7 +134,13 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	    // Only if the type is not already known
 	    if (!a.getColumnType().equals(AttributeType.UNKNOWN))
 		continue;
-	    AttributeType aType = typeOfValue(e.getValue());
+	    AttributeType aType;
+	    if (pc.getBoolean(ProfilerConfig.EXPERIMENTAL)) {
+		// In experimental mode - force all data to be strings
+		aType = AttributeType.STRING;
+	    } else {
+		aType = typeOfValue(e.getValue());
+	    }
 	    if (aType == null) {
 		continue; // Means that data was dirty/anomaly, so skip value
 	    }

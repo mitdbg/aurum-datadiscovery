@@ -43,7 +43,7 @@ public class JustReadTest {
 			e.printStackTrace();
 		    }
 		    CSVConnector c = fc;
-		    PreAnalyzer pa = new PreAnalyzer();
+		    PreAnalyzer pa = new PreAnalyzer(null);
 		    pa.composeConnector(c);
 
 		    // Consume all remaining records from the connector
