@@ -23,12 +23,12 @@ class DoD:
         filter_drs = dict()
         filter_id = 0
         for attr in sch_def.keys():
-            drs = self.aurum_api.search_exact_attribute(attr, max_results=50)
+            drs = self.aurum_api.search_exact_attribute(attr, max_results=200)
             filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
             filter_id += 1
 
         for cell in sch_def.values():
-            drs = self.aurum_api.search_content(cell, max_results=50)
+            drs = self.aurum_api.search_content(cell, max_results=200)
             filter_drs[(cell, FilterType.CELL, filter_id)] = drs
             filter_id += 1
         return filter_drs
@@ -285,7 +285,7 @@ class DoD:
             print("Processing materializable join paths...")
 
             # Sort materializable_join_paths by likely joining on key
-            all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path)
+            all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path, self)
 
             clean_jp = []
             for annotated_jp, aggr_score, mul_score in all_jgs_scores:
@@ -296,7 +296,8 @@ class DoD:
                     # since we don't need it at this point anymore, we check for its existence and do not include it
                     if r is not None:
                         jp.append((l, r))
-                    filters.update(filter)
+                    if filter is not None:
+                        filters.update(filter)
                 clean_jp.append((filters, jp))
 
             import pickle
@@ -430,6 +431,7 @@ class DoD:
         return join_paths_hops
 
     def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters, candidate_group):
+        # FIXME: does this keep *all* relevant filters?
         annotated_jps = []
         l = None  # memory for last hop
         r = None
@@ -446,12 +448,12 @@ class DoD:
                 annotated_hop = (filters, l, r)
                 annotated_jp.append(annotated_hop)
             annotated_jps.append(annotated_jp)
-        # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
-        if r.source_name in candidate_group:
-            filters = table_fulfilled_filters[r.source_name]
-            annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
-            last_hop = annotated_jps[-1]
-            last_hop.append(annotated_hop)
+            # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
+            if r.source_name in candidate_group:
+                filters = table_fulfilled_filters[r.source_name]
+                annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
+                last_hop = annotated_jps[-1]
+                last_hop.append(annotated_hop)
         return annotated_jps
 
     def verify_candidate_join_paths(self, annotated_join_paths):
@@ -478,6 +480,9 @@ class DoD:
                 x_to_remove = set()
                 for x, payload in tree_valid_filters.items():
                     carrying_filters, carrying_values = payload
+                    if carrying_values[0] is None and carrying_values[1] is None:
+                        # tree_valid_filters[x] = (carrying_filters, (None, None))
+                        continue  # in this case nothing to hook
                     attr = carrying_values[1]
                     if attr == l.field_name:
                         continue  # no need to translate values to hook in this case
@@ -495,6 +500,9 @@ class DoD:
                 if len(tree_valid_filters.items()) == 0:
                     return False, set()
 
+            if filters is None:
+                # This means we are in an intermediate hop with no filters, as it's only connecting
+                continue
             if filters is not None:
                 # sort filters so cell type come first
                 filters = sorted(filters, key=lambda x: x[1].value)
@@ -502,7 +510,7 @@ class DoD:
                 for info, filter_type, filter_id in filters:
                     if filter_type == FilterType.CELL:
                         attribute = info[1]
-                        cell_value_specified_by_user = info[0]  # this will always be one (?)
+                        cell_value_specified_by_user = info[0]  # this will always be one (?) FIXME: no! only when using the pre-interface
                         path = l_path + "/" + l.source_name
                         keys_l = dpu.find_key_for(path, l.field_name,
                                                  attribute, cell_value_specified_by_user)
@@ -520,6 +528,10 @@ class DoD:
                                 tree_for_level[x] = (carrying_filters, (ix, l.field_name))
                     elif filter_type == FilterType.ATTR:
                         # attr filters work with everyone, so just append
+                        # Check for the first addition, TODO: tree_for_level ?
+                        if len(tree_for_level.items()) == 0:
+                            x += 1
+                            tree_for_level[x] = ({(info, filter_type, filter_id)}, (None, None))
                         for x, payload in tree_for_level.items():
                             carrying_filters, carrying_values = payload
                             carrying_filters.add((info, filter_type, filter_id))
@@ -530,6 +542,10 @@ class DoD:
                 x_to_remove = set()
                 for x, payload in tree_for_level.items():
                     carrying_filters, carrying_values = payload
+                    if carrying_values[0] is None and carrying_values[1] is None:
+                        # propagate the None None because all values work
+                        tree_for_level[x] = (carrying_filters, (None, None))
+                        continue
                     values_to_carry = set()
                     for carrying_value in carrying_values[0]:
                         path = r_path + "/" + r.source_name
@@ -549,6 +565,8 @@ class DoD:
                     return False, set()  # early stop
         # Check if the join path was valid, also retrieve the number of filters covered by this JP
         if len(tree_valid_filters.items()) > 0:
+            for k, v in tree_for_level.items():
+                tree_valid_filters[k] = v  # merge trees
             unique_filters = set()
             for k, v in tree_valid_filters.items():
                 unique_filters.update(v[0])
@@ -557,7 +575,7 @@ class DoD:
             return False, set()
 
 
-def rank_materializable_join_graphs(materializable_join_paths, table_path):
+def rank_materializable_join_graphs(materializable_join_paths, table_path, dod):
 
     def score_for_key(keys_score, target):
         for c, nunique, score in keys_score:
@@ -578,6 +596,10 @@ def rank_materializable_join_graphs(materializable_join_paths, table_path):
         for filter, l, r in mjp:
             table = l.source_name
             if table not in keys_cache:
+                if table not in table_path:
+                    nid = (dod.aurum_api.make_drs(table)).data[0].nid
+                    path = dod.aurum_api.helper.get_path_nid(nid)
+                    table_path[table] = path
                 path = table_path[table]
                 table_df = dpu.get_dataframe(path + "/" + table)
                 likely_keys_sorted = mva.most_likely_key(table_df)
@@ -592,12 +614,17 @@ def rank_materializable_join_graphs(materializable_join_paths, table_path):
     return rank_jps
 
 
-def rank_materializable_join_paths_piece(materializable_join_paths, candidate_group, table_path):
+def rank_materializable_join_paths_piece(materializable_join_paths, candidate_group, table_path, dod):
     # compute rank list of likely keys for each table
     table_keys = dict()
     table_field_rank = dict()
     for table in candidate_group:
-        path = table_path[table]
+        if table in table_path:
+            path = table_path[table]
+        else:
+            nid = (dod.aurum_api.make_drs(table)).data[0].nid
+            path = dod.aurum_api.helper.get_path_nid(nid)
+            table_path[table] = path
         table_df = dpu.get_dataframe(path + "/" + table)
         likely_keys_sorted = mva.most_likely_key(table_df)
         table_keys[table] = likely_keys_sorted
@@ -641,11 +668,17 @@ def obtain_table_paths(set_nids, dod):
 
 def test_e2e(dod, number_jps=5):
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    # values = ["", "kimball", "Mechanical Engineering"]
+    # values = ["968548423", "kimball", "Mechanical Engineering"]
 
-    attrs = ["Iap Category Name", "Person Name", "Person Email"]
-    # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
-    values = ["Engineering", "", ""]
+    attrs = ["Subject", "Title", "Publisher"]
+    values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
+
+    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    # values = ["Engineering", "", ""]
+
+    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    # values = ["", "", "", ""]
 
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
