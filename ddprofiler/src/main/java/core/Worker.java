@@ -28,6 +28,7 @@ import store.Store;
 public class Worker implements Runnable {
 
     final private Logger LOG = LoggerFactory.getLogger(Worker.class.getName());
+    private ProfilerConfig pc;
 
     private final int pseudoRandomSeed = 1;
 
@@ -57,6 +58,7 @@ public class Worker implements Runnable {
 	this.workerName = workerName;
 	this.taskQueue = taskQueue;
 	this.errorQueue = errorQueue;
+	this.pc = pc;
     }
 
     public void stop() {
@@ -97,7 +99,7 @@ public class Worker implements Runnable {
 
 		// Access attributes and attribute type through first read
 		Connector c = task.getConnector();
-		PreAnalyzer pa = new PreAnalyzer();
+		PreAnalyzer pa = new PreAnalyzer(pc);
 		pa.composeConnector(c);
 
 		LOG.info("Worker: {} processing: {}", workerName, task.getSourceConfig().getRelationName());

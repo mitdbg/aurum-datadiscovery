@@ -1,9 +1,19 @@
 import pandas as pd
-from DoD.utils import FilterType
 from collections import defaultdict
+import editdistance
+
+from DoD.utils import FilterType
+import config as C
 
 # Cache reading and transformation of DFs
 cache = dict()
+
+data_separator = C.separator
+
+
+def configure_csv_separator(separator):
+    global data_separator
+    data_separator = separator
 
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
@@ -40,7 +50,7 @@ def find_key_for(relation_path, key, attribute, value):
     if relation_path in cache:
         df = cache[relation_path]
     else:
-        df = pd.read_csv(relation_path, encoding='latin1')
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
         #df = df.apply(lambda x: x.astype(str).str.lower())
         # cache[relation_path] = df  # cache for later
     try:
@@ -57,7 +67,7 @@ def is_value_in_column(value, relation_path, column):
     if relation_path in cache:
         df = cache[relation_path]
     else:
-        df = pd.read_csv(relation_path, encoding='latin1')
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
         #df = df.apply(lambda x: x.astype(str).str.lower())
         cache[relation_path] = df  # cache for later
     return value in df[column].map(lambda x: str(x).lower()).unique()
@@ -76,7 +86,18 @@ def obtain_attributes_to_project(jp_with_filters):
 
 
 def project(df, attributes_to_project):
-    print("Projecting: " + str(attributes_to_project))
+    # print("Project requested: " + str(attributes_to_project))
+    # actual_attribute_names = df.columns
+    # mapping = dict()
+    # for req in attributes_to_project:
+    #     candidate, score = None, 1000
+    #     for c in actual_attribute_names:
+    #         d = editdistance.eval(req, c)
+    #         if d < score:
+    #             candidate, score = c, d
+    #     mapping[req] = candidate
+    # print("Projecting on: " + str(mapping.values()))
+    print("Project: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]
     return df
 
@@ -118,7 +139,7 @@ def materialize_join_graph(jg_with_filters, dod):
         for l, r in jg:
             if len(intree) == 0:
                 node = InTreeNode(l.source_name)
-                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                 df = get_dataframe(node_path)
                 node.set_payload(df)
                 intree[l.source_name] = node
@@ -126,7 +147,7 @@ def materialize_join_graph(jg_with_filters, dod):
             # now either l or r should be in intree
             if l.source_name in intree.keys():
                 rnode = InTreeNode(r.source_name)  # create node for r
-                node_path = dod.api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
                 df = get_dataframe(node_path)
                 rnode.set_payload(df)
                 r_parent = intree[l.source_name]
@@ -138,7 +159,7 @@ def materialize_join_graph(jg_with_filters, dod):
                 intree[r.source_name] = rnode
             elif r.source_name in intree.keys():
                 lnode = InTreeNode(l.source_name)  # create node for l
-                node_path = dod.api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                 df = get_dataframe(node_path)
                 lnode.set_payload(df)
                 l_parent = intree[r.source_name]
@@ -156,7 +177,7 @@ def materialize_join_graph(jg_with_filters, dod):
     def get_join_info_pair(t1, t2, jg):
         # t1 and t2 won't never be the same
         for l, r in jg:
-            if t1 == l.source_name or t1 == r.source_name and t2 == l.source_name or t2 == r.source_name:
+            if (t1 == l.source_name or t1 == r.source_name) and (t2 == l.source_name or t2 == r.source_name):
                 return l, r
 
     filters, jg = jg_with_filters
@@ -170,7 +191,8 @@ def materialize_join_graph(jg_with_filters, dod):
             continue  # we have now converged
         leave_ancestor = defaultdict(list)
         for leave in leaves:
-            leave_ancestor[leave.get_parent()].append(leave)
+            if leave.get_parent() is not None:  # never add the parent's parent, which does not exist
+                leave_ancestor[leave.get_parent()].append(leave)
         # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
         for k, v in leave_ancestor.items():
             for child in v:
@@ -185,7 +207,8 @@ def materialize_join_graph(jg_with_filters, dod):
                 if child in leaves:
                     leaves.remove(child)  # removed merged children
             # joined all children, now we include joint df on leaves
-            leaves.append(k)  # k becomes a new leave
+            if k not in leaves:  # avoid re-adding parent element
+                leaves.append(k)  # k becomes a new leave
     materialized_view = leaves[0].get_payload()  # the last leave is folded onto the in-tree root
     return materialized_view
 
@@ -195,8 +218,8 @@ def materialize_join_path(jp_with_filters, dod):
     df = None
     suffix = '_x'
     for l, r in jp:
-        l_path = dod.api.helper.get_path_nid(l.nid)
-        r_path = dod.api.helper.get_path_nid(r.nid)
+        l_path = dod.aurum_api.helper.get_path_nid(l.nid)
+        r_path = dod.aurum_api.helper.get_path_nid(r.nid)
         l_key = l.field_name
         r_key = r.field_name
         print("Joining: " + str(l.source_name) + "." + str(l_key) + " with: " + str(r.source_name) + "." + str(r_key))
@@ -205,19 +228,19 @@ def materialize_join_path(jp_with_filters, dod):
             if path in cache:
                 l = cache[path]
             else:
-                l = pd.read_csv(path, encoding='latin1')
+                l = pd.read_csv(path, encoding='latin1', sep=data_separator)
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                r = pd.read_csv(path, encoding='latin1')
+                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
         else:  # roll the partially joint
             l = df
             path = r_path + '/' + r.source_name
             if path in cache:
                 r = cache[path]
             else:
-                r = pd.read_csv(path, encoding='latin1')
+                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
         df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
         suffix += '_x'  # this is to make sure we don't end up with repeated columns
     return df
@@ -225,15 +248,15 @@ def materialize_join_path(jp_with_filters, dod):
 
 def get_dataframe(path):
     # TODO: only csv is supported
-    df = pd.read_csv(path, encoding='latin1')
+    df = pd.read_csv(path, encoding='latin1', sep=data_separator)
     return df
 
 
 if __name__ == "__main__":
 
     # JOIN
-    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1')
-    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1')
+    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1', sep=data_separator)
+    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1', sep=data_separator)
 
     a_key = 'Mit Id'
     b_key = 'Mit Id'
