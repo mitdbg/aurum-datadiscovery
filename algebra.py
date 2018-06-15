@@ -46,11 +46,26 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
+    def exact_search(self, kw: str, kw_type: KWType, max_results=10):
+        """
+        See 'search'. This only returns exact matches.
+        """
+
+        hits = self._store_client.exact_search_keywords(
+            keywords=kw, elasticfieldname=kw_type, max_hits=max_results)
+
+        # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
+        return drs
+
     def search_content(self, kw: str, max_results=10) -> DRS:
         return self.search(kw, kw_type=KWType.KW_CONTENT, max_results=max_results)
 
     def search_attribute(self, kw: str, max_results=10) -> DRS:
         return self.search(kw, kw_type=KWType.KW_SCHEMA, max_results=max_results)
+
+    def search_exact_attribute(self, kw: str, max_results=10) -> DRS:
+        return self.exact_search(kw, kw_type=KWType.KW_SCHEMA, max_results=max_results)
 
     def search_table(self, kw: str, max_results=10) -> DRS:
         return self.search(kw, kw_type=KWType.KW_TABLE, max_results=max_results)

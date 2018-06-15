@@ -48,7 +48,7 @@ public class AnalyzerTest {
 
 	// DBConnector dbc = new DBConnector(db, connIP, port, sourceName,
 	// tableName, username, password);
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	pa.composeConnector(fc);
 	// pa.composeConnector(dbc);
 

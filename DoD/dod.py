@@ -14,8 +14,41 @@ import pickle
 
 class DoD:
 
-    def __init__(self, network, store_client):
-        self.api = API(network=network, store_client=store_client)
+    def __init__(self, network, store_client, csv_separator=","):
+        self.aurum_api = API(network=network, store_client=store_client)
+        dpu.configure_csv_separator(csv_separator)
+
+    def individual_filters(self, sch_def):
+        # Obtain sets that fulfill individual filters
+        filter_drs = dict()
+        filter_id = 0
+        for attr in sch_def.keys():
+            drs = self.aurum_api.search_exact_attribute(attr, max_results=200)
+            filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
+            filter_id += 1
+
+        for cell in sch_def.values():
+            drs = self.aurum_api.search_content(cell, max_results=200)
+            filter_drs[(cell, FilterType.CELL, filter_id)] = drs
+            filter_id += 1
+        return filter_drs
+
+    def joint_filters(self, sch_def):
+        # Obtain sets that fulfill individual filters
+        filter_drs = dict()
+        filter_id = 0
+
+        for attr, cell in sch_def.items():
+            if cell == "":
+                drs = self.aurum_api.search_exact_attribute(attr, max_results=50)
+                filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
+            else:
+                drs_attr = self.aurum_api.search_exact_attribute(attr, max_results=50)
+                drs_cell = self.aurum_api.search_content(cell, max_results=500)
+                drs = self.aurum_api.intersection(drs_attr, drs_cell)
+                filter_drs[(cell, FilterType.CELL, filter_id)] = drs
+            filter_id += 1
+        return filter_drs
 
     def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], debug_enumerate_all_jps=False):
         # Align schema definition and samples
@@ -24,18 +57,7 @@ class DoD:
 
         sch_def = OrderedDict(sorted(sch_def.items(), key=lambda x: x[0], reverse=True))
 
-        # Obtain sets that fulfill individual filters
-        filter_drs = dict()
-        filter_id = 0
-        for attr in sch_def.keys():
-            drs = self.api.search_attribute(attr)
-            filter_drs[(attr, FilterType.ATTR, filter_id)] = drs
-            filter_id += 1
-
-        for cell in sch_def.values():
-            drs = self.api.search_content(cell)
-            filter_drs[(cell, FilterType.CELL, filter_id)] = drs
-            filter_id += 1
+        filter_drs = self.joint_filters(sch_def)
 
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
@@ -51,14 +73,16 @@ class DoD:
                     for c in columns:
                         if c.source_name == table:
                             table_nid[table] = c.nid
-                    if filter not in table_fulfilled_filters[table]:
+                    # if filter not in table_fulfilled_filters[table]:
+                    if filter[2] not in [id for _,_,id in table_fulfilled_filters[table]]:
                         table_fulfilled_filters[table].append(((filter[0], None), FilterType.ATTR, filter[2]))
                 elif filter[1] == FilterType.CELL:
                     columns = [c for c in drs.data]  # copy
                     for c in columns:
                         if c.source_name == table:  # filter in this column
                             table_nid[table] = c.nid
-                            if filter not in table_fulfilled_filters[table]:
+                            # if filter not in table_fulfilled_filters[table]:
+                            if filter[2] not in [id for _, _, id in table_fulfilled_filters[table]]:
                                 table_fulfilled_filters[table].append(((filter[0], c.field_name), FilterType.CELL, filter[2]))
 
         table_path = obtain_table_paths(table_nid, self)
@@ -74,6 +98,19 @@ class DoD:
             table_fulfilled_filters[k] = v
 
         def eager_candidate_exploration():
+            def covers_filters(candidate_filters, all_filters):
+                all_filters_set = set([id for _, _, id in filter_drs.keys()])
+                candidate_filters_set = set([id for _, _, id in candidate_filters])
+                if len(candidate_filters_set) == len(all_filters_set):
+                    return True
+                return False
+
+            def compute_size_filter_ix(filters, candidate_group_filters_covered):
+                new_fs_set = set([id for _,_,id in filters])
+                candidate_fs_set = set([id for _,_,id in candidate_group_filters_covered])
+                ix_size = len(new_fs_set.union(candidate_fs_set)) - len(candidate_fs_set)
+                return ix_size
+
             def clear_state():
                 candidate_group.clear()
                 candidate_group_filters_covered.clear()
@@ -84,17 +121,14 @@ class DoD:
                 candidate_group_filters_covered = set()
                 for i in range(len(list(table_fulfilled_filters.items()))):
                     table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
-                    if table_pivot == "Zpm_rooms_load.csv":
-                        a = 1
                     # Eagerly add pivot
                     candidate_group.append(table_pivot)
                     candidate_group_filters_covered.update(filters_pivot)
                     # Did it cover all filters?
-                    if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                    # if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                    if covers_filters(candidate_group_filters_covered, filter_drs.items()):
                         candidate_group = sorted(candidate_group)
-                        print("1: " + str(table_pivot))
-                        if len(candidate_group) == 1:
-                            a = 1
+                        # print("1: " + str(table_pivot))
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
                         clear_state()
@@ -104,27 +138,22 @@ class DoD:
                         if idx == len(table_fulfilled_filters.items()):
                             break
                         table, filters = list(table_fulfilled_filters.items())[idx]
-                        new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
+                        # new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
+                        new_filters = compute_size_filter_ix(filters, candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
-                            if table == "Zpm_rooms_load.csv":
-                                a = 1
                             candidate_group.append(table)
-
                             candidate_group_filters_covered.update(filters)
-                            if len(candidate_group_filters_covered) == len(filter_drs.items()):
+                            if covers_filters(candidate_group_filters_covered, filter_drs.items()):
+                            # if len(candidate_group_filters_covered) == len(filter_drs.items()):
                                 candidate_group = sorted(candidate_group)
-                                print("2: " + str(table_pivot))
-                                if len(candidate_group) == 1:
-                                    a = 1
+                                # print("2: " + str(table_pivot))
                                 yield (candidate_group, candidate_group_filters_covered)
                                 clear_state()
                                 # Re-add the current pivot, only necessary in this case
                                 candidate_group.append(table_pivot)
                                 candidate_group_filters_covered.update(filters_pivot)
                     candidate_group = sorted(candidate_group)
-                    print("3: " + str(table_pivot))
-                    if len(candidate_group) == 1:
-                        a = 1
+                    # print("3: " + str(table_pivot))
                     yield (candidate_group, candidate_group_filters_covered)
                     # Cleaning
                     clear_state()
@@ -135,14 +164,16 @@ class DoD:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             print("")
             print("Candidate group: " + str(candidate_group))
-            # print("Which covers: " + str(candidate_group_filters_covered))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
-            # continue
 
             if len(candidate_group) == 1:
-                print(str(candidate_group))
-                continue  # avoid the joinable for a 1-table group
+                table = candidate_group[0]
+                path = table_path[table]
+                materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
+                attrs_to_project = dpu.obtain_attributes_to_project((candidate_group_filters_covered, None))
+                yield materialized_virtual_schema, attrs_to_project
+                continue  # to go to the next group
 
             # Pre-check
             # TODO: with a connected components index we can pre-filter many of those groups without checking
@@ -254,15 +285,19 @@ class DoD:
             print("Processing materializable join paths...")
 
             # Sort materializable_join_paths by likely joining on key
-            all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path)
+            all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path, self)
 
             clean_jp = []
             for annotated_jp, aggr_score, mul_score in all_jgs_scores:
                 jp = []
                 filters = set()
                 for filter, l, r in annotated_jp:
-                    jp.append((l, r))
-                    filters.update(filter)
+                    # To drag filters along, there's a leaf special tuple where r may be None
+                    # since we don't need it at this point anymore, we check for its existence and do not include it
+                    if r is not None:
+                        jp.append((l, r))
+                    if filter is not None:
+                        filters.update(filter)
                 clean_jp.append((filters, jp))
 
             import pickle
@@ -280,65 +315,6 @@ class DoD:
                                                     key=lambda x: x[1], reverse=True))
         for k, v in cache_unjoinable_pairs.items():
             print(str(k) + " => " + str(v))
-
-    def virtual_schema_exhaustive_search(self, list_attributes: [str], list_samples: [str]):
-
-        # Align schema definition and samples
-        assert len(list_attributes) == len(list_samples)
-        sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
-
-        # Obtain sets that fulfill individual filters
-        filter_drs = dict()
-        for attr in sch_def.keys():
-            drs = self.api.search_attribute(attr)
-            filter_drs[(attr, FilterType.ATTR)] = drs
-
-        for cell in sch_def.values():
-            drs = self.api.search_content(cell)
-            filter_drs[(cell, FilterType.CELL)] = drs
-
-        # We group now into groups that convey multiple filters.
-        # Obtain list of tables ordered from more to fewer filters.
-        table_fulfilled_filters = defaultdict(list)
-        for filter, drs in filter_drs.items():
-            drs.set_table_mode()
-            for table in drs:
-                table_fulfilled_filters[table].append(filter)
-        # sort by value len -> # fulfilling filters
-        a = sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True)
-        table_fulfilled_filters = OrderedDict(sorted(table_fulfilled_filters.items(), key=lambda el: len(el[1]), reverse=True))
-
-        # Find all combinations of tables...
-        # Set cover problem, but enumerating all candidates, not just the minimum size set that covers the universe
-        candidate_groups = set()
-        num_tables = len(table_fulfilled_filters)
-        while num_tables > 0:
-            combinations = itertools.combinations(list(table_fulfilled_filters.keys()), num_tables)
-            for combination in combinations:
-                candidate_groups.add(frozenset(combination))
-            num_tables = num_tables - 1
-
-        # ...and order by coverage of filters
-        candidate_group_filters = defaultdict(list)
-        for candidate_group in candidate_groups:
-            filter_set = set()
-            for table in candidate_group:
-                for filter_covered_by_table in table_fulfilled_filters[table]:
-                    filter_set.add(filter_covered_by_table)
-            candidate_group_filters[candidate_group] = list(filter_set)
-        candidate_group_filters = OrderedDict(sorted(candidate_group_filters.items(), key=lambda el: len(el[1]), reverse=True))
-
-        # Now do all-pairs join paths for each group, and eliminate groups that do not join (future -> transform first)
-        joinable_groups = []
-        for candidate_group, filters in candidate_group_filters.items():
-            if len(candidate_group) > 1:
-                join_paths = self.joinable(candidate_group)
-                if join_paths > 0:
-                    joinable_groups.append((join_paths, filters))
-            else:
-                joinable_groups.append((candidate_group, filters))  # join not defined on a single table, so we add it
-
-        return joinable_groups
 
     def joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int)):
         """
@@ -371,11 +347,11 @@ class DoD:
             #                 table2 == "Drupal_employee_directory.csv" and\
             #                 table1 == "Employee_directory.csv":
             #     a = 1
-            t1 = self.api.make_drs(table1)
-            t2 = self.api.make_drs(table2)
+            t1 = self.aurum_api.make_drs(table1)
+            t2 = self.aurum_api.make_drs(table2)
             t1.set_table_mode()
             t2.set_table_mode()
-            drs = self.api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+            drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
             paths = drs.paths()  # list of lists
             group = []
             if len(paths) == 0:  # then store this info, these tables do not join
@@ -455,6 +431,7 @@ class DoD:
         return join_paths_hops
 
     def annotate_join_paths_with_filter(self, join_paths, table_fulfilled_filters, candidate_group):
+        # FIXME: does this keep *all* relevant filters?
         annotated_jps = []
         l = None  # memory for last hop
         r = None
@@ -471,18 +448,22 @@ class DoD:
                 annotated_hop = (filters, l, r)
                 annotated_jp.append(annotated_hop)
             annotated_jps.append(annotated_jp)
-        # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
-        if r.source_name in candidate_group:
-            filters = table_fulfilled_filters[r.source_name]
-            annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
-            last_hop = annotated_jps[-1]
-            last_hop.append(annotated_hop)
+            # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
+            if r.source_name in candidate_group:
+                filters = table_fulfilled_filters[r.source_name]
+                annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
+                last_hop = annotated_jps[-1]
+                last_hop.append(annotated_hop)
         return annotated_jps
 
     def verify_candidate_join_paths(self, annotated_join_paths):
         materializable_join_paths = []
+        total_jps = len(annotated_join_paths)
+        i = 0
         for annotated_join_path in annotated_join_paths:
+            print("Verifying " + str(i) + "/" + str(total_jps), end="", flush=True)
             valid, filters = self.verify_candidate_join_path(annotated_join_path)
+            i += 1
             if valid:
                 materializable_join_paths.append(annotated_join_path)
         return materializable_join_paths
@@ -491,7 +472,7 @@ class DoD:
         tree_valid_filters = dict()
         x = 0
         for filters, l, r in annotated_join_path:  # for each hop
-            l_path = self.api.helper.get_path_nid(l.nid)
+            l_path = self.aurum_api.helper.get_path_nid(l.nid)
             tree_for_level = dict()
 
             # Before checking for filters, translate carrying values into hook attribute in l
@@ -499,6 +480,9 @@ class DoD:
                 x_to_remove = set()
                 for x, payload in tree_valid_filters.items():
                     carrying_filters, carrying_values = payload
+                    if carrying_values[0] is None and carrying_values[1] is None:
+                        # tree_valid_filters[x] = (carrying_filters, (None, None))
+                        continue  # in this case nothing to hook
                     attr = carrying_values[1]
                     if attr == l.field_name:
                         continue  # no need to translate values to hook in this case
@@ -516,6 +500,9 @@ class DoD:
                 if len(tree_valid_filters.items()) == 0:
                     return False, set()
 
+            if filters is None:
+                # This means we are in an intermediate hop with no filters, as it's only connecting
+                continue
             if filters is not None:
                 # sort filters so cell type come first
                 filters = sorted(filters, key=lambda x: x[1].value)
@@ -523,7 +510,7 @@ class DoD:
                 for info, filter_type, filter_id in filters:
                     if filter_type == FilterType.CELL:
                         attribute = info[1]
-                        cell_value_specified_by_user = info[0]  # this will always be one (?)
+                        cell_value_specified_by_user = info[0]  # this will always be one (?) FIXME: no! only when using the pre-interface
                         path = l_path + "/" + l.source_name
                         keys_l = dpu.find_key_for(path, l.field_name,
                                                  attribute, cell_value_specified_by_user)
@@ -541,16 +528,24 @@ class DoD:
                                 tree_for_level[x] = (carrying_filters, (ix, l.field_name))
                     elif filter_type == FilterType.ATTR:
                         # attr filters work with everyone, so just append
+                        # Check for the first addition, TODO: tree_for_level ?
+                        if len(tree_for_level.items()) == 0:
+                            x += 1
+                            tree_for_level[x] = ({(info, filter_type, filter_id)}, (None, None))
                         for x, payload in tree_for_level.items():
                             carrying_filters, carrying_values = payload
                             carrying_filters.add((info, filter_type, filter_id))
                             tree_for_level[x] = (carrying_filters, carrying_values)
             # Now filter with r
             if r is not None:  # if none, we processed the last step already, so time to check the tree
-                r_path = self.api.helper.get_path_nid(r.nid)
+                r_path = self.aurum_api.helper.get_path_nid(r.nid)
                 x_to_remove = set()
                 for x, payload in tree_for_level.items():
                     carrying_filters, carrying_values = payload
+                    if carrying_values[0] is None and carrying_values[1] is None:
+                        # propagate the None None because all values work
+                        tree_for_level[x] = (carrying_filters, (None, None))
+                        continue
                     values_to_carry = set()
                     for carrying_value in carrying_values[0]:
                         path = r_path + "/" + r.source_name
@@ -570,6 +565,8 @@ class DoD:
                     return False, set()  # early stop
         # Check if the join path was valid, also retrieve the number of filters covered by this JP
         if len(tree_valid_filters.items()) > 0:
+            for k, v in tree_for_level.items():
+                tree_valid_filters[k] = v  # merge trees
             unique_filters = set()
             for k, v in tree_valid_filters.items():
                 unique_filters.update(v[0])
@@ -578,7 +575,7 @@ class DoD:
             return False, set()
 
 
-def rank_materializable_join_graphs(materializable_join_paths, table_path):
+def rank_materializable_join_graphs(materializable_join_paths, table_path, dod):
 
     def score_for_key(keys_score, target):
         for c, nunique, score in keys_score:
@@ -599,6 +596,10 @@ def rank_materializable_join_graphs(materializable_join_paths, table_path):
         for filter, l, r in mjp:
             table = l.source_name
             if table not in keys_cache:
+                if table not in table_path:
+                    nid = (dod.aurum_api.make_drs(table)).data[0].nid
+                    path = dod.aurum_api.helper.get_path_nid(nid)
+                    table_path[table] = path
                 path = table_path[table]
                 table_df = dpu.get_dataframe(path + "/" + table)
                 likely_keys_sorted = mva.most_likely_key(table_df)
@@ -613,12 +614,17 @@ def rank_materializable_join_graphs(materializable_join_paths, table_path):
     return rank_jps
 
 
-def rank_materializable_join_paths_piece(materializable_join_paths, candidate_group, table_path):
+def rank_materializable_join_paths_piece(materializable_join_paths, candidate_group, table_path, dod):
     # compute rank list of likely keys for each table
     table_keys = dict()
     table_field_rank = dict()
     for table in candidate_group:
-        path = table_path[table]
+        if table in table_path:
+            path = table_path[table]
+        else:
+            nid = (dod.aurum_api.make_drs(table)).data[0].nid
+            path = dod.aurum_api.helper.get_path_nid(nid)
+            table_path[table] = path
         table_df = dpu.get_dataframe(path + "/" + table)
         likely_keys_sorted = mva.most_likely_key(table_df)
         table_keys[table] = likely_keys_sorted
@@ -655,14 +661,27 @@ def rank_materializable_join_paths_piece(materializable_join_paths, candidate_gr
 def obtain_table_paths(set_nids, dod):
     table_path = dict()
     for table, nid in set_nids.items():
-        path = dod.api.helper.get_path_nid(nid)
+        path = dod.aurum_api.helper.get_path_nid(nid)
         table_path[table] = path
     return table_path
 
 
 def test_e2e(dod, number_jps=5):
-    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    values = ["968548423", "kimball", "Mechanical Engineering"]
+    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    # values = ["968548423", "kimball", "Mechanical Engineering"]
+
+    attrs = ["Subject", "Title", "Publisher"]
+    values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
+
+    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    # values = ["Engineering", "", ""]
+
+    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    # values = ["", "", "", ""]
+
+    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
+    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
@@ -677,6 +696,9 @@ def test_e2e(dod, number_jps=5):
         # print(mjp.head(2))
         # if i > number_jps:
         #     break
+
+        proj_view = dpu.project(mjp, attrs_project)
+
         if first:
             first = False
             first_mjp = mjp
@@ -727,11 +749,13 @@ if __name__ == "__main__":
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
     path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
+    sep = ","
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 
-    dod = DoD(network=network, store_client=store_client)
+    dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
     test_e2e(dod, number_jps=10)
 

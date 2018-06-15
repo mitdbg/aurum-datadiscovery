@@ -27,7 +27,7 @@ public class RangeAnalyzerTest {
 
 	// FIXME: create config on the fly
 	CSVConnector fc = new CSVConnector(null);
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	pa.composeConnector(fc);
 
 	Map<Attribute, Values> data = pa.readRows(numRecords);
