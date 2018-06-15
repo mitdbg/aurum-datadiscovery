@@ -14,6 +14,9 @@ public class ProfilerConfig extends Config {
 
     private static final ConfigDef config;
 
+    public static final String EXPERIMENTAL = "experimental";
+    private static final String EXPERIMENTAL_DOC = "To activate experimental features";
+
     public static final String SOURCE_CONFIG_FILE = "sources";
     private static final String SOURCE_CONFIG_FILE_DOC = "Path to the YAML file with the " + "source configuration";
 
@@ -66,7 +69,8 @@ public class ProfilerConfig extends Config {
 		.define(STORE_PORT, Type.INT, 9300, Importance.HIGH, STORE_PORT_DOC)
 		.define(ERROR_LOG_FILE_NAME, Type.STRING, "error_profiler.log", Importance.MEDIUM,
 			ERROR_LOG_FILE_NAME_DOC)
-		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, Importance.HIGH, REPORT_METRICS_CONSOLE_DOC);
+		.define(REPORT_METRICS_CONSOLE, Type.INT, -1, Importance.HIGH, REPORT_METRICS_CONSOLE_DOC)
+		.define(EXPERIMENTAL, Type.BOOLEAN, false, Importance.LOW, EXPERIMENTAL_DOC);
     }
 
     public ProfilerConfig(Map<? extends Object, ? extends Object> originals) {

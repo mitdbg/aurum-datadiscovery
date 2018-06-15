@@ -137,6 +137,47 @@ class StoreHandler:
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
 
+    def exact_search_keywords(self, keywords, elasticfieldname, max_hits=15):
+        """
+        Like search_keywords, but returning only exact results
+        :param keywords:
+        :param elasticfieldname:
+        :param max_hits:
+        :return:
+        """
+        index = None
+        query_body = None
+        filter_path = ['hits.hits._source.id',
+                       'hits.hits._score',
+                       'hits.total',
+                       'hits.hits._source.dbName',
+                       'hits.hits._source.sourceName',
+                       'hits.hits._source.columnName']
+        if elasticfieldname == KWType.KW_CONTENT:
+            index = "text"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"text": keywords}}}
+        elif elasticfieldname == KWType.KW_SCHEMA:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"columnNameNA": keywords}}}
+        elif elasticfieldname == KWType.KW_ENTITIES:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"entities": keywords}}}
+        elif elasticfieldname == KWType.KW_TABLE:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"sourceNameNA": keywords}}}
+        res = client.search(index=index, body=query_body,
+                            filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+        for el in res['hits']['hits']:
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
+                       el['_source']['columnName'], el['_score'])
+            yield data
+
     def search_keywords(self, keywords, elasticfieldname, max_hits=15):
         """
         Performs a search query on elastic_field_name to match the provided keywords

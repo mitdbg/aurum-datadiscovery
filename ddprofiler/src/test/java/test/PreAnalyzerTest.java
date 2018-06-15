@@ -82,7 +82,7 @@ public class PreAnalyzerTest {
 
     @Test
     public void testRegExpPerformance() {
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	final int NUM_TEST_STRINGS = 1000000;
 	final double DOUBLE_RANGLE_MIN = 1.0;
 	final double DOUBLE_RANGLE_MAX = 10000000.0;
@@ -126,7 +126,7 @@ public class PreAnalyzerTest {
 	// FIXME: create config on the fly
 	CSVConnector fc = new CSVConnector(null);
 
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	pa.composeConnector(fc);
 	System.out.println("------------begin type checking with FileConnector");
 	typeChecking(pa);
@@ -143,7 +143,7 @@ public class PreAnalyzerTest {
 	// FIXME: create config on the fly
 	PostgresConnector dbc = new PostgresConnector(null);
 
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	pa.composeConnector(dbc);
 	System.out.println("------------begin type checking with DBConnector");
 	typeChecking(pa);
