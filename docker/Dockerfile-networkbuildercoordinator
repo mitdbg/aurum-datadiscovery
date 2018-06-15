@@ -35,4 +35,4 @@ VOLUME /output
 
 WORKDIR /aurum
 
-CMD ["python3", "networkbuildercoordinator.py", "--opath", "/output"]
+ENTRYPOINT ["python3", "networkbuildercoordinator.py", "--opath", "/output"]
