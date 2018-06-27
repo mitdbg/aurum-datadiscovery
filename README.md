@@ -132,7 +132,7 @@ briefly explain next the requirements for running the model builder.
 virtualenv) so that you can quickly wipeout the environment if you no longer
 need it without affecting any system-wide dependencies.* 
 
-Requires Python 3 (tested with 3.4.2, 3.5.0 and 3.5.1). Use requirements.txt to
+Requires Python 3 (tested with 3.4, 3.5 and 3.6). Use requirements.txt to
 install all the dependencies:
 
 ```shell
