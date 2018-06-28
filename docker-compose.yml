@@ -51,27 +51,9 @@ services:
         aliases:
           - profiler
 
-  neodb:
-    depends_on:
-      - elasticsearch
-    image: neo4j:3.3
-    volumes:
-      - ./data/neo4j-data:/data
-      - ./data/neo4j-logs:/logs
-    ports:
-      - 7474:7474
-      - 7687:7687
-    environment:
-      - NEO4J_AUTH=neo4j/aurum
-    networks:
-      aurum_net:
-        aliases:
-          - neo4j
-
   nbc:
     depends_on:
       - elasticsearch
-      - neodb
     image: aurum/networkbuildercoordinator
     build:
       context: .
@@ -86,7 +68,6 @@ services:
   notebook:
     depends_on:
       - elasticsearch
-      - neodb
     image: aurum/notebook
     build:
       context: .
