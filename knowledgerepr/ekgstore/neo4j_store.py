@@ -6,7 +6,7 @@ import sys
 
 def serialize_network_to_neo4j(path_to_serialized_model,server="bolt://neo4j:7687",user="neo4j",pwd="aurum"):
     ## read the network
-    network=filednetwork..deserialize_network(path_to_serialized_model)
+    network=filednetwork.deserialize_network(path_to_serialized_model)
     
     ## connect to neo4j bolt
     driver = GraphDatabase.driver(server, auth=(user, pwd))
