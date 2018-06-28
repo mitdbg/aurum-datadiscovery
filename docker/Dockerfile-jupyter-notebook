@@ -15,7 +15,7 @@ RUN pip install \
 RUN python -c "import matplotlib; matplotlib.use('TkAgg'); import matplotlib.pyplot"
 
 COPY requirements.txt /tmp/
-RUN pip3 install -r /tmp/requirements.txt --no-cache-dir --ignore-installed
+RUN pip install -r /tmp/requirements.txt --no-cache-dir --ignore-installed
 
 COPY . /home/$NB_USER/work/
 
