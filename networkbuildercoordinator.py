@@ -8,7 +8,7 @@ import sys
 import time
 
 
-def main(output_path=None,neodb=False):
+def main(output_path=None):
     start_all = time.time()
     network = FieldNetwork()
     store = StoreHandler()
@@ -81,10 +81,6 @@ def main(output_path=None,neodb=False):
     end_pkfk = time.time()
     print("Total PKFK: {0}".format(str(end_pkfk - start_pkfk)))
     print("!!6 " + str(end_pkfk - start_pkfk))
-
-    # export network to neo4j
-    if neodb==True:
-        fieldnetwork.serialize_network_to_neo4j(network)
 
     end_all = time.time()
     print("Total time: {0}".format(str(end_all - start_all)))
@@ -165,19 +161,13 @@ if __name__ == "__main__":
     path = None
     if len(sys.argv) == 3:
         path = sys.argv[2]
-        neodb = False
-    if len(sys.argv) == 5:
-        path = sys.argv[2]
-        if (sys.argv[4]=="neo4j"): neodb=True
+
     else:
         print("USAGE: ")
         print("python networkbuildercoordinator.py --opath <path>")
         print("where opath must be writable by the process")
-        print("python networkbuildercoordinator.py --opath <path> --neodb neo4j")
-        print("Networkx object will be written to neo4j")
-
         exit()
-    main(path,neodb)
+    main(path)
 
     #test_read_store()
 

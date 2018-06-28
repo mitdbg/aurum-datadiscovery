@@ -442,32 +442,6 @@ def serialize_network_to_csv(network, path):
             s = str(n) + "," + "node\n"
             f.write(s)
 
-def serialize_network_to_neo4j(network,server="http://neo4j",port=7474,user="neo4j",pwd="aurum"):
-    conn_neo=neo4_cli.GraphDatabase(":".join([server,str(port)]),username=user,password=pwd)
-    
-    hit_pattern=re.compile("Hit\(nid='(.*)', db_name='.*', source_name='(.*)', field_name='(.*)', score=(.*)\)")
-    sim_labels=conn_neo.labels.create("CONTENT")
-    nid_2_node={}
-    for x in network.enumerate_relation(Relation.CONTENT_SIM):
-        a=hit_pattern.match(x.split("-")[0].lstrip())
-        b=hit_pattern.match(x.split("-")[1].lstrip())
-    
-        ## insert
-        if a.groups()[0] not in nid_2_node.keys():
-            a4 = conn_neo.nodes.create(nid=a.groups()[0],source_name=a.groups()[1],field_name=a.groups()[2],score=a.groups()[3])
-            sim_labels.add(a4)
-            nid_2_node[a.groups()[0]]=a4
-        else:
-            a4=nid_2_node[a.groups()[0]]
-        if b.groups()[0] not in nid_2_node.keys():
-            b4 = conn_neo.nodes.create(nid=b.groups()[0],source_name=b.groups()[1],field_name=b.groups()[2],score=b.groups()[3])
-            sim_labels.add(b4)
-            nid_2_node[b.groups()[0]]=b4
-        else:
-            b4=nid_2_node[b.groups()[0]]
-    
-        a4.relationships.create("CONTENT_SIM", b4)
-
 def serialize_network(network, path):
     """
     Serialize the meta schema index
