@@ -1,15 +1,6 @@
 # notebook
 FROM jupyter/scipy-notebook
 
-RUN apt-get update && \
-    apt-get install -y pkg-config \
-    libpng-dev \
-    libfreetype6-dev \
-    libblas-dev \
-    liblapack-dev \
-    lib32ncurses5-dev
-
-
 RUN pip install \
     bitarray \
     dataset \
@@ -22,9 +13,6 @@ RUN pip install \
 # Otherwise the first time someone does this is a notebook, they'll see warning
 # messages and have to wait.
 RUN python -c "import matplotlib; matplotlib.use('TkAgg'); import matplotlib.pyplot"
-
-COPY requirements.txt /tmp/
-RUN pip install -r /tmp/requirements.txt --no-cache-dir --ignore-installed
 
 COPY . /home/$NB_USER/work/
 
