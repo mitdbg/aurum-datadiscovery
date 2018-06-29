@@ -31,17 +31,6 @@ def serialize_network_to_neo4j(path_to_serialized_model,server="bolt://neo4j:768
                 nid_hash[b.groups()[0]]=nid_hash.get(b.groups()[0],0)+1
 
             ## insert relation
-            session.run("MATCH (a:Node),(b:Node) WHERE a.nid=$nid_a AND b.nid=$nid_b CREATE (a)-[r1:CONTENT_SIM]->(b) RETURN type(r1)").single().value()
+            session.run("MATCH (a:Node),(b:Node) WHERE a.nid=$nid_a AND b.nid=$nid_b CREATE (a)-[r1:CONTENT_SIM]->(b) RETURN type(r1)",nid_a=a.groups()[0],nid_b=b.groups()[0]).single().value()
 
 
-if __name__ == "__main__":
-    path=None
-    neodb=None
-    if len(sys.argv)==5:
-        path=sys.argv[2]
-        neo_url=sys.argv[4]
-    else:
-        print('USAGE:')
-        print("python neo4j_store.py --opath <path> --neo_url neo4j_server")
-        sys.exit(1)
-    serialize_network_to_neo4j(path,neo_url)
