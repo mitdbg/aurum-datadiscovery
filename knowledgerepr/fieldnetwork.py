@@ -2,9 +2,6 @@ import matplotlib.pyplot as plt
 import operator
 import networkx as nx
 import os
-import re
-import neo4jrestclient.client as neo4_cli
-import requests
 
 
 from collections import defaultdict
