@@ -248,6 +248,11 @@ Soon...
 
 Soon...
 
+### Export network to neo4j graph database
+
+Run with Docker
+use docker-compose.neo4j.yml instead of orignal docker-compose.yml file to start the docker instance
+
 ### Code of Conduct
 
 Check the code of conduct for Aurum here: 
@@ -256,3 +261,4 @@ https://github.com/mitdbg/aurum-datadiscovery/blob/master/README.md
 
 Please, report violations of the code of conduct by sending an email to
 raulcf@csail.mit.edu
+
