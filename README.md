@@ -247,3 +247,12 @@ Soon...
 ### Analytical Queries over the Model
 
 Soon...
+
+### Code of Conduct
+
+Check the code of conduct for Aurum here: 
+
+https://github.com/mitdbg/aurum-datadiscovery/blob/master/README.md
+
+Please, report violations of the code of conduct by sending an email to
+raulcf@csail.mit.edu
