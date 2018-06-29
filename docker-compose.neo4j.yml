@@ -3,18 +3,16 @@
 #
 # 1. docker-compose up -d elasticsearch
 #     Brings up an elasticsearch instance using the data located at data/elasticsearch. This data persists even if you destroy and recreate the elasticsearch Docker container.
-# 2*. docker-compose build profiler
 # 2. docker-compose up profiler
 #     Runs the ddprofiler with the CSVs located in data/csvs. Writes to the above elasticsearch container.
-# 3*. docker-compose build nbc
-# 3*. docker-compose run --rm -T nbc
-# 3. docker-compose up -d neodb
+# 3. docker-compose up nbc
+# 4. docker-compose up -d neodb
 #    Run the neo4j instance,user='neo4j',password='aurum'
-# 4. docker-compose up nbc
+# 5. docker-compose up network2neo4j
 #     Runs networkbuildercoordinator.py with the above elasticsearch and saves its files to data/pickles.
-# 5. docker-compose up notebook
+# 6. docker-compose up notebook
 #     Runs a Jupyter notebook with Aurum libraries and the above pickles from data/pickles.
-# 6. docker-compose up frontend
+# 7. docker-compose up frontend
 #     Runs the web frontend and API on http://localhost:3000 and http://localhost:5000 respectively. Uses pickles from data/pickles.
 
 version: '3'
@@ -64,6 +62,33 @@ services:
       aurum_net:
         aliases:
           - nbc
+  neodb:
+    image: neo4j:3.3
+    volumes:
+      - ./data/neo4j-data:/data
+      - ./data/neo4j-logs:/logs
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO$J_AUTH=neo4j/aurum
+    networks:
+      aurum_net:
+        aliases:
+          - neo4j
+
+  network2neo4j:
+    image: aurum/network2neo4j
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-network-2-neo4j
+    volumes:
+      - ./data/models:/output
+    command: --neo_url bolt://neo4j:7687
+    networks:
+      aurum_net:
+        aliases:
+          - n2n
 
   notebook:
     depends_on:

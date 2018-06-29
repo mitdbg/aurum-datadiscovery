@@ -161,6 +161,7 @@ if __name__ == "__main__":
     path = None
     if len(sys.argv) == 3:
         path = sys.argv[2]
+
     else:
         print("USAGE: ")
         print("python networkbuildercoordinator.py --opath <path>")

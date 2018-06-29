@@ -3,6 +3,7 @@ import operator
 import networkx as nx
 import os
 
+
 from collections import defaultdict
 from api.apiutils import DRS
 from api.apiutils import Operation
@@ -11,7 +12,6 @@ from api.apiutils import Hit
 from api.apiutils import Relation
 from api.apiutils import compute_field_id
 from api.annotation import MRS
-
 
 def build_hit(sn, fn):
     nid = compute_field_id(sn, fn)
@@ -438,7 +438,6 @@ def serialize_network_to_csv(network, path):
         for n in nodes:
             s = str(n) + "," + "node\n"
             f.write(s)
-
 
 def serialize_network(network, path):
     """

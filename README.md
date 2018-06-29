@@ -247,3 +247,9 @@ Soon...
 ### Analytical Queries over the Model
 
 Soon...
+
+### Export network to neo4j graph database
+
+Run with Docker
+use docker-compose.neo4j.yml instead of orignal docker-compose.yml file to start the docker instance
+
