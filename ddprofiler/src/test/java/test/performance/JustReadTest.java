@@ -9,10 +9,10 @@ import java.util.Properties;
 import org.junit.Test;
 
 import core.config.ProfilerConfig;
-import inputoutput.Attribute;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
 
 public class JustReadTest {
 

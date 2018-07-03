@@ -19,9 +19,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.config.sources.CSVSourceConfig;
-import core.tasks.ProfileTask;
-import core.tasks.ProfileTaskFactory;
+import sources.config.CSVSourceConfig;
+import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTaskFactory;
 
 public class WebHandler extends HttpServlet {
 

@@ -1,9 +1,9 @@
-package core.config.sources;
+package sources.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import core.SourceType;
+import sources.SourceType;
 
 public class GenericSource {
 

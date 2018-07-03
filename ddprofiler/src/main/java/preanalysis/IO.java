@@ -5,7 +5,7 @@ package preanalysis;
 
 import java.util.Map;
 
-import inputoutput.Attribute;
+import sources.connectors.Attribute;
 
 public interface IO { 
 	public Map<Attribute, Values> readRows(int num) throws Exception; 

@@ -1,8 +1,8 @@
-package core.tasks;
+package sources.tasks;
 
-import core.SourceType;
-import core.config.sources.SourceConfig;
-import inputoutput.connectors.Connector;
+import sources.SourceType;
+import sources.config.SourceConfig;
+import sources.connectors.Connector;
 
 public interface ProfileTask {
 

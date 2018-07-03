@@ -1,4 +1,4 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -19,12 +19,9 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
-import core.SourceType;
-import core.config.sources.SQLServerSourceConfig;
-import inputoutput.Attribute;
-import inputoutput.Record;
-import inputoutput.TableInfo;
 import metrics.Metrics;
+import sources.SourceType;
+import sources.config.SQLServerSourceConfig;
 
 public class SQLServerConnector implements Connector {
 

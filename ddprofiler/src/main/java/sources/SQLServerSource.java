@@ -8,12 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
-import core.SourceType;
-import core.config.sources.SQLServerSourceConfig;
-import core.config.sources.SourceConfig;
-import core.tasks.ProfileTask;
-import core.tasks.ProfileTaskFactory;
-import inputoutput.connectors.DBUtils;
+import sources.config.SQLServerSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.DBUtils;
+import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTaskFactory;
 
 public class SQLServerSource implements Source {
 

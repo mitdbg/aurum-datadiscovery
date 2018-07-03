@@ -9,9 +9,9 @@ import java.util.Vector;
 
 import org.junit.Test;
 
-import inputoutput.Attribute;
-import inputoutput.Record;
-import inputoutput.connectors.CSVConnector;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
+import sources.connectors.Record;
 
 public class FileConnectorTest {
 

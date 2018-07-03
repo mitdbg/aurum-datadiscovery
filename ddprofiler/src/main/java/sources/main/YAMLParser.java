@@ -1,4 +1,4 @@
-package core.config.sources;
+package sources.main;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,7 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-import core.SourceType;
+import sources.SourceType;
+import sources.config.CSVSourceConfig;
+import sources.config.GenericSource;
+import sources.config.PostgresSourceConfig;
+import sources.config.SourceConfig;
+import sources.config.Sources;
 
 public class YAMLParser {
 
@@ -40,17 +45,21 @@ public class YAMLParser {
 	    SourceType type = src.getType();
 	    JsonNode props = src.getConfig();
 	    SourceConfig sc = null;
-	    if (type == SourceType.csv) {
-		sc = mapper.convertValue(props, CSVSourceConfig.class);
-	    } else if (type == SourceType.postgres) {
-		sc = mapper.convertValue(props, PostgresSourceConfig.class);
-	    } else if (type == SourceType.sqlserver) {
-		sc = mapper.convertValue(props, SQLServerSourceConfig.class);
 
-	    } else {
-		LOG.error("Unsupported!");
-		System.exit(0);
-	    }
+	    sc = SourceType.map(type, props, mapper);
+
+	    // if (type == SourceType.csv) {
+	    // sc = mapper.convertValue(props, CSVSourceConfig.class);
+	    // } else if (type == SourceType.postgres) {
+	    // sc = mapper.convertValue(props, PostgresSourceConfig.class);
+	    // } else if (type == SourceType.sqlserver) {
+	    // sc = mapper.convertValue(props, SQLServerSourceConfig.class);
+	    //
+	    // } else {
+	    // LOG.error("Unsupported!");
+	    // System.exit(0);
+	    // }
+
 	    sc.setSourceName(name);
 	    sourceConfigs.add(sc);
 	}

@@ -1,7 +1,7 @@
 package sources;
 
 import core.Conductor;
-import core.config.sources.SourceConfig;
+import sources.config.SourceConfig;
 
 public interface Source {
 

@@ -2,7 +2,7 @@ package preanalysis;
 
 import java.util.List;
 
-import inputoutput.Attribute.AttributeType;
+import sources.connectors.Attribute.AttributeType;
 
 public class Values {
 

@@ -1,10 +1,10 @@
-package core.tasks;
+package sources.tasks;
 
-import core.SourceType;
-import core.config.sources.CSVSourceConfig;
-import core.config.sources.SourceConfig;
-import inputoutput.connectors.CSVConnector;
-import inputoutput.connectors.Connector;
+import sources.SourceType;
+import sources.config.CSVSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.CSVConnector;
+import sources.connectors.Connector;
 
 public class CSVProfileTask implements ProfileTask {
 

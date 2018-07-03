@@ -9,12 +9,12 @@ import java.util.Vector;
 
 import org.junit.Test;
 
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
-import inputoutput.connectors.PostgresConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
+import sources.connectors.PostgresConnector;
+import sources.connectors.Attribute.AttributeType;
 
 public class PreAnalyzerTest {
 

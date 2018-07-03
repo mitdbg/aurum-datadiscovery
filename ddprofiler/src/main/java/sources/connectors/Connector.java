@@ -1,12 +1,11 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import core.SourceType;
-import inputoutput.Attribute;
+import sources.SourceType;
 
 public interface Connector {
 

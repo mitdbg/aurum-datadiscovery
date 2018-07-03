@@ -1,10 +1,10 @@
-package core.tasks;
+package sources.tasks;
 
-import core.SourceType;
-import core.config.sources.PostgresSourceConfig;
-import core.config.sources.SourceConfig;
-import inputoutput.connectors.Connector;
-import inputoutput.connectors.PostgresConnector;
+import sources.SourceType;
+import sources.config.PostgresSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.Connector;
+import sources.connectors.PostgresConnector;
 
 public class PostgresProfileTask implements ProfileTask {
 

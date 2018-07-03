@@ -20,9 +20,9 @@ import com.codahale.metrics.Meter;
 
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
-import core.tasks.ProfileTask;
 import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
+import sources.tasks.ProfileTask;
 import store.Store;
 
 public class Conductor {

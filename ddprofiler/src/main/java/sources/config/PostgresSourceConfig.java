@@ -1,8 +1,8 @@
-package core.config.sources;
+package sources.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import core.SourceType;
+import sources.SourceType;
 
 public class PostgresSourceConfig implements SourceConfig {
 

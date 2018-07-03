@@ -1,4 +1,4 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -19,16 +19,13 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
-import core.SourceType;
-import core.config.sources.PostgresSourceConfig;
-import inputoutput.Attribute;
-import inputoutput.Record;
-import inputoutput.TableInfo;
 import metrics.Metrics;
+import sources.SourceType;
+import sources.config.HiveSourceConfig;
 
-public class PostgresConnector implements Connector {
+public class HiveConnector implements Connector {
 
-    private PostgresSourceConfig config;
+    private HiveSourceConfig config;
 
     private Connection connection;
 
@@ -41,12 +38,11 @@ public class PostgresConnector implements Connector {
     private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
 
-    public PostgresConnector(PostgresSourceConfig config) {
+    public HiveConnector(HiveSourceConfig config) {
 	this.config = config;
 
 	this.tableInfo = new TableInfo();
 
-	// Create connector first
 	try {
 	    this.initConnector();
 	} catch (ClassNotFoundException | IOException | SQLException e) {
@@ -54,7 +50,7 @@ public class PostgresConnector implements Connector {
 	    e.printStackTrace();
 	}
 
-	// Initialize tableInfo
+	// Initialize tbInfo
 	List<Attribute> attrs = null;
 	try {
 	    attrs = this.getAttributes();
@@ -67,17 +63,15 @@ public class PostgresConnector implements Connector {
 
     @Override
     public SourceType getSourceType() {
-	return SourceType.postgres;
+	return SourceType.sqlserver;
     }
 
     @Override
     public void initConnector() throws IOException, ClassNotFoundException, SQLException {
 	// Definition of a conn identifier is here
-	String ip = config.getDb_server_ip();
-	String port = new Integer(config.getDb_server_port()).toString();
-	String connPath = config.getDatabase_name();
-	String username = config.getDb_username();
-	String password = config.getDb_password();
+	String ip = config.getHive_server_ip();
+	String port = new Integer(config.getHive_server_port()).toString();
+	String dbName = config.getDatabase_name();
 
 	String connIdentifier = config.getDatabase_name() + ip + port;
 
@@ -86,14 +80,12 @@ public class PostgresConnector implements Connector {
 	    return;
 	}
 
-	Class.forName("org.postgresql.Driver");
-	String cPath = "jdbc:postgresql://" + ip + ":" + port + "/" + connPath;
+	Class.forName("org.apache.hadoop.hive.jdbc.HiveDriver");
+	String cPath = "jdbc:hive2://" + ip + ":" + port + "/" + dbName + ";";
 
 	// If no existing pool to handle this db, then we create a new one
 	HikariConfig config = new HikariConfig();
 	config.setJdbcUrl(cPath);
-	config.setUsername(username);
-	config.setPassword(password);
 	config.addDataSourceProperty("cachePrepStmts", "true");
 	config.addDataSourceProperty("prepStmtCacheSize", "250");
 	config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");

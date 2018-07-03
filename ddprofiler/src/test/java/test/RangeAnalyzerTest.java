@@ -9,11 +9,11 @@ import java.util.Map.Entry;
 import org.junit.Test;
 
 import analysis.modules.RangeAnalyzer;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
+import sources.connectors.Attribute.AttributeType;
 
 public class RangeAnalyzerTest {
 

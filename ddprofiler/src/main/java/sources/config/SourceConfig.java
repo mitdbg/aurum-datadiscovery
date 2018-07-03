@@ -1,6 +1,6 @@
-package core.config.sources;
+package sources.config;
 
-import core.SourceType;
+import sources.SourceType;
 
 public interface SourceConfig {
 

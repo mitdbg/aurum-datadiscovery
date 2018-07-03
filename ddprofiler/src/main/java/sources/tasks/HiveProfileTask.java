@@ -1,10 +1,10 @@
-package core.tasks;
+package sources.tasks;
 
-import core.SourceType;
-import core.config.sources.HiveSourceConfig;
-import core.config.sources.SourceConfig;
-import inputoutput.connectors.Connector;
-import inputoutput.connectors.HiveConnector;
+import sources.SourceType;
+import sources.config.HiveSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.Connector;
+import sources.connectors.HiveConnector;
 
 public class HiveProfileTask implements ProfileTask {
 

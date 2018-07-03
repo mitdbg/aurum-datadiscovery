@@ -16,13 +16,13 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
-import core.tasks.ProfileTask;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.BenchmarkingData;
-import inputoutput.connectors.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.connectors.Attribute;
+import sources.connectors.BenchmarkingData;
+import sources.connectors.Connector;
+import sources.connectors.Attribute.AttributeType;
+import sources.tasks.ProfileTask;
 import store.Store;
 
 public class Worker implements Runnable {

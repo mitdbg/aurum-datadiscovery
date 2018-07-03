@@ -1,4 +1,4 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -16,12 +16,9 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Counter;
 
 import au.com.bytecode.opencsv.CSVReader;
-import core.SourceType;
-import core.config.sources.CSVSourceConfig;
-import inputoutput.Attribute;
-import inputoutput.Record;
-import inputoutput.TableInfo;
 import metrics.Metrics;
+import sources.SourceType;
+import sources.config.CSVSourceConfig;
 
 public class CSVConnector implements Connector {
 

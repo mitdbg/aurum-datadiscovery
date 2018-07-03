@@ -1,10 +1,10 @@
-package core.tasks;
+package sources.tasks;
 
-import core.SourceType;
-import core.config.sources.SQLServerSourceConfig;
-import core.config.sources.SourceConfig;
-import inputoutput.connectors.Connector;
-import inputoutput.connectors.SQLServerConnector;
+import sources.SourceType;
+import sources.config.SQLServerSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.Connector;
+import sources.connectors.SQLServerConnector;
 
 public class SQLServerProfileTask implements ProfileTask {
 

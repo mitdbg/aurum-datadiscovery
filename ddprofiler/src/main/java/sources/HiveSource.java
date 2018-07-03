@@ -8,12 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
-import core.SourceType;
-import core.config.sources.HiveSourceConfig;
-import core.config.sources.SourceConfig;
-import core.tasks.ProfileTask;
-import core.tasks.ProfileTaskFactory;
-import inputoutput.connectors.DBUtils;
+import sources.config.HiveSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.DBUtils;
+import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTaskFactory;
 
 public class HiveSource implements Source {
 

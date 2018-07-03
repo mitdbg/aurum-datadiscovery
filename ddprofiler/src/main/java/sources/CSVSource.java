@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
-import core.config.sources.CSVSourceConfig;
-import core.config.sources.SourceConfig;
-import core.tasks.ProfileTask;
-import core.tasks.ProfileTaskFactory;
+import sources.config.CSVSourceConfig;
+import sources.config.SourceConfig;
+import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTaskFactory;
 
 public class CSVSource implements Source {
 

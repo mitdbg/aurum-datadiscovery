@@ -17,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.config.ProfilerConfig;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.Connector;
+import sources.connectors.Attribute;
+import sources.connectors.Connector;
+import sources.connectors.Attribute.AttributeType;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 

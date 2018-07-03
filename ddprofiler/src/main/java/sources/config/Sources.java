@@ -1,4 +1,4 @@
-package core.config.sources;
+package sources.config;
 
 import java.util.List;
 

@@ -5,8 +5,8 @@ package preanalysis;
 
 import java.util.List;
 
-import inputoutput.Attribute;
-import inputoutput.connectors.Connector;
+import sources.connectors.Attribute;
+import sources.connectors.Connector;
 
 public interface PreAnalysis {
 

@@ -1,4 +1,4 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import au.com.bytecode.opencsv.CSVReader;
-import inputoutput.Attribute;
-import inputoutput.Record;
 
 public class BenchmarkingData {
 

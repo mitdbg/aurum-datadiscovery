@@ -1,4 +1,4 @@
-package inputoutput.connectors;
+package sources.connectors;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Main;
-import core.SourceType;
+import sources.SourceType;
 
 public class DBUtils {
 
@@ -60,12 +60,15 @@ public class DBUtils {
     public static Connection getDBConnection(SourceType type, String connIP, String port, String dbName,
 	    String username, String password) {
 	Connection conn = null;
-	if (type == SourceType.mysql) {
-	    conn = getMYSQLConnection(connIP, port, dbName, username, password);
-	} else if (type == SourceType.postgres) {
+	// if (type == SourceType.mysql) {
+	// conn = getMYSQLConnection(connIP, port, dbName, username, password);
+	// } else
+	if (type == SourceType.postgres) {
 	    conn = getPOSTGRESQLConnection(connIP, port, dbName, username, password);
-	} else if (type == SourceType.oracle11g) {
-	    conn = getOracle10GConnection(connIP, port, dbName, username, password);
+	    // } else
+	    // if (type == SourceType.oracle11g) {
+	    // conn = getOracle10GConnection(connIP, port, dbName, username,
+	    // password);
 	} else if (type == SourceType.sqlserver) {
 	    conn = getSQLServerConnection(connIP, port, dbName, username, password);
 	} else if (type == SourceType.hive) {

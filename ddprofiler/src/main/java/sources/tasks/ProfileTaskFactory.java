@@ -1,9 +1,9 @@
-package core.tasks;
+package sources.tasks;
 
-import core.config.sources.CSVSourceConfig;
-import core.config.sources.HiveSourceConfig;
-import core.config.sources.PostgresSourceConfig;
-import core.config.sources.SQLServerSourceConfig;
+import sources.config.CSVSourceConfig;
+import sources.config.HiveSourceConfig;
+import sources.config.PostgresSourceConfig;
+import sources.config.SQLServerSourceConfig;
 
 public class ProfileTaskFactory {
 

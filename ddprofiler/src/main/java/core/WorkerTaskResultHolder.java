@@ -8,8 +8,8 @@ import analysis.Analysis;
 import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.Entities;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
+import sources.connectors.Attribute;
+import sources.connectors.Attribute.AttributeType;
 
 public class WorkerTaskResultHolder {
 

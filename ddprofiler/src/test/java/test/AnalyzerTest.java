@@ -15,11 +15,11 @@ import analysis.TextualAnalysis;
 import analysis.modules.Cardinality;
 import analysis.modules.Entities;
 import analysis.modules.Range;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
+import sources.connectors.Attribute.AttributeType;
 
 public class AnalyzerTest {
 
