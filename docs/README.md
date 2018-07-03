@@ -1,7 +1,5 @@
 # Aurum: Discovering Data in Lakes, Clouds and Databases
 
-Webpage version of this documentation: [http://mitdbg.github.io/aurum-datadiscovery/](http://mitdbg.github.io/aurum-datadiscovery/)
-
 Aurum helps users identify relevant content among multiple data
 sources that may consist of tabular files, such as CSV, and relational tables.
 These may be stored in relational database management systems (RDBMS), file
@@ -18,18 +16,18 @@ queries, such as figuring out what tables join with a table of interest. The
 idea is that the API is flexible enough to allow a wide range of use cases, and
 that it works over all data you feed to the system, regardless where these live.
 
-* [**Why do I need Aurum?**](docs/why_aurum.md) We show you various scenarios in which Aurum has proven useful.
+* [**Why do I need Aurum?**](why_aurum.md) We show you various scenarios in which Aurum has proven useful.
 
-* [**Design Rationale**](docs/design_rationale.md) A brief explanation of the system architecture and 
+* [**Design Rationale**](design_rationale.md) A brief explanation of the system architecture and 
 design rationale.
 
-* [**Quick Start**](docs/quick_start.md) A guide to setup Aurum and start running some discovery queries.
+* [**Quick Start**](quick_start.md) A guide to setup Aurum and start running some discovery queries.
 
-* [**Tutorial**](docs/tutorial.md) A tutorial that walks you through the different aspects of Aurum, from how 
+* [**Tutorial**](tutorial.md) A tutorial that walks you through the different aspects of Aurum, from how 
 to write queries using the discovery API, to how to create new connectors to read data from different 
 data sources to how to store data in different stores.
 
-* [**FAQ**](docs/faq.md) Collection of frequent questions
+* [**FAQ**](faq.md) Collection of frequent questions
 
 Aurum is a work in progress, we expect to release its first open-source version in the 4th quarter of 2018.
 We are happy to accept contributions of the community. If you are interested in contributing take a look at
@@ -44,3 +42,4 @@ https://github.com/mitdbg/aurum-datadiscovery/blob/master/CODE_OF_CONDUCT.md
 
 Please, report violations of the code of conduct by sending an email to
 raulcf@csail.mit.edu
+
