@@ -1,12 +1,12 @@
 package sources.tasks;
 
-import sources.SourceType;
 import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
 import sources.connectors.Connector;
 import sources.connectors.PostgresConnector;
+import sources.main.SourceType;
 
-public class PostgresProfileTask implements ProfileTask {
+public class PostgresProfileTask implements ProfileTask_old {
 
     private int taskId;
     private PostgresConnector connector;

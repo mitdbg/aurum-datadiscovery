@@ -10,11 +10,12 @@ import org.slf4j.LoggerFactory;
 import core.Conductor;
 import sources.config.HiveSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.DBUtils;
-import sources.tasks.ProfileTask;
+import sources.main.DBUtils;
+import sources.main.SourceType;
+import sources.tasks.ProfileTask_old;
 import sources.tasks.ProfileTaskFactory;
 
-public class HiveSource implements Source {
+public class HiveSource implements Source_old {
 
     final private Logger LOG = LoggerFactory.getLogger(HiveSource.class.getName());
 
@@ -47,7 +48,7 @@ public class HiveSource implements Source {
 	    HiveSourceConfig relationHiveSourceConfig = (HiveSourceConfig) hiveConfig.selfCopy();
 	    relationHiveSourceConfig.setRelationName(relation);
 
-	    ProfileTask pt = ProfileTaskFactory.makeHiveProfileTask(relationHiveSourceConfig);
+	    ProfileTask_old pt = ProfileTaskFactory.makeHiveProfileTask(relationHiveSourceConfig);
 
 	    c.submitTask(pt);
 	}

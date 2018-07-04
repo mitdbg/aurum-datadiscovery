@@ -20,8 +20,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
 import metrics.Metrics;
-import sources.SourceType;
 import sources.config.HiveSourceConfig;
+import sources.main.SourceType;
 
 public class HiveConnector implements Connector {
 

@@ -10,11 +10,12 @@ import org.slf4j.LoggerFactory;
 import core.Conductor;
 import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.DBUtils;
-import sources.tasks.ProfileTask;
+import sources.main.DBUtils;
+import sources.main.SourceType;
+import sources.tasks.ProfileTask_old;
 import sources.tasks.ProfileTaskFactory;
 
-public class SQLServerSource implements Source {
+public class SQLServerSource implements Source_old {
 
     final private Logger LOG = LoggerFactory.getLogger(SQLServerSource.class.getName());
 
@@ -50,7 +51,7 @@ public class SQLServerSource implements Source {
 	    SQLServerSourceConfig relationSQLServerSourceConfig = (SQLServerSourceConfig) sqlServerConfig.selfCopy();
 	    relationSQLServerSourceConfig.setRelationName(relation);
 
-	    ProfileTask pt = ProfileTaskFactory.makeSQLServerProfileTask(relationSQLServerSourceConfig);
+	    ProfileTask_old pt = ProfileTaskFactory.makeSQLServerProfileTask(relationSQLServerSourceConfig);
 
 	    c.submitTask(pt);
 	}

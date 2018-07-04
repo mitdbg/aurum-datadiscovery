@@ -1,4 +1,4 @@
-package sources;
+package sources.main;
 
 import org.apache.commons.lang.NotImplementedException;
 

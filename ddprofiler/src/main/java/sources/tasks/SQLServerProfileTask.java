@@ -1,12 +1,12 @@
 package sources.tasks;
 
-import sources.SourceType;
 import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
 import sources.connectors.Connector;
 import sources.connectors.SQLServerConnector;
+import sources.main.SourceType;
 
-public class SQLServerProfileTask implements ProfileTask {
+public class SQLServerProfileTask implements ProfileTask_old {
 
     private int taskId;
     private SQLServerConnector connector;

@@ -12,16 +12,16 @@ import core.config.ConfigKey;
 import core.config.ProfilerConfig;
 import joptsimple.OptionParser;
 import metrics.Metrics;
-import sources.CSVSource;
+import sources.CSVSource_old;
 import sources.HiveSource;
 import sources.PostgresSource;
 import sources.SQLServerSource;
-import sources.SourceType;
 import sources.config.CSVSourceConfig;
 import sources.config.HiveSourceConfig;
 import sources.config.PostgresSourceConfig;
 import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
+import sources.main.SourceType;
 import sources.main.YAMLParser;
 import store.Store;
 import store.StoreFactory;
@@ -72,7 +72,7 @@ public class Main {
 	    if (sType == SourceType.csv) {
 		CSVSourceConfig csvSourceConfig = (CSVSourceConfig) sourceConfig;
 
-		CSVSource csvSource = new CSVSource();
+		CSVSource_old csvSource = new CSVSource_old();
 		csvSource.processSource(csvSourceConfig, c);
 	    } else if (sType == SourceType.postgres) {
 		PostgresSourceConfig postgresSourceConfig = (PostgresSourceConfig) sourceConfig;

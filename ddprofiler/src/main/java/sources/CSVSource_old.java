@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 import core.Conductor;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
-import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTask_old;
 import sources.tasks.ProfileTaskFactory;
 
-public class CSVSource implements Source {
+public class CSVSource_old implements Source_old {
 
-    final private Logger LOG = LoggerFactory.getLogger(CSVSource.class.getName());
+    final private Logger LOG = LoggerFactory.getLogger(CSVSource_old.class.getName());
 
     @Override
     public void processSource(SourceConfig config, Conductor c) {
@@ -40,7 +40,7 @@ public class CSVSource implements Source {
 		relationCSVConfig.setRelationName(name);
 		relationCSVConfig.setPath(path);
 
-		ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(relationCSVConfig);
+		ProfileTask_old pt = ProfileTaskFactory.makeCSVProfileTask(relationCSVConfig);
 
 		// TaskPackage tp =
 		// TaskPackage.makeCSVFileTaskPackage(csvConfig.getSourceName(),

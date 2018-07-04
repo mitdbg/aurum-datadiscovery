@@ -1,6 +1,6 @@
 package sources.config;
 
-import sources.SourceType;
+import sources.main.SourceType;
 
 public interface SourceConfig {
 

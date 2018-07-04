@@ -10,11 +10,12 @@ import org.slf4j.LoggerFactory;
 import core.Conductor;
 import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.DBUtils;
-import sources.tasks.ProfileTask;
+import sources.main.DBUtils;
+import sources.main.SourceType;
+import sources.tasks.ProfileTask_old;
 import sources.tasks.ProfileTaskFactory;
 
-public class PostgresSource implements Source {
+public class PostgresSource implements Source_old {
 
     final private Logger LOG = LoggerFactory.getLogger(PostgresSource.class.getName());
 
@@ -50,7 +51,7 @@ public class PostgresSource implements Source {
 	    PostgresSourceConfig relationPostgresSourceConfig = (PostgresSourceConfig) postgresConfig.selfCopy();
 	    relationPostgresSourceConfig.setRelationName(relation);
 
-	    ProfileTask pt = ProfileTaskFactory.makePostgresProfileTask(relationPostgresSourceConfig);
+	    ProfileTask_old pt = ProfileTaskFactory.makePostgresProfileTask(relationPostgresSourceConfig);
 
 	    // // FIXME: Remove type
 	    // TaskPackage tp =

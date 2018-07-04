@@ -22,7 +22,7 @@ import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
-import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTask_old;
 import store.Store;
 
 public class Conductor {
@@ -32,7 +32,7 @@ public class Conductor {
     private ProfilerConfig pc;
     private File errorLogFile;
 
-    private BlockingQueue<ProfileTask> taskQueue;
+    private BlockingQueue<ProfileTask_old> taskQueue;
     private List<Worker> activeWorkers;
     private List<Thread> workerPool;
     private BlockingQueue<WorkerTaskResult> results;
@@ -55,6 +55,7 @@ public class Conductor {
 
     // Global cache, FIXME; find better place
     // TODO: move to some db-specific class
+    @Deprecated
     public static Map<String, Connection> connectionPools = new HashMap<>();
 
     public Conductor(ProfilerConfig pc, Store s) {
@@ -105,7 +106,7 @@ public class Conductor {
 	}
     }
 
-    public boolean submitTask(ProfileTask task) {
+    public boolean submitTask(ProfileTask_old task) {
 	totalTasksSubmitted++;
 	return taskQueue.add(task);
     }

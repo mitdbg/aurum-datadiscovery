@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.main;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Main;
-import sources.SourceType;
 
 public class DBUtils {
 

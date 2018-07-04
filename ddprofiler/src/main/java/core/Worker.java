@@ -22,7 +22,7 @@ import sources.connectors.Attribute;
 import sources.connectors.BenchmarkingData;
 import sources.connectors.Connector;
 import sources.connectors.Attribute.AttributeType;
-import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTask_old;
 import store.Store;
 
 public class Worker implements Runnable {
@@ -35,11 +35,11 @@ public class Worker implements Runnable {
     private Conductor conductor;
     private boolean doWork = true;
     private String workerName;
-    private ProfileTask task;
+    private ProfileTask_old task;
     private int numRecordChunk;
     private Store store;
 
-    private BlockingQueue<ProfileTask> taskQueue;
+    private BlockingQueue<ProfileTask_old> taskQueue;
     private BlockingQueue<ErrorPackage> errorQueue;
 
     // Benchmark variables
@@ -49,7 +49,7 @@ public class Worker implements Runnable {
     // cached object
     private EntityAnalyzer ea;
 
-    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<ProfileTask> taskQueue,
+    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<ProfileTask_old> taskQueue,
 	    BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
 	this.conductor = conductor;
 	this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
@@ -65,9 +65,9 @@ public class Worker implements Runnable {
 	this.doWork = false;
     }
 
-    private ProfileTask pullTask() {
+    private ProfileTask_old pullTask() {
 	// Attempt to consume new task
-	ProfileTask pt = null;
+	ProfileTask_old pt = null;
 	try {
 	    pt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
 	    if (pt == null) {

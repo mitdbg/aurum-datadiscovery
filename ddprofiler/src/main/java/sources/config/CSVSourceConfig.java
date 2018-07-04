@@ -2,7 +2,7 @@ package sources.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import sources.SourceType;
+import sources.main.SourceType;
 
 public class CSVSourceConfig implements SourceConfig {
 

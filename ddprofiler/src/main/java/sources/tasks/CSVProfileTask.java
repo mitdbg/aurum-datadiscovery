@@ -1,12 +1,12 @@
 package sources.tasks;
 
-import sources.SourceType;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
 import sources.connectors.CSVConnector;
 import sources.connectors.Connector;
+import sources.main.SourceType;
 
-public class CSVProfileTask implements ProfileTask {
+public class CSVProfileTask implements ProfileTask_old {
 
     private int taskId;
     // private Old_Connector connector;

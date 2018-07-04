@@ -7,23 +7,23 @@ import sources.config.SQLServerSourceConfig;
 
 public class ProfileTaskFactory {
 
-    public static ProfileTask makeCSVProfileTask(CSVSourceConfig config) {
-	ProfileTask pt = new CSVProfileTask(config);
+    public static ProfileTask_old makeCSVProfileTask(CSVSourceConfig config) {
+	ProfileTask_old pt = new CSVProfileTask(config);
 	return pt;
     }
 
-    public static ProfileTask makePostgresProfileTask(PostgresSourceConfig config) {
-	ProfileTask pt = new PostgresProfileTask(config);
+    public static ProfileTask_old makePostgresProfileTask(PostgresSourceConfig config) {
+	ProfileTask_old pt = new PostgresProfileTask(config);
 	return pt;
     }
 
-    public static ProfileTask makeSQLServerProfileTask(SQLServerSourceConfig config) {
-	ProfileTask pt = new SQLServerProfileTask(config);
+    public static ProfileTask_old makeSQLServerProfileTask(SQLServerSourceConfig config) {
+	ProfileTask_old pt = new SQLServerProfileTask(config);
 	return pt;
     }
 
-    public static ProfileTask makeHiveProfileTask(HiveSourceConfig config) {
-	ProfileTask pt = new HiveProfileTask(config);
+    public static ProfileTask_old makeHiveProfileTask(HiveSourceConfig config) {
+	ProfileTask_old pt = new HiveProfileTask(config);
 	return pt;
     }
 

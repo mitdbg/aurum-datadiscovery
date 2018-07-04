@@ -1,10 +1,10 @@
 package sources.tasks;
 
-import sources.SourceType;
 import sources.config.SourceConfig;
 import sources.connectors.Connector;
+import sources.main.SourceType;
 
-public interface ProfileTask {
+public interface ProfileTask_old {
 
     public SourceConfig getSourceConfig();
 

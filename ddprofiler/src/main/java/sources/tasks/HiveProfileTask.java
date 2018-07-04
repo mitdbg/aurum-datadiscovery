@@ -1,12 +1,12 @@
 package sources.tasks;
 
-import sources.SourceType;
 import sources.config.HiveSourceConfig;
 import sources.config.SourceConfig;
 import sources.connectors.Connector;
 import sources.connectors.HiveConnector;
+import sources.main.SourceType;
 
-public class HiveProfileTask implements ProfileTask {
+public class HiveProfileTask implements ProfileTask_old {
 
     private int taskId;
     private HiveConnector connector;

@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.implementations;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -9,10 +9,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Counter;
 import com.zaxxer.hikari.HikariConfig;
@@ -21,45 +25,85 @@ import com.zaxxer.hikari.HikariDataSource;
 import core.Conductor;
 import metrics.Metrics;
 import sources.config.PostgresSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.Attribute;
+import sources.connectors.PostgresConnector;
+import sources.connectors.Record;
+import sources.connectors.TableInfo;
+import sources.main.DBUtils;
+import sources.main.Source;
 import sources.main.SourceType;
+import sources.main.SourceUtils;
 
-public class PostgresConnector implements Connector {
+public class PostgresSource implements Source {
+
+    final private Logger LOG = LoggerFactory.getLogger(PostgresSource.class.getName());
 
     private PostgresSourceConfig config;
+    private String relationName;
+    private int tid;
 
     private Connection connection;
 
-    private TableInfo tableInfo;
+    private boolean initialized = false;
     private boolean firstTime = true;
+
     private Statement theStatement;
     private ResultSet theRS;
+
+    private TableInfo tableInfo;
 
     // Metrics
     private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
 
-    public PostgresConnector(PostgresSourceConfig config) {
-	this.config = config;
+    // this was before in conductor, can we move it to 1 place per source?
+    public static Map<String, Connection> connectionPools = new HashMap<>();
 
-	this.tableInfo = new TableInfo();
+    public PostgresSource(String relationName) {
+	this.relationName = relationName;
+	this.tid = SourceUtils.computeTaskId(this.config.getDatabase_name(), relationName);
+    }
 
-	// Create connector first
+    @Override
+    public List<Source> processSource(SourceConfig config, Conductor c) {
+	assert (config instanceof PostgresSourceConfig);
+
+	PostgresSourceConfig postgresConfig = (PostgresSourceConfig) config;
+	this.config = postgresConfig;
+
+	List<Source> tasks = new ArrayList<>();
+
+	// TODO: at this point we'll be harnessing metadata from the source
+
+	String ip = postgresConfig.getDb_server_ip();
+	String port = new Integer(postgresConfig.getDb_server_port()).toString();
+	String db_name = postgresConfig.getDatabase_name();
+	String username = postgresConfig.getDb_username();
+	String password = postgresConfig.getDb_password();
+	String dbschema = "default";
+
+	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
+
+	// FIXME: remove this enum; simplify this
+	Connection dbConn = DBUtils.getDBConnection(SourceType.postgres, ip, port, db_name, username, password);
+
+	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
 	try {
-	    this.initConnector();
-	} catch (ClassNotFoundException | IOException | SQLException e) {
-	    // TODO Auto-generated catch block
+	    dbConn.close();
+	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
+	for (String relation : tables) {
+	    LOG.info("Detected relational table: {}", relation);
 
-	// Initialize tableInfo
-	List<Attribute> attrs = null;
-	try {
-	    attrs = this.getAttributes();
-	} catch (SQLException | IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    PostgresSourceConfig relationPostgresSourceConfig = (PostgresSourceConfig) postgresConfig.selfCopy();
+	    relationPostgresSourceConfig.setRelationName(relation);
+
+	    PostgresSource ps = new PostgresSource(relation);
+	    tasks.add(ps);
 	}
-	this.tableInfo.setTableAttributes(attrs);
+	return tasks;
     }
 
     @Override
@@ -68,56 +112,13 @@ public class PostgresConnector implements Connector {
     }
 
     @Override
-    public void initConnector() throws IOException, ClassNotFoundException, SQLException {
-	// Definition of a conn identifier is here
-	String ip = config.getDb_server_ip();
-	String port = new Integer(config.getDb_server_port()).toString();
-	String connPath = config.getDatabase_name();
-	String username = config.getDb_username();
-	String password = config.getDb_password();
-
-	String connIdentifier = config.getDatabase_name() + ip + port;
-
-	if (Conductor.connectionPools.containsKey(connIdentifier)) {
-	    this.connection = Conductor.connectionPools.get(connIdentifier);
-	    return;
-	}
-
-	Class.forName("org.postgresql.Driver");
-	String cPath = "jdbc:postgresql://" + ip + ":" + port + "/" + connPath;
-
-	// If no existing pool to handle this db, then we create a new one
-	HikariConfig config = new HikariConfig();
-	config.setJdbcUrl(cPath);
-	config.setUsername(username);
-	config.setPassword(password);
-	config.addDataSourceProperty("cachePrepStmts", "true");
-	config.addDataSourceProperty("prepStmtCacheSize", "250");
-	config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-	config.addDataSourceProperty("maximumPoolSize", "1");
-	HikariDataSource ds = new HikariDataSource(config);
-
-	Connection connection = null;
-	try {
-	    connection = ds.getConnection();
-	} catch (SQLException e) {
-	    e.printStackTrace();
-	}
-	Conductor.connectionPools.put(connIdentifier, connection);
-
-	this.connection = connection;
+    public String getPath() {
+	return null;
     }
 
     @Override
-    public void destroyConnector() {
-	try {
-	    // this.connection.close();
-	    this.theRS.close();
-	    this.theStatement.close();
-	} catch (SQLException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
+    public String getRelationName() {
+	return this.relationName;
     }
 
     @Override
@@ -140,7 +141,64 @@ public class PostgresConnector implements Connector {
     }
 
     @Override
+    public SourceConfig getSourceConfig() {
+	return config;
+    }
+
+    @Override
+    public int getTaskId() {
+	return tid;
+    }
+
+    private void initializeConnection() {
+	// Definition of a conn identifier is here
+	String ip = config.getDb_server_ip();
+	String port = new Integer(config.getDb_server_port()).toString();
+	String connPath = config.getDatabase_name();
+	String username = config.getDb_username();
+	String password = config.getDb_password();
+
+	String connIdentifier = config.getDatabase_name() + ip + port;
+
+	if (this.connectionPools.containsKey(connIdentifier)) {
+	    this.connection = this.connectionPools.get(connIdentifier);
+	}
+
+	try {
+	    Class.forName("org.postgresql.Driver");
+	} catch (ClassNotFoundException e1) {
+	    // TODO Auto-generated catch block
+	    e1.printStackTrace();
+	}
+	String cPath = "jdbc:postgresql://" + ip + ":" + port + "/" + connPath;
+
+	// If no existing pool to handle this db, then we create a new one
+	HikariConfig config = new HikariConfig();
+	config.setJdbcUrl(cPath);
+	config.setUsername(username);
+	config.setPassword(password);
+	config.addDataSourceProperty("cachePrepStmts", "true");
+	config.addDataSourceProperty("prepStmtCacheSize", "250");
+	config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+	config.addDataSourceProperty("maximumPoolSize", "1");
+	HikariDataSource ds = new HikariDataSource(config);
+
+	Connection connection = null;
+	try {
+	    connection = ds.getConnection();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+	this.connectionPools.put(connIdentifier, connection);
+
+	this.connection = connection;
+    }
+
+    @Override
     public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
+	if (!initialized) {
+	    initializeConnection();
+	}
 	Map<Attribute, List<String>> data = new LinkedHashMap<>();
 	// Make sure attrs is populated, if not, populate it here
 	if (data.isEmpty()) {

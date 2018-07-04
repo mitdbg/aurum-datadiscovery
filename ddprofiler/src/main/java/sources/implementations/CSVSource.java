@@ -1,7 +1,8 @@
-package sources.connectors;
+package sources.implementations;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -16,56 +17,99 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Counter;
 
 import au.com.bytecode.opencsv.CSVReader;
+import core.Conductor;
 import metrics.Metrics;
 import sources.config.CSVSourceConfig;
+import sources.config.SourceConfig;
+import sources.connectors.Attribute;
+import sources.connectors.CSVConnector;
+import sources.connectors.Record;
+import sources.connectors.TableInfo;
+import sources.main.Source;
 import sources.main.SourceType;
+import sources.main.SourceUtils;
 
-public class CSVConnector implements Connector {
+public class CSVSource implements Source {
 
-    final private Logger LOG = LoggerFactory.getLogger(CSVConnector.class.getName());
+    final private Logger LOG = LoggerFactory.getLogger(CSVSource.class.getName());
 
+    private int tid;
+    private String path;
+    private String relationName;
     private CSVSourceConfig config;
+    private boolean initialized = false;
     private CSVReader fileReader;
-
-    // Connector state
-    private long lineCounter = 0;
     private TableInfo tableInfo;
 
-    // Metrics
-    // Metrics on how many successful and erroneous records are processed
+    // metrics
+    private long lineCounter = 0;
     private Counter error_records = Metrics.REG.counter((name(CSVConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(CSVConnector.class, "success", "records")));
 
-    public CSVConnector(CSVSourceConfig config) {
-	this.config = config;
+    public CSVSource(String path, String relationName) {
+	this.tid = SourceUtils.computeTaskId(path, relationName);
+	this.path = path;
+	this.relationName = relationName;
+    }
 
-	this.tableInfo = new TableInfo();
-	try {
-	    initConnector();
-	} catch (ClassNotFoundException | IOException | SQLException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+    @Override
+    public String getPath() {
+	return path;
+    }
+
+    @Override
+    public String getRelationName() {
+	return relationName;
+    }
+
+    @Override
+    public SourceConfig getSourceConfig() {
+	return this.config;
+    }
+
+    @Override
+    public int getTaskId() {
+	return tid;
+    }
+
+    @Override
+    public List<Source> processSource(SourceConfig config, Conductor c) {
+	assert (config instanceof CSVSourceConfig);
+
+	this.config = (CSVSourceConfig) config;
+
+	List<Source> tasks = new ArrayList<>();
+
+	CSVSourceConfig csvConfig = (CSVSourceConfig) config;
+	String pathToSources = csvConfig.getPath();
+
+	// TODO: at this point we'll be harnessing metadata from the source
+
+	File folder = new File(pathToSources);
+	int totalFiles = 0;
+	int tt = 0;
+
+	File[] filePaths = folder.listFiles();
+	for (File f : filePaths) {
+	    tt++;
+	    if (f.isFile()) {
+		String path = f.getParent() + File.separator;
+		String name = f.getName();
+		// Make the csv config specific to the relation
+		CSVSource task = new CSVSource(path, name);
+		totalFiles++;
+		// c.submitTask(pt);
+		tasks.add(task);
+	    }
 	}
-	List<Attribute> attrs = null;
-	try {
-	    attrs = this.getAttributes();
-	} catch (IOException | SQLException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
-	tableInfo.setTableAttributes(attrs);
+
+	LOG.info("Total files submitted for processing: {} - {}", totalFiles, tt);
+	return tasks;
     }
 
     @Override
     public SourceType getSourceType() {
 	return SourceType.csv;
-    }
-
-    @Override
-    public void initConnector() throws IOException, ClassNotFoundException, SQLException {
-	String path = config.getPath() + config.getRelationName();
-	char separator = config.getSeparator().charAt(0);
-	fileReader = new CSVReader(new FileReader(path), separator);
     }
 
     @Override
@@ -87,6 +131,13 @@ public class CSVConnector implements Connector {
 
     @Override
     public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException {
+	if (!initialized) {
+	    String path = this.path + this.relationName;
+	    char separator = this.config.getSeparator().charAt(0);
+	    fileReader = new CSVReader(new FileReader(path), separator);
+	    initialized = true;
+	}
+
 	Map<Attribute, List<String>> data = new LinkedHashMap<>();
 	// Make sure attrs is populated, if not, populate it here
 	if (data.isEmpty()) {
@@ -129,15 +180,6 @@ public class CSVConnector implements Connector {
 	    rec_list.add(rec);
 	}
 	return read_lines;
-    }
-
-    @Override
-    public void destroyConnector() {
-	try {
-	    fileReader.close();
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
     }
 
 }

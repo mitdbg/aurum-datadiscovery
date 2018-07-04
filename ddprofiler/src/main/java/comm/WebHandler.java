@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
 import sources.config.CSVSourceConfig;
-import sources.tasks.ProfileTask;
+import sources.tasks.ProfileTask_old;
 import sources.tasks.ProfileTaskFactory;
 
 public class WebHandler extends HttpServlet {
@@ -91,7 +91,7 @@ public class WebHandler extends HttpServlet {
 	csvConfig.setSourceName(dbName);
 	csvConfig.setPath(path);
 	csvConfig.setSeparator(separator);
-	ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(csvConfig);
+	ProfileTask_old pt = ProfileTaskFactory.makeCSVProfileTask(csvConfig);
 	boolean success = true; // c.submitTask(wt);
 	if (success)
 	    return "OK";
