@@ -1,4 +1,4 @@
-package sources.main;
+package sources;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,11 +14,14 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import core.Main;
+public class SourceUtils {
 
-public class DBUtils {
+    final static private Logger LOG = LoggerFactory.getLogger(SourceUtils.class.getName());
 
-    final static private Logger LOG = LoggerFactory.getLogger(Main.class.getName());
+    public static int computeTaskId(String one, String two) {
+	String c = one.concat(two);
+	return c.hashCode();
+    }
 
     public static List<String> getTablesFromDatabase(Connection conn, String dbschema) {
 
@@ -48,7 +51,7 @@ public class DBUtils {
     public static Properties loadDBPropertiesFromFile() {
 	Properties prop = new Properties();
 	try {
-	    InputStream is = DBUtils.class.getClassLoader().getResource("dbconnector.config").openStream();
+	    InputStream is = SourceUtils.class.getClassLoader().getResource("dbconnector.config").openStream();
 	    prop.load(is);
 	} catch (IOException e) {
 	    e.printStackTrace();

@@ -5,8 +5,8 @@ package preanalysis;
 
 import java.util.List;
 
-import sources.connectors.Attribute;
-import sources.connectors.Connector;
+import sources.deprecated.Attribute;
+import sources.deprecated.Connector;
 
 public interface PreAnalysis {
 

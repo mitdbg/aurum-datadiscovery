@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.deprecated;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -17,8 +17,8 @@ import com.codahale.metrics.Counter;
 
 import au.com.bytecode.opencsv.CSVReader;
 import metrics.Metrics;
+import sources.SourceType;
 import sources.config.CSVSourceConfig;
-import sources.main.SourceType;
 
 public class CSVConnector implements Connector {
 

@@ -3,7 +3,7 @@
  * @author ra-mit (edits)
  *
  */
-package sources.connectors;
+package sources.deprecated;
 
 import java.util.List;
 

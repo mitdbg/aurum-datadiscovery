@@ -1,10 +1,8 @@
-package sources.tasks;
+package sources.deprecated;
 
+import sources.SourceType;
 import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.Connector;
-import sources.connectors.PostgresConnector;
-import sources.main.SourceType;
 
 public class PostgresProfileTask implements ProfileTask_old {
 

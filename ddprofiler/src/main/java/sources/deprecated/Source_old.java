@@ -1,4 +1,4 @@
-package sources;
+package sources.deprecated;
 
 import core.Conductor;
 import sources.config.SourceConfig;

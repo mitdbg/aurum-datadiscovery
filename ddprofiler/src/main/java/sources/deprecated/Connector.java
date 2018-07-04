@@ -1,11 +1,11 @@
-package sources.connectors;
+package sources.deprecated;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import sources.main.SourceType;
+import sources.SourceType;
 
 public interface Connector {
 

@@ -1,4 +1,4 @@
-package sources;
+package sources.deprecated;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -8,12 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
+import sources.SourceType;
+import sources.SourceUtils;
 import sources.config.HiveSourceConfig;
 import sources.config.SourceConfig;
-import sources.main.DBUtils;
-import sources.main.SourceType;
-import sources.tasks.ProfileTask_old;
-import sources.tasks.ProfileTaskFactory;
 
 public class HiveSource implements Source_old {
 
@@ -34,9 +32,9 @@ public class HiveSource implements Source_old {
 	LOG.info("Conn to Hive on: {}:{}", ip, port);
 
 	// FIXME: remove this enum; simplify this
-	Connection hiveConn = DBUtils.getDBConnection(SourceType.hive, ip, port, dbName, null, null);
+	Connection hiveConn = SourceUtils.getDBConnection(SourceType.hive, ip, port, dbName, null, null);
 
-	List<String> tables = DBUtils.getTablesFromDatabase(hiveConn, null);
+	List<String> tables = SourceUtils.getTablesFromDatabase(hiveConn, null);
 	try {
 	    hiveConn.close();
 	} catch (SQLException e) {

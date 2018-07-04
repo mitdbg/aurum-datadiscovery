@@ -1,4 +1,4 @@
-package sources.tasks;
+package sources.deprecated;
 
 import sources.config.CSVSourceConfig;
 import sources.config.HiveSourceConfig;

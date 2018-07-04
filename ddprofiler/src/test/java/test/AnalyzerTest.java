@@ -17,9 +17,9 @@ import analysis.modules.Entities;
 import analysis.modules.Range;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
-import sources.connectors.Attribute;
-import sources.connectors.CSVConnector;
-import sources.connectors.Attribute.AttributeType;
+import sources.deprecated.Attribute;
+import sources.deprecated.CSVConnector;
+import sources.deprecated.Attribute.AttributeType;
 
 public class AnalyzerTest {
 

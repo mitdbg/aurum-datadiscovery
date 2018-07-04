@@ -22,7 +22,7 @@ import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
-import sources.tasks.ProfileTask_old;
+import sources.deprecated.ProfileTask_old;
 import store.Store;
 
 public class Conductor {

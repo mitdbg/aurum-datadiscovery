@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.deprecated;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -20,8 +20,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import core.Conductor;
 import metrics.Metrics;
+import sources.SourceType;
 import sources.config.SQLServerSourceConfig;
-import sources.main.SourceType;
 
 public class SQLServerConnector implements Connector {
 

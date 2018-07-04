@@ -2,7 +2,7 @@
  * @author Sibo Wang
  * @author ra-mit (edits)
  */
-package sources.connectors;
+package sources.deprecated;
 
 public class Attribute {
 

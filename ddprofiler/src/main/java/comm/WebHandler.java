@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
 import sources.config.CSVSourceConfig;
-import sources.tasks.ProfileTask_old;
-import sources.tasks.ProfileTaskFactory;
+import sources.deprecated.ProfileTaskFactory;
+import sources.deprecated.ProfileTask_old;
 
 public class WebHandler extends HttpServlet {
 

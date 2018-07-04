@@ -2,7 +2,7 @@ package sources.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import sources.main.SourceType;
+import sources.SourceType;
 
 public class HiveSourceConfig implements SourceConfig {
 

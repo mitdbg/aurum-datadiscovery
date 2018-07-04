@@ -19,15 +19,15 @@ import com.codahale.metrics.Counter;
 import au.com.bytecode.opencsv.CSVReader;
 import core.Conductor;
 import metrics.Metrics;
+import sources.Source;
+import sources.SourceType;
+import sources.SourceUtils;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.Attribute;
-import sources.connectors.CSVConnector;
-import sources.connectors.Record;
-import sources.connectors.TableInfo;
-import sources.main.Source;
-import sources.main.SourceType;
-import sources.main.SourceUtils;
+import sources.deprecated.Attribute;
+import sources.deprecated.CSVConnector;
+import sources.deprecated.Record;
+import sources.deprecated.TableInfo;
 
 public class CSVSource implements Source {
 

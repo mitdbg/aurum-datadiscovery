@@ -3,7 +3,7 @@ package sources.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import sources.main.SourceType;
+import sources.SourceType;
 
 public class GenericSource {
 

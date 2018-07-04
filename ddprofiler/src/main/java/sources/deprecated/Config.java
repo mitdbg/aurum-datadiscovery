@@ -6,7 +6,7 @@
  *
  */
 
-package sources.connectors;
+package sources.deprecated;
 
 import java.io.FileInputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package sources;
+package sources.deprecated;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -8,12 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.Conductor;
+import sources.SourceType;
+import sources.SourceUtils;
 import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
-import sources.main.DBUtils;
-import sources.main.SourceType;
-import sources.tasks.ProfileTask_old;
-import sources.tasks.ProfileTaskFactory;
 
 public class PostgresSource implements Source_old {
 
@@ -37,9 +35,9 @@ public class PostgresSource implements Source_old {
 	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
 
 	// FIXME: remove this enum; simplify this
-	Connection dbConn = DBUtils.getDBConnection(SourceType.postgres, ip, port, db_name, username, password);
+	Connection dbConn = SourceUtils.getDBConnection(SourceType.postgres, ip, port, db_name, username, password);
 
-	List<String> tables = DBUtils.getTablesFromDatabase(dbConn, dbschema);
+	List<String> tables = SourceUtils.getTablesFromDatabase(dbConn, dbschema);
 	try {
 	    dbConn.close();
 	} catch (SQLException e) {

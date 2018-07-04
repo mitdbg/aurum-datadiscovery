@@ -2,7 +2,7 @@ package preanalysis;
 
 import java.util.List;
 
-import sources.connectors.Attribute.AttributeType;
+import sources.deprecated.Attribute.AttributeType;
 
 public class Values {
 

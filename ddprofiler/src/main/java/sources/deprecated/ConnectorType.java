@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.deprecated;
 
 public enum ConnectorType {
   DB,

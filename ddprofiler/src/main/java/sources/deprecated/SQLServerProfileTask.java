@@ -1,23 +1,29 @@
-package sources.tasks;
+package sources.deprecated;
 
-import sources.config.HiveSourceConfig;
+import sources.SourceType;
+import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.Connector;
-import sources.connectors.HiveConnector;
-import sources.main.SourceType;
 
-public class HiveProfileTask implements ProfileTask_old {
+public class SQLServerProfileTask implements ProfileTask_old {
 
     private int taskId;
-    private HiveConnector connector;
-    private HiveSourceConfig config;
+    private SQLServerConnector connector;
+    private SQLServerSourceConfig config;
 
-    public HiveProfileTask(HiveSourceConfig config) {
+    public SQLServerProfileTask(SQLServerSourceConfig config) {
 	this.config = config;
 	String sourceName = config.getSourceName();
 	String tableName = config.getRelationName();
 
-	HiveConnector dbc = new HiveConnector(config);
+	// Connection c = Old_DBConnector.getOrCreateConnector(sourceName,
+	// DBType.SQLSERVER, connIP, port, dbName, tableName,
+	// username, password);
+	//
+	// Old_DBConnector dbc = new Old_DBConnector(c, sourceName,
+	// DBType.SQLSERVER, connIP, port, dbName, tableName, username,
+	// password);
+
+	SQLServerConnector dbc = new SQLServerConnector(config);
 
 	int id = ProfileTaskFactory.computeTaskId(sourceName, tableName);
 	this.taskId = id;

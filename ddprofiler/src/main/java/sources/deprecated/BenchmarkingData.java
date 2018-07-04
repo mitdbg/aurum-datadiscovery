@@ -1,4 +1,4 @@
-package sources.connectors;
+package sources.deprecated;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;

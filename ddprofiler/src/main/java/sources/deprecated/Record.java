@@ -2,7 +2,7 @@
  * @author Sibo Wang
  *
  */
-package sources.connectors;
+package sources.deprecated;
 
 import java.util.ArrayList;
 import java.util.Arrays;

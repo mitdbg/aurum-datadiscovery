@@ -11,8 +11,8 @@ import org.junit.Test;
 import core.config.ProfilerConfig;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
-import sources.connectors.Attribute;
-import sources.connectors.CSVConnector;
+import sources.deprecated.Attribute;
+import sources.deprecated.CSVConnector;
 
 public class JustReadTest {
 

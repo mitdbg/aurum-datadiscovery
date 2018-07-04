@@ -27,65 +27,61 @@ import metrics.Metrics;
 import sources.Source;
 import sources.SourceType;
 import sources.SourceUtils;
-import sources.config.PostgresSourceConfig;
+import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
 import sources.deprecated.PostgresConnector;
 import sources.deprecated.Record;
 import sources.deprecated.TableInfo;
 
-public class PostgresSource implements Source {
+public class SQLServerSource implements Source {
 
-    final private Logger LOG = LoggerFactory.getLogger(PostgresSource.class.getName());
+    final private Logger LOG = LoggerFactory.getLogger(SQLServerSource.class.getName());
 
-    private PostgresSourceConfig config;
     private String relationName;
     private int tid;
+    private SQLServerSourceConfig config;
 
+    private TableInfo tableInfo;
     private Connection connection;
-
     private boolean initialized = false;
     private boolean firstTime = true;
-
     private Statement theStatement;
     private ResultSet theRS;
 
-    private TableInfo tableInfo;
+    // this was before in conductor, can we move it to 1 place per source?
+    public static Map<String, Connection> connectionPools = new HashMap<>();
 
     // Metrics
     private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
     private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
 
-    // this was before in conductor, can we move it to 1 place per source?
-    public static Map<String, Connection> connectionPools = new HashMap<>();
-
-    public PostgresSource(String relationName) {
+    public SQLServerSource(String relationName) {
 	this.relationName = relationName;
-	this.tid = SourceUtils.computeTaskId(this.config.getDatabase_name(), relationName);
+	this.tid = SourceUtils.computeTaskId(config.getDatabase_name(), relationName);
     }
 
     @Override
     public List<Source> processSource(SourceConfig config, Conductor c) {
-	assert (config instanceof PostgresSourceConfig);
+	assert (config instanceof SQLServerSourceConfig);
 
-	PostgresSourceConfig postgresConfig = (PostgresSourceConfig) config;
-	this.config = postgresConfig;
+	SQLServerSourceConfig sqlServerConfig = (SQLServerSourceConfig) config;
+	this.config = sqlServerConfig;
 
 	List<Source> tasks = new ArrayList<>();
 
 	// TODO: at this point we'll be harnessing metadata from the source
 
-	String ip = postgresConfig.getDb_server_ip();
-	String port = new Integer(postgresConfig.getDb_server_port()).toString();
-	String db_name = postgresConfig.getDatabase_name();
-	String username = postgresConfig.getDb_username();
-	String password = postgresConfig.getDb_password();
+	String ip = sqlServerConfig.getDb_server_ip();
+	String port = new Integer(sqlServerConfig.getDb_server_port()).toString();
+	String db_name = sqlServerConfig.getDatabase_name();
+	String username = sqlServerConfig.getDb_username();
+	String password = sqlServerConfig.getDb_password();
 	String dbschema = "default";
 
 	LOG.info("Conn to DB on: {}:{}/{}", ip, port, db_name);
 
-	// FIXME: remove this enum; simplify this
-	Connection dbConn = SourceUtils.getDBConnection(SourceType.postgres, ip, port, db_name, username, password);
+	Connection dbConn = SourceUtils.getDBConnection(SourceType.sqlserver, ip, port, db_name, username, password);
 
 	List<String> tables = SourceUtils.getTablesFromDatabase(dbConn, dbschema);
 	try {
@@ -93,21 +89,17 @@ public class PostgresSource implements Source {
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	}
-	for (String relation : tables) {
-	    LOG.info("Detected relational table: {}", relation);
-
-	    PostgresSourceConfig relationPostgresSourceConfig = (PostgresSourceConfig) postgresConfig.selfCopy();
-	    relationPostgresSourceConfig.setRelationName(relation);
-
-	    PostgresSource ps = new PostgresSource(relation);
-	    tasks.add(ps);
+	for (String relationName : tables) {
+	    LOG.info("Detected relational table: {}", relationName);
+	    SQLServerSource sss = new SQLServerSource(relationName);
+	    tasks.add(sss);
 	}
 	return tasks;
     }
 
     @Override
     public SourceType getSourceType() {
-	return SourceType.postgres;
+	return SourceType.sqlserver;
     }
 
     @Override
@@ -117,7 +109,7 @@ public class PostgresSource implements Source {
 
     @Override
     public String getRelationName() {
-	return this.relationName;
+	return relationName;
     }
 
     @Override
@@ -156,20 +148,22 @@ public class PostgresSource implements Source {
 	String connPath = config.getDatabase_name();
 	String username = config.getDb_username();
 	String password = config.getDb_password();
+	String dbName = config.getDatabase_name();
 
 	String connIdentifier = config.getDatabase_name() + ip + port;
 
 	if (this.connectionPools.containsKey(connIdentifier)) {
 	    this.connection = this.connectionPools.get(connIdentifier);
+	    return;
 	}
 
 	try {
-	    Class.forName("org.postgresql.Driver");
+	    Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 	} catch (ClassNotFoundException e1) {
 	    // TODO Auto-generated catch block
 	    e1.printStackTrace();
 	}
-	String cPath = "jdbc:postgresql://" + ip + ":" + port + "/" + connPath;
+	String cPath = "jdbc:sqlserver://" + ip + ":" + port + "; databaseName=" + dbName;
 
 	// If no existing pool to handle this db, then we create a new one
 	HikariConfig config = new HikariConfig();
@@ -191,6 +185,36 @@ public class PostgresSource implements Source {
 	this.connectionPools.put(connIdentifier, connection);
 
 	this.connection = connection;
+    }
+
+    private boolean read(int num, List<Record> rec_list) throws SQLException {
+	if (firstTime) {
+	    handleFirstTime(num);
+	    firstTime = false;
+	}
+
+	boolean new_row = false;
+
+	while (num > 0 && theRS.next()) { // while there are some available and
+					  // we need to read more records
+	    new_row = true;
+
+	    num--;
+	    // FIXME: profile and optimize this
+	    Record rec = new Record();
+	    for (int i = 0; i < this.tableInfo.getTableAttributes().size(); i++) {
+		Object obj = theRS.getObject(i + 1);
+		if (obj != null) {
+		    String v1 = obj.toString();
+		    rec.getTuples().add(v1);
+		} else {
+		    rec.getTuples().add("");
+		}
+	    }
+	    rec_list.add(rec);
+	}
+
+	return new_row;
     }
 
     @Override
@@ -227,36 +251,6 @@ public class PostgresSource implements Source {
 	    }
 	}
 	return data;
-    }
-
-    private boolean read(int num, List<Record> rec_list) throws SQLException {
-	if (firstTime) {
-	    handleFirstTime(num);
-	    firstTime = false;
-	}
-
-	boolean new_row = false;
-
-	while (num > 0 && theRS.next()) { // while there are some available and
-					  // we need to read more records
-	    new_row = true;
-
-	    num--;
-	    // FIXME: profile and optimize this
-	    Record rec = new Record();
-	    for (int i = 0; i < this.tableInfo.getTableAttributes().size(); i++) {
-		Object obj = theRS.getObject(i + 1);
-		if (obj != null) {
-		    String v1 = obj.toString();
-		    rec.getTuples().add(v1);
-		} else {
-		    rec.getTuples().add("");
-		}
-	    }
-	    rec_list.add(rec);
-	}
-
-	return new_row;
     }
 
     private boolean handleFirstTime(int fetchSize) {

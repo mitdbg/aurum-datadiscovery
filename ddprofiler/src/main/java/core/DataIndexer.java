@@ -3,7 +3,7 @@ package core;
 import java.util.Map;
 
 import preanalysis.Values;
-import sources.connectors.Attribute;
+import sources.deprecated.Attribute;
 
 public interface DataIndexer {
 

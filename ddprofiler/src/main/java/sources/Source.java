@@ -1,4 +1,4 @@
-package sources.main;
+package sources;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import core.Conductor;
 import sources.config.SourceConfig;
-import sources.connectors.Attribute;
+import sources.deprecated.Attribute;
 
 public interface Source {
 

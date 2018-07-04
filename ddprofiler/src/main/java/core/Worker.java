@@ -18,11 +18,11 @@ import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
-import sources.connectors.Attribute;
-import sources.connectors.BenchmarkingData;
-import sources.connectors.Connector;
-import sources.connectors.Attribute.AttributeType;
-import sources.tasks.ProfileTask_old;
+import sources.deprecated.Attribute;
+import sources.deprecated.BenchmarkingData;
+import sources.deprecated.Connector;
+import sources.deprecated.ProfileTask_old;
+import sources.deprecated.Attribute.AttributeType;
 import store.Store;
 
 public class Worker implements Runnable {

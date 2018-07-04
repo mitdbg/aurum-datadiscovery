@@ -1,4 +1,4 @@
-package sources;
+package sources.deprecated;
 
 import java.io.File;
 
@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 import core.Conductor;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
-import sources.tasks.ProfileTask_old;
-import sources.tasks.ProfileTaskFactory;
 
 public class CSVSource_old implements Source_old {
 

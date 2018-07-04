@@ -1,10 +1,8 @@
-package sources.tasks;
+package sources.deprecated;
 
+import sources.SourceType;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
-import sources.connectors.CSVConnector;
-import sources.connectors.Connector;
-import sources.main.SourceType;
 
 public class CSVProfileTask implements ProfileTask_old {
 
