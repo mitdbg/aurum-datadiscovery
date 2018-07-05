@@ -22,7 +22,6 @@ import com.codahale.metrics.Counter;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import core.Conductor;
 import metrics.Metrics;
 import sources.Source;
 import sources.SourceType;
@@ -30,7 +29,6 @@ import sources.SourceUtils;
 import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
-import sources.deprecated.PostgresConnector;
 import sources.deprecated.Record;
 import sources.deprecated.TableInfo;
 
@@ -53,11 +51,15 @@ public class PostgresSource implements Source {
     private TableInfo tableInfo;
 
     // Metrics
-    private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
-    private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
+    private Counter error_records = Metrics.REG.counter((name(PostgresSource.class, "error", "records")));
+    private Counter success_records = Metrics.REG.counter((name(PostgresSource.class, "success", "records")));
 
     // this was before in conductor, can we move it to 1 place per source?
     public static Map<String, Connection> connectionPools = new HashMap<>();
+
+    public PostgresSource() {
+
+    }
 
     public PostgresSource(String relationName) {
 	this.relationName = relationName;
@@ -65,7 +67,7 @@ public class PostgresSource implements Source {
     }
 
     @Override
-    public List<Source> processSource(SourceConfig config, Conductor c) {
+    public List<Source> processSource(SourceConfig config) {
 	assert (config instanceof PostgresSourceConfig);
 
 	PostgresSourceConfig postgresConfig = (PostgresSourceConfig) config;
@@ -112,7 +114,7 @@ public class PostgresSource implements Source {
 
     @Override
     public String getPath() {
-	return null;
+	return config.getPath();
     }
 
     @Override
@@ -275,6 +277,18 @@ public class PostgresSource implements Source {
 	    return false;
 	}
 	return true;
+    }
+
+    @Override
+    public void close() {
+	try {
+	    // this.connection.close();
+	    this.theRS.close();
+	    this.theStatement.close();
+	} catch (SQLException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
     }
 
 }

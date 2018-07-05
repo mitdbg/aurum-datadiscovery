@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Counter;
 
 import au.com.bytecode.opencsv.CSVReader;
-import core.Conductor;
 import metrics.Metrics;
 import sources.Source;
 import sources.SourceType;
@@ -25,7 +24,6 @@ import sources.SourceUtils;
 import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
-import sources.deprecated.CSVConnector;
 import sources.deprecated.Record;
 import sources.deprecated.TableInfo;
 
@@ -43,8 +41,12 @@ public class CSVSource implements Source {
 
     // metrics
     private long lineCounter = 0;
-    private Counter error_records = Metrics.REG.counter((name(CSVConnector.class, "error", "records")));
-    private Counter success_records = Metrics.REG.counter((name(CSVConnector.class, "success", "records")));
+    private Counter error_records = Metrics.REG.counter((name(CSVSource.class, "error", "records")));
+    private Counter success_records = Metrics.REG.counter((name(CSVSource.class, "success", "records")));
+
+    public CSVSource() {
+
+    }
 
     public CSVSource(String path, String relationName) {
 	this.tid = SourceUtils.computeTaskId(path, relationName);
@@ -73,7 +75,7 @@ public class CSVSource implements Source {
     }
 
     @Override
-    public List<Source> processSource(SourceConfig config, Conductor c) {
+    public List<Source> processSource(SourceConfig config) {
 	assert (config instanceof CSVSourceConfig);
 
 	this.config = (CSVSourceConfig) config;
@@ -180,6 +182,15 @@ public class CSVSource implements Source {
 	    rec_list.add(rec);
 	}
 	return read_lines;
+    }
+
+    @Override
+    public void close() {
+	try {
+	    fileReader.close();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
     }
 
 }

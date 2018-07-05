@@ -25,6 +25,7 @@ public class CSVSourceConfig implements SourceConfig {
 	return separator;
     }
 
+    @Deprecated
     public void setPath(String path) {
 	this.path = path;
     }
@@ -52,6 +53,7 @@ public class CSVSourceConfig implements SourceConfig {
 	return relationName;
     }
 
+    @Deprecated
     public void setRelationName(String relationName) {
 	this.relationName = relationName;
     }

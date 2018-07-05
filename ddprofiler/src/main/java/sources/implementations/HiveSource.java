@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Counter;
 
-import core.Conductor;
 import metrics.Metrics;
 import sources.Source;
 import sources.SourceType;
@@ -27,7 +26,6 @@ import sources.SourceUtils;
 import sources.config.HiveSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
-import sources.deprecated.PostgresConnector;
 import sources.deprecated.Record;
 import sources.deprecated.TableInfo;
 
@@ -47,8 +45,12 @@ public class HiveSource implements Source {
     private ResultSet theRS;
 
     // Metrics
-    private Counter error_records = Metrics.REG.counter((name(PostgresConnector.class, "error", "records")));
-    private Counter success_records = Metrics.REG.counter((name(PostgresConnector.class, "success", "records")));
+    private Counter error_records = Metrics.REG.counter((name(PostgresSource.class, "error", "records")));
+    private Counter success_records = Metrics.REG.counter((name(PostgresSource.class, "success", "records")));
+
+    public HiveSource() {
+
+    }
 
     public HiveSource(String relationName) {
 	this.relationName = relationName;
@@ -56,7 +58,7 @@ public class HiveSource implements Source {
     }
 
     @Override
-    public List<Source> processSource(SourceConfig config, Conductor c) {
+    public List<Source> processSource(SourceConfig config) {
 	assert (config instanceof HiveSourceConfig);
 
 	HiveSourceConfig hiveConfig = (HiveSourceConfig) config;
@@ -98,7 +100,7 @@ public class HiveSource implements Source {
 
     @Override
     public String getPath() {
-	return null;
+	return config.getPath();
     }
 
     @Override
@@ -218,6 +220,18 @@ public class HiveSource implements Source {
 	    return false;
 	}
 	return true;
+    }
+
+    @Override
+    public void close() {
+	try {
+	    // this.connection.close();
+	    this.theRS.close();
+	    this.theStatement.close();
+	} catch (SQLException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
     }
 
 }

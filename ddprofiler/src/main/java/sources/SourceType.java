@@ -10,6 +10,10 @@ import sources.config.HiveSourceConfig;
 import sources.config.PostgresSourceConfig;
 import sources.config.SQLServerSourceConfig;
 import sources.config.SourceConfig;
+import sources.implementations.CSVSource;
+import sources.implementations.HiveSource;
+import sources.implementations.PostgresSource;
+import sources.implementations.SQLServerSource;
 
 public enum SourceType {
     // CSV source
@@ -43,5 +47,20 @@ public enum SourceType {
 		    + "you register your SourceConfig with its respective class in SourceType.java");
 	}
 	return sc;
+    }
+
+    public static Source instantiateSourceOfType(SourceType st) {
+	switch (st) {
+	case csv:
+	    return new CSVSource();
+	case postgres:
+	    return new PostgresSource();
+	case sqlserver:
+	    return new SQLServerSource();
+	case hive:
+	    return new HiveSource();
+	default:
+	    return null;
+	}
     }
 }

@@ -10,10 +10,12 @@ public interface SourceConfig {
 
     public void setSourceName(String sourceName);
 
+    @Deprecated
     public String getRelationName();
 
     public String getPath();
 
+    @Deprecated
     public SourceConfig selfCopy();
 
 }

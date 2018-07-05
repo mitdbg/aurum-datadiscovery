@@ -22,7 +22,7 @@ import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
 import metrics.Metrics;
 import opennlp.tools.namefind.TokenNameFinderModel;
-import sources.deprecated.ProfileTask_old;
+import sources.Source;
 import store.Store;
 
 public class Conductor {
@@ -32,7 +32,7 @@ public class Conductor {
     private ProfilerConfig pc;
     private File errorLogFile;
 
-    private BlockingQueue<ProfileTask_old> taskQueue;
+    private BlockingQueue<Source> taskQueue;
     private List<Worker> activeWorkers;
     private List<Thread> workerPool;
     private BlockingQueue<WorkerTaskResult> results;
@@ -106,7 +106,7 @@ public class Conductor {
 	}
     }
 
-    public boolean submitTask(ProfileTask_old task) {
+    public boolean submitTask(Source task) {
 	totalTasksSubmitted++;
 	return taskQueue.add(task);
     }

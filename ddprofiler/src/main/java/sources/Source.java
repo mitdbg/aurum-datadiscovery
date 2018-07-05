@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-import core.Conductor;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
 
@@ -18,7 +17,7 @@ public interface Source {
      * @param config
      * @param c
      */
-    public List<Source> processSource(SourceConfig config, Conductor c);
+    public List<Source> processSource(SourceConfig config);
 
     /**
      * Return the source type
@@ -75,5 +74,10 @@ public interface Source {
      * @throws SQLException
      */
     public Map<Attribute, List<String>> readRows(int num) throws IOException, SQLException;
+
+    /**
+     * Cease existing. Free all resources consumed by this Source
+     */
+    public void close();
 
 }
