@@ -8,6 +8,7 @@ import java.util.List;
 
 import au.com.bytecode.opencsv.CSVReader;
 
+@Deprecated
 public class BenchmarkingData {
 
     public List<Attribute> attributes;

@@ -25,7 +25,6 @@ import sources.config.CSVSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
 import sources.deprecated.Record;
-import sources.deprecated.TableInfo;
 
 public class CSVSource implements Source {
 
@@ -37,7 +36,8 @@ public class CSVSource implements Source {
     private CSVSourceConfig config;
     private boolean initialized = false;
     private CSVReader fileReader;
-    private TableInfo tableInfo;
+    // private TableInfo tableInfo;
+    private List<Attribute> attributes;
 
     // metrics
     private long lineCounter = 0;
@@ -48,10 +48,11 @@ public class CSVSource implements Source {
 
     }
 
-    public CSVSource(String path, String relationName) {
+    public CSVSource(String path, String relationName, SourceConfig config) {
 	this.tid = SourceUtils.computeTaskId(path, relationName);
 	this.path = path;
 	this.relationName = relationName;
+	this.config = (CSVSourceConfig) config;
     }
 
     @Override
@@ -98,7 +99,7 @@ public class CSVSource implements Source {
 		String path = f.getParent() + File.separator;
 		String name = f.getName();
 		// Make the csv config specific to the relation
-		CSVSource task = new CSVSource(path, name);
+		CSVSource task = new CSVSource(path, name, config);
 		totalFiles++;
 		// c.submitTask(pt);
 		tasks.add(task);
@@ -116,9 +117,16 @@ public class CSVSource implements Source {
 
     @Override
     public List<Attribute> getAttributes() throws IOException, SQLException {
+	if (!initialized) {
+	    String path = this.path + this.relationName;
+	    char separator = this.config.getSeparator().charAt(0);
+	    fileReader = new CSVReader(new FileReader(path), separator);
+	    initialized = true;
+	}
 	// assume that the first row is the attributes;
 	if (lineCounter != 0) {
-	    return tableInfo.getTableAttributes();
+	    // return tableInfo.getTableAttributes();
+	    return attributes;
 	}
 	String[] attributes = fileReader.readNext();
 	lineCounter++;
@@ -128,6 +136,7 @@ public class CSVSource implements Source {
 	    Attribute attr = new Attribute(attributes[i]);
 	    attrList.add(attr);
 	}
+	this.attributes = attrList;
 	return attrList;
     }
 

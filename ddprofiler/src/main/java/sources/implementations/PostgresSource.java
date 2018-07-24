@@ -30,7 +30,6 @@ import sources.config.PostgresSourceConfig;
 import sources.config.SourceConfig;
 import sources.deprecated.Attribute;
 import sources.deprecated.Record;
-import sources.deprecated.TableInfo;
 
 public class PostgresSource implements Source {
 
@@ -48,7 +47,7 @@ public class PostgresSource implements Source {
     private Statement theStatement;
     private ResultSet theRS;
 
-    private TableInfo tableInfo;
+    private List<Attribute> attributes;
 
     // Metrics
     private Counter error_records = Metrics.REG.counter((name(PostgresSource.class, "error", "records")));
@@ -61,8 +60,9 @@ public class PostgresSource implements Source {
 
     }
 
-    public PostgresSource(String relationName) {
+    public PostgresSource(String relationName, PostgresSourceConfig config) {
 	this.relationName = relationName;
+	this.config = config;
 	this.tid = SourceUtils.computeTaskId(this.config.getDatabase_name(), relationName);
     }
 
@@ -101,7 +101,7 @@ public class PostgresSource implements Source {
 	    PostgresSourceConfig relationPostgresSourceConfig = (PostgresSourceConfig) postgresConfig.selfCopy();
 	    relationPostgresSourceConfig.setRelationName(relation);
 
-	    PostgresSource ps = new PostgresSource(relation);
+	    PostgresSource ps = new PostgresSource(relation, relationPostgresSourceConfig);
 	    tasks.add(ps);
 	}
 	return tasks;
@@ -124,8 +124,12 @@ public class PostgresSource implements Source {
 
     @Override
     public List<Attribute> getAttributes() throws IOException, SQLException {
-	if (tableInfo.getTableAttributes() != null)
-	    return tableInfo.getTableAttributes();
+	if (!initialized) {
+	    initializeConnection();
+	}
+	if (this.attributes != null) {
+	    return this.attributes;
+	}
 	DatabaseMetaData metadata = connection.getMetaData();
 	ResultSet resultSet = metadata.getColumns(null, null, config.getRelationName(), null);
 	Vector<Attribute> attrs = new Vector<Attribute>();
@@ -137,7 +141,7 @@ public class PostgresSource implements Source {
 	    attrs.addElement(attr);
 	}
 	resultSet.close();
-	tableInfo.setTableAttributes(attrs);
+	this.attributes = attrs;
 	return attrs;
     }
 
@@ -163,6 +167,7 @@ public class PostgresSource implements Source {
 
 	if (this.connectionPools.containsKey(connIdentifier)) {
 	    this.connection = this.connectionPools.get(connIdentifier);
+	    return;
 	}
 
 	try {
@@ -246,7 +251,7 @@ public class PostgresSource implements Source {
 	    num--;
 	    // FIXME: profile and optimize this
 	    Record rec = new Record();
-	    for (int i = 0; i < this.tableInfo.getTableAttributes().size(); i++) {
+	    for (int i = 0; i < this.attributes.size(); i++) {
 		Object obj = theRS.getObject(i + 1);
 		if (obj != null) {
 		    String v1 = obj.toString();
