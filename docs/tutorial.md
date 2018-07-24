@@ -14,7 +14,9 @@ Soon...
 
 ### How to consume new databases and files
 
-Soon...
+Aurum can read from multiple databases and other repositories. If you need to
+read data from a repository that is not currently supported you can follow [this
+guide](connector.md).
 
 ### Export network to neo4j graph database
 
