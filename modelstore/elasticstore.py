@@ -48,6 +48,10 @@ class StoreHandler:
                                          'hits.hits._source.path'
                                          ]
                             )
+        if res['hits']['total'] == 0:
+            print("!!!")
+            print("nid not found in store: are you using the right EKG and store?")
+            print("!!!")
         hits = res['hits']['hits']
         if len(hits) > 1:
             # TODO: handle some error here, nids should be unique

@@ -56,8 +56,10 @@ def find_key_for(relation_path, key, attribute, value):
     try:
         key_value_df = df[df[attribute].map(lambda x: str(x).lower()) == value][[key]]
     except KeyError:
-        print("wtf")
-        a = 1
+        print("!!!")
+        print("Attempt to access attribute: '" + str(attribute) + "' from relation: " + str(df.columns))
+        print("Attempt to project attribute: '" + str(key) + "' from relation: " + str(df.columns))
+        print("!!!")
     return {x[0] for x in key_value_df.values}
 
 
