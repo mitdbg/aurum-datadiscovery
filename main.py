@@ -18,12 +18,12 @@ def print_md(string):
 
 
 #@DeprecationWarning
-def __init_system(path_to_serialized_model, reporting=True):
+def __init_system(path_to_serialized_model, create_reporting=True):
     print_md('Loading: *' + str(path_to_serialized_model) + "*")
     sl = time.time()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     api = oldAPI(network)
-    if reporting:
+    if create_reporting:
         reporting = Report(network)
     api.init_store()
     api.help()
@@ -32,13 +32,13 @@ def __init_system(path_to_serialized_model, reporting=True):
     return api, reporting
 
 
-def init_system(path_to_serialized_model, reporting=False):
+def init_system(path_to_serialized_model, create_reporting=False):
     print_md('Loading: *' + str(path_to_serialized_model) + "*")
     sl = time.time()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     store_client = StoreHandler()
     api = API(network=network, store_client=store_client)
-    if reporting:
+    if create_reporting:
         reporting = Report(network)
     api.helper.help()
     el = time.time()
