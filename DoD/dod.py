@@ -585,6 +585,34 @@ class DoD:
 
             if filters is None:
                 # This means we are in an intermediate hop with no filters, as it's only connecting
+                # we still need to hook connect the carrying values
+                r_path = self.aurum_api.helper.get_path_nid(r.nid)
+                x_to_remove = set()
+                for x, payload in tree_valid_filters.items():
+                    carrying_filters, carrying_values = payload
+                    if carrying_values[0] is None and carrying_values[1] is None:
+                        # propagate the None None because all values work
+                        tree_for_level[x] = (carrying_filters, (None, None))
+                        continue
+                    values_to_carry = set()
+                    # attr = carrying_values[1]
+                    for carrying_value in carrying_values[0]:
+                        path = r_path + "/" + r.source_name
+                        exists = dpu.is_value_in_column(carrying_value, path, r.field_name)
+                        if exists:
+                            values_to_carry.add(carrying_value)  # this one checks
+                    if len(values_to_carry) > 0:
+                        # here we update the tree at the current level
+                        tree_for_level[x] = (carrying_filters, (values_to_carry, r.field_name))
+                    else:
+                        return False, set()  # non joinable, stop trying
+                        # x_to_remove.add(x)
+                # remove if any
+                for x in x_to_remove:
+                    del tree_for_level[x]  # no more results here, need to prune
+                tree_valid_filters = tree_for_level
+                if len(tree_valid_filters.items()) == 0:
+                    return False, set()  # early stop
                 continue
             if filters is not None:
                 # sort filters so cell type come first
