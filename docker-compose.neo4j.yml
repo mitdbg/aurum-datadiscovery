@@ -1,0 +1,126 @@
+# For a simple Aurum setup, install Docker Compose
+# <https://docs.docker.com/compose/install/> and run these commands:
+#
+# 1. docker-compose up -d elasticsearch
+#     Brings up an elasticsearch instance using the data located at data/elasticsearch. This data persists even if you destroy and recreate the elasticsearch Docker container.
+# 2. docker-compose up profiler
+#     Runs the ddprofiler with the CSVs located in data/csvs. Writes to the above elasticsearch container.
+# 3. docker-compose up nbc
+# 4. docker-compose up -d neodb
+#    Run the neo4j instance,user='neo4j',password='aurum'
+# 5. docker-compose up network2neo4j
+#     Runs networkbuildercoordinator.py with the above elasticsearch and saves its files to data/pickles.
+# 6. docker-compose up notebook
+#     Runs a Jupyter notebook with Aurum libraries and the above pickles from data/pickles.
+# 7. docker-compose up frontend
+#     Runs the web frontend and API on http://localhost:3000 and http://localhost:5000 respectively. Uses pickles from data/pickles.
+
+version: '3'
+
+networks:
+  aurum_net:
+    driver: bridge
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.1
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      aurum_net:
+        aliases:
+          - elasticsearch
+
+  profiler:
+    depends_on:
+      - elasticsearch
+    image: aurum/ddprofiler
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-ddprofiler
+    volumes:
+      - ./data:/data
+    command: ""  # "<profiler args here>"
+    networks:
+      aurum_net:
+        aliases:
+          - profiler
+
+  nbc:
+    depends_on:
+      - elasticsearch
+    image: aurum/networkbuildercoordinator
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-networkbuildercoordinator
+    volumes:
+      - ./data/models:/output
+    networks:
+      aurum_net:
+        aliases:
+          - nbc
+  neodb:
+    image: neo4j:3.3
+    volumes:
+      - ./data/neo4j-data:/data
+      - ./data/neo4j-logs:/logs
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO$J_AUTH=neo4j/aurum
+    networks:
+      aurum_net:
+        aliases:
+          - neo4j
+
+  network2neo4j:
+    image: aurum/network2neo4j
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-network-2-neo4j
+    volumes:
+      - ./data/models:/output
+    command: --neo_url bolt://neo4j:7687
+    networks:
+      aurum_net:
+        aliases:
+          - n2n
+
+  notebook:
+    depends_on:
+      - elasticsearch
+    image: aurum/notebook
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-jupyter-notebook
+    volumes:
+      - ./data/models:/data/models
+    ports:
+      - 8888:8888
+    networks:
+      aurum_net:
+        aliases:
+          - notebook
+
+#  frontend:
+#    depends_on:
+#      - elasticsearch
+#    image: aurum/frontend
+#    build:
+#      context: .
+#      dockerfile: docker/Dockerfile-ui
+#    volumes:
+#      - ./data/models:/aurum/data/models
+#    ports:
+#      - 3000:3000
+#      - 5000:5000
+#    networks:
+#      aurum_net:
+#        aliases:
+#          - frontend
+
+

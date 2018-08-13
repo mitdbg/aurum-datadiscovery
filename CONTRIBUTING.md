@@ -24,3 +24,12 @@ the master branch, unless you know exactly what you are doing :)
  - Once you get a "+1" on the pull request, the change can be merged.
 
 *This contributing.md is based on that one from mediative/eigenflow, thanks!*
+
+### Code of Conduct
+
+Check the code of conduct for Aurum here: 
+
+https://github.com/mitdbg/aurum-datadiscovery/blob/master/README.md
+
+Please, report violations of the code of conduct by sending an email to
+raulcf@csail.mit.edu

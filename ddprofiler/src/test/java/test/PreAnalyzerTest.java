@@ -9,12 +9,12 @@ import java.util.Vector;
 
 import org.junit.Test;
 
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
-import inputoutput.connectors.PostgresConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
+import sources.implementations.CSVSource;
+import sources.implementations.PostgresSource;
 
 public class PreAnalyzerTest {
 
@@ -82,7 +82,7 @@ public class PreAnalyzerTest {
 
     @Test
     public void testRegExpPerformance() {
-	PreAnalyzer pa = new PreAnalyzer();
+	PreAnalyzer pa = new PreAnalyzer(null);
 	final int NUM_TEST_STRINGS = 1000000;
 	final double DOUBLE_RANGLE_MIN = 1.0;
 	final double DOUBLE_RANGLE_MAX = 10000000.0;
@@ -124,10 +124,10 @@ public class PreAnalyzerTest {
     public void testPreAnalyzerForTypesCSVFile() throws IOException {
 
 	// FIXME: create config on the fly
-	CSVConnector fc = new CSVConnector(null);
+	CSVSource fc = new CSVSource();
 
-	PreAnalyzer pa = new PreAnalyzer();
-	pa.composeConnector(fc);
+	PreAnalyzer pa = new PreAnalyzer(null);
+	pa.assignSourceTask(fc);
 	System.out.println("------------begin type checking with FileConnector");
 	typeChecking(pa);
 	System.out.println("------------finish type checking with FileConnector");
@@ -141,10 +141,10 @@ public class PreAnalyzerTest {
 	// password);
 
 	// FIXME: create config on the fly
-	PostgresConnector dbc = new PostgresConnector(null);
+	PostgresSource dbc = new PostgresSource();
 
-	PreAnalyzer pa = new PreAnalyzer();
-	pa.composeConnector(dbc);
+	PreAnalyzer pa = new PreAnalyzer(null);
+	pa.assignSourceTask(dbc);
 	System.out.println("------------begin type checking with DBConnector");
 	typeChecking(pa);
 	System.out.println("------------finish type checking with DBConnector");

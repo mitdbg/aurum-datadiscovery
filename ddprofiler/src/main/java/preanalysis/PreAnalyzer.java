@@ -16,17 +16,19 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.Connector;
+import core.config.ProfilerConfig;
+import sources.Source;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 
     final private Logger LOG = LoggerFactory.getLogger(PreAnalyzer.class.getName());
 
-    private Connector c;
+    private Source task;
     private List<Attribute> attributes;
     private boolean knownDataTypes = false;
+    private ProfilerConfig pc;
 
     private static final Pattern _DOUBLE_PATTERN = Pattern
 	    .compile("[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)"
@@ -39,6 +41,10 @@ public class PreAnalyzer implements PreAnalysis, IO {
 
     private final static String[] BANNED = { "", "nan" };
 
+    public PreAnalyzer(ProfilerConfig pc) {
+	this.pc = pc;
+    }
+
     /**
      * Implementation of IO interface
      * 
@@ -49,7 +55,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
     public Map<Attribute, Values> readRows(int num) {
 	Map<Attribute, List<String>> data = null;
 	try {
-	    data = c.readRows(num);
+	    data = task.readRows(num);
 	    if (data == null)
 		return null;
 	} catch (IOException | SQLException e) {
@@ -128,7 +134,13 @@ public class PreAnalyzer implements PreAnalysis, IO {
 	    // Only if the type is not already known
 	    if (!a.getColumnType().equals(AttributeType.UNKNOWN))
 		continue;
-	    AttributeType aType = typeOfValue(e.getValue());
+	    AttributeType aType;
+	    if (pc.getBoolean(ProfilerConfig.EXPERIMENTAL)) {
+		// In experimental mode - force all data to be strings
+		aType = AttributeType.STRING;
+	    } else {
+		aType = typeOfValue(e.getValue());
+	    }
 	    if (aType == null) {
 		continue; // Means that data was dirty/anomaly, so skip value
 	    }
@@ -238,10 +250,10 @@ public class PreAnalyzer implements PreAnalysis, IO {
      */
 
     @Override
-    public void composeConnector(Connector c) {
-	this.c = c;
+    public void assignSourceTask(Source task) {
+	this.task = task;
 	try {
-	    this.attributes = c.getAttributes();
+	    this.attributes = task.getAttributes();
 	} catch (IOException | SQLException e) {
 	    e.printStackTrace();
 	}

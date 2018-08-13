@@ -21,139 +21,20 @@ class Algebra:
     def __init__(self, network, store_client):
         self._network = network
         self._store_client = store_client
-
-    """
-    Metadata API
-    """
-    def annotate(self, author: str, text: str, md_class: MDClass,
-        general_source, ref={"general_target": None, "type": None}) -> MRS:
-        """
-        Create a new annotation in the elasticsearch graph.
-        :param author: identifiable name of user or process
-        :param text: free text description
-        :param md_class: MDClass
-        :param general_source: nid, node tuple, Hit, or DRS
-        :param ref: (optional) {
-            "general_target": nid, node tuple, Hit, or DRS,
-            "type": MDRelation
-        }
-        :return: MRS of the new metadata
-        """
-        source = self._general_to_drs(general_source)
-        target = self._general_to_drs(ref["general_target"])
-
-        if source.mode != DRSMode.FIELDS or target.mode != DRSMode.FIELDS:
-            raise ValueError("source and targets must be columns")
-
-        md_class = self._mdclass_to_str(md_class)
-        md_hits = []
-
-        # non-relational metadata
-        if ref["type"] is None:
-            for hit_source in source:
-                res = self._store_client.add_annotation(
-                    author=author,
-                    text=text,
-                    md_class=md_class,
-                    source=hit_source.nid)
-                md_hits.append(res)
-            return MRS(md_hits)
-
-        # relational metadata
-        md_relation, nid_is_source = self._mdrelation_to_str(ref["type"])
-        if not nid_is_source:
-            source, target = target, source
-
-        for hit_source in source:
-            for hit_target in target:
-                res = self._store_client.add_annotation(
-                    author=author,
-                    text=text,
-                    md_class=md_class,
-                    source=hit_source.nid,
-                    target={"id": hit_target.nid, "type": md_relation})
-                md_hits.append(res)
-            return MRS(md_hits)
-
-    def add_comments(self, author: str, comments: list, md_id: str) -> MRS:
-        """
-        Add comments to the annotation with the given md_id.
-        :param author: identifiable name of user or process
-        :param comments: list of free text comments
-        :param md_id: metadata id
-        """
-        md_comments = []
-        for comment in comments:
-            res = self._store_client.add_comment(
-                author=author, text=comment, md_id=md_id)
-            md_comments.append(res)
-        return MRS(md_comments)
-
-    def add_tags(self, author: str, tags: list, md_id: str):
-        """
-        Add tags/keywords to metadata with the given md_id.
-        :param md_id: metadata id
-        :param tags: a list of tags to add
-        """
-        return self._store_client.add_tags(author, tags, md_id)
-
-    def md_search(self, general_input=None,
-                        relation: MDRelation=None) -> MRS:
-        """
-        Searches for metadata that reference the nodes in the general
-        input. If a relation is given, searches for metadata that mention the
-        nodes as the source of the relation. If no parameters are given,
-        searches for all metadata.
-        :param general_input: nid, node tuple, Hit, or DRS
-        :param relation: an MDRelation
-        """
-        # return all metadata
-        if general_input is None:
-            return MRS([x for x in self._store_client.get_metadata()])
-
-        drs_nodes = self._general_to_drs(general_input)
-        if drs_nodes.mode != DRSMode.FIELDS:
-            raise ValueError("general_input must be columns")
-
-        # return metadata that reference the input
-        if relation is None:
-            md_hits = []
-            for node in drs_nodes:
-                md_hits.extend(self._store_client.get_metadata(nid=node.nid))
-            return MRS(md_hits)
-
-        # return metadata that reference the input with the given relation
-        md_hits = []
-        store_relation, nid_is_source = self._mdrelation_to_str(relation)
-        for node in drs_nodes:
-            md_hits.extend(self._store_client.get_metadata(nid=node.nid,
-                relation=store_relation, nid_is_source=nid_is_source))
-        return MRS(md_hits)
-
-    def md_keyword_search(self, kw: str, max_results=10) -> MRS:
-        """
-        Performs a keyword search over metadata annotations and comments.
-        :param kw: the keyword to search
-        :param max_results: maximum number of results to return
-        :return: returns a MRS
-        """
-        hits = self._store_client.search_keywords_md(
-            keywords=kw, max_hits=max_results)
-
-        mrs = MRS([x for x in hits])
-        return mrs
+        self.helper = Helper(network=network, store_client=store_client)
 
     """
     Basic API
     """
 
-    def keyword_search(self, kw: str, kw_type: KWType, max_results=10) -> DRS:
+    def search(self, kw: str, kw_type: KWType, max_results=10) -> DRS:
         """
         Performs a keyword search over the contents of the data.
         Scope specifies where elasticsearch should be looking for matches.
         i.e. table titles (SOURCE), columns (FIELD), or comment (SOURCE)
 
         :param kw: the keyword to serch
+        :param kw_type: the context type on which to search
         :param max_results: maximum number of results to return
         :return: returns a DRS
         """
@@ -165,17 +46,40 @@ class Algebra:
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
         return drs
 
-    def neighbor_search(self,
-                        general_input,
-                        relation: Relation,
-                        max_hops=None):
+    def exact_search(self, kw: str, kw_type: KWType, max_results=10):
+        """
+        See 'search'. This only returns exact matches.
+        """
+
+        hits = self._store_client.exact_search_keywords(
+            keywords=kw, elasticfieldname=kw_type, max_hits=max_results)
+
+        # materialize generator
+        drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))
+        return drs
+
+    def search_content(self, kw: str, max_results=10) -> DRS:
+        return self.search(kw, kw_type=KWType.KW_CONTENT, max_results=max_results)
+
+    def search_attribute(self, kw: str, max_results=10) -> DRS:
+        return self.search(kw, kw_type=KWType.KW_SCHEMA, max_results=max_results)
+
+    def search_exact_attribute(self, kw: str, max_results=10) -> DRS:
+        return self.exact_search(kw, kw_type=KWType.KW_SCHEMA, max_results=max_results)
+
+    def search_table(self, kw: str, max_results=10) -> DRS:
+        return self.search(kw, kw_type=KWType.KW_TABLE, max_results=max_results)
+
+    def __neighbor_search(self,
+                        input_data,
+                        relation: Relation):
         """
         Given an nid, node, hit or DRS, finds neighbors with specified
         relation.
         :param nid, node tuple, Hit, or DRS:
         """
         # convert whatever input to a DRS
-        i_drs = self._general_to_drs(general_input)
+        i_drs = self._general_to_drs(input_data)
 
         # prepare an output DRS
         o_drs = DRS([], Operation(OP.NONE))
@@ -197,6 +101,15 @@ class Algebra:
                 hits_drs = self._network.md_neighbors_id(h, neighbors, relation)
                 o_drs = o_drs.absorb(hits_drs)
         return o_drs
+
+    def content_similar_to(self, general_input):
+        return self.__neighbor_search(input_data=general_input, relation=Relation.CONTENT_SIM)
+
+    def schema_similar_to(self, general_input):
+        return self.__neighbor_search(input_data=general_input, relation=Relation.SCHEMA_SIM)
+
+    def pkfk_of(self, general_input):
+        return self.__neighbor_search(input_data=general_input, relation=Relation.PKFK)
 
     """
     TC API
@@ -242,7 +155,7 @@ class Algebra:
 
         return o_drs
 
-    def traverse(self, a: DRS, primitive, max_hops=2) -> DRS:
+    def __traverse(self, a: DRS, primitive, max_hops=2) -> DRS:
         """
         Conduct a breadth first search of nodes matching a primitive, starting
         with an initial DRS.
@@ -263,7 +176,7 @@ class Algebra:
         while max_hops > 0:
             max_hops = max_hops - 1
             for h in fringe:
-                hits_drs = self.__network.neighbors_id(h, primitive)
+                hits_drs = self._network.neighbors_id(h, primitive)
                 o_drs = self.union(o_drs, hits_drs)
             fringe = o_drs  # grow the initial input
         return o_drs
@@ -321,11 +234,11 @@ class Algebra:
     """
 
     def make_drs(self, general_input):
-        '''
+        """
         Makes a DRS from general_input.
         general_input can include an array of strings, Hits, DRS's, etc,
         or just a single DRS.
-        '''
+        """
         try:
 
             # If this is a list of inputs, condense it into a single drs
@@ -350,6 +263,13 @@ class Algebra:
                 'id, drs/hit/string/int] )' +
                 '\ne.g.:\n\tmake_drs(1600820766)')
             print(msg)
+
+    def drs_from_table_hit(self, hit: Hit) -> DRS:
+        # TODO: migrated from old ddapi as there's no good swap
+        table = hit.source_name
+        hits = self._network.get_hits_from_table(table)
+        drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]))
+        return drs
 
     def _general_to_drs(self, general_input) -> DRS:
         """
@@ -498,9 +418,184 @@ class Algebra:
         except:
             return False
 
+    """
+    Metadata API
+    """
+
+    # Hide these for the time-being
+
+    def __annotate(self, author: str, text: str, md_class: MDClass,
+                 general_source, ref={"general_target": None, "type": None}) -> MRS:
+        """
+        Create a new annotation in the elasticsearch graph.
+        :param author: identifiable name of user or process
+        :param text: free text description
+        :param md_class: MDClass
+        :param general_source: nid, node tuple, Hit, or DRS
+        :param ref: (optional) {
+            "general_target": nid, node tuple, Hit, or DRS,
+            "type": MDRelation
+        }
+        :return: MRS of the new metadata
+        """
+        source = self._general_to_drs(general_source)
+        target = self._general_to_drs(ref["general_target"])
+
+        if source.mode != DRSMode.FIELDS or target.mode != DRSMode.FIELDS:
+            raise ValueError("source and targets must be columns")
+
+        md_class = self._mdclass_to_str(md_class)
+        md_hits = []
+
+        # non-relational metadata
+        if ref["type"] is None:
+            for hit_source in source:
+                res = self._store_client.add_annotation(
+                    author=author,
+                    text=text,
+                    md_class=md_class,
+                    source=hit_source.nid)
+                md_hits.append(res)
+            return MRS(md_hits)
+
+        # relational metadata
+        md_relation, nid_is_source = self._mdrelation_to_str(ref["type"])
+        if not nid_is_source:
+            source, target = target, source
+
+        for hit_source in source:
+            for hit_target in target:
+                res = self._store_client.add_annotation(
+                    author=author,
+                    text=text,
+                    md_class=md_class,
+                    source=hit_source.nid,
+                    target={"id": hit_target.nid, "type": md_relation})
+                md_hits.append(res)
+            return MRS(md_hits)
+
+    def __add_comments(self, author: str, comments: list, md_id: str) -> MRS:
+        """
+        Add comments to the annotation with the given md_id.
+        :param author: identifiable name of user or process
+        :param comments: list of free text comments
+        :param md_id: metadata id
+        """
+        md_comments = []
+        for comment in comments:
+            res = self._store_client.add_comment(
+                author=author, text=comment, md_id=md_id)
+            md_comments.append(res)
+        return MRS(md_comments)
+
+    def __add_tags(self, author: str, tags: list, md_id: str):
+        """
+        Add tags/keywords to metadata with the given md_id.
+        :param md_id: metadata id
+        :param tags: a list of tags to add
+        """
+        return self._store_client.add_tags(author, tags, md_id)
+
+    def __md_search(self, general_input=None,
+                  relation: MDRelation = None) -> MRS:
+        """
+        Searches for metadata that reference the nodes in the general
+        input. If a relation is given, searches for metadata that mention the
+        nodes as the source of the relation. If no parameters are given,
+        searches for all metadata.
+        :param general_input: nid, node tuple, Hit, or DRS
+        :param relation: an MDRelation
+        """
+        # return all metadata
+        if general_input is None:
+            return MRS([x for x in self._store_client.get_metadata()])
+
+        drs_nodes = self._general_to_drs(general_input)
+        if drs_nodes.mode != DRSMode.FIELDS:
+            raise ValueError("general_input must be columns")
+
+        # return metadata that reference the input
+        if relation is None:
+            md_hits = []
+            for node in drs_nodes:
+                md_hits.extend(self._store_client.get_metadata(nid=node.nid))
+            return MRS(md_hits)
+
+        # return metadata that reference the input with the given relation
+        md_hits = []
+        store_relation, nid_is_source = self._mdrelation_to_str(relation)
+        for node in drs_nodes:
+            md_hits.extend(self._store_client.get_metadata(nid=node.nid,
+                                                           relation=store_relation, nid_is_source=nid_is_source))
+        return MRS(md_hits)
+
+    def __md_keyword_search(self, kw: str, max_results=10) -> MRS:
+        """
+        Performs a keyword search over metadata annotations and comments.
+        :param kw: the keyword to search
+        :param max_results: maximum number of results to return
+        :return: returns a MRS
+        """
+        hits = self._store_client.search_keywords_md(
+            keywords=kw, max_hits=max_results)
+
+        mrs = MRS([x for x in hits])
+        return mrs
+
+
+class Helper:
+
+    def __init__(self, network, store_client):
+        self._network = network
+        self._store_client = store_client
+
+    def reverse_lookup(self, nid) -> [str]:
+        info = self._network.get_info_for([nid])
+        return info
+
+    def get_path_nid(self, nid) -> str:
+        path_str = self._store_client.get_path_of(nid)
+        return path_str
+
+    def help(self):
+        """
+        Prints general help information, or specific usage information of a function if provided
+        :param function: an optional function
+        """
+        from IPython.display import Markdown, display
+
+        def print_md(string):
+            display(Markdown(string))
+
+        # Check whether the request is for some specific function
+        #if function is not None:
+        #    print_md(self.function.__doc__)
+        # If not then offer the general help menu
+        #else:
+        print_md("### Help Menu")
+        print_md("You can use the system through an **API** object. API objects are returned"
+                 "by the *init_system* function, so you can get one by doing:")
+        print_md("***your_api_object = init_system('path_to_stored_model')***")
+        print_md("Once you have access to an API object there are a few concepts that are useful "
+                 "to use the API. **content** refers to actual values of a given field. For "
+                 "example, if you have a table with an attribute called __Name__ and values *Olu, Mike, Sam*, content "
+                 "refers to the actual values, e.g. Mike, Sam, Olu.")
+        print_md("**schema** refers to the name of a given field. In the previous example, schema refers to the word"
+                 "__Name__ as that's how the field is called.")
+        print_md("Finally, **entity** refers to the *semantic type* of the content. This is in experimental state. For "
+                 "the previous example it would return *'person'* as that's what those names refer to.")
+        print_md("Certain functions require a *field* as input. In general a field is specified by the source name ("
+                 "e.g. table name) and the field name (e.g. attribute name). For example, if we are interested in "
+                 "finding content similar to the one of the attribute *year* in the table *Employee* we can provide "
+                 "the field in the following way:")
+        print(
+            "field = ('Employee', 'year') # field = [<source_name>, <field_name>)")
+
 
 class API(Algebra):
     def __init__(self, *args, **kwargs):
+        # print(str(type(API)))
+        # print(str(type(self)))
         super(API, self).__init__(*args, **kwargs)
 
 

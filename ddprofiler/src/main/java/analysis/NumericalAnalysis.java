@@ -4,7 +4,7 @@
 package analysis;
 
 import analysis.modules.Range;
-import inputoutput.Attribute.AttributeType;
+import sources.deprecated.Attribute.AttributeType;
 
 /**
  * @author Raul - raulcf@csail.mit.edu

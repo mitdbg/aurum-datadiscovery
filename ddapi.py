@@ -104,7 +104,7 @@ class DDAPI:
         :param max_results: the maximum number of results to return
         :return: returns a DRS
         """
-        hits = store_client.search_keywords(kw, KWType.KW_TEXT, max_results)
+        hits = store_client.search_keywords(kw, KWType.KW_CONTENT, max_results)
         drs = DRS([x for x in hits], Operation(OP.KW_LOOKUP, params=[kw]))  # materialize generator
         return drs
 
@@ -613,6 +613,7 @@ class API(DDAPI):
         # create store handler
         global store_client
         store_client = StoreHandler()
+
 
 if __name__ == '__main__':
     print("Aurum API")

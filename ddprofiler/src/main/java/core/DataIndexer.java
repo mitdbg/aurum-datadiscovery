@@ -2,8 +2,8 @@ package core;
 
 import java.util.Map;
 
-import inputoutput.Attribute;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
 
 public interface DataIndexer {
 

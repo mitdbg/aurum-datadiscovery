@@ -16,29 +16,29 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
-import core.tasks.ProfileTask;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.BenchmarkingData;
-import inputoutput.connectors.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.Source;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
+import sources.deprecated.BenchmarkingData;
 import store.Store;
 
 public class Worker implements Runnable {
 
     final private Logger LOG = LoggerFactory.getLogger(Worker.class.getName());
+    private ProfilerConfig pc;
 
     private final int pseudoRandomSeed = 1;
 
     private Conductor conductor;
     private boolean doWork = true;
     private String workerName;
-    private ProfileTask task;
+    private Source task;
     private int numRecordChunk;
     private Store store;
 
-    private BlockingQueue<ProfileTask> taskQueue;
+    private BlockingQueue<Source> taskQueue;
     private BlockingQueue<ErrorPackage> errorQueue;
 
     // Benchmark variables
@@ -48,7 +48,7 @@ public class Worker implements Runnable {
     // cached object
     private EntityAnalyzer ea;
 
-    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<ProfileTask> taskQueue,
+    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<Source> taskQueue,
 	    BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
 	this.conductor = conductor;
 	this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
@@ -57,24 +57,25 @@ public class Worker implements Runnable {
 	this.workerName = workerName;
 	this.taskQueue = taskQueue;
 	this.errorQueue = errorQueue;
+	this.pc = pc;
     }
 
     public void stop() {
 	this.doWork = false;
     }
 
-    private ProfileTask pullTask() {
+    private Source pullTask() {
 	// Attempt to consume new task
-	ProfileTask pt = null;
+	Source task = null;
 	try {
-	    pt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-	    if (pt == null) {
+	    task = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+	    if (task == null) {
 		return null;
 	    }
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
-	return pt;
+	return task;
     }
 
     @Override
@@ -91,15 +92,15 @@ public class Worker implements Runnable {
 		    continue;
 		}
 
-		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(),
-			"path<check>", task.getSourceConfig().getRelationName());
+		String path = task.getPath();
+		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(), path,
+			task.getRelationName());
 
 		// Access attributes and attribute type through first read
-		Connector c = task.getConnector();
-		PreAnalyzer pa = new PreAnalyzer();
-		pa.composeConnector(c);
+		PreAnalyzer pa = new PreAnalyzer(pc);
+		pa.assignSourceTask(task);
 
-		LOG.info("Worker: {} processing: {}", workerName, task.getSourceConfig().getRelationName());
+		LOG.info("Worker: {} processing: {}", workerName, task.getRelationName());
 
 		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
 		if (initData == null) {
@@ -109,13 +110,13 @@ public class Worker implements Runnable {
 
 		// Read initial records to figure out attribute types etc
 		// FIXME: readFirstRecords(initData, analyzers);
-		readFirstRecords(task.getSourceConfig().getSourceName(), "path<check>", initData, analyzers, indexer);
+		readFirstRecords(task.getSourceConfig().getSourceName(), path, initData, analyzers, indexer);
 
 		// Consume all remaining records from the connector
 		Map<Attribute, Values> data = pa.readRows(numRecordChunk);
 		int records = 0;
 		while (data != null) {
-		    indexer.indexData(task.getSourceConfig().getSourceName(), "path<check>", data);
+		    indexer.indexData(task.getSourceConfig().getSourceName(), path, data);
 		    records = records + data.size();
 		    Conductor.recordsPerSecond.mark(records);
 		    // Do the processing
@@ -130,8 +131,8 @@ public class Worker implements Runnable {
 		// FIXME: WorkerTaskResultHolder wtrf = new
 		// WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(),
 		// analyzers);
-		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(),
-			"path<check>", task.getSourceConfig().getRelationName(), c.getAttributes(), analyzers);
+		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(), path,
+			task.getRelationName(), task.getAttributes(), analyzers);
 
 		// List<WorkerTaskResult> rs =
 		// WorkerTaskResultHolder.makeFakeOne();

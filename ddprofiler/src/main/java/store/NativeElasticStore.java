@@ -52,16 +52,14 @@ public class NativeElasticStore implements Store {
     @Override
     public void initStore() {
 	// Create native client
-try {
-        Settings settings = Settings.builder().put("client.transport.sniff",
-false)
-            .put("client.transport.ignore_cluster_name", true).build();
-        client = new PreBuiltTransportClient(settings)
-            .addTransportAddress(new
-TransportAddress(InetAddress.getByName(storeServer), storePort));
-    } catch (UnknownHostException e) {
-        e.printStackTrace();
-    }
+	try {
+	    Settings settings = Settings.builder().put("client.transport.sniff", false)
+		    .put("client.transport.ignore_cluster_name", true).build();
+	    client = new PreBuiltTransportClient(settings)
+		    .addTransportAddress(new TransportAddress(InetAddress.getByName(storeServer), storePort));
+	} catch (UnknownHostException e) {
+	    e.printStackTrace();
+	}
 
 	// Create bulk processor
 	bulkProcessor = BulkProcessor.builder(client, new BulkProcessor.Listener() {
@@ -87,10 +85,18 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 	    }
 
 	}).setBulkActions(-1).setBulkSize(new ByteSizeValue(50, ByteSizeUnit.MB))
-		.setFlushInterval(TimeValue.timeValueSeconds(5)).setConcurrentRequests(1) // Means requests are queud
-											  // while a bulkrequest is in
+		.setFlushInterval(TimeValue.timeValueSeconds(5)).setConcurrentRequests(1) // Means
+											  // requests
+											  // are
+											  // queud
+											  // while
+											  // a
+											  // bulkrequest
+											  // is
+											  // in
 											  // progress
-		.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) // just default
+		.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(100), 3)) // just
+												       // default
 		.build();
 
 	XContentBuilder set = null;
@@ -106,7 +112,8 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 
 	    // set.startObject("char_filter");
 	    // set.startObject("csv_to_none");
-	    // set.field("type", "mapping").field("mappings").startArray().value(".csv=>
+	    // set.field("type",
+	    // "mapping").field("mappings").startArray().value(".csv=>
 	    // ").endArray();
 	    // set.endObject();
 	    // set.endObject();
@@ -148,11 +155,13 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 
 	// String settings = "{"
 	//
-	// + "\"analysis\": {" + "\"char_filter\": {" + "\"_to-\": {" + "\"type\":
+	// + "\"analysis\": {" + "\"char_filter\": {" + "\"_to-\": {" +
+	// "\"type\":
 	// \"mapping\","
 	// + "\"mappings\": [\"_=>-\"]" + "}" + "},"
 	//
-	// + "\"char_filter\": {" + "\"csv_to_none\": {" + "\"type\": \"mapping\"," +
+	// + "\"char_filter\": {" + "\"csv_to_none\": {" + "\"type\":
+	// \"mapping\"," +
 	// "\"mappings\": [\".csv=> \"]"
 	// + "}" + "},"
 	//
@@ -160,7 +169,8 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 	// "\"stopwords\": \"_english_\""
 	// + "}," + "\"english_stemmer\": {" + " \"type\": \"stemmer\"," + "
 	// \"language\": \"english\""
-	// + "}," + "\"english_possessive_stemmer\": {" + " \"type\": \"stemmer\","
+	// + "}," + "\"english_possessive_stemmer\": {" + " \"type\":
+	// \"stemmer\","
 	// + " \"language\": \"possessive_english\"" + "}" + "},"
 	//
 	// + "\"analyzer\": {" + "\"aurum_analyzer\": {" + "\"tokenizer\":
@@ -220,29 +230,42 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 	// String profileMapping = "{ \"properties\" : "
 	//
 	// + "{ \"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-	// + "\"dbName\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"dbName\" : {\"type\" : \"string\", \"index\" :
+	// \"not_analyzed\"},"
 	// + "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-	// + "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-	// + "\"sourceName\" : {\"type\" : \"string\"," + "\"index\" : \"analyzed\", "
+	// + "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" :
+	// \"not_analyzed\"},"
+	// + "\"sourceName\" : {\"type\" : \"string\"," + "\"index\" :
+	// \"analyzed\", "
 	// + "\"analyzer\" : \"aurum_analyzer\"},"
-	// + "\"columnNameNA\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-	// + "\"columnName\" : {\"type\" : \"string\", " + "\"index\" : \"analyzed\", "
+	// + "\"columnNameNA\" : {\"type\" : \"string\", \"index\" :
+	// \"not_analyzed\"},"
+	// + "\"columnName\" : {\"type\" : \"string\", " + "\"index\" :
+	// \"analyzed\", "
 	// + "\"analyzer\" : \"aurum_analyzer\"},"
 	//
-	// + "\"dataType\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
+	// + "\"dataType\" : {\"type\" : \"string\", \"index\" :
+	// \"not_analyzed\"},"
 	//
-	// + "\"totalValues\" : {\"type\" : \"integer\", \"index\" : \"not_analyzed\"},"
+	// + "\"totalValues\" : {\"type\" : \"integer\", \"index\" :
+	// \"not_analyzed\"},"
 	// + "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" :
 	// \"not_analyzed\"},"
-	// + "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"}," //
+	// + "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"},"
+	// //
 	// array
-	// + "\"minhash\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}," //
+	// + "\"minhash\" : {\"type\" : \"long\", \"index\" :
+	// \"not_analyzed\"}," //
 	// array
-	// + "\"minValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-	// + "\"maxValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
-	// + "\"avgValue\" : {\"type\" : \"float\", \"index\" : \"not_analyzed\"},"
+	// + "\"minValue\" : {\"type\" : \"float\", \"index\" :
+	// \"not_analyzed\"},"
+	// + "\"maxValue\" : {\"type\" : \"float\", \"index\" :
+	// \"not_analyzed\"},"
+	// + "\"avgValue\" : {\"type\" : \"float\", \"index\" :
+	// \"not_analyzed\"},"
 	// + "\"median\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-	// + "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}" + "} }";
+	// + "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}" +
+	// "} }";
 
 	XContentBuilder profile_mapping = null;
 	try {
@@ -257,13 +280,13 @@ TransportAddress(InetAddress.getByName(storeServer), storePort));
 	    profile_mapping.field("type", "keyword").field("index", "false");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("sourceNameNA");
-	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.field("type", "keyword").field("index", "true");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("sourceName");
 	    profile_mapping.field("type", "text").field("index", "true").field("analyzer", "aurum_analyzer");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("columnNameNA");
-	    profile_mapping.field("type", "keyword").field("index", "false");
+	    profile_mapping.field("type", "keyword").field("index", "true");
 	    profile_mapping.endObject();
 	    profile_mapping.startObject("columnName");
 	    profile_mapping.field("type", "text").field("index", "true").field("analyzer", "aurum_analyzer");

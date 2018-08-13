@@ -11,7 +11,7 @@ import config as c
 
 
 class KWType(Enum):
-    KW_TEXT = 0
+    KW_CONTENT = 0
     KW_SCHEMA = 1
     KW_ENTITIES = 2
     KW_TABLE = 3
@@ -48,8 +48,12 @@ class StoreHandler:
                                          'hits.hits._source.path'
                                          ]
                             )
+        if res['hits']['total'] == 0:
+            print("!!!")
+            print("nid not found in store: are you using the right EKG and store?")
+            print("!!!")
         hits = res['hits']['hits']
-        if len(hits) > 0:
+        if len(hits) > 1:
             # TODO: handle some error here, nids should be unique
             print("ERROR: nid not unique when querying for path?")
         hit = hits[0]
@@ -123,7 +127,7 @@ class StoreHandler:
             hits = res['hits']['hits']
             for h in hits:
                 toret = []
-                toret.append(h['_id'])
+                toret.append(str(h['_id']))
                 toret.append(h['_source']['sourceName'])
                 toret.append(h['_source']['columnName'])
                 for attr in attrs:
@@ -136,6 +140,47 @@ class StoreHandler:
                                 )
             scroll_id = res['_scroll_id']  # update the scroll_id
         client.clear_scroll(scroll_id=scroll_id)
+
+    def exact_search_keywords(self, keywords, elasticfieldname, max_hits=15):
+        """
+        Like search_keywords, but returning only exact results
+        :param keywords:
+        :param elasticfieldname:
+        :param max_hits:
+        :return:
+        """
+        index = None
+        query_body = None
+        filter_path = ['hits.hits._source.id',
+                       'hits.hits._score',
+                       'hits.total',
+                       'hits.hits._source.dbName',
+                       'hits.hits._source.sourceName',
+                       'hits.hits._source.columnName']
+        if elasticfieldname == KWType.KW_CONTENT:
+            index = "text"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"text": keywords}}}
+        elif elasticfieldname == KWType.KW_SCHEMA:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"columnNameNA": keywords}}}
+        elif elasticfieldname == KWType.KW_ENTITIES:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"entities": keywords}}}
+        elif elasticfieldname == KWType.KW_TABLE:
+            index = "profile"
+            query_body = {"from": 0, "size": max_hits,
+                          "query": {"term": {"sourceNameNA": keywords}}}
+        res = client.search(index=index, body=query_body,
+                            filter_path=filter_path)
+        if res['hits']['total'] == 0:
+            return []
+        for el in res['hits']['hits']:
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
+                       el['_source']['columnName'], el['_score'])
+            yield data
 
     def search_keywords(self, keywords, elasticfieldname, max_hits=15):
         """
@@ -152,7 +197,7 @@ class StoreHandler:
                        'hits.hits._source.dbName',
                        'hits.hits._source.sourceName',
                        'hits.hits._source.columnName']
-        if elasticfieldname == KWType.KW_TEXT:
+        if elasticfieldname == KWType.KW_CONTENT:
             index = "text"
             query_body = {"from": 0, "size": max_hits,
                           "query": {"match": {"text": keywords}}}
@@ -173,7 +218,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 
@@ -207,7 +252,7 @@ class StoreHandler:
         if res['hits']['total'] == 0:
             return []
         for el in res['hits']['hits']:
-            data = Hit(el['_source']['id'], el['_source']['dbName'], el['_source']['sourceName'],
+            data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
 
