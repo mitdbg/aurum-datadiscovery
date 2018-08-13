@@ -36,13 +36,13 @@ services:
   profiler:
     depends_on:
       - elasticsearch
-    image: aurum/ddprofiler
+    image: aurum/ddprofiler:0.1
     build:
       context: .
       dockerfile: docker/Dockerfile-ddprofiler
     volumes:
       - ./data:/data
-    command: ""  # "<profiler args here>"
+    command: " --store.server elasticsearch --sources /data/mitdwhdata.yml"  # "<profiler args here>"
     networks:
       aurum_net:
         aliases:
@@ -51,7 +51,7 @@ services:
   nbc:
     depends_on:
       - elasticsearch
-    image: aurum/networkbuildercoordinator
+    image: aurum/networkbuildercoordinator:0.1
     build:
       context: .
       dockerfile: docker/Dockerfile-networkbuildercoordinator
