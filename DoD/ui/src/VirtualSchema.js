@@ -1,19 +1,22 @@
 import React, { Component } from 'react';
 import VirtualSchemaControl from './VirtualSchemaControl';
+import CellValue from './CellValue';
 
-function TableCell(props) {
-	return (
-		<td>
-			<p>Hi!</p>
-		</td>
-	)
 
-}
+//function TableCell(props) {
+//	return (
+//		<td>
+//			<p>Hi!</p>
+//		</td>
+//	)
+//
+//}
 
 function TableRow(props) {
 	var row_columns = [];
 	for (var j = 0; j < props.columns; j++) {
-		row_columns.push(<TableCell key={j}/>);
+		//row_columns.push(<TableCell key={j}/>);
+		row_columns.push(<CellValue key={j}/>);
 	}
 	return (
 		<tr>{row_columns}</tr>
