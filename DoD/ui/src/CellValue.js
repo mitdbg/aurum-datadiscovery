@@ -4,21 +4,29 @@ class CellValue extends React.Component {
 
     constructor(props) {
         super(props);
-        this.state = {value: "hi!"};
+        this.rowId = props.rowId;
+        this.columnId = props.columnId;
+        this.cellKey = this.rowId + "-" + this.columnId;
+        this.onVSChange = props.onVSChange;
+        this.handleChange = this.handleChange.bind(this);
     }
 
-    //	<p>{this.state.value}</p>
-    // value="hi!" required
+    handleChange(event) {
+        var newValue = event.target.value;
+        this.onVSChange(this.rowId, this.columnId, newValue);
+    }
+
 
     render() {
         return (
             <td>
 			    <input type="text" id="display-name" name="ip-display"
                    pattern="[A-Za-z\s]+"
-                   maxlength="10"
-                   minlength="0"
-                   value={this.state.value}
-                    />
+                   maxLength="10"
+                   minLength="0"
+                   value={this.value}
+                   onChange={this.handleChange}
+                />
 		    </td>
 		)
     }
