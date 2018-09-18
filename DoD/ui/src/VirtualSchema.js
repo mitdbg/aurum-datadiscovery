@@ -42,11 +42,12 @@ class VirtualSchema extends React.Component {
 		this.addColumn = this.addColumn.bind(this);
 		this.removeColumn = this.removeColumn.bind(this);
 		this.changeVS = this.changeVS.bind(this);
+		this.findView = this.findView.bind(this);
 
 		this.state = {
 			rows: 3,
 			columns: 3,
-			matrixValues: {} // key: "i"-"j" -> value
+			virtualSchemaValues: {} // key: "i"-"j" -> value
 		};
 	}
 
@@ -55,8 +56,8 @@ class VirtualSchema extends React.Component {
 	    this.setState((prevState) => {
             console.log(prevState);
             var cellId = rowId + "-" + columnId;
-            prevState.matrixValues[cellId] = newValue;
-            return {matrixValues: prevState.matrixValues};
+            prevState.virtualSchemaValues[cellId] = newValue;
+            return {virtualSchemaValues: prevState.virtualSchemaValues};
 	    });
 	}
 
@@ -96,6 +97,38 @@ class VirtualSchema extends React.Component {
 		);
 	}
 
+	findView() {
+	    var vsDefinition = this.state.virtualSchemaValues;
+        console.log(vsDefinition);
+
+        var payload = {};
+        payload['payload'] = JSON.stringify(vsDefinition);
+        var body = JSON.stringify(payload);
+
+        var response = fetch("http://127.0.0.1:5000/testpost", {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            credentials: 'same-origin',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            redirect: "follow",
+            referrer: "no-referrer",
+            body: body
+            })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log("SUCCESS: " + JSON.stringify(result));
+                },
+                (error) => {
+                    console.log("ERROR: " + error);
+                }
+            )
+        console.log(response);
+	}
+
 	render() {
 		return (
 			<div className="VirtualSchemaTable">
@@ -105,6 +138,7 @@ class VirtualSchema extends React.Component {
 									  remove_row={this.removeRow}
 									  add_column={this.addColumn}
 									  remove_column={this.removeColumn}
+									  find_view={this.findView}
 				/>
 			</div>
 		)

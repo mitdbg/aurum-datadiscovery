@@ -16,7 +16,7 @@ Django==1.10.5
 editdistance==0.2
 elasticsearch==6.0.0
 elasticsearch-dsl==2.0.0
-Flask==0.11.1
+Flask==1.0.2
 Flask-Cors==2.1.2
 gnureadline==6.3.3
 html5lib==0.999999999
@@ -26,7 +26,8 @@ ipython-genutils==0.1.0
 ipywidgets==4.1.1
 isodate==0.5.4
 itsdangerous==0.24
-Jinja2==2.8
+java-random==1.0
+Jinja2==2.10
 jsonschema==2.5.1
 jupyter==1.0.0
 jupyter-client==4.1.1
@@ -51,8 +52,10 @@ packaging==16.8
 pandas==0.19.2
 path.py==8.1.2
 pbr==1.10.0
+pdb==0.1
 pexpect==4.0.1
 pickleshare==0.5
+psycopg2==2.7.1
 ptyprocess==0.5
 pyfiglet==0.7.5
 Pygments==2.0.2
@@ -74,13 +77,14 @@ scikit-learn==0.19.1
 scipy==1.0.0
 simplegeneric==0.8.1
 six==1.10.0
+snakeviz==0.4.2
 SPARQLWrapper==1.8.0
 SQLAlchemy==1.0.12
 terminado==0.5
 tornado==4.3
 traitlets==4.0.0
 urllib3==1.15.1
+uWSGI==2.0.12
 webencodings==0.5
-Werkzeug==0.11.3
+Werkzeug==0.14.1
 yappi==0.94
-neo4j-driver
