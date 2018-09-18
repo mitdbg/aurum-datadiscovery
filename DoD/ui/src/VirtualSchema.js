@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import VirtualSchemaControl from './VirtualSchemaControl';
 import CellValue from './CellValue';
+import ResultViews from './ResultViews';
 
 
 function TableRow(props) {
@@ -105,7 +106,7 @@ class VirtualSchema extends React.Component {
         payload['payload'] = JSON.stringify(vsDefinition);
         var body = JSON.stringify(payload);
 
-        var response = fetch("http://127.0.0.1:5000/testpost", {
+        var response = fetch("http://127.0.0.1:5000/findvs", {
             method: "POST",
             mode: "cors",
             cache: "no-cache",
@@ -120,7 +121,9 @@ class VirtualSchema extends React.Component {
             .then(res => res.json())
             .then(
                 (result) => {
-                    console.log("SUCCESS: " + JSON.stringify(result));
+                    console.log("SUCCESS");
+                    var view = result['view'];
+                    document.getElementById('payload').innerHTML = view;
                 },
                 (error) => {
                     console.log("ERROR: " + error);
@@ -131,16 +134,46 @@ class VirtualSchema extends React.Component {
 
 	render() {
 		return (
-			<div className="VirtualSchemaTable">
+		    <div className="dummy">
+		      <div className="row">
+		        <div className="col-12 text-center title">
+		          <h1 className="mt-5">DoD: Dataset On Demand</h1>
+		        </div>
+		      </div>
 
-				<Table rows={this.state.rows} columns={this.state.columns} onVSChange={this.changeVS} />
-				<VirtualSchemaControl add_row={this.addRow}
+              <div className="row">
+
+                <div className="col-1 left-margin">
+                </div>
+
+                <div className="col-6">
+
+                  <div className="VirtualSchemaTable">
+
+				    <Table rows={this.state.rows} columns={this.state.columns} onVSChange={this.changeVS} />
+                    <ResultViews/>
+			      </div>
+
+                </div>
+                <div className="col-2 middle-margin">
+                </div>
+                <div className="col-2">
+                  <div className="VirtualSchemaControl">
+                    <VirtualSchemaControl add_row={this.addRow}
 									  remove_row={this.removeRow}
 									  add_column={this.addColumn}
 									  remove_column={this.removeColumn}
 									  find_view={this.findView}
-				/>
-			</div>
+				     />
+				   </div>
+                </div>
+
+                <div className="col-1 right-margin">
+                </div>
+
+              </div>
+            </div>
+
 		)
 	}
 	

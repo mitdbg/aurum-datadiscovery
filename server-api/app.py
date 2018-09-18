@@ -6,6 +6,7 @@ from flask import Flask, jsonify
 from flask import request
 from flask_cors import CORS, cross_origin
 import json
+import pandas as pd
 
 # move to top level and import some more things
 currentdir = os.path.dirname(
@@ -55,13 +56,6 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route('/findvs/<vsdefinition>')
-def findvs(vsdefinition):
-    print("Received: ")
-    print(str(vsdefinition))
-    return Ack()
-
-
 @app.route('/test')
 def test():
     return "received test ok"
@@ -76,6 +70,22 @@ def testpost():
         payload = json_request['payload']
         print("rcvd: " + str(payload))
         return jsonify({"myResp": "ok"})
+
+
+@app.route("/findvs", methods=['POST'])
+def findvs():
+    # print(request.get_json())
+    if request.method == 'POST':
+        # print(json.loads(request.data))
+        json_request = request.get_json()
+        payload = json_request['payload']
+
+        # dummy view for now
+        df = pd.read_csv("/Users/ra-mit/data/mitdwhdata/All_olap_columns.csv", encoding='latin1')
+        html_dataframe = df.to_html()
+
+        print("rcvd: " + str(payload))
+        return jsonify({"view": html_dataframe})
 
     # try:
     #     res = eval(query, {"__builtins__": None}, safe_dict)
