@@ -21,7 +21,7 @@ function ButtonPanel(props) {
 }
 
 
-class VirtualSchemaControl extends React.Component {
+class VirtualSchemaControl extends Component {
 	constructor(props) {
 		super(props);
 	}

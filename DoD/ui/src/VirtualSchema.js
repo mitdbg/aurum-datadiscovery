@@ -34,7 +34,7 @@ function Table(props) {
 	)
 }
 
-class VirtualSchema extends React.Component {
+class VirtualSchema extends Component {
 	constructor(props) {
 		super(props);
 		
@@ -173,7 +173,6 @@ class VirtualSchema extends React.Component {
 
               </div>
             </div>
-
 		)
 	}
 	

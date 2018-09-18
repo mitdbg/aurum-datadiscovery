@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 
-class ResultViews extends React.Component {
+class ResultViews extends Component {
 
     render() {
 		return (
