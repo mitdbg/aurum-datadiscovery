@@ -193,7 +193,7 @@ class DoD:
 
             # if not paths or graphs skip next
             # if len(join_path_groups) == 0 and len(group_with_all_relations) == 0:
-            if len(join_path_groups) == 0: # and len(group_with_all_relations) == 0:
+            if len(join_path_groups) == 0:  # and len(group_with_all_relations) == 0:
                 print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
                 continue
 
@@ -321,6 +321,66 @@ class DoD:
         for k, v in cache_unjoinable_pairs.items():
             print(str(k) + " => " + str(v))
 
+    def _joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int), max_hops=2):
+        """
+        Find all join graphs that connect the tables in group_tables. This boils down to check
+        whether there is (at least) a set of join paths which connect all tables.
+        :param group_tables:
+        :param cache_unjoinable_pairs: this set contains pairs of tables that do not join with each other
+        :return:
+        """
+        assert len(group_tables) > 1
+
+        # if not the size of group_tables, there won't be unique jps with all tables. that may not be good though
+        max_hops = max_hops
+
+        # for each pair of tables in group keep list of (path, tables_covered)
+        paths_per_pair = defaultdict(list)
+
+        for table1, table2 in itertools.combinations(group_tables, 2):
+            # Check if tables are already known to be unjoinable
+            if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
+                continue
+            t1 = self.aurum_api.make_drs(table1)
+            t2 = self.aurum_api.make_drs(table2)
+            t1.set_table_mode()
+            t2.set_table_mode()
+            drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+            paths = drs.paths()  # list of lists
+            # If we didn't find paths, update unjoinable_pairs cache with this pair
+            if len(paths) == 0:  # then store this info, these tables do not join
+                cache_unjoinable_pairs[(table1, table2)] += 1
+                cache_unjoinable_pairs[(table2, table1)] += 1
+
+            for p in paths:
+                tables_covered = set()
+                tables_in_group = set(group_tables)
+                for hop in p:
+                    if hop.source_name in tables_in_group:
+                        # this is a table covered by this path
+                        tables_covered.add(hop.source_name)
+                paths_per_pair[(table1, table2)].append((p, tables_covered))
+
+        # enumerate all possible join graphs
+        join_graphs = []
+        all_combinations = [el for el in itertools.product(list(paths_per_pair.values())[0])]
+        for path_combination in all_combinations:
+            total_tables_covered = set()
+            total_hops = 0
+            for path, tables_covered in path_combination:
+                if len(tables_covered) == len(group_tables):
+                    join_graphs.append(([path], len([hop for hop in path])))  # unique path covering all tables
+                    continue  # we want minimum join graphs, so we skip this one which is covers all tables by itself
+                total_tables_covered.add([el for el in tables_covered])
+                total_hops += len(path)
+            # Check if join graph is valid, if not just filter it out
+            if len(total_tables_covered) == len(group_tables):
+                join_graphs.append(([p for p, tables_covered in path_combination], total_hops))
+
+        # sort join_graph based on the length of the involved hops in each of them
+        join_graphs = sorted(join_graphs, key=lambda x: x[1], reverse=False)
+        return join_graphs
+
     def joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int), max_hops=2):
         """
         Check whether there is join graph that connects the tables in the group. This boils down to check
@@ -329,6 +389,7 @@ class DoD:
         :param cache_unjoinable_pairs: this set contains pairs of tables that do not join with each other
         :return:
         """
+        # FIXME: needs to consider the case of having multiple different strategies for joining the group
         assert len(group_tables) > 1
 
         # Check first with the cache whether these are unjoinable
@@ -342,8 +403,6 @@ class DoD:
 
         # if not the size of group_tables, there won't be unique jps with all tables. that may not be good though
         max_hops = max_hops
-
-        # group_with_all_tables = []
 
         join_path_groups_dict = dict()  # store groups, as many as pairs of tables in the group
         for table1, table2 in itertools.combinations(group_tables, 2):
@@ -397,80 +456,6 @@ class DoD:
             return [], []  # no jps covering all tables and empty groups => no join graph
         return join_path_groups_dict
 
-
-    def _joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int), max_hops=2):
-        """
-        Check whether there is join graph that connects the tables in the group. This boils down to check
-        whether there is a set of join paths which connect all tables.
-        :param group_tables:
-        :param cache_unjoinable_pairs: this set contains pairs of tables that do not join with each other
-        :return:
-        """
-        assert len(group_tables) > 1
-
-        # Check first with the cache whether these are unjoinable
-        for table1, table2 in itertools.combinations(group_tables, 2):
-            if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
-                # We count the attempt
-                cache_unjoinable_pairs[(table1, table2)] += 1
-                cache_unjoinable_pairs[(table2, table1)] += 1
-                print(table1 + " unjoinable to: " + table2 + " skipping...")
-                return [], []
-
-        # if not the size of group_tables, there won't be unique jps with all tables. that may not be good though
-        max_hops = max_hops
-
-        group_with_all_tables = []
-
-        join_path_groups_dict = dict()  # store groups, as many as pairs of tables in the group
-        for table1, table2 in itertools.combinations(group_tables, 2):
-            # if table1 == "Drupal_employee_directory.csv" and\
-            #                 table2 == "Employee_directory.csv" or\
-            #                 table2 == "Drupal_employee_directory.csv" and\
-            #                 table1 == "Employee_directory.csv":
-            #     a = 1
-            t1 = self.aurum_api.make_drs(table1)
-            t2 = self.aurum_api.make_drs(table2)
-            t1.set_table_mode()
-            t2.set_table_mode()
-            drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
-            paths = drs.paths()  # list of lists
-            group = []
-            if len(paths) == 0:  # then store this info, these tables do not join
-                cache_unjoinable_pairs[(table1, table2)] += 1
-                cache_unjoinable_pairs[(table2, table1)] += 1
-            for p in paths:
-                tables_covered = set(group_tables)
-                for hop in p:
-                    if hop.source_name in tables_covered:
-                        tables_covered.remove(hop.source_name)
-                if len(tables_covered) == 0:
-                    group_with_all_tables.append(p)  # this path covers all tables in group
-                else:
-                    group.append(p)
-            join_path_groups_dict[(table1, table2)] = group
-
-        # Remove invalid combinations from join_path_groups_dict
-        for i in range(len(group_tables)):
-            invalid = False
-            table1 = group_tables[i]
-            for table2 in group_tables[i + 1:]:
-                if len(join_path_groups_dict[(table1, table2)]) == 0:
-                    invalid = True
-            if invalid:
-                # table 1 does not join to all the others, so no join graph here
-                to_remove = set()
-                for k in join_path_groups_dict.keys():
-                    if k[0] == table1:
-                        to_remove.add(k)
-                for el in to_remove:
-                    del join_path_groups_dict[el]
-
-        # Now verify that it's possible to obtain a join graph from these jps
-        if len(group_with_all_tables) == 0:
-            if len(join_path_groups_dict.items()) == 0:
-                    return [], []  # no jps covering all tables and empty groups => no join graph
-        return group_with_all_tables, join_path_groups_dict
 
     def format_join_paths(self, join_paths):
         """
@@ -551,6 +536,9 @@ class DoD:
         return materializable_join_paths
 
     def verify_candidate_join_path(self, annotated_join_path):
+        """
+        TODO: what about materializing views of the tables that are filtered by the selection predicates?
+        """
         tree_valid_filters = dict()
         x = 0
         for filters, l, r in annotated_join_path:  # for each hop
@@ -778,8 +766,17 @@ def obtain_table_paths(set_nids, dod):
 
 
 def test_e2e(dod, number_jps=5):
-    attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    values = ["968548423", "kimball", "Mechanical Engineering"]
+
+    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    # values = ["968548423", "kimball", "Mechanical Engineering"]
+
+    # # cannot search for numbers
+    # attrs = ["s_name", "s_address", "ps_availqty"]
+    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
+
+    attrs = ["s_name", "s_address", "ps_comment"]
+    values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
+              "dly final packages haggle blithely according to the pending packages. slyly regula"]
 
     # attrs = ["Subject", "Title", "Publisher"]
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
@@ -860,10 +857,11 @@ if __name__ == "__main__":
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
-    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
-    sep = ","
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
+    # sep = ","
+    sep = "|"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 
