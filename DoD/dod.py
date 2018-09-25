@@ -388,7 +388,6 @@ class DoD:
             if len(paths) == 0:  # then store this info, these tables do not join
                 cache_unjoinable_pairs[(table1, table2)] += 1
                 cache_unjoinable_pairs[(table2, table1)] += 1
-
             for p in paths:
                 tables_covered = set()
                 tables_in_group = set(group_tables)
@@ -400,15 +399,16 @@ class DoD:
 
         # enumerate all possible join graphs
         join_graphs = []
-        all_combinations = [el for el in itertools.product(list(paths_per_pair.values())[0])]
+        all_combinations = [el for el in itertools.product(*list(paths_per_pair.values()))]
         for path_combination in all_combinations:
+            path_combination = path_combination[0]  # unpack the combination
             total_tables_covered = set()
             total_hops = 0
             for path, tables_covered in path_combination:
                 if len(tables_covered) == len(group_tables):
                     join_graphs.append(([path], len([hop for hop in path])))  # unique path covering all tables
                     continue  # we want minimum join graphs, so we skip this one which is covers all tables by itself
-                total_tables_covered.add([el for el in tables_covered])
+                total_tables_covered.update(tables_covered)
                 total_hops += len(path)
             # Check if join graph is valid, if not just filter it out
             if len(total_tables_covered) == len(group_tables):
@@ -492,7 +492,6 @@ class DoD:
         if len(join_path_groups_dict.items()) == 0:
             return [], []  # no jps covering all tables and empty groups => no join graph
         return join_path_groups_dict
-
 
     def format_join_paths(self, join_paths):
         """
@@ -818,9 +817,12 @@ def test_e2e(dod, number_jps=5):
     # attrs = ["s_name", "s_address", "ps_availqty"]
     # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
 
-    attrs = ["s_name", "s_address", "ps_comment"]
-    values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
-              "dly final packages haggle blithely according to the pending packages. slyly regula"]
+    # attrs = ["s_name", "s_address", "ps_comment"]
+    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
+    #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
+
+    attrs = ["n_name", "s_name", "c_name", "o_clerk"]
+    values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
 
     # attrs = ["Subject", "Title", "Publisher"]
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
@@ -839,9 +841,6 @@ def test_e2e(dod, number_jps=5):
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
-    first = True
-    first_mjp = None
-    most_likely_key = None
     for mjp, attrs_project in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
@@ -851,15 +850,10 @@ def test_e2e(dod, number_jps=5):
 
         proj_view = dpu.project(mjp, attrs_project)
 
-        if first:
-            first = False
-            first_mjp = mjp
-            most_likely_keys_info = mva.most_likely_key(first_mjp)
-            most_likely_key = most_likely_keys_info[0][0]
-        missing_keys, non_unique_df1, non_unique_df2, conflicting_pair = \
-            mva.inconsistent_value_on_key(first_mjp, mjp, key=most_likely_key)
-        if len(conflicting_pair) > 0:
-            print(str(conflicting_pair))
+        print(str(proj_view.head(10)))
+
+        print("")
+        input("Press any key to continue...")
 
 
 def test_joinable(dod):
