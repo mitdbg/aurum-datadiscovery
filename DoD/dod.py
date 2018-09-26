@@ -400,23 +400,65 @@ class DoD:
         # enumerate all possible join graphs
         join_graphs = []
         all_combinations = [el for el in itertools.product(*list(paths_per_pair.values()))]
+        deduplicated_paths = dict()
         for path_combination in all_combinations:
-            path_combination = path_combination[0]  # unpack the combination
-            total_tables_covered = set()
-            total_hops = 0
-            for path, tables_covered in path_combination:
-                if len(tables_covered) == len(group_tables):
-                    join_graphs.append(([path], len([hop for hop in path])))  # unique path covering all tables
-                    continue  # we want minimum join graphs, so we skip this one which is covers all tables by itself
-                total_tables_covered.update(tables_covered)
-                total_hops += len(path)
-            # Check if join graph is valid, if not just filter it out
-            if len(total_tables_covered) == len(group_tables):
-                join_graphs.append(([p for p, tables_covered in path_combination], total_hops))
+            # path_combination = path_combination[0]  # unpack the combination
+            for p1, p2 in itertools.combinations(path_combination, 2):
+                path1, tables_covered1 = p1
+                path2, tables_covered2 = p2
+                # does combining these two paths help to cover more tables?
+                if len(tables_covered1) > len(tables_covered2):
+                    current_cover_len = len(tables_covered1)
+                else:
+                    current_cover_len = len(tables_covered2)
+                potential_cover = tables_covered1.union(tables_covered2)
+                joinable_paths = tables_covered1.intersection(tables_covered2)
+                potential_cover_len = len(potential_cover)
+                # if we cover more tables, and the paths are joinable (at least one table in common)
+                if potential_cover_len > current_cover_len and len(joinable_paths) > 0:
+                    # combine the paths
+                    combined_path = path1 + path2
+                    path_id = frozenset([hop.nid for hop in combined_path])
+                    # If I haven't generated this path elsewhere, then I add it along with the tables it covers
+                    if path_id not in deduplicated_paths:
+                        deduplicated_paths[path_id] = (combined_path, potential_cover)
+        # Once all combination paths have been generated, we find
+        total_tables_covered = set()
+        total_hops = 0
+        for path, tables_covered in path_combination:
+            if len(tables_covered) == len(group_tables):
+                join_graphs.append(([path], len([hop for hop in path])))  # unique path covering all tables
+                continue  # we want minimum join graphs, so we skip this one which is covers all tables by itself
+            total_tables_covered.update(tables_covered)
+            total_hops += len(path)
+        # Check if join graph is valid, if not just filter it out
+        if len(total_tables_covered) == len(group_tables):
+            join_graphs.append(([p for p, tables_covered in path_combination], total_hops))
 
         # sort join_graph based on the length of the involved hops in each of them
         join_graphs = sorted(join_graphs, key=lambda x: x[1], reverse=False)
         return join_graphs
+
+        # # enumerate all possible join graphs
+        # join_graphs = []
+        # all_combinations = [el for el in itertools.product(*list(paths_per_pair.values()))]
+        # for path_combination in all_combinations:
+        #     path_combination = path_combination[0]  # unpack the combination
+        #     total_tables_covered = set()
+        #     total_hops = 0
+        #     for path, tables_covered in path_combination:
+        #         if len(tables_covered) == len(group_tables):
+        #             join_graphs.append(([path], len([hop for hop in path])))  # unique path covering all tables
+        #             continue  # we want minimum join graphs, so we skip this one which is covers all tables by itself
+        #         total_tables_covered.update(tables_covered)
+        #         total_hops += len(path)
+        #     # Check if join graph is valid, if not just filter it out
+        #     if len(total_tables_covered) == len(group_tables):
+        #         join_graphs.append(([p for p, tables_covered in path_combination], total_hops))
+        #
+        # # sort join_graph based on the length of the involved hops in each of them
+        # join_graphs = sorted(join_graphs, key=lambda x: x[1], reverse=False)
+        # return join_graphs
 
     def _joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int), max_hops=2):
         """
