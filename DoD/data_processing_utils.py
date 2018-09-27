@@ -1,6 +1,5 @@
 import pandas as pd
 from collections import defaultdict
-import editdistance
 
 from DoD.utils import FilterType
 import config as C
@@ -17,6 +16,23 @@ def configure_csv_separator(separator):
 
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+
+    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
+
+    return joined
+
+
+def read_relation(relation_path):
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+    return df
+
+
+def _join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
     # TODO: Generate data event if nan values are found
     a_valid_index = (a[a_key].dropna()).index
@@ -38,6 +54,15 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suf
     # joined[b_key] = b_original
 
     return joined
+
+
+def apply_filter(relation_path, attribute, cell_value):
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+    df = df[df[attribute] == cell_value]
+    return df
 
 
 def find_key_for(relation_path, key, attribute, value):
