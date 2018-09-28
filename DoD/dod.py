@@ -172,7 +172,7 @@ class DoD:
                 table = candidate_group[0]
                 path = table_path[table]
                 materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
-                attrs_to_project = dpu.obtain_attributes_to_project((candidate_group_filters_covered, None))
+                attrs_to_project = dpu.obtain_attributes_to_project(candidate_group_filters_covered)
                 yield materialized_virtual_schema, attrs_to_project
                 continue  # to go to the next group
 
@@ -214,8 +214,6 @@ class DoD:
                     materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
                     yield materialized_virtual_schema, attrs_to_project
 
-                    # materializable_join_graphs.append(jpg)
-
             # # FIXME: fixing stitching downstream from here
             #
             # # We have now all the materializable join graphs for this candidate group
@@ -247,113 +245,6 @@ class DoD:
                                                     key=lambda x: x[1], reverse=True))
         for k, v in cache_unjoinable_pairs.items():
             print(str(k) + " => " + str(v))
-
-
-            # print("Processing join graphs...")
-            # materializable_join_graphs = dict()
-            # for k, v in join_path_groups.items():
-            #     print("Pair: " + str(k))
-            #     join_paths = self.tx_join_paths_to_pair_hops(v)
-            #     annotated_join_paths = self.annotate_join_paths_with_filter(join_paths,
-            #                                                                 table_fulfilled_filters,
-            #                                                                 candidate_group)
-            #
-            #     # Check JP materialization
-            #     print("Found " + str(len(annotated_join_paths)) + " candidate join paths for join graph")
-            #
-            #     # For each candidate join_path, check whether it can be materialized or not,
-            #     # then show to user (or the other way around)
-            #     valid_join_paths = self.verify_candidate_join_paths(annotated_join_paths)
-            #
-            #     print("Found " + str(len(valid_join_paths)) + " materializable join paths for join graph")
-            #
-            #     if len(valid_join_paths) > 0:
-            #         materializable_join_graphs[k] = valid_join_paths
-            #     else:
-            #         # This pair is non-materializable, but there may be other groups of pairs that cover
-            #         # the same tables, therefore we can only continue, we cannot determine at this point that
-            #         # the group is non-materializable, not yet.
-            #         continue
-            # # Verify whether the join_graphs cover the group or not
-            # covered_tables = set(candidate_group)
-            # for k, _ in materializable_join_graphs.items():
-            #     (t1, t2) = k
-            #     if t1 in covered_tables:
-            #         covered_tables.remove(t1)
-            #     if t2 in covered_tables:
-            #         covered_tables.remove(t2)
-            # if len(covered_tables) > 0:
-            #     # now we know there are not join graphs in this group, so we explicitly mark it as such
-            #     materializable_join_graphs.clear()
-            #     materializable_join_graphs = list()  # next block of processing expects a list
-            # else:
-            #     # 1) find key-groups
-            #     keygroups = defaultdict(list)
-            #     current_id = 0
-            #     for keygroup in itertools.combinations(list(materializable_join_graphs.keys()),
-            #                                            len(candidate_group) - 1):
-            #         for key in keygroup:
-            #             keygroups[current_id].append(materializable_join_graphs[key])
-            #         current_id += 1
-            #
-            #     # 2) for each key-group, enumerate all paths
-            #     unit_jp = []
-            #     for _, keygroup in keygroups.items():
-            #         # def unpack(packed_list):
-            #         #     for el in packed_list:
-            #         #         yield [v[0] for v in el]
-            #         args = keygroup
-            #         for comb in itertools.product(*args):
-            #             unit_jp.append(comb)
-            #
-            #     # pack units into more compact format
-            #     materializable_join_graphs = []  # TODO: note we are rewriting the type of a var in scope
-            #     for unit in unit_jp:
-            #         packed_unit = []
-            #         for el in unit:
-            #             packed_unit.append(el[0])
-            #         materializable_join_graphs.append(packed_unit)
-            # print("Processing join graphs...OK")
-            #
-            # # # Merge join paths and join graphs, at this point the difference is meaningless
-            # # # TODO: are paths necessarily contained in graphs? if so, simplify code above
-            # #
-            # # all_jgs = materializable_join_graphs + materializable_join_paths
-            # all_jgs = materializable_join_graphs
-            #
-            # print("Processing materializable join paths...")
-            #
-            # # Sort materializable_join_paths by likely joining on key
-            # all_jgs_scores = rank_materializable_join_graphs(all_jgs, table_path, self)
-            #
-            # clean_jp = []
-            # for annotated_jp, aggr_score, mul_score in all_jgs_scores:
-            #     jp = []
-            #     filters = set()
-            #     for filter, l, r in annotated_jp:
-            #         # To drag filters along, there's a leaf special tuple where r may be None
-            #         # since we don't need it at this point anymore, we check for its existence and do not include it
-            #         if r is not None:
-            #             jp.append((l, r))
-            #         if filter is not None:
-            #             filters.update(filter)
-            #     clean_jp.append((filters, jp))
-            #
-            # import pickle
-            # with open("check_debug.pkl", 'wb') as f:
-            #     pickle.dump(clean_jp, f)
-            #
-            # for mjp in clean_jp:
-            #     attrs_to_project = dpu.obtain_attributes_to_project(mjp)
-            #     # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
-            #     materialized_virtual_schema = dpu.materialize_join_graph(mjp, self)
-            #     yield materialized_virtual_schema, attrs_to_project
-
-        # print("Finished enumerating groups")
-        # cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
-        #                                             key=lambda x: x[1], reverse=True))
-        # for k, v in cache_unjoinable_pairs.items():
-        #     print(str(k) + " => " + str(v))
 
     def compute_join_graph_id(self, join_graph):
         all_nids = []

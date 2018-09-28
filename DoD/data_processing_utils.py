@@ -144,6 +144,7 @@ class InTreeNode:
         self.node = node
         self.parent = None
         self.payload = None
+        self.join_attribute = None
 
     def add_parent(self, parent):
         self.parent = parent
@@ -151,8 +152,14 @@ class InTreeNode:
     def set_payload(self, payload: pd.DataFrame):
         self.payload = payload
 
+    def set_join_attribute(self, join_attribute: str):
+        self.join_attribute = join_attribute
+
     def get_payload(self):
         return self.payload
+
+    def get_join_attribute(self):
+        return self.join_attribute
 
     def get_parent(self):
         return self.parent
@@ -173,42 +180,50 @@ def materialize_join_graph(jg, dod):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
         leaves = []
-        for l, r in jg:
-            if len(intree) == 0:
-                node = InTreeNode(l.source_name)
-                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                df = get_dataframe(node_path)
-                node.set_payload(df)
-                intree[l.source_name] = node
-                leaves.append(node)
-            # now either l or r should be in intree
-            if l.source_name in intree.keys():
-                rnode = InTreeNode(r.source_name)  # create node for r
-                node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
-                df = get_dataframe(node_path)
-                rnode.set_payload(df)
-                r_parent = intree[l.source_name]
-                rnode.add_parent(r_parent)  # add ref
-                # r becomes a leave, and l stops being one
-                if r_parent in leaves:
-                    leaves.remove(r_parent)
-                leaves.append(rnode)
-                intree[r.source_name] = rnode
-            elif r.source_name in intree.keys():
-                lnode = InTreeNode(l.source_name)  # create node for l
-                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                df = get_dataframe(node_path)
-                lnode.set_payload(df)
-                l_parent = intree[r.source_name]
-                lnode.add_parent(l_parent)  # add ref
-                if l_parent in leaves:
-                    leaves.remove(l_parent)
-                leaves.append(lnode)
-                intree[l.source_name] = lnode
-            else:
-                # FIXME: to implement
-                print("disjoint pair on assembling join in-tree... fix")
-                exit()
+
+        hops = jg
+
+        while len(hops) > 0:
+            pending_hops = []  # we use this variable to maintain the temporarily disconnected hops
+            for l, r in hops:
+                if len(intree) == 0:
+                    node = InTreeNode(l.source_name)
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = get_dataframe(node_path)
+                    node.set_payload(df)
+                    node.set_join_attribute(l.field_name)  # store join attr
+                    intree[l.source_name] = node
+                    leaves.append(node)
+                # now either l or r should be in intree
+                if l.source_name in intree.keys():
+                    rnode = InTreeNode(r.source_name)  # create node for r
+                    node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                    df = get_dataframe(node_path)
+                    rnode.set_payload(df)
+                    rnode.set_join_attribute(r.field_name)
+                    r_parent = intree[l.source_name]
+                    rnode.add_parent(r_parent)  # add ref
+                    # r becomes a leave, and l stops being one
+                    if r_parent in leaves:
+                        leaves.remove(r_parent)
+                    leaves.append(rnode)
+                    intree[r.source_name] = rnode
+                elif r.source_name in intree.keys():
+                    lnode = InTreeNode(l.source_name)  # create node for l
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = get_dataframe(node_path)
+                    lnode.set_payload(df)
+                    lnode.set_join_attribute(l.field_name)
+                    l_parent = intree[r.source_name]
+                    lnode.add_parent(l_parent)  # add ref
+                    if l_parent in leaves:
+                        leaves.remove(l_parent)
+                    leaves.append(lnode)
+                    intree[l.source_name] = lnode
+                else:
+                    # temporarily disjoint hop which we store for subsequent iteration
+                    pending_hops.append((l, r))
+            hops = pending_hops
         return intree, leaves
 
     def get_join_info_pair(t1, t2, jg):
@@ -233,11 +248,13 @@ def materialize_join_graph(jg, dod):
         # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
         for k, v in leave_ancestor.items():
             for child in v:
-                l_info, r_info = get_join_info_pair(k, child, jg)
-                l_key = l_info.field_name
-                r_key = r_info.field_name
+                # l_info, r_info = get_join_info_pair(k, child, jg)
+                # l_key = l_info.field_name
+                # r_key = r_info.field_name
                 l = k.get_payload()
+                l_key = k.get_join_attribute()
                 r = child.get_payload()
+                r_key = child.get_join_attribute()
                 df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
