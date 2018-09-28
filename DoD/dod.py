@@ -173,7 +173,11 @@ class DoD:
                 path = table_path[table]
                 materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
                 attrs_to_project = dpu.obtain_attributes_to_project(candidate_group_filters_covered)
-                yield materialized_virtual_schema, attrs_to_project
+                # Create metadata to document this view
+                view_metadata = dict()
+                view_metadata["#join_graphs"] = 1
+                view_metadata["join_graph"] = "unique table with all attrs"
+                yield materialized_virtual_schema, attrs_to_project, view_metadata
                 continue  # to go to the next group
 
             # Pre-check
@@ -212,7 +216,11 @@ class DoD:
                 if is_join_graph_valid:
                     attrs_to_project = dpu.obtain_attributes_to_project(filters)
                     materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
-                    yield materialized_virtual_schema, attrs_to_project
+                    # Create metadata to document this view
+                    view_metadata = dict()
+                    view_metadata["#join_graphs"] = len(join_graphs)
+                    view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
+                    yield materialized_virtual_schema, attrs_to_project, view_metadata
 
             # # FIXME: fixing stitching downstream from here
             #
@@ -348,7 +356,7 @@ class DoD:
         for jp in join_paths:
             formatted_jp = ""
             for hop in jp:
-                hop_str = hop.db_name + "." + hop.source_name + "." + hop.field_name
+                hop_str = hop.db_name + ":" + hop.source_name + ":" + hop.field_name
                 if formatted_jp == "":
                     formatted_jp += hop_str
                 else:
@@ -761,6 +769,9 @@ def test_e2e(dod, number_jps=5):
     attrs = ["n_name", "s_name", "c_name", "o_clerk"]
     values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
 
+    # attrs = ["o_clerk", "o_orderpriority", "n_name"]
+    # values = ["Clerk#000000951", "5-LOW", "JAPAN"]
+
     # attrs = ["Subject", "Title", "Publisher"]
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
 
@@ -778,7 +789,7 @@ def test_e2e(dod, number_jps=5):
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     i = 0
-    for mjp, attrs_project in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
         # print(mjp.head(2))

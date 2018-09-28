@@ -144,7 +144,6 @@ class InTreeNode:
         self.node = node
         self.parent = None
         self.payload = None
-        self.join_attribute = None
 
     def add_parent(self, parent):
         self.parent = parent
@@ -152,14 +151,8 @@ class InTreeNode:
     def set_payload(self, payload: pd.DataFrame):
         self.payload = payload
 
-    def set_join_attribute(self, join_attribute: str):
-        self.join_attribute = join_attribute
-
-    def get_payload(self):
+    def get_payload(self) -> pd.DataFrame:
         return self.payload
-
-    def get_join_attribute(self):
-        return self.join_attribute
 
     def get_parent(self):
         return self.parent
@@ -191,7 +184,6 @@ def materialize_join_graph(jg, dod):
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                     df = get_dataframe(node_path)
                     node.set_payload(df)
-                    node.set_join_attribute(l.field_name)  # store join attr
                     intree[l.source_name] = node
                     leaves.append(node)
                 # now either l or r should be in intree
@@ -200,7 +192,6 @@ def materialize_join_graph(jg, dod):
                     node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
                     df = get_dataframe(node_path)
                     rnode.set_payload(df)
-                    rnode.set_join_attribute(r.field_name)
                     r_parent = intree[l.source_name]
                     rnode.add_parent(r_parent)  # add ref
                     # r becomes a leave, and l stops being one
@@ -213,7 +204,6 @@ def materialize_join_graph(jg, dod):
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                     df = get_dataframe(node_path)
                     lnode.set_payload(df)
-                    lnode.set_join_attribute(l.field_name)
                     l_parent = intree[r.source_name]
                     lnode.add_parent(l_parent)  # add ref
                     if l_parent in leaves:
@@ -226,13 +216,14 @@ def materialize_join_graph(jg, dod):
             hops = pending_hops
         return intree, leaves
 
-    def get_join_info_pair(t1, t2, jg):
-        # t1 and t2 won't never be the same
+    def find_l_r_key(l_source_name, r_source_name, jg):
+        # print(l_source_name + " -> " + r_source_name)
         for l, r in jg:
-            if (t1 == l.source_name or t1 == r.source_name) and (t2 == l.source_name or t2 == r.source_name):
-                return l, r
+            if l.source_name == l_source_name and r.source_name == r_source_name:
+                return l.field_name, r.field_name
+            elif l.source_name == r_source_name and r.source_name == l_source_name:
+                return r.field_name, l.field_name
 
-    # filters, jg = jg_with_filters
     intree, leaves = build_tree(jg)
     # find groups of leaves with same common ancestor
     suffix_str = '_x'
@@ -248,13 +239,10 @@ def materialize_join_graph(jg, dod):
         # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
         for k, v in leave_ancestor.items():
             for child in v:
-                # l_info, r_info = get_join_info_pair(k, child, jg)
-                # l_key = l_info.field_name
-                # r_key = r_info.field_name
                 l = k.get_payload()
-                l_key = k.get_join_attribute()
                 r = child.get_payload()
-                r_key = child.get_join_attribute()
+                l_key, r_key = find_l_r_key(k.node, child.node, jg)
+
                 df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
