@@ -197,7 +197,7 @@ class DoD:
             # Now we need to check every join graph individually and see if it's materializable. Only once we've
             # exhausted these join graphs we move on to the next candidate group. We know already that each of the
             # join graphs covers all tables in candidate_group, so if they're materializable we're good.
-            materializable_join_graphs = []
+            # materializable_join_graphs = []
             for jpg in join_graphs:
                 # Obtain filters that apply to this join graph
                 filters = set()
@@ -210,37 +210,37 @@ class DoD:
                 is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
 
                 if is_join_graph_valid:
-                    materializable_join_graphs.append(jpg)
+                    attrs_to_project = dpu.obtain_attributes_to_project(filters)
+                    materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
+                    yield materialized_virtual_schema, attrs_to_project
 
-            # FIXME: fixing stitching downstream from here
+                    # materializable_join_graphs.append(jpg)
 
-            # We have now all the materializable join graphs for this candidate group
-            # We can sort them by how likely they use 'keys'
-            all_jgs_scores = rank_materializable_join_graphs(materializable_join_graphs, table_path, self)
-
-            # Do some clean up
-            clean_jp = []
-            for annotated_jp, aggr_score, mul_score in all_jgs_scores:
-                jp = []
-                filters = set()
-                for filter, l, r in annotated_jp:
-                    # To drag filters along, there's a leaf special tuple where r may be None
-                    # since we don't need it at this point anymore, we check for its existence and do not include it
-                    if r is not None:
-                        jp.append((l, r))
-                    if filter is not None:
-                        filters.update(filter)
-                clean_jp.append((filters, jp))
-
-            # import pickle
-            # with open("check_debug.pkl", 'wb') as f:
-            #     pickle.dump(clean_jp, f)
-
-            for mjp in clean_jp:
-                attrs_to_project = dpu.obtain_attributes_to_project(mjp)
-                # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
-                materialized_virtual_schema = dpu.materialize_join_graph(mjp, self)
-                yield materialized_virtual_schema, attrs_to_project
+            # # FIXME: fixing stitching downstream from here
+            #
+            # # We have now all the materializable join graphs for this candidate group
+            # # We can sort them by how likely they use 'keys'
+            # all_jgs_scores = rank_materializable_join_graphs(materializable_join_graphs, table_path, self)
+            #
+            # # Do some clean up
+            # clean_jp = []
+            # for annotated_jp, aggr_score, mul_score in all_jgs_scores:
+            #     jp = []
+            #     filters = set()
+            #     for filter, l, r in annotated_jp:
+            #         # To drag filters along, there's a leaf special tuple where r may be None
+            #         # since we don't need it at this point anymore, we check for its existence and do not include it
+            #         if r is not None:
+            #             jp.append((l, r))
+            #         if filter is not None:
+            #             filters.update(filter)
+            #     clean_jp.append((filters, jp))
+            #
+            # for mjp in clean_jp:
+            #     attrs_to_project = dpu.obtain_attributes_to_project(mjp)
+            #     # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
+            #     materialized_virtual_schema = dpu.materialize_join_graph(mjp, self)
+            #     yield materialized_virtual_schema, attrs_to_project
 
         print("Finished enumerating groups")
         cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),

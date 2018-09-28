@@ -100,7 +100,17 @@ def is_value_in_column(value, relation_path, column):
     return value in df[column].map(lambda x: str(x).lower()).unique()
 
 
-def obtain_attributes_to_project(jp_with_filters):
+def obtain_attributes_to_project(filters):
+    attributes_to_project = set()
+    for f in filters:
+        f_type = f[1].value
+        if f_type is FilterType.ATTR.value:
+            attributes_to_project.add(f[0][0])
+        elif f_type is FilterType.CELL.value:
+            attributes_to_project.add(f[0][1])
+    return attributes_to_project
+
+def _obtain_attributes_to_project(jp_with_filters):
     filters, jp = jp_with_filters
     attributes_to_project = set()
     for f in filters:
@@ -158,7 +168,7 @@ class InTreeNode:
             return self.node == other.node
 
 
-def materialize_join_graph(jg_with_filters, dod):
+def materialize_join_graph(jg, dod):
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
@@ -207,7 +217,7 @@ def materialize_join_graph(jg_with_filters, dod):
             if (t1 == l.source_name or t1 == r.source_name) and (t2 == l.source_name or t2 == r.source_name):
                 return l, r
 
-    filters, jg = jg_with_filters
+    # filters, jg = jg_with_filters
     intree, leaves = build_tree(jg)
     # find groups of leaves with same common ancestor
     suffix_str = '_x'
