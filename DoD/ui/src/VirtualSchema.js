@@ -44,6 +44,7 @@ class VirtualSchema extends Component {
 		this.removeColumn = this.removeColumn.bind(this);
 		this.changeVS = this.changeVS.bind(this);
 		this.findView = this.findView.bind(this);
+		this.nextView = this.nextView.bind(this);
 
 		this.state = {
 			rows: 3,
@@ -102,6 +103,8 @@ class VirtualSchema extends Component {
 	    var vsDefinition = this.state.virtualSchemaValues;
         console.log(vsDefinition);
 
+        document.getElementById('payload').className = 'loader';
+
         var payload = {};
         payload['payload'] = JSON.stringify(vsDefinition);
         var body = JSON.stringify(payload);
@@ -117,6 +120,34 @@ class VirtualSchema extends Component {
             redirect: "follow",
             referrer: "no-referrer",
             body: body
+            })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log("SUCCESS");
+                    var view = result['view'];
+                    document.getElementById('payload').className = '';
+                    document.getElementById('payload').innerHTML = view;
+                },
+                (error) => {
+                    console.log("ERROR: " + error);
+                }
+            )
+        console.log(response);
+	}
+
+	nextView() {
+        var response = fetch("http://127.0.0.1:5000/next_view", {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            credentials: 'same-origin',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            redirect: "follow",
+            referrer: "no-referrer",
+            body: ""
             })
             .then(res => res.json())
             .then(
@@ -151,7 +182,11 @@ class VirtualSchema extends Component {
                   <div className="VirtualSchemaTable">
 
 				    <Table rows={this.state.rows} columns={this.state.columns} onVSChange={this.changeVS} />
+
+
                     <ResultViews/>
+
+
 			      </div>
 
                 </div>
@@ -164,6 +199,7 @@ class VirtualSchema extends Component {
 									  add_column={this.addColumn}
 									  remove_column={this.removeColumn}
 									  find_view={this.findView}
+									  next_view={this.nextView}
 				     />
 				   </div>
                 </div>

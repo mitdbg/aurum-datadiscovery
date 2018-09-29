@@ -7,6 +7,9 @@ from flask import request
 from flask_cors import CORS, cross_origin
 import json
 import pandas as pd
+from DoD.dod import DoD
+from DoD import data_processing_utils as dpu
+import server_config as C
 
 # move to top level and import some more things
 currentdir = os.path.dirname(
@@ -20,40 +23,21 @@ from knowledgerepr import fieldnetwork
 from algebra import API
 from modelstore.elasticstore import KWType
 
-# path_to_serialized_model = parentdir + "/models/dwh3/"
-# network = fieldnetwork.deserialize_network(path_to_serialized_model)
-# store_client = StoreHandler()
-global api
 
-# # add the tuple builtin function
-# safe_dict = {}
-# safe_dict['tuple'] = tuple
-#
-# # short names for functions
-# safe_dict['keyword_search'] = api.keyword_search
-# safe_dict['neighbor_search'] = api.neighbor_search
-# safe_dict['union'] = api.union
-# safe_dict['intersection'] = api.intersection
-# safe_dict['difference'] = api.difference
-# safe_dict['_general_to_drs'] = api._general_to_drs
-#
-# # Short names for scopes
-# # safe_dict['db'] = NA
-# safe_dict['source'] = KWType.KW_TABLE  # table/file/source name
-# safe_dict['field'] = KWType.KW_SCHEMA  # colum names/fields
-# safe_dict['content'] = KWType.KW_TEXT
-#
-#
-# # short names for Relations
-# safe_dict['schema'] = Relation.SCHEMA
-# safe_dict['schema_sim'] = Relation.SCHEMA_SIM
-# safe_dict['content_sim'] = Relation.CONTENT_SIM
-# safe_dict['entity_sim'] = Relation.ENTITY_SIM
-# safe_dict['pkfk'] = Relation.PKFK
+path_to_serialized_model = C.path_model
+sep = C.separator
+print("Configuring DoD with model: " + str(path_to_serialized_model) + " separator: " + str(sep))
+network = fieldnetwork.deserialize_network(path_to_serialized_model)
+store_client = StoreHandler()
 
+global dod
+dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
 app = Flask(__name__)
 CORS(app)
+
+# this supports exactly 1 session right now
+global view_generator
 
 
 @app.route('/test')
@@ -74,28 +58,50 @@ def testpost():
 
 @app.route("/findvs", methods=['POST'])
 def findvs():
-    # print(request.get_json())
     if request.method == 'POST':
-        # print(json.loads(request.data))
         json_request = request.get_json()
-        payload = json_request['payload']
+        payload_str = json_request['payload']
+        payload = json.loads(payload_str)
 
-        # dummy view for now
-        df = pd.read_csv("/Users/ra-mit/data/mitdwhdata/All_olap_columns.csv", encoding='latin1')
-        html_dataframe = df.to_html()
+        # Prepare input parameters to DoD
+        list_attributes = ["" for k, v in payload.items() if k[0] == "0"]  # measure number attrs
+        list_samples = ["" for el in list_attributes]  # template for samples, 1 row only for now
+        for k, v in payload.items():
+            row_idx = int(k[0])
+            col_idx = int(k[2])
+            if row_idx == 0:
+                list_attributes[col_idx] = v
+            else:
+                list_samples[col_idx] = v
 
-        print("rcvd: " + str(payload))
+        # Obtain view - always create a new view_generator, we assume these are new views
+        global dod
+        global view_generator
+        view_generator = iter(dod.virtual_schema_iterative_search(list_attributes, list_samples))
+        mvs, attrs_to_project, view_metadata = next(view_generator)
+        proj_view = dpu.project(mvs, attrs_to_project)
+
+        sample_view = proj_view.head(10)
+
+        html_dataframe = sample_view.to_html()
+
         return jsonify({"view": html_dataframe})
 
-    # try:
-    #     res = eval(query, {"__builtins__": None}, safe_dict)
-    #     res = jsonify(res.__dict__())
-    #
-    #     return res
-    # except Exception as e:
-    #     res = "error: " + str(e)
-    #     return InvalidUsage(res, status_code=400)
-    #     # return res, invalid
+
+@app.route("/next_view", methods=['POST'])
+def next_view():
+    if request.method == 'POST':
+
+        # Obtain view - always create a new view_generator, we assume these are new views
+        global view_generator
+        mvs, attrs_to_project, view_metadata = next(view_generator)
+        proj_view = dpu.project(mvs, attrs_to_project)
+
+        sample_view = proj_view.head(10)
+
+        html_dataframe = sample_view.to_html()
+
+        return jsonify({"view": html_dataframe})
 
 
 # @app.route('/convert/<input>')
@@ -166,6 +172,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', default='nofile', help='path to aurum model')
+    parser.add_argument('--separator', default=',', help='path to aurum model')
 
     args = parser.parse_args()
 
@@ -173,10 +180,13 @@ if __name__ == '__main__':
         print("Usage: --model <path_to_aurum_model>")
         exit()
 
+    # basic test
     path_to_serialized_model = args.model
+    sep = args.sep
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     store_client = StoreHandler()
-    global api
-    api = API(network, store_client)
+
+    global dod
+    dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
     app.run()

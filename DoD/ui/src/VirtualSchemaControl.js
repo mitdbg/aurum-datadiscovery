@@ -8,6 +8,7 @@ function ButtonPanel(props) {
 	const addColumn = props.add_column;
 	const removeColumn = props.remove_column;
 	const findView = props.find_view;
+	const nextView = props.next_view;
 
 	return (
 		<div>
@@ -16,6 +17,7 @@ function ButtonPanel(props) {
 			<button type="button" onClick={addColumn}>Add Column</button>
 			<button type="button" onClick={removeColumn}>Remove Column</button>
 			<button type="button" onClick={findView}>Find View</button>
+			<button type="button" onClick={nextView}>Next View</button>
 		</div>
 	)
 }
@@ -34,6 +36,7 @@ class VirtualSchemaControl extends Component {
 							 add_column={this.props.add_column}
 							 remove_column={this.props.remove_column}
 							 find_view={this.props.find_view}
+							 next_view={this.props.next_view}
 							 />
 			</div>
 		)

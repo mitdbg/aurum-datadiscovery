@@ -22,7 +22,7 @@ class CellValue extends Component {
             <td>
 			    <input type="text" id="display-name" name="ip-display"
                    pattern="[A-Za-z\s]+"
-                   maxLength="10"
+                   maxLength="30"
                    minLength="0"
                    value={this.value}
                    onChange={this.handleChange}
