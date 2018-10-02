@@ -165,7 +165,7 @@ class VirtualSchema extends Component {
 
 	render() {
 		return (
-		    <div className="dummy">
+		    <div className="general-wrapper">
 		      <div className="row">
 		        <div className="col-12 text-center title">
 		          <h1 className="mt-5">DoD: Dataset On Demand</h1>
@@ -178,20 +178,14 @@ class VirtualSchema extends Component {
                 </div>
 
                 <div className="col-6">
-
                   <div className="VirtualSchemaTable">
-
 				    <Table rows={this.state.rows} columns={this.state.columns} onVSChange={this.changeVS} />
-
-
-                    <ResultViews/>
-
-
 			      </div>
-
                 </div>
+
                 <div className="col-2 middle-margin">
                 </div>
+
                 <div className="col-2">
                   <div className="VirtualSchemaControl">
                     <VirtualSchemaControl add_row={this.addRow}
@@ -208,6 +202,19 @@ class VirtualSchema extends Component {
                 </div>
 
               </div>
+
+              <div className="row">
+                <div className="col-3">
+		        </div>
+		        <div className="col-4 text-center">
+		            <ResultViews/>
+		        </div>
+		        <div className="col-2">
+		        
+		        </div>
+		        <div className="col-3">
+		        </div>
+		      </div>
             </div>
 		)
 	}

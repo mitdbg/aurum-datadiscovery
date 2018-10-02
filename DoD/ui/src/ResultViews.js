@@ -5,7 +5,7 @@ class ResultViews extends Component {
 
     render() {
 		return (
-	        <div className="ResultViews">
+	        <div className="ResultViews text-center">
 	        	<div id="payload">
 
 	        	</div>
