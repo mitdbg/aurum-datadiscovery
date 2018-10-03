@@ -104,6 +104,18 @@ def next_view():
         return jsonify({"view": html_dataframe})
 
 
+@app.route("/suggest_field", methods=['POST'])
+def suggest_field():
+    if request.method == 'POST':
+        json_request = request.get_json()
+        input_text = json_request['input_text']
+
+        suggestions = dod.aurum_api.suggest_schema(input_text)
+        print(suggestions)
+        output = {k: v for k, v in suggestions}
+
+        return jsonify(output)
+
 # @app.route('/convert/<input>')
 # def convert(input):
 #     try:

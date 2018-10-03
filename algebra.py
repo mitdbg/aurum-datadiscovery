@@ -70,6 +70,9 @@ class Algebra:
     def search_table(self, kw: str, max_results=10) -> DRS:
         return self.search(kw, kw_type=KWType.KW_TABLE, max_results=max_results)
 
+    def suggest_schema(self, kw: str, max_results=5):
+        return self._store_client.suggest_schema(kw, max_hits=max_results)
+
     def __neighbor_search(self,
                         input_data,
                         relation: Relation):

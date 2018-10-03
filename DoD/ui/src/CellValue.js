@@ -11,9 +11,46 @@ class CellValue extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
+    findSuggestions(input_text) {
+        var payload = {};
+        payload['input_text'] = input_text;
+        var body = JSON.stringify(payload);
+
+        console.log(payload);
+
+        var response = fetch("http://127.0.0.1:5000/suggest_field", {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            credentials: 'same-origin',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            redirect: "follow",
+            referrer: "no-referrer",
+            body: body
+            })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    console.log("SUCCESS");
+                    console.log(result);
+                },
+                (error) => {
+                    console.log("ERROR: " + error);
+                }
+            )
+        console.log(response);
+    }
+
     handleChange(event) {
+        // We set the value for this cell
         var newValue = event.target.value;
         this.onVSChange(this.rowId, this.columnId, newValue);
+        // Also, if this is the header row, then we suggest options to complete
+        if (this.rowId == 0) {
+            this.findSuggestions(newValue);
+        }
     }
 
 

@@ -210,7 +210,7 @@ class VirtualSchema extends Component {
 		            <ResultViews/>
 		        </div>
 		        <div className="col-2">
-		        
+
 		        </div>
 		        <div className="col-3">
 		        </div>
