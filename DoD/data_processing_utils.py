@@ -110,6 +110,7 @@ def obtain_attributes_to_project(filters):
             attributes_to_project.add(f[0][1])
     return attributes_to_project
 
+
 def _obtain_attributes_to_project(jp_with_filters):
     filters, jp = jp_with_filters
     attributes_to_project = set()

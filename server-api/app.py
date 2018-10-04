@@ -81,11 +81,13 @@ def findvs():
         mvs, attrs_to_project, view_metadata = next(view_generator)
         proj_view = dpu.project(mvs, attrs_to_project)
 
+        analysis = obtain_view_analysis(proj_view)
+
         sample_view = proj_view.head(10)
 
         html_dataframe = sample_view.to_html()
 
-        return jsonify({"view": html_dataframe})
+        return jsonify({"view": html_dataframe, "analysis": analysis})
 
 
 @app.route("/next_view", methods=['POST'])
@@ -94,14 +96,20 @@ def next_view():
 
         # Obtain view - always create a new view_generator, we assume these are new views
         global view_generator
-        mvs, attrs_to_project, view_metadata = next(view_generator)
+        try:
+            mvs, attrs_to_project, view_metadata = next(view_generator)
+        except StopIteration:
+            print("finished exploring views")
+            return jsonify({"view": "no-more-views", "analysis": 'no'})
         proj_view = dpu.project(mvs, attrs_to_project)
+
+        analysis = obtain_view_analysis(proj_view)
 
         sample_view = proj_view.head(10)
 
         html_dataframe = sample_view.to_html()
 
-        return jsonify({"view": html_dataframe})
+        return jsonify({"view": html_dataframe, "analysis": analysis})
 
 
 @app.route("/suggest_field", methods=['POST'])
@@ -115,6 +123,14 @@ def suggest_field():
         output = {k: v for k, v in suggestions}
 
         return jsonify(output)
+
+
+def obtain_view_analysis(view):
+    htmls = []
+    for c in view.columns:
+        html_repr = view[c].describe().to_frame().to_html()
+        htmls.append(html_repr)
+    return htmls
 
 # @app.route('/convert/<input>')
 # def convert(input):

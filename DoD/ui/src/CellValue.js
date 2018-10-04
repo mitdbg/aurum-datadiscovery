@@ -57,6 +57,7 @@ class CellValue extends Component {
                     var el = <SuggestionList rowId={this.rowId} colId={this.columnId} suggestions={listResults} onSuggestionClick={this.handleUserClickingSuggestion}/>
                     ReactDOM.unmountComponentAtNode(document.getElementById('suggestions'));
                     ReactDOM.render(el, document.getElementById('suggestions'));
+//                    ReactDOM.render(el, document.getElementById(this.cellKey));
                 },
                 (error) => {
                     console.log("ERROR: " + error);

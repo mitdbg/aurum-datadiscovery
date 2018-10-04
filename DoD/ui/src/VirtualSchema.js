@@ -124,17 +124,24 @@ class VirtualSchema extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
-                    console.log("SUCCESS");
+                    // Set view
                     var view = result['view'];
                     document.getElementById('payload').className = '';
                     document.getElementById('payload').innerHTML = view;
+                    // Set analysis
+                    var analysis = result['analysis'];
+                    if (analysis != 'no') {
+                        var analysis_html = analysis.join(" ");
+                        document.getElementById('payload-analysis').className = '';
+                        document.getElementById('payload-analysis').innerHTML = analysis_html;
+                    }
                 },
                 (error) => {
                     console.log("ERROR: " + error);
                 }
             )
-        console.log(response);
 	}
+
 
 	nextView() {
         var response = fetch("http://127.0.0.1:5000/next_view", {
@@ -152,15 +159,28 @@ class VirtualSchema extends Component {
             .then(res => res.json())
             .then(
                 (result) => {
-                    console.log("SUCCESS");
                     var view = result['view'];
-                    document.getElementById('payload').innerHTML = view;
+                    // if we found a view
+                    if (view != 'no-more-views') {
+                        document.getElementById('payload').innerHTML = view;
+                    }
+                    var analysis = result['analysis'];
+                    if(analysis != 'no') {
+                        var analysis_html = analysis.join(" ");
+                        document.getElementById('payload-analysis').className = '';
+                        document.getElementById('payload-analysis').innerHTML = analysis_html;
+                    }
+                    // if no more views are available
+                    else {
+                        var nomoreviews = "<div class='nomoreview'> <p>No More Views Found! </p> </div>";
+                        document.getElementById('payload').innerHTML = nomoreviews;
+                        document.getElementById('payload-analysis').innerHTML = '';
+                    }
                 },
                 (error) => {
                     console.log("ERROR: " + error);
                 }
             )
-        console.log(response);
 	}
 
 	render() {
@@ -204,15 +224,17 @@ class VirtualSchema extends Component {
               </div>
 
               <div className="row">
-                <div className="col-3">
+                <div className="col-2">
 		        </div>
 		        <div className="col-4 text-center">
 		            <ResultViews/>
 		        </div>
-		        <div className="col-2">
+		        <div className="col-4">
+                    <div id="payload-analysis">
 
+	        	    </div>
 		        </div>
-		        <div className="col-3">
+		        <div className="col-2">
 		        </div>
 		      </div>
             </div>
