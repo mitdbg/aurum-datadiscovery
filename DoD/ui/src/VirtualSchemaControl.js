@@ -8,16 +8,38 @@ function ButtonPanel(props) {
 	const addColumn = props.add_column;
 	const removeColumn = props.remove_column;
 	const findView = props.find_view;
-	const nextView = props.next_view;
 
 	return (
 		<div>
-			<button type="button" onClick={addRow}>Add Row</button>
-			<button type="button" onClick={removeRow}>Remove Row</button>
-			<button type="button" onClick={addColumn}>Add Column</button>
-			<button type="button" onClick={removeColumn}>Remove Column</button>
-			<button type="button" onClick={findView}>Find View</button>
-			<button type="button" onClick={nextView}>Next View</button>
+		    <div className="row">
+		        <div className="col mt-1">
+                    <button type="button" className="button-addrow" data-toggle="tooltip" data-placement="left" data-html="true" title="Add <b>ROW</b>" onClick={addRow}>
+                        <span className="fas fa-arrow-circle-down"></span>
+                    </button>
+                    <button type="button" className="button-removerow" data-toggle="tooltip" data-placement="top" data-html="true" title="Remove <b>ROW</b>" onClick={removeRow}>
+                        <span className="fas fa-arrow-circle-up"></span>
+                    </button>
+                </div>
+			</div>
+
+			<div className="row">
+		        <div className="col mt-1">
+                    <button type="button" className="button-addcol" data-toggle="tooltip" data-placement="left" data-html="true" title="Add <b>COLUMN</b>" onClick={addColumn}>
+                        <span className="fas fa-arrow-circle-right"></span>
+                    </button>
+                    <button type="button" className="button-removecol" data-toggle="tooltip" data-placement="right" data-html="true" title="Remove <b>COL</b>" onClick={removeColumn}>
+                        <span className="fas fa-arrow-circle-left"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div className="row">
+		        <div className="col mt-1">
+                    <button type="button" className="button-find" data-toggle="tooltip" data-placement="left" data-html="true" title="Find <em>views</em>" onClick={findView}>
+                        <span className="fas fa-play-circle"></span>
+                    </button>
+                </div>
+            </div>
 		</div>
 	)
 }
@@ -36,7 +58,6 @@ class VirtualSchemaControl extends Component {
 							 add_column={this.props.add_column}
 							 remove_column={this.props.remove_column}
 							 find_view={this.props.find_view}
-							 next_view={this.props.next_view}
 							 />
 			</div>
 		)

@@ -12,6 +12,7 @@
     <!-- Custom Stuff -->
     <link rel="stylesheet" href="custom_style/custom_style.css" crossorigin="null">
     <link rel="stylesheet" href="custom_style/elements.css" crossorigin="null">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
 
 	<!-- Custom styles for this template -->
     <style>
@@ -25,33 +26,35 @@
       }
     </style>
 
-    <title>DoD: Dataset On Demand</title>
+    <title>Aurum: Dataset On Demand</title>
   </head>
   <body>
     
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="#">Aurum-DoD</a>
+        <a class="navbar-brand" href="#">Aurum-DoD: Dataset on Demand</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
             <li class="nav-item active">
-              <a class="nav-link" href="#">Home
+              <a class="nav-link" href="#">Main
                 <span class="sr-only">(current)</span>
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">About</a>
+              <a class="nav-link" href="http://mitdbg.github.io/aurum-datadiscovery/">About</a>
             </li>
+            <!--
             <li class="nav-item">
               <a class="nav-link" href="#">Services</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">Contact</a>
             </li>
+            -->
           </ul>
         </div>
       </div>
@@ -69,8 +72,13 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="js_dependencies/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="js_dependencies/popper.min.js" crossorigin="anonymous"></script>
     <script src="bootstrap-4/js/bootstrap.min.js" crossorigin="null"></script>
+    <script>
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+      })
+    </script>
   </body>
 </html>

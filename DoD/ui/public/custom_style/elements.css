@@ -1,3 +1,28 @@
 #suggestion ul {
     background-color: grey;
 }
+
+
+.ResultViewControl {
+    visibility: hidden;
+}
+
+.button-addrow {
+    color: green;
+}
+
+.button-removerow {
+    color: red;
+}
+
+.button-addcol {
+    color: green;
+}
+
+.button-removecol {
+    color: red;
+}
+
+.button-find {
+    font-size: 30px;
+}

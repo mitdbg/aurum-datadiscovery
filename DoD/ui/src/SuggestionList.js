@@ -16,13 +16,8 @@ class SuggestionList extends Component {
         // We set the value for this cell
         var test = console.log(event);
         var newValue = event.target.innerHTML;
-//        console.log("user clicked in the list: " + newValue);
-//        console.log(event.target);
-//        console.log(event.target.innerHTML);
         this.onSuggestionClick(this.rowId, this.colId, newValue);
     }
-
-//    <p>" from " + entry['originRelation']}</p>
 
     render() {
         var listEntries = [];

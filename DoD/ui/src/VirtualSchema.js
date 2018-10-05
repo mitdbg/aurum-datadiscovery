@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import VirtualSchemaControl from './VirtualSchemaControl';
 import CellValue from './CellValue';
 import ResultViews from './ResultViews';
+import ResultViewControl from './ResultViewControl';
+import ReactDOM from 'react-dom';
 
 
 function TableRow(props) {
@@ -134,6 +136,9 @@ class VirtualSchema extends Component {
                         var analysis_html = analysis.join(" ");
                         document.getElementById('payload-analysis').className = '';
                         document.getElementById('payload-analysis').innerHTML = analysis_html;
+
+                        // show ResultViewControl
+                        document.getElementById('result-view-control').style.visibility = 'visible';
                     }
                 },
                 (error) => {
@@ -175,6 +180,9 @@ class VirtualSchema extends Component {
                         var nomoreviews = "<div class='nomoreview'> <p>No More Views Found! </p> </div>";
                         document.getElementById('payload').innerHTML = nomoreviews;
                         document.getElementById('payload-analysis').innerHTML = '';
+
+                        // hide result view panel
+                        document.getElementById('result-view-control').style.visibility = 'hidden';
                     }
                 },
                 (error) => {
@@ -183,12 +191,16 @@ class VirtualSchema extends Component {
             )
 	}
 
+	downloadView() {
+	    // todo
+	}
+
 	render() {
 		return (
 		    <div className="general-wrapper">
 		      <div className="row">
 		        <div className="col-12 text-center title">
-		          <h1 className="mt-5">DoD: Dataset On Demand</h1>
+
 		        </div>
 		      </div>
 
@@ -198,22 +210,22 @@ class VirtualSchema extends Component {
                 </div>
 
                 <div className="col-6">
-                  <div className="VirtualSchemaTable">
+                  <div className="VirtualSchemaTable mt-5">
 				    <Table rows={this.state.rows} columns={this.state.columns} onVSChange={this.changeVS} />
 			      </div>
                 </div>
 
-                <div className="col-2 middle-margin">
+                <div className="col-1 middle-margin">
                 </div>
 
-                <div className="col-2">
-                  <div className="VirtualSchemaControl">
+                <div className="col-3">
+                  <div className="VirtualSchemaControl mt-5">
                     <VirtualSchemaControl add_row={this.addRow}
 									  remove_row={this.removeRow}
 									  add_column={this.addColumn}
 									  remove_column={this.removeColumn}
 									  find_view={this.findView}
-									  next_view={this.nextView}
+
 				     />
 				   </div>
                 </div>
@@ -226,13 +238,23 @@ class VirtualSchema extends Component {
               <div className="row">
                 <div className="col-2">
 		        </div>
-		        <div className="col-4 text-center">
+		        <div className="col-4 text-center mt-5">
 		            <ResultViews/>
 		        </div>
 		        <div className="col-4">
-                    <div id="payload-analysis">
 
-	        	    </div>
+                    <div className="row mt-5">
+                        <div className="col">
+                            <ResultViewControl next_view={this.nextView} download_view={this.downloadView}/>
+                        </div>
+                    </div>
+                    <div className="row mt-2">
+                        <div className="col">
+                            <div id="payload-analysis">
+                            </div>
+                        </div>
+                    </div>
+
 		        </div>
 		        <div className="col-2">
 		        </div>
