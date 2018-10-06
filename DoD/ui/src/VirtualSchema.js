@@ -4,6 +4,7 @@ import CellValue from './CellValue';
 import ResultViews from './ResultViews';
 import ResultViewControl from './ResultViewControl';
 import ReactDOM from 'react-dom';
+import vis from 'vis';
 
 
 function TableRow(props) {
@@ -101,6 +102,39 @@ class VirtualSchema extends Component {
 		);
 	}
 
+    createGraph(listNodes, containerId) {
+
+        // create an array with nodes
+        var nodes = new vis.DataSet([
+            {id: 1, label: 'Node 1'},
+            {id: 2, label: 'Node 2'},
+            {id: 3, label: 'Node 3'},
+            {id: 4, label: 'Node 4'},
+            {id: 5, label: 'Node 5'}
+        ]);
+
+        // create an array with edges
+        var edges = new vis.DataSet([
+            {from: 1, to: 3},
+            {from: 1, to: 2},
+            {from: 2, to: 4},
+            {from: 2, to: 5}
+        ]);
+
+        // create a network
+        var container = document.getElementById(containerId);
+
+        // provide the data in the vis format
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {};
+
+        // initialize your network!
+        var network = new vis.Network(container, data, options);
+}
+
 	findView() {
 	    var vsDefinition = this.state.virtualSchemaValues;
         console.log(vsDefinition);
@@ -139,6 +173,10 @@ class VirtualSchema extends Component {
 
                         // show ResultViewControl
                         document.getElementById('result-view-control').style.visibility = 'visible';
+
+                        // create graph and show it
+                        // TODO
+                        this.createGraph(null, 'joingraph');
                     }
                 },
                 (error) => {
@@ -236,9 +274,9 @@ class VirtualSchema extends Component {
               </div>
 
               <div className="row">
-                <div className="col-2">
+                <div className="col-1">
 		        </div>
-		        <div className="col-4 text-center mt-5">
+		        <div className="col-6 text-center mt-5">
 		            <ResultViews/>
 		        </div>
 		        <div className="col-4">
@@ -252,11 +290,14 @@ class VirtualSchema extends Component {
                         <div className="col">
                             <div id="payload-analysis">
                             </div>
+                            <div id='joingraph'>
+
+                            </div>
                         </div>
                     </div>
 
 		        </div>
-		        <div className="col-2">
+		        <div className="col-1">
 		        </div>
 		      </div>
             </div>
