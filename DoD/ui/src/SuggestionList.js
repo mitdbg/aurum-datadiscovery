@@ -23,7 +23,7 @@ class SuggestionList extends Component {
         var listEntries = [];
         for(var i = 0; i < this.suggestions.length; i++) {
             var entry = this.suggestions[i];
-            listEntries.push(<li key={entry['id']} onClick={this.handleClick}>{entry['attributeName']}</li>);
+            listEntries.push(<li key={entry['id']} onClick={this.handleClick} className="suggestionlistentry">{entry['attributeName']}</li>);
         }
         return (
             <ul>

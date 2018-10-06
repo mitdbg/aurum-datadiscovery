@@ -25,11 +25,11 @@ function Table(props) {
 	}
 	
 	return (
-		<table>
-			<thead>
+		<table className="vstable">
+			<thead className="vsheader">
 				<TableRow key={0} rowId={0} columns={props.columns} onVSChange={props.onVSChange}/>
 			</thead>
-			<tbody>
+			<tbody className="vsbody">
 				{table_rows}
 			</tbody>
 		</table>

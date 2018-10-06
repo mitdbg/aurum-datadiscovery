@@ -16,11 +16,11 @@ class CellValue extends Component {
 
         // to hold state of the actual cell, managed so we can change it with the suggestion cick event
         this.state = {
-            cellValue: ""
+            cellValue: "",
         };
     }
 
-    findSuggestions(input_text) {
+    findSuggestions(cellId, input_text) {
         var payload = {};
         payload['input_text'] = input_text;
         var body = JSON.stringify(payload);
@@ -55,9 +55,9 @@ class CellValue extends Component {
                     }
                     // Create new suggestion list, remove previous and place new
                     var el = <SuggestionList rowId={this.rowId} colId={this.columnId} suggestions={listResults} onSuggestionClick={this.handleUserClickingSuggestion}/>
-                    ReactDOM.unmountComponentAtNode(document.getElementById('suggestions'));
-                    ReactDOM.render(el, document.getElementById('suggestions'));
-//                    ReactDOM.render(el, document.getElementById(this.cellKey));
+                    var renderTargetId = document.getElementById('suggestionListCell' + this.cellKey);
+                    ReactDOM.unmountComponentAtNode(renderTargetId);
+                    ReactDOM.render(el, renderTargetId);
                 },
                 (error) => {
                     console.log("ERROR: " + error);
@@ -84,18 +84,44 @@ class CellValue extends Component {
         this.onVSChange(this.rowId, this.columnId, newValue);
         // Also, if this is the header row, then we suggest options to complete
         if (this.rowId == 0) {
-            this.findSuggestions(newValue);
+            this.findSuggestions(this.cellKey, newValue);
         }
     }
 
     handleClick(event) {
         // remove any suggestion list that may have been rendered before
-        ReactDOM.unmountComponentAtNode(document.getElementById('suggestions'));
+        var targets = document.getElementsByClassName('suggestionlist');
+        // for some reason targets is real length + 1, so need to discard that one for this to work
+        for(var i = 0; i < targets.length - 1; i++){
+            var targetId = document.getElementById(targets[i].id);
+            ReactDOM.unmountComponentAtNode(targetId);
+        }
     }
 
 
     render() {
-        return (
+
+        let element;
+        // if header then we add a placeholder for suggestions
+        if (this.rowId == 0) {
+            element =
+            <td>
+			    <input type="text" id={this.cellKey} name="ip-display"
+                   pattern="[A-Za-z\s]+"
+                   maxLength="30"
+                   minLength="0"
+                   value={this.state.cellValue}
+                   onChange={this.handleChange}
+                   onClick={this.handleClick}
+                />
+                <div id={"suggestionListCell" + this.cellKey} className="suggestionlist">
+
+                </div>
+		    </td>
+        }
+        // no placeholder for suggestions otherwise
+        else {
+            element =
             <td>
 			    <input type="text" id={this.cellKey} name="ip-display"
                    pattern="[A-Za-z\s]+"
@@ -106,6 +132,10 @@ class CellValue extends Component {
                    onClick={this.handleClick}
                 />
 		    </td>
+        }
+
+        return (
+            element
 		)
     }
 

@@ -1,7 +1,20 @@
+body {
+    padding-top: 54px;
+}
+
+@media (min-width: 992px) {
+    body {
+        padding-top: 56px;
+    }
+}
+
 #suggestion ul {
     background-color: grey;
 }
 
+/*
+Buttons
+*/
 
 .ResultViewControl {
     visibility: hidden;
@@ -25,4 +38,56 @@
 
 .button-find {
     font-size: 30px;
+}
+
+/*
+Virtual Schema
+*/
+
+.vstable table {
+    font-size: 12px;
+}
+
+.vsheader input {
+    border: 0px;
+}
+
+.vsheader input:focus {
+    background-color: #DDDDDD;
+}
+
+.vsheader td {
+    border: 2px solid black;
+}
+
+.vsbody input {
+    border: 0px;
+}
+
+.vsbody td {
+    border: 1px solid grey;
+}
+
+/*
+Suggestions list
+*/
+
+.suggestionlist {
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.suggestionlist ul {
+    list-style: none;
+}
+
+.suggestionlistentry {
+    font-size: 10px;
+}
+
+.suggestionlistentry:hover {
+    background-color: #afafea;
 }
