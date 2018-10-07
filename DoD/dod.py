@@ -303,6 +303,9 @@ class DoD:
                         tables_covered.add(hop.source_name)
                 paths_per_pair[(table1, table2)].append((p, tables_covered))
 
+        if len(paths_per_pair) == 0:
+            return []
+
         # enumerate all possible join graphs
         all_combinations = [el for el in itertools.product(*list(paths_per_pair.values()))]
         deduplicated_paths = dict()
@@ -489,6 +492,7 @@ class DoD:
                     filtered_l = None
                     for info, filter_type, filter_id in filters_l:
                         if filter_type == FilterType.ATTR:
+                            filtered_l = dpu.read_relation(l_path + l.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
                         cell_value = info[0]
@@ -512,6 +516,7 @@ class DoD:
                     filtered_r = None
                     for info, filter_type, filter_id in filters_r:
                         if filter_type == FilterType.ATTR:
+                            filtered_r = dpu.read_relation(r_path + r.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
                         cell_value = info[0]
@@ -527,7 +532,7 @@ class DoD:
             local_intermediates[r.source_name] = filtered_r
 
             # check if the materialized version join's cardinality > 0
-            joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str=None)
+            joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
 
             if len(joined) == 0:
                 return False  # non-joinable hop enough to discard join graph
@@ -784,8 +789,8 @@ def test_e2e(dod, number_jps=5):
     # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
     #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
 
-    attrs = ["n_name", "s_name", "c_name", "o_clerk"]
-    values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
+    # attrs = ["n_name", "s_name", "c_name", "o_clerk"]
+    # values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
 
     # attrs = ["o_clerk", "o_orderpriority", "n_name"]
     # values = ["Clerk#000000951", "5-LOW", "JAPAN"]
@@ -805,6 +810,12 @@ def test_e2e(dod, number_jps=5):
 
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
+
+    # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
+    # values = ["Cambridgeport", "", ""]
+
+    attrs = ["Email Address", "Department Full Name"]
+    values = ["madden@csail.mit.edu", ""]
 
     i = 0
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
@@ -861,11 +872,12 @@ if __name__ == "__main__":
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
-    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/newmitdwh/"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
-    # sep = ","
-    sep = "|"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/massdata/"
+    sep = ","
+    # sep = "|"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 

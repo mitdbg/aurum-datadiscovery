@@ -91,9 +91,10 @@ class CellValue extends Component {
     handleClick(event) {
         // remove any suggestion list that may have been rendered before
         var targets = document.getElementsByClassName('suggestionlist');
-        // for some reason targets is real length + 1, so need to discard that one for this to work
-        for(var i = 0; i < targets.length - 1; i++){
+        // note these ids come from the vs definition, regardless how it's changed
+        for(var i = 0; i < targets.length; i++){
             var targetId = document.getElementById(targets[i].id);
+            console.log("unmounting: " + targets[i].id);
             ReactDOM.unmountComponentAtNode(targetId);
         }
     }

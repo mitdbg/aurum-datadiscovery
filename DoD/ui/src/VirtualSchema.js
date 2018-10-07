@@ -125,6 +125,7 @@ class VirtualSchema extends Component {
 	    var vsDefinition = this.state.virtualSchemaValues;
         console.log(vsDefinition);
 
+        document.getElementById('payload').innerHTML = '';
         document.getElementById('payload').className = 'loader';
 
         var payload = {};
@@ -173,6 +174,15 @@ class VirtualSchema extends Component {
 
 
 	nextView() {
+
+	    // Show activity
+	    document.getElementById('payload').innerHTML = '';
+        document.getElementById('payload').className = 'loader';
+        document.getElementById('payload-analysis').innerHTML = '';
+        document.getElementById('joingraph').innerHTML = '';
+        document.getElementById('result-view-control').style.visibility = 'hidden';
+
+
         var response = fetch("http://127.0.0.1:5000/next_view", {
             method: "POST",
             mode: "cors",
@@ -189,6 +199,10 @@ class VirtualSchema extends Component {
             .then(
                 (result) => {
                     var view = result['view'];
+
+                    // remove loader
+                    document.getElementById('payload').className = '';
+
                     // if we found a view
                     if (view != 'no-more-views') {
                         document.getElementById('payload').innerHTML = view;
@@ -198,6 +212,9 @@ class VirtualSchema extends Component {
                         var analysis_html = analysis.join(" ");
                         document.getElementById('payload-analysis').className = '';
                         document.getElementById('payload-analysis').innerHTML = analysis_html;
+
+                        // show resultviewcontrol
+                        document.getElementById('result-view-control').style.visibility = 'visible';
 
                         // Set Graph
                         var graphdata = result['joingraph'];
