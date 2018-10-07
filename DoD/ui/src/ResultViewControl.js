@@ -22,23 +22,7 @@ function ViewButtonPanel(props) {
 class ResultViewControl extends Component {
 	constructor(props) {
 		super(props);
-
-//		this.state = {
-//            shown: false
-//        };
 	}
-
-//	showComponent() {
-//	    this.setState({
-//	        shown: true
-//	    });
-//	}
-//
-//	hideComponent() {
-//	    this.setState({
-//	        shown:false
-//	    });
-//	}
 
 	render() {
 		return (

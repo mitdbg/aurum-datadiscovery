@@ -173,21 +173,26 @@ View analysis data
   text-align: center;
   border-collapse: collapse;
 }
+
 #payload-analysis td, #payload-analysis th {
   font-size: 9px;
   border: 1px solid #FFFFFF;
   padding: 2px 3px;
 }
+
 #payload-analysis tbody td {
   font-size: 9px;
 }
+
 #payload-analysis td:nth-child(even) {
   background: #EBEBEB;
 }
+
 #payload-analysis thead {
   background: #FFFFFF;
   border-bottom: 4px solid #333333;
 }
+
 #payload-analysis thead th {
   font-size: 9px;
   font-weight: bold;
@@ -195,6 +200,7 @@ View analysis data
   text-align: center;
   border-left: 2px solid #333333;
 }
+
 #payload-analysis thead th:first-child {
   border-left: none;
 }
@@ -205,6 +211,7 @@ View analysis data
   color: #333333;
   border-top: 4px solid #333333;
 }
+
 #payload-analysis tfoot td {
   font-size: 9px;
 }
@@ -214,7 +221,7 @@ JOIN graph
 */
 
 #joingraph {
-    width: 200px;
-    height: 200px;
+    width: 300px;
+    height: 300px;
     border: 1px solid lightgray;
 }

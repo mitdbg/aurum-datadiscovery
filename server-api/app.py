@@ -5,6 +5,7 @@ import inspect
 from flask import Flask, jsonify
 from flask import request
 from flask_cors import CORS, cross_origin
+from flask import send_from_directory
 import json
 import pandas as pd
 from DoD.dod import DoD
@@ -32,6 +33,9 @@ store_client = StoreHandler()
 
 global dod
 dod = DoD(network=network, store_client=store_client, csv_separator=sep)
+
+global matview
+matview = None
 
 app = Flask(__name__)
 CORS(app)
@@ -84,6 +88,9 @@ def findvs():
         sample_view = proj_view.head(10)
         html_dataframe = sample_view.to_html()
 
+        global matview
+        matview = proj_view
+
         return jsonify({"view": html_dataframe, "analysis": analysis, "joingraph": view_metadata})
 
 
@@ -103,6 +110,9 @@ def next_view():
         sample_view = proj_view.head(10)
         html_dataframe = sample_view.to_html()
 
+        global matview
+        matview = proj_view
+
         return jsonify({"view": html_dataframe, "analysis": analysis, "joingraph": view_metadata})
 
 
@@ -117,6 +127,15 @@ def suggest_field():
         output = {k: v for k, v in suggestions}
 
         return jsonify(output)
+
+
+@app.route("/download_view", methods=['POST'])
+def download_view():
+    if request.method == 'POST':
+        global matview
+        matview.to_csv("/Users/ra-mit/development/discovery_proto/server-api/tmp/view.csv", encoding='latin1')
+        return jsonify({"ok": "ok"})
+        # return send_from_directory("tmp/", "test.csv")
 
 
 def obtain_view_analysis(view):

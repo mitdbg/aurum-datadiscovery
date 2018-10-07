@@ -48,6 +48,7 @@ class VirtualSchema extends Component {
 		this.changeVS = this.changeVS.bind(this);
 		this.findView = this.findView.bind(this);
 		this.nextView = this.nextView.bind(this);
+		this.downloadView = this.downloadView.bind(this);
 
 		this.state = {
 			rows: 3,
@@ -239,7 +240,27 @@ class VirtualSchema extends Component {
 	}
 
 	downloadView() {
-	    // todo
+	    var response = fetch("http://127.0.0.1:5000/download_view", {
+            method: "POST",
+            mode: "cors",
+            cache: "no-cache",
+            credentials: 'same-origin',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            redirect: "follow",
+            referrer: "no-referrer",
+            body: ""
+            })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    alert("View downloaded");
+                },
+                (error) => {
+                    console.log("ERROR: " + error);
+                }
+            )
 	}
 
 	render() {
