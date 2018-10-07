@@ -219,7 +219,8 @@ class DoD:
                     # Create metadata to document this view
                     view_metadata = dict()
                     view_metadata["#join_graphs"] = len(join_graphs)
-                    view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
+                    # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
+                    view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(jpg)
                     yield materialized_virtual_schema, attrs_to_project, view_metadata
 
             # # FIXME: fixing stitching downstream from here
@@ -345,7 +346,6 @@ class DoD:
         join_graphs = sorted(covering_join_graphs, key=lambda x: len(x))
         return join_graphs
 
-
     def format_join_paths_pairhops(self, join_paths):
         """
         Transform this into something readable
@@ -363,6 +363,24 @@ class DoD:
                     formatted_jp += " -> " + hop_str
             formatted_jps.append(formatted_jp)
         return formatted_jps
+
+    def format_join_graph_into_nodes_edges(self, join_graph):
+        nodes = dict()
+        edges = []
+        for jp in join_graph:
+            # Add nodes
+            for hop in jp:
+                label = hop.db_name + ":" + hop.source_name
+                node_descr = {"id": hash(label), "label": label}  # cannot use nid cause that's for cols not rels
+                node_id = hash(label)
+                if node_id not in nodes:
+                    nodes[node_id] = node_descr
+            l, r = jp
+            l_label = l.db_name + ":" + l.source_name
+            r_label = r.db_name + ":" + r.source_name
+            edge_descr = {"from": hash(l_label), "to": hash(r_label)}
+            edges.append(edge_descr)
+        return {"nodes": list(nodes.values()), "edges": list(edges)}
 
     def transform_join_path_to_pair_hop(self, join_path):
         jp_hops = []

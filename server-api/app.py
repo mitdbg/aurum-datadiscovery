@@ -80,14 +80,11 @@ def findvs():
         view_generator = iter(dod.virtual_schema_iterative_search(list_attributes, list_samples))
         mvs, attrs_to_project, view_metadata = next(view_generator)
         proj_view = dpu.project(mvs, attrs_to_project)
-
         analysis = obtain_view_analysis(proj_view)
-
         sample_view = proj_view.head(10)
-
         html_dataframe = sample_view.to_html()
 
-        return jsonify({"view": html_dataframe, "analysis": analysis})
+        return jsonify({"view": html_dataframe, "analysis": analysis, "joingraph": view_metadata})
 
 
 @app.route("/next_view", methods=['POST'])
@@ -102,14 +99,11 @@ def next_view():
             print("finished exploring views")
             return jsonify({"view": "no-more-views", "analysis": 'no'})
         proj_view = dpu.project(mvs, attrs_to_project)
-
         analysis = obtain_view_analysis(proj_view)
-
         sample_view = proj_view.head(10)
-
         html_dataframe = sample_view.to_html()
 
-        return jsonify({"view": html_dataframe, "analysis": analysis})
+        return jsonify({"view": html_dataframe, "analysis": analysis, "joingraph": view_metadata})
 
 
 @app.route("/suggest_field", methods=['POST'])

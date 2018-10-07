@@ -102,24 +102,10 @@ class VirtualSchema extends Component {
 		);
 	}
 
-    createGraph(listNodes, containerId) {
+    createGraph(listNodes, listEdges, containerId) {
 
-        // create an array with nodes
-        var nodes = new vis.DataSet([
-            {id: 1, label: 'Node 1'},
-            {id: 2, label: 'Node 2'},
-            {id: 3, label: 'Node 3'},
-            {id: 4, label: 'Node 4'},
-            {id: 5, label: 'Node 5'}
-        ]);
-
-        // create an array with edges
-        var edges = new vis.DataSet([
-            {from: 1, to: 3},
-            {from: 1, to: 2},
-            {from: 2, to: 4},
-            {from: 2, to: 5}
-        ]);
+        var nodes = new vis.DataSet(listNodes);
+        var edges = new vis.DataSet(listEdges);
 
         // create a network
         var container = document.getElementById(containerId);
@@ -174,9 +160,9 @@ class VirtualSchema extends Component {
                         // show ResultViewControl
                         document.getElementById('result-view-control').style.visibility = 'visible';
 
-                        // create graph and show it
-                        // TODO
-                        this.createGraph(null, 'joingraph');
+                        // Set Graph
+                        var graphdata = result['joingraph'];
+                        this.createGraph(graphdata['join_graph']['nodes'], graphdata['join_graph']['edges'], 'joingraph');
                     }
                 },
                 (error) => {
@@ -212,6 +198,11 @@ class VirtualSchema extends Component {
                         var analysis_html = analysis.join(" ");
                         document.getElementById('payload-analysis').className = '';
                         document.getElementById('payload-analysis').innerHTML = analysis_html;
+
+                        // Set Graph
+                        var graphdata = result['joingraph'];
+                        console.log(graphdata);
+                        this.createGraph(graphdata['join_graph']['nodes'], graphdata['join_graph']['edges'], 'joingraph');
                     }
                     // if no more views are available
                     else {
@@ -221,6 +212,7 @@ class VirtualSchema extends Component {
 
                         // hide result view panel
                         document.getElementById('result-view-control').style.visibility = 'hidden';
+                        document.getElementById('joingraph').style.visibility = 'hidden';
                     }
                 },
                 (error) => {
@@ -276,10 +268,10 @@ class VirtualSchema extends Component {
               <div className="row">
                 <div className="col-1">
 		        </div>
-		        <div className="col-6 text-center mt-5">
+		        <div className="col-5 text-center mt-1">
 		            <ResultViews/>
 		        </div>
-		        <div className="col-4">
+		        <div className="col-5">
 
                     <div className="row mt-5">
                         <div className="col">
@@ -287,11 +279,12 @@ class VirtualSchema extends Component {
                         </div>
                     </div>
                     <div className="row mt-2">
-                        <div className="col">
+                        <div className="col-6">
                             <div id="payload-analysis">
                             </div>
+                        </div>
+                        <div className="col-6">
                             <div id='joingraph'>
-
                             </div>
                         </div>
                     </div>
