@@ -176,7 +176,7 @@ class DoD:
                 # Create metadata to document this view
                 view_metadata = dict()
                 view_metadata["#join_graphs"] = 1
-                view_metadata["join_graph"] = "unique table with all attrs"
+                view_metadata["join_graph"] = {"nodes": [{"id": -101010, "label": table}], "edges": []}
                 yield materialized_virtual_schema, attrs_to_project, view_metadata
                 continue  # to go to the next group
 
