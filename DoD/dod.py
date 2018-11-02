@@ -116,6 +116,7 @@ class DoD:
                 candidate_group.clear()
                 candidate_group_filters_covered.clear()
             # Eagerly obtain groups of tables that cover as many filters as possible
+            backup = []
             go_on = True
             while go_on:
                 candidate_group = []
@@ -155,9 +156,16 @@ class DoD:
                                 candidate_group_filters_covered.update(filters_pivot)
                     candidate_group = sorted(candidate_group)
                     # print("3: " + str(table_pivot))
-                    yield (candidate_group, candidate_group_filters_covered)
+                    if covers_filters(candidate_group_filters_covered, filter_drs.items()):
+                        yield (candidate_group, candidate_group_filters_covered)
+                    else:
+                        backup.append(([el for el in candidate_group],
+                                       set([el for el in candidate_group_filters_covered])))
                     # Cleaning
                     clear_state()
+                # before exiting, return backup in case that may be useful
+                for candidate_group, candidate_group_filters_covered in backup:
+                    yield (candidate_group, candidate_group_filters_covered)
                 go_on = False  # finished exploring all groups
 
         # Find ways of joining together each group
@@ -167,6 +175,8 @@ class DoD:
             print("Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
+
+            continue
 
             if len(candidate_group) == 1:
                 table = candidate_group[0]
@@ -776,7 +786,7 @@ def obtain_table_paths(set_nids, dod):
     return table_path
 
 
-def test_e2e(dod, number_jps=5):
+def test_e2e(dod, number_jps=5, output_path=None):
 
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     # values = ["968548423", "kimball", "Mechanical Engineering"]
@@ -828,6 +838,11 @@ def test_e2e(dod, number_jps=5):
         proj_view = dpu.project(mjp, attrs_project)
 
         print(str(proj_view.head(10)))
+
+        if output_path is not None:
+            proj_view.to_csv(output_path + "/view_" + str(i), encoding='latin1')
+
+        i += 1
 
         print("")
         input("Press any key to continue...")
@@ -883,7 +898,8 @@ if __name__ == "__main__":
 
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    test_e2e(dod, number_jps=10)
+    test_e2e(dod, number_jps=10, output_path=None)
+    # test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
 
     # debug intree mat join
     # test_intree(dod)
