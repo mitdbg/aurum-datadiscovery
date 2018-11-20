@@ -176,8 +176,6 @@ class DoD:
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
 
-            continue
-
             if len(candidate_group) == 1:
                 table = candidate_group[0]
                 path = table_path[table]
@@ -786,8 +784,9 @@ def obtain_table_paths(set_nids, dod):
     return table_path
 
 
-def test_e2e(dod, number_jps=5, output_path=None):
+def test_e2e(dod, number_jps=5, output_path=None, full_view=True):
 
+    # tests equivalence and containment - did not finish executing though
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     # values = ["968548423", "kimball", "Mechanical Engineering"]
 
@@ -795,9 +794,9 @@ def test_e2e(dod, number_jps=5, output_path=None):
     # attrs = ["s_name", "s_address", "ps_availqty"]
     # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
 
-    # attrs = ["s_name", "s_address", "ps_comment"]
-    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
-    #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
+    attrs = ["s_name", "s_address", "ps_comment"]
+    values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
+              "dly final packages haggle blithely according to the pending packages. slyly regula"]
 
     # attrs = ["n_name", "s_name", "c_name", "o_clerk"]
     # values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
@@ -824,11 +823,13 @@ def test_e2e(dod, number_jps=5, output_path=None):
     # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
     # values = ["Cambridgeport", "", ""]
 
-    attrs = ["Email Address", "Department Full Name"]
-    values = ["madden@csail.mit.edu", ""]
+    # tests equivalence and containment
+    # attrs = ["Email Address", "Department Full Name"]
+    # values = ["madden@csail.mit.edu", ""]
 
     i = 0
-    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, debug_enumerate_all_jps=False):
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
+                                                        debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
         # print(mjp.head(2))
@@ -838,9 +839,13 @@ def test_e2e(dod, number_jps=5, output_path=None):
         proj_view = dpu.project(mjp, attrs_project)
 
         print(str(proj_view.head(10)))
+        print("Metadata")
+        print(metadata)
 
         if output_path is not None:
-            proj_view.to_csv(output_path + "/view_" + str(i), encoding='latin1')
+            if full_view:
+                mjp.to_csv(output_path + "/raw_view_" + str(i), encoding='latin1', index=False)
+            proj_view.to_csv(output_path + "/view_" + str(i), encoding='latin1', index=False)  # always store this
 
         i += 1
 
@@ -887,19 +892,19 @@ if __name__ == "__main__":
     from knowledgerepr import fieldnetwork
     from modelstore.elasticstore import StoreHandler
     # basic test
-    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/massdata/"
-    sep = ","
-    # sep = "|"
+    # sep = ","
+    sep = "|"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    test_e2e(dod, number_jps=10, output_path=None)
-    # test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
+    # test_e2e(dod, number_jps=10, output_path=None)
+    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
 
     # debug intree mat join
     # test_intree(dod)

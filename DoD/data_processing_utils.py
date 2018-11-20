@@ -18,9 +18,7 @@ def configure_csv_separator(separator):
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     a[a_key] = a[a_key].apply(lambda x: str(x).lower())
     b[b_key] = b[b_key].apply(lambda x: str(x).lower())
-
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
-
     return joined
 
 
