@@ -11,13 +11,31 @@ from functools import reduce
 import operator
 import pickle
 from tqdm import tqdm
+from knowledgerepr import fieldnetwork
+from modelstore.elasticstore import StoreHandler
+import time
 
 
 class DoD:
 
     def __init__(self, network, store_client, csv_separator=","):
         self.aurum_api = API(network=network, store_client=store_client)
+        self.paths_cache = dict()
         dpu.configure_csv_separator(csv_separator)
+
+    def place_paths_in_cache(self, t1, t2, paths):
+        self.paths_cache[(t1, t2)] = paths
+        self.paths_cache[(t2, t1)] = paths
+
+    def are_paths_in_cache(self, t1, t2):
+        if (t1, t2) in self.paths_cache:
+            print("HIT!")
+            return self.paths_cache[(t1, t2)]
+        elif (t2, t1) in self.paths_cache:
+            print("HIT!")
+            return self.paths_cache[(t2, t1)]
+        else:
+            return None
 
     def individual_filters(self, sch_def):
         # Obtain sets that fulfill individual filters
@@ -296,7 +314,16 @@ class DoD:
             t2 = self.aurum_api.make_drs(table2)
             t1.set_table_mode()
             t2.set_table_mode()
-            drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+            # Check cache first, if not in cache then do the search
+            drs = self.are_paths_in_cache(table1, table2)
+            if drs is None:
+                print("Finding paths between " + str(table1) + " and " + str(table2))
+                print("max hops: " + str(max_hops))
+                s = time.time()
+                drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+                e = time.time()
+                print("Total time: " + str((e-s)))
+                self.place_paths_in_cache(table1, table2, drs)
             paths = drs.paths()  # list of lists
             # If we didn't find paths, update unjoinable_pairs cache with this pair
             if len(paths) == 0:  # then store this info, these tables do not join
@@ -784,7 +811,7 @@ def obtain_table_paths(set_nids, dod):
     return table_path
 
 
-def test_e2e(dod, number_jps=5, output_path=None, full_view=True):
+def test_e2e(dod, number_jps=5, output_path=None, full_view=True, interactive=True):
 
     # tests equivalence and containment - did not finish executing though
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
@@ -849,8 +876,9 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=True):
 
         i += 1
 
-        print("")
-        input("Press any key to continue...")
+        if interactive:
+            print("")
+            input("Press any key to continue...")
 
 
 def test_joinable(dod):
@@ -886,25 +914,79 @@ def test_dpu(dod):
         yield materialized_virtual_schema, attrs_to_project
 
 
+def main(args):
+    model_path = args.model_path
+    separator = args.separator
+
+    store_client = StoreHandler()
+    network = fieldnetwork.deserialize_network(model_path)
+    dod = DoD(network=network, store_client=store_client, csv_separator=separator)
+
+    attrs = args.list_attributes.split(";")
+    values = args.list_values.split(";")
+    print(attrs)
+    print(values)
+    assert len(attrs) == len(values)
+
+    i = 0
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
+                                                                            debug_enumerate_all_jps=False):
+        print("JP: " + str(i))
+        proj_view = dpu.project(mjp, attrs_project)
+        print(str(proj_view.head(10)))
+        print("Metadata")
+        print(metadata)
+        if args.output_path:
+            if args.full_view:
+                mjp.to_csv(args.output_path + "/raw_view_" + str(i), encoding='latin1', index=False)
+            proj_view.to_csv(args.output_path + "/view_" + str(i), encoding='latin1', index=False)  # always store this
+        i += 1
+        if args.interactive == "True":
+            print("")
+            input("Press any key to continue...")
+
+
+def pe_paths(dod):
+    s = time.time()
+    table1 = "Fclt_building_list.csv"
+    table2 = "short_course_catalog_subject_offered.csv"
+    # table1 = "Warehouse_users.csv"
+    # table2 = "short_course_catalog_subject_offered.csv"
+    # table1 = "Fclt_building_list.csv"
+    # table2 = "Se_person.csv"
+    t1 = dod.aurum_api.make_drs(table1)
+    t2 = dod.aurum_api.make_drs(table2)
+    t1.set_table_mode()
+    t2.set_table_mode()
+    i = time.time()
+    drs = dod.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=2, lean_search=True)
+    a = drs.paths()
+    e = time.time()
+    print("Total time: " + str((e - s)))
+    print("Inter time: " + str((i - s)))
+    print("Done")
+
+
 if __name__ == "__main__":
     print("DoD")
 
-    from knowledgerepr import fieldnetwork
-    from modelstore.elasticstore import StoreHandler
     # basic test
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
-    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/massdata/"
-    # sep = ","
-    sep = "|"
+    sep = ","
+    # sep = "|"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
 
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    # test_e2e(dod, number_jps=10, output_path=None)
-    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
+    # Fclt_building_list.csv and short_course_catalog_subject_offered.csv
+    pe_paths(dod)
+
+    # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
+    # test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
 
     # debug intree mat join
     # test_intree(dod)
