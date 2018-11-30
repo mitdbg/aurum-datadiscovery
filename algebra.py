@@ -118,7 +118,7 @@ class Algebra:
     TC API
     """
 
-    def paths(self, drs_a: DRS, drs_b: DRS, relation=Relation.PKFK, max_hops=2) -> DRS:
+    def paths(self, drs_a: DRS, drs_b: DRS, relation=Relation.PKFK, max_hops=2, lean_search=False) -> DRS:
         """
         Is there a transitive relationship between any element in a with any
         element in b?
@@ -152,7 +152,7 @@ class Algebra:
                     h1, h2, relation, max_hops=max_hops)
             else:
                 res_drs = self._network.find_path_table(
-                    h1, h2, relation, self, max_hops=max_hops)
+                    h1, h2, relation, self, max_hops=max_hops, lean_search=lean_search)
 
             o_drs = o_drs.absorb(res_drs)
 
@@ -266,6 +266,13 @@ class Algebra:
                 'id, drs/hit/string/int] )' +
                 '\ne.g.:\n\tmake_drs(1600820766)')
             print(msg)
+
+    def _drs_from_table_hit_lean_no_provenance(self, hit: Hit) -> DRS:
+        # TODO: migrated from old ddapi as there's no good swap
+        table = hit.source_name
+        hits = self._network.get_hits_from_table(table)
+        drs = DRS([x for x in hits], Operation(OP.TABLE, params=[hit]), lean_drs=True)
+        return drs
 
     def drs_from_table_hit(self, hit: Hit) -> DRS:
         # TODO: migrated from old ddapi as there's no good swap
