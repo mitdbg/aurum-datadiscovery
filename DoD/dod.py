@@ -237,6 +237,8 @@ class DoD:
                     if r.source_name in table_fulfilled_filters:
                         filters.update(table_fulfilled_filters[r.source_name])
 
+                # TODO: obtain join_graph score for diff metrics. useful for ranking later
+                # rank_materializable_join_graphs(materializable_join_paths, table_path, dod)
                 is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
 
                 if is_join_graph_valid:
@@ -248,32 +250,6 @@ class DoD:
                     # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
                     view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(jpg)
                     yield materialized_virtual_schema, attrs_to_project, view_metadata
-
-            # # FIXME: fixing stitching downstream from here
-            #
-            # # We have now all the materializable join graphs for this candidate group
-            # # We can sort them by how likely they use 'keys'
-            # all_jgs_scores = rank_materializable_join_graphs(materializable_join_graphs, table_path, self)
-            #
-            # # Do some clean up
-            # clean_jp = []
-            # for annotated_jp, aggr_score, mul_score in all_jgs_scores:
-            #     jp = []
-            #     filters = set()
-            #     for filter, l, r in annotated_jp:
-            #         # To drag filters along, there's a leaf special tuple where r may be None
-            #         # since we don't need it at this point anymore, we check for its existence and do not include it
-            #         if r is not None:
-            #             jp.append((l, r))
-            #         if filter is not None:
-            #             filters.update(filter)
-            #     clean_jp.append((filters, jp))
-            #
-            # for mjp in clean_jp:
-            #     attrs_to_project = dpu.obtain_attributes_to_project(mjp)
-            #     # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
-            #     materialized_virtual_schema = dpu.materialize_join_graph(mjp, self)
-            #     yield materialized_virtual_schema, attrs_to_project
 
         print("Finished enumerating groups")
         cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
@@ -384,24 +360,6 @@ class DoD:
         join_graphs = sorted(covering_join_graphs, key=lambda x: len(x))
         return join_graphs
 
-    def format_join_paths_pairhops(self, join_paths):
-        """
-        Transform this into something readable
-        :param join_paths: [(hit, hit)]
-        :return:
-        """
-        formatted_jps = []
-        for jp in join_paths:
-            formatted_jp = ""
-            for hop in jp:
-                hop_str = hop.db_name + ":" + hop.source_name + ":" + hop.field_name
-                if formatted_jp == "":
-                    formatted_jp += hop_str
-                else:
-                    formatted_jp += " -> " + hop_str
-            formatted_jps.append(formatted_jp)
-        return formatted_jps
-
     def format_join_graph_into_nodes_edges(self, join_graph):
         nodes = dict()
         edges = []
@@ -421,6 +379,12 @@ class DoD:
         return {"nodes": list(nodes.values()), "edges": list(edges)}
 
     def transform_join_path_to_pair_hop(self, join_path):
+        """
+        1. get join path, 2. annotate with values to check for, then 3. format into [(l,r)]
+        :param join_paths:
+        :param table_fulfilled_filters:
+        :return:
+        """
         jp_hops = []
         pair = []
         for hop in join_path:
@@ -432,86 +396,6 @@ class DoD:
         # Now remove pairs with pointers within same relation, as we don't need to join these
         jp_hops = [(l, r) for l, r in jp_hops if l.source_name != r.source_name]
         return jp_hops
-
-    def transform_join_paths_to_pair_hops(self, join_paths):
-        """
-        1. get join path, 2. annotate with values to check for, then 3. format into [(l,r)]
-        :param join_paths:
-        :param table_fulfilled_filters:
-        :return:
-        """
-        join_paths_hops = []
-        for jp in join_paths:
-            jp_hops = self.transform_join_path_to_pair_hop(jp)
-            join_paths_hops.append(jp_hops)
-        return join_paths_hops
-
-
-    def annotate_join_graph_with_filters(self, join_graph, table_fulfilled_filters, candidate_group):
-        filters = set()
-        for l, r in join_graph:
-            filters.update(table_fulfilled_filters[l.source_name])
-            filters.update(table_fulfilled_filters[r.source_name])
-        return list(filters)
-
-        # # FIXME: BROKEN: not annotating all filters if a table flals in the 'r' is not annotating it
-        # annotated_join_graph = []
-        # r = None  # memory for last hop
-        # for l, r in join_graph:
-        #     # each filter is a (attr, filter-type)
-        #     # Check if l side is a table in the group or just an intermediary
-        #     if l.source_name in candidate_group:  # it's a table in group, so retrieve filters
-        #         filters = table_fulfilled_filters[l.source_name]
-        #     else:
-        #         filters = None  # indicating no need to check filters for intermediary node
-        #     annotated_hop = (filters, l, r)
-        #     annotated_join_graph.append(annotated_hop)
-        # # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
-        # if r.source_name in candidate_group:
-        #     filters = table_fulfilled_filters[r.source_name]
-        #     annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
-        #     annotated_join_graph.append(annotated_hop)
-        # return annotated_join_graph
-
-    def _annotate_join_graph_with_filters(self, join_graph, table_fulfilled_filters, candidate_group):
-        # FIXME: does this keep *all* relevant filters?
-        # FIXME: This would be much simpler to do if we just attach filters to the tables, this would only work
-        # FIXME: assuming that we are receiving all paths in order
-        annotated_jps = []
-        l = None  # memory for last hop
-        r = None
-        for jp in join_graph:
-            # For each hop
-            annotated_jp = []
-            for l, r in jp:
-                # each filter is a (attr, filter-type)
-                # Check if l side is a table in the group or just an intermediary
-                if l.source_name in candidate_group:  # it's a table in group, so retrieve filters
-                    filters = table_fulfilled_filters[l.source_name]
-                else:
-                    filters = None  # indicating no need to check filters for intermediary node
-                annotated_hop = (filters, l, r)
-                annotated_jp.append(annotated_hop)
-            annotated_jps.append(annotated_jp)
-            # Finally we must check if the very last table was also part of the jp, so we can add the filters for it
-            if r.source_name in candidate_group:
-                filters = table_fulfilled_filters[r.source_name]
-                annotated_hop = (filters, r, None)  # r becomes left and we insert a None to indicate the end
-                last_hop = annotated_jps[-1]
-                last_hop.append(annotated_hop)
-        return annotated_jps
-
-    def verify_candidate_join_paths(self, annotated_join_paths):
-        materializable_join_paths = []
-        total_jps = len(annotated_join_paths)
-        i = 0
-        for annotated_join_path in annotated_join_paths:
-            print("Verifying " + str(i) + "/" + str(total_jps), end="", flush=True)
-            valid, filters = self.verify_candidate_join_path(annotated_join_path)
-            i += 1
-            if valid:
-                materializable_join_paths.append(annotated_join_path)
-        return materializable_join_paths
 
     def is_join_graph_materializable(self, join_graph, table_fulfilled_filters):
 
@@ -573,151 +457,6 @@ class DoD:
                 return False  # non-joinable hop enough to discard join graph
         # if we make it through all hopes, then join graph is materializable (i.e., verified)
         return True
-
-    def _is_join_graph_materializable(self, annotated_join_paths):
-        for idx, annotated_join_path in enumerate(annotated_join_paths):
-            valid, filters = self.verify_candidate_join_path(annotated_join_path)
-            if not valid:
-                return False
-        return True
-
-    def verify_candidate_join_path(self, annotated_join_path):
-        """
-        TODO: what about materializing views of the tables that are filtered by the selection predicates?
-        """
-        tree_valid_filters = dict()
-        x = 0
-        for filters, l, r in annotated_join_path:  # for each hop
-            l_path = self.aurum_api.helper.get_path_nid(l.nid)
-            tree_for_level = dict()
-
-            # Before checking for filters, translate carrying values into hook attribute in l
-            if len(tree_valid_filters) != 0:  # i.e., not first hop
-                x_to_remove = set()
-                for x, payload in tree_valid_filters.items():
-                    carrying_filters, carrying_values = payload
-                    if carrying_values[0] is None and carrying_values[1] is None:
-                        # tree_valid_filters[x] = (carrying_filters, (None, None))
-                        continue  # in this case nothing to hook
-                    attr = carrying_values[1]
-                    if attr == l.field_name:
-                        continue  # no need to translate values to hook in this case
-                    hook_values = set()
-                    for carrying_value in carrying_values[0]:
-                        values = dpu.find_key_for(l_path + "/" + l.source_name, l.field_name,
-                                                   attr, carrying_value)
-                        hook_values.update(values)
-                    if len(hook_values) > 0:
-                        # FIXME: EXPERIMENTAL HERE!!
-                        tree_valid_filters[x] = (carrying_filters, (hook_values, l.field_name))  # update tree
-                    else:  # does this even make sense?
-                        x_to_remove.add(x)
-                for x in x_to_remove:
-                    del tree_valid_filters[x]
-                if len(tree_valid_filters.items()) == 0:
-                    return False, set()
-
-            if filters is None:
-                # This means we are in an intermediate hop with no filters, as it's only connecting
-                # we still need to hook connect the carrying values
-                r_path = self.aurum_api.helper.get_path_nid(r.nid)
-                x_to_remove = set()
-                for x, payload in tree_valid_filters.items():
-                    carrying_filters, carrying_values = payload
-                    if carrying_values[0] is None and carrying_values[1] is None:
-                        # propagate the None None because all values work
-                        tree_for_level[x] = (carrying_filters, (None, None))
-                        continue
-                    values_to_carry = set()
-                    # attr = carrying_values[1]
-                    for carrying_value in carrying_values[0]:
-                        path = r_path + "/" + r.source_name
-                        exists = dpu.is_value_in_column(carrying_value, path, r.field_name)
-                        if exists:
-                            values_to_carry.add(carrying_value)  # this one checks
-                    if len(values_to_carry) > 0:
-                        # here we update the tree at the current level
-                        tree_for_level[x] = (carrying_filters, (values_to_carry, r.field_name))
-                    else:
-                        return False, set()  # non joinable, stop trying
-                        # x_to_remove.add(x)
-                # remove if any
-                for x in x_to_remove:
-                    del tree_for_level[x]  # no more results here, need to prune
-                tree_valid_filters = tree_for_level
-                if len(tree_valid_filters.items()) == 0:
-                    return False, set()  # early stop
-                continue
-            if filters is not None:
-                # sort filters so cell type come first
-                filters = sorted(filters, key=lambda x: x[1].value)
-                # pre-filter carrying values
-                for info, filter_type, filter_id in filters:
-                    if filter_type == FilterType.CELL:
-                        attribute = info[1]
-                        cell_value_specified_by_user = info[0]  # this will always be one (?) FIXME: no! only when using the pre-interface
-                        path = l_path + "/" + l.source_name
-                        keys_l = dpu.find_key_for(path, l.field_name,
-                                                 attribute, cell_value_specified_by_user)
-                        # Check for the first addition
-                        if len(tree_valid_filters.items()) == 0:
-                            x += 1
-                            tree_for_level[x] = ({(info, filter_type, filter_id)}, (set(keys_l), l.field_name))
-                        # Now update carrying_values with the first filter
-                        for x, payload in tree_valid_filters.items():
-                            carrying_filters, carrying_values = payload
-                            ix = carrying_values[0].intersection(set(keys_l))
-                            if len(ix) > 0:  # if keeps it valid, create branch
-                                carrying_filters.add((info, filter_type, filter_id))
-                                x += 1
-                                tree_for_level[x] = (carrying_filters, (ix, l.field_name))
-                    elif filter_type == FilterType.ATTR:
-                        # attr filters work with everyone, so just append
-                        # Check for the first addition, TODO: tree_for_level ?
-                        if len(tree_for_level.items()) == 0:
-                            x += 1
-                            tree_for_level[x] = ({(info, filter_type, filter_id)}, (None, None))
-                        for x, payload in tree_for_level.items():
-                            carrying_filters, carrying_values = payload
-                            carrying_filters.add((info, filter_type, filter_id))
-                            tree_for_level[x] = (carrying_filters, carrying_values)
-            # Now filter with r
-            if r is not None:  # if none, we processed the last step already, so time to check the tree
-                r_path = self.aurum_api.helper.get_path_nid(r.nid)
-                x_to_remove = set()
-                for x, payload in tree_for_level.items():
-                    carrying_filters, carrying_values = payload
-                    if carrying_values[0] is None and carrying_values[1] is None:
-                        # propagate the None None because all values work
-                        tree_for_level[x] = (carrying_filters, (None, None))
-                        continue
-                    values_to_carry = set()
-                    for carrying_value in carrying_values[0]:
-                        path = r_path + "/" + r.source_name
-                        exists = dpu.is_value_in_column(carrying_value, path, r.field_name)
-                        if exists:
-                            values_to_carry.add(carrying_value)  # this one checks
-                    if len(values_to_carry) > 0:
-                        # here we update the tree at the current level
-                        tree_for_level[x] = (carrying_filters, (values_to_carry, r.field_name))
-                    else:
-                        x_to_remove.add(x)
-                # remove if any
-                for x in x_to_remove:
-                    del tree_for_level[x]  # no more results here, need to prune
-                tree_valid_filters = tree_for_level
-                if len(tree_valid_filters.items()) == 0:
-                    return False, set()  # early stop
-        # Check if the join path was valid, also retrieve the number of filters covered by this JP
-        if len(tree_valid_filters.items()) > 0:
-            for k, v in tree_for_level.items():
-                tree_valid_filters[k] = v  # merge trees
-            unique_filters = set()
-            for k, v in tree_valid_filters.items():
-                unique_filters.update(v[0])
-            return True, len(unique_filters)
-        else:
-            return False, set()
 
 
 def rank_materializable_join_graphs(materializable_join_paths, table_path, dod):
@@ -881,21 +620,21 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=True, interactive=Tr
             input("Press any key to continue...")
 
 
-def test_joinable(dod):
-    candidate_group = ['Employee_directory.csv', 'Drupal_employee_directory.csv']
-    #candidate_group = ['Se_person.csv', 'Employee_directory.csv', 'Drupal_employee_directory.csv']
-    #candidate_group = ['Tip_detail.csv', 'Tip_material.csv']
-    join_paths = dod.joinable(candidate_group)
-
-    # print("RAW: " + str(len(join_paths)))
-    # for el in join_paths:
-    #     print(el)
-
-    join_paths = dod.format_join_paths_pairhops(join_paths)
-
-    print("CLEAN: " + str(len(join_paths)))
-    for el in join_paths:
-        print(el)
+# def test_joinable(dod):
+#     candidate_group = ['Employee_directory.csv', 'Drupal_employee_directory.csv']
+#     #candidate_group = ['Se_person.csv', 'Employee_directory.csv', 'Drupal_employee_directory.csv']
+#     #candidate_group = ['Tip_detail.csv', 'Tip_material.csv']
+#     join_paths = dod.joinable(candidate_group)
+#
+#     # print("RAW: " + str(len(join_paths)))
+#     # for el in join_paths:
+#     #     print(el)
+#
+#     join_paths = dod.format_join_paths_pairhops(join_paths)
+#
+#     print("CLEAN: " + str(len(join_paths)))
+#     for el in join_paths:
+#         print(el)
 
 
 def test_intree(dod):
