@@ -29,6 +29,7 @@ def uniqueness(df):
         res[c] = uniqueness
     return res
 
+
 def curate_view(df):
     df = df.dropna()  # drop nan
     df = df.drop_duplicates()

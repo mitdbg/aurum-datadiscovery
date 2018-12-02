@@ -398,7 +398,7 @@ class DoD:
         return jp_hops
 
     def is_join_graph_materializable(self, join_graph, table_fulfilled_filters):
-
+        # FIXME: add a way of collecting the join cardinalities and propagating them outside as well
         local_intermediates = dict()
 
         for l, r in join_graph:

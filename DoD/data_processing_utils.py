@@ -122,17 +122,6 @@ def _obtain_attributes_to_project(jp_with_filters):
 
 
 def project(df, attributes_to_project):
-    # print("Project requested: " + str(attributes_to_project))
-    # actual_attribute_names = df.columns
-    # mapping = dict()
-    # for req in attributes_to_project:
-    #     candidate, score = None, 1000
-    #     for c in actual_attribute_names:
-    #         d = editdistance.eval(req, c)
-    #         if d < score:
-    #             candidate, score = c, d
-    #     mapping[req] = candidate
-    # print("Projecting on: " + str(mapping.values()))
     print("Project: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]
     return df
@@ -254,37 +243,16 @@ def materialize_join_graph(jg, dod):
     return materialized_view
 
 
-def materialize_join_path(jp_with_filters, dod):
-    filters, jp = jp_with_filters
-    df = None
-    suffix = '_x'
-    for l, r in jp:
-        l_path = dod.aurum_api.helper.get_path_nid(l.nid)
-        r_path = dod.aurum_api.helper.get_path_nid(r.nid)
-        l_key = l.field_name
-        r_key = r.field_name
-        print("Joining: " + str(l.source_name) + "." + str(l_key) + " with: " + str(r.source_name) + "." + str(r_key))
-        if df is None:  # first iteration
-            path = l_path + '/' + l.source_name
-            if path in cache:
-                l = cache[path]
-            else:
-                l = pd.read_csv(path, encoding='latin1', sep=data_separator)
-            path = r_path + '/' + r.source_name
-            if path in cache:
-                r = cache[path]
-            else:
-                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
-        else:  # roll the partially joint
-            l = df
-            path = r_path + '/' + r.source_name
-            if path in cache:
-                r = cache[path]
-            else:
-                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
-        df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
-        suffix += '_x'  # this is to make sure we don't end up with repeated columns
-    return df
+def compute_table_cleanliness_profile(table_df: pd.DataFrame) -> dict:
+    columns = table_df.columns
+    # TODO: return a dict with a col profile. perhaps do some aggr at the end to return table-wide stats as well
+    # unique / total
+    # num null values
+    # uniqueness column in the whole dataset -> information
+    # FIXME: cardinality of the join - this is specific to a pair and not the invidivual
+    #
+
+    return columns
 
 
 def get_dataframe(path):
