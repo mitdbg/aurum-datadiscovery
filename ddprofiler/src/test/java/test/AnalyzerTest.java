@@ -15,11 +15,11 @@ import analysis.TextualAnalysis;
 import analysis.modules.Cardinality;
 import analysis.modules.Entities;
 import analysis.modules.Range;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
+import sources.implementations.CSVSource;
 
 public class AnalyzerTest {
 
@@ -44,12 +44,12 @@ public class AnalyzerTest {
 	// separator);
 
 	// FIXME: configure source on-the-fly
-	CSVConnector fc = new CSVConnector(null);
+	CSVSource fc = new CSVSource();
 
 	// DBConnector dbc = new DBConnector(db, connIP, port, sourceName,
 	// tableName, username, password);
 	PreAnalyzer pa = new PreAnalyzer(null);
-	pa.composeConnector(fc);
+	pa.assignSourceTask(fc);
 	// pa.composeConnector(dbc);
 
 	Map<Attribute, Values> data = pa.readRows(numRecords);

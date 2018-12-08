@@ -13,6 +13,7 @@ from api.apiutils import Relation
 from api.apiutils import compute_field_id
 from api.annotation import MRS
 
+
 def build_hit(sn, fn):
     nid = compute_field_id(sn, fn)
     return Hit(nid, sn, fn, -1)
@@ -309,7 +310,7 @@ class FieldNetwork:
         else:
             return DRS([], Operation(OP.NONE))
 
-    def find_path_table(self, source: str, target: str, relation, api, max_hops=3):
+    def find_path_table(self, source: str, target: str, relation, api, max_hops=3, lean_search=False):
 
         def assemble_table_path_provenance(o_drs, paths, relation):
 
@@ -366,7 +367,10 @@ class FieldNetwork:
             # FIXME: filter out already seen nodes here
             for n in direct_neighbors:
                 if not check_membership(n, paths):
-                    t_neighbors = api.drs_from_table_hit(n)  # Brought old API
+                    if lean_search:
+                        t_neighbors = api._drs_from_table_hit_lean_no_provenance(n)
+                    else:
+                        t_neighbors = api.drs_from_table_hit(n)  # Brought old API
                     # t_neighbors = api.make_drs(n)  # XXX: this won't take all table neighbors, only the input one
                     results.extend([(x, n) for x in t_neighbors])
             return results  # note how we include hit as sibling of x here

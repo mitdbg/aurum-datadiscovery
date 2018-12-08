@@ -1,6 +1,7 @@
 package core;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -10,18 +11,12 @@ import org.slf4j.LoggerFactory;
 import core.config.CommandLineArgs;
 import core.config.ConfigKey;
 import core.config.ProfilerConfig;
-import core.config.sources.CSVSourceConfig;
-import core.config.sources.HiveSourceConfig;
-import core.config.sources.PostgresSourceConfig;
-import core.config.sources.SQLServerSourceConfig;
-import core.config.sources.SourceConfig;
-import core.config.sources.YAMLParser;
 import joptsimple.OptionParser;
 import metrics.Metrics;
-import sources.CSVSource;
-import sources.HiveSource;
-import sources.PostgresSource;
-import sources.SQLServerSource;
+import sources.Source;
+import sources.SourceType;
+import sources.YAMLParser;
+import sources.config.SourceConfig;
 import store.Store;
 import store.StoreFactory;
 
@@ -63,46 +58,24 @@ public class Main {
 	LOG.info("Using {} as sources file", sourceConfigFile);
 	List<SourceConfig> sourceConfigs = YAMLParser.processSourceConfig(sourceConfigFile);
 
+	List<Source> allSources = new ArrayList<>();
 	LOG.info("Found {} sources to profile", sourceConfigs.size());
 	for (SourceConfig sourceConfig : sourceConfigs) {
 	    String sourceName = sourceConfig.getSourceName();
 	    SourceType sType = sourceConfig.getSourceType();
 	    LOG.info("Processing source {} of type {}", sourceName, sType);
-	    if (sType == SourceType.csv) {
-		CSVSourceConfig csvSourceConfig = (CSVSourceConfig) sourceConfig;
-
-		CSVSource csvSource = new CSVSource();
-		csvSource.processSource(csvSourceConfig, c);
-	    } else if (sType == SourceType.postgres) {
-		PostgresSourceConfig postgresSourceConfig = (PostgresSourceConfig) sourceConfig;
-
-		PostgresSource postgresSource = new PostgresSource();
-		postgresSource.processSource(postgresSourceConfig, c);
-
-	    } else if (sType == SourceType.sqlserver) {
-		SQLServerSourceConfig sqlServerConfig = (SQLServerSourceConfig) sourceConfig;
-
-		SQLServerSource sqlServerSource = new SQLServerSource();
-
-		sqlServerSource.processSource(sqlServerConfig, c);
-
-		// this.readTablesFromSQLServerDBAndCreateTasks(sourceName, c,
-		// sqlserverSource);
-	    } else if (sType == SourceType.hive) {
-		HiveSourceConfig hiveConfig = (HiveSourceConfig) sourceConfig;
-
-		HiveSource hiveSource = new HiveSource();
-
-		hiveSource.processSource(hiveConfig, c);
-
-	    }
+	    Source source = SourceType.instantiateSourceOfType(sType);
+	    List<Source> sources = source.processSource(sourceConfig);
+	    allSources.addAll(sources);
+	}
+	for (Source source : allSources) {
+	    c.submitTask(source);
 	}
 
 	while (c.isTherePendingWork()) {
 	    try {
 		Thread.sleep(3000);
 	    } catch (InterruptedException e) {
-		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
 	}

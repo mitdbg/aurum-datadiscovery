@@ -8,7 +8,7 @@ import analysis.AnalyzerFactory;
 import analysis.NumericalAnalysis;
 import analysis.modules.Cardinality;
 import analysis.modules.Range;
-import inputoutput.Attribute.AttributeType;
+import sources.deprecated.Attribute.AttributeType;
 import utils.NumericalColumnGenerator;
 import utils.NumericalColumnGenerator.Distribution;
 

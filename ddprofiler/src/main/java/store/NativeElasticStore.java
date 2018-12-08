@@ -110,14 +110,6 @@ public class NativeElasticStore implements Store {
 	    set.endObject();
 	    set.endObject();
 
-	    // set.startObject("char_filter");
-	    // set.startObject("csv_to_none");
-	    // set.field("type",
-	    // "mapping").field("mappings").startArray().value(".csv=>
-	    // ").endArray();
-	    // set.endObject();
-	    // set.endObject();
-
 	    set.startObject("filter");
 	    set.startObject("english_stop");
 	    set.field("type", "stop").field("stopwords", "_english_");
@@ -129,7 +121,6 @@ public class NativeElasticStore implements Store {
 	    set.field("type", "stemmer").field("language", "possessive_english");
 	    set.endObject();
 	    set.endObject(); // closes filter
-	    // set = jsonBuilder().startObject("analysis");
 
 	    set.startObject("analyzer");
 	    set.startObject("aurum_analyzer");
@@ -146,54 +137,6 @@ public class NativeElasticStore implements Store {
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
-
-	// try {
-	// System.out.println(set.string());
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// }
-
-	// String settings = "{"
-	//
-	// + "\"analysis\": {" + "\"char_filter\": {" + "\"_to-\": {" +
-	// "\"type\":
-	// \"mapping\","
-	// + "\"mappings\": [\"_=>-\"]" + "}" + "},"
-	//
-	// + "\"char_filter\": {" + "\"csv_to_none\": {" + "\"type\":
-	// \"mapping\"," +
-	// "\"mappings\": [\".csv=> \"]"
-	// + "}" + "},"
-	//
-	// + "\"filter\": {" + "\"english_stop\": {" + "\"type\": \"stop\"," +
-	// "\"stopwords\": \"_english_\""
-	// + "}," + "\"english_stemmer\": {" + " \"type\": \"stemmer\"," + "
-	// \"language\": \"english\""
-	// + "}," + "\"english_possessive_stemmer\": {" + " \"type\":
-	// \"stemmer\","
-	// + " \"language\": \"possessive_english\"" + "}" + "},"
-	//
-	// + "\"analyzer\": {" + "\"aurum_analyzer\": {" + "\"tokenizer\":
-	// \"standard\","
-	// + "\"char_filter\": [\"_to-\", \"csv_to_none\"],"
-	// + "\"filter\": [\"english_possessive_stemmer\", \"lowercase\",
-	// \"english_stop\", \"english_stemmer\"]"
-	// + "}" + "}" + "}" // closes analysis
-	// + "}"; // closes object
-
-	// Create mapping for the indices
-	// index 'text' type 'column'
-	String textMapping = "{ \"properties\" : "
-
-		+ "{ \"id\" :   {\"type\" : \"long\"," + "\"store\" : \"yes\"," + "\"index\" : \"not_analyzed\"},"
-		+ "\"dbName\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\"}, "
-		+ "\"path\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\"}, "
-		+ "\"sourceName\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\"}, "
-		+ "\"columnName\" :   {\"type\" : \"string\"," + "\"index\" : \"not_analyzed\", "
-		+ "\"ignore_above\" : 512 }," + "\"text\" : {\"type\" : \"string\", " + "\"store\" : \"no\"," // space
-		// saving?
-		+ "\"index\" : \"analyzed\"," + "\"analyzer\" : \"english\"," + "\"term_vector\" : \"yes\"}" + "}" + " "
-		+ "}";
 
 	XContentBuilder text_mapping = null;
 	try {
@@ -214,6 +157,10 @@ public class NativeElasticStore implements Store {
 	    text_mapping.field("type", "keyword").field("index", "false");
 	    text_mapping.field("ignore_above", "512");
 	    text_mapping.endObject();
+	    text_mapping.startObject("columnNameSuggest");
+	    text_mapping.field("type", "completion");
+	    // .field("analyzer", "aurum_analyzer");
+	    text_mapping.endObject();
 	    text_mapping.startObject("text");
 	    text_mapping.field("type", "text").field("store", "false");
 	    text_mapping.field("index", "true").field("analyzer", "english");
@@ -225,47 +172,6 @@ public class NativeElasticStore implements Store {
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
-
-	// index 'profile' type 'column'
-	// String profileMapping = "{ \"properties\" : "
-	//
-	// + "{ \"id\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-	// + "\"dbName\" : {\"type\" : \"string\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"path\" : {\"type\" : \"string\", \"index\" : \"not_analyzed\"},"
-	// + "\"sourceNameNA\" : {\"type\" : \"string\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"sourceName\" : {\"type\" : \"string\"," + "\"index\" :
-	// \"analyzed\", "
-	// + "\"analyzer\" : \"aurum_analyzer\"},"
-	// + "\"columnNameNA\" : {\"type\" : \"string\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"columnName\" : {\"type\" : \"string\", " + "\"index\" :
-	// \"analyzed\", "
-	// + "\"analyzer\" : \"aurum_analyzer\"},"
-	//
-	// + "\"dataType\" : {\"type\" : \"string\", \"index\" :
-	// \"not_analyzed\"},"
-	//
-	// + "\"totalValues\" : {\"type\" : \"integer\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"uniqueValues\" : {\"type\" : \"integer\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"entities\" : {\"type\" : \"string\", \"index\" : \"analyzed\"},"
-	// //
-	// array
-	// + "\"minhash\" : {\"type\" : \"long\", \"index\" :
-	// \"not_analyzed\"}," //
-	// array
-	// + "\"minValue\" : {\"type\" : \"float\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"maxValue\" : {\"type\" : \"float\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"avgValue\" : {\"type\" : \"float\", \"index\" :
-	// \"not_analyzed\"},"
-	// + "\"median\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"},"
-	// + "\"iqr\" : {\"type\" : \"long\", \"index\" : \"not_analyzed\"}" +
-	// "} }";
 
 	XContentBuilder profile_mapping = null;
 	try {
@@ -343,14 +249,6 @@ public class NativeElasticStore implements Store {
 	} else {
 	    LOG.info("Indices already exist, moving on");
 	}
-	// admin.prepareCreate("text").addMapping("column", text_mapping).get();
-	// //
-	// admin.preparePutMapping("text").setType("column").setSource(text_mapping).get();
-	// admin.prepareCreate("profile").addMapping("column",
-	// profile_mapping).setSettings(set).get();
-	//
-	// //
-	// admin.preparePutMapping("profile").setType("column").setSource(profile_mapping);
     }
 
     @Override
@@ -360,7 +258,8 @@ public class NativeElasticStore implements Store {
 	XContentBuilder builder = null;
 	try {
 	    builder = jsonBuilder().startObject().field("id", id).field("dbName", dbName).field("path", path)
-		    .field("sourceName", sourceName).field("columnName", columnName).startArray("text");
+		    .field("sourceName", sourceName).field("columnName", columnName)
+		    .field("columnNameSuggest", columnName).startArray("text");
 
 	    for (String v : values) {
 		builder.value(v);

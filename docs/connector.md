@@ -1,69 +1,50 @@
-# Guide to Create New Connectors
+# Reading and Profiling new data sources with Aurum
 
-Aurum's profiler is in charge of reading and profiling external data sources.
-Each data source is accessed differently, and this connection is encapsulated in
-a *connector*. There are existing connectors to read from CSV files in file
-systems and from relations in JDBC-compatible databases. We say Aurum has
-*connectors* to *sources* In this guide we walk
-through the process of creating new connectors, should you need to connect to a
-new data source.
+Aurum's profiler is in charge of reading and profiling external data sources.  A
+*data source* is a system that stores *relations*. For example, a Postgres
+database is a data source, and so it is a folder in a machine, if it stores a
+bunch of CSV files.  Each data source is accessed differently. To read the
+relations from a RDBMS, such as Postgres, you may need to use a JDBC connector,
+while to read the relations from the CSV folder a IO API may suffice. Aurum's
+profiler can read from multiple data sources, provided there is a *Source*
+implementation for them. By default, Aurum has *Source* implementations for a
+bunch of different data sources. This guide explains how to add new ones.
 
-*The process is being streamlines, and suggestions accepted (or better, PRs), but
-here's a current guide to build your own connector.* 
-
-The steps are roughtly:
+This is a work in progress. Suggestions on how to smooth the process of adding
+new data sources are accepted and appreciated. There are a few moving parts
+aimed to aid developers who are following this process.
 
 *1- Let the system know there is a new source available.
 
-When using Aurum, a user must configure the sources from which to read data.
-That is done with a YAML file. You can find an example here:
+Go to
+[sources.SourceType](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/java/sources/SourceType.java)
+, and add a new Enum entry to the list. Choose a name that does not exist yet
+and that describes well the new data source. As you see, each data source
+declared there takes a parameter, which is the file that contains its
+configuration:
 
-[here](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/resources/template.yml)
+*2- Implement a configuration file for the new data source.
 
-The first step is to make Aurum recognize there is a new source. For that, first
-declare the new source name in
-[core/SourceType][https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/core/SourceType.java].
-Then, write the condition for the YAML parser to detect the new source. You can
-do that
-[here][https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/core/config/sources/YAMLParser.java] 
+Each data source has different configuration parameters that a user must input
+to be able to read the source. For example, a CSV file may contain a
+'separator', while a JDBC connection may have a 'port'. Examples of how a user
+of Aurum will input these parameters to read from a data source 
+are in [this example YAML
+file](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/java/sources).
 
-as you see, that function takes a SourceConfig.class file, which is specific to
-the new source. The new step is then to create such file.
+To read and parse correctly that YAML file, a developer writes a *SourceConfig*
+configuration. Examples of those are in the
+[sources.config](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/java/sources/config/)
+package. 
 
-*2- Decide the configuration parameters of the new source.
+The newly implemented SourceConfig file is then passed as a parameter to the new
+type when adding the entry in the SourceType class (step 1 above).
 
-Each source may have different configuration parameters. For example, a CSV file
-may contain a 'separator', while a JDBC connection may have a 'port'. Examples
-of these configuration parameters are in the YAML template above. To use these
-configuration parameters, the profiler must have them in a *SourceConfig* file,
-which is essentially a class that implements the SourceConfig.java interface,
-accessible
-[here][https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/core/config/sources/SourceConfig.java]
+*3- Implement the Source interface
 
-and you can find different examples in *core.config.sources*. In this step you
-need to create a new SourceConfig which is specific to your source. One good way
-of naming the new file is to concatenate the name of the new source, say,
-*NewDB*, with *SourceConfig*, e.g., *NewDBSourceConfig* and place it in the same
-package with the others.
-
-*3- Time to pass the source configuration to the Source handler.
-
-In Main.java, you will see examples of how to process each of the different
-existing sources. Again, you will need to create a condition to detect the new
-source, and inside, create a new class, specific to the new source, which knows
-how to configure a connection to it. Specifically, you will need to create a
-class that implements *sources.Source.java*. You can look into that package to
-find other examples.
-
-The *processSource* of the Source interface will take care of: i) connecting
-to the source (e.g, creating a stream to a file, or a connection to a database),
-read the different datasets inside the source (files or tables) and create a
-*ProfileTask* for each one of it.
-
-*4- Final step is to create the *Connector*, which will, in general, be a class
-variable of the ProfileTask. This is so that the profiler knows how to access
-the source-specific connector. As you'll see in the examples, these Connectors
-implement a series of functions that determine how data must be read from the
-external data sources, and how it's delivered to the system.
+Finally, the developer of the new *data source* must implement the
+[*Source*](https://github.com/mitdbg/aurum-datadiscovery/blob/master/ddprofiler/src/main/java/sources/Source.java)
+interface and place it in the sources.implementations package, where there are
+some existing implementations one can use as a guiding example.
 
 

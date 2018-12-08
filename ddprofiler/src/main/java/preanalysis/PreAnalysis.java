@@ -5,12 +5,12 @@ package preanalysis;
 
 import java.util.List;
 
-import inputoutput.Attribute;
-import inputoutput.connectors.Connector;
+import sources.Source;
+import sources.deprecated.Attribute;
 
 public interface PreAnalysis {
 
-    public void composeConnector(Connector c);
+    public void assignSourceTask(Source c);
 
     public DataQualityReport getQualityReport();
 

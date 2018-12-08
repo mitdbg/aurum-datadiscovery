@@ -25,6 +25,23 @@ class Hit(BaseHit):
         return hsh
 
     def __eq__(self, other):
+        target_type = type(other)
+        if target_type == int:
+            if self.nid == other:
+                return True
+        elif target_type == Hit:
+            if self.nid == other.nid:
+                return True
+        elif other != None and self.nid == other.nid:
+            return True
+        return False
+
+    def __eq__2(self, other):
+        """
+        XXX: probably safe to remove
+        :param other:
+        :return:
+        """
         if isinstance(other, int):  # cover the case when id is provided directly
             if self.nid == other:
                 return True
@@ -279,9 +296,10 @@ class DRS:
         CERTAINTY = 0
         COVERAGE = 1
 
-    def __init__(self, data, operation):
+    def __init__(self, data, operation, lean_drs=False):
         self._data = data
-        self._provenance = Provenance(data, operation)
+        if not lean_drs:
+            self._provenance = Provenance(data, operation)
         self._table_view = []
         self._idx = 0
         self._idx_table = 0

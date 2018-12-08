@@ -48,6 +48,10 @@ class StoreHandler:
                                          'hits.hits._source.path'
                                          ]
                             )
+        if res['hits']['total'] == 0:
+            print("!!!")
+            print("nid not found in store: are you using the right EKG and store?")
+            print("!!!")
         hits = res['hits']['hits']
         if len(hits) > 1:
             # TODO: handle some error here, nids should be unique
@@ -251,6 +255,51 @@ class StoreHandler:
             data = Hit(str(el['_source']['id']), el['_source']['dbName'], el['_source']['sourceName'],
                        el['_source']['columnName'], el['_score'])
             yield data
+
+
+    def suggest_schema(self, suggestion_string, max_hits=5):
+        # filter_path = ['suggest.schema-suggest',
+        #                'hits.hits._score',
+        #                'hits.total',
+        #                'hits.hits._source.dbName',
+        #                'hits.hits._source.sourceName',
+        #                'hits.hits._source.columnName']
+        filter_path = []
+        index = "text"
+        query_body = {
+            "suggest": {
+                "schema-completion": {
+                    "prefix": suggestion_string,
+                    "completion": {
+                        "field": "columnNameSuggest",
+                        "fuzzy": {
+                            "fuzziness": 3
+                        },
+                        "size": max_hits,
+                        "skip_duplicates": True
+                    }
+                }
+                # ,
+                # "schema-suggest": {
+                #     "text": suggestion_string,
+                #     "term": {
+                #         "field": "columnName",
+                #         "sort": "score",
+                #         "size": max_hits
+                #     }
+                # }
+            }
+        }
+        res = client.search(index=index, body=query_body,
+                            filter_path=filter_path)
+
+        # return res
+
+        res_completion = [((el['_source']['columnName'], el['_source']['sourceName']), el['_score']) for el in res['suggest']['schema-completion'][0]['options']]
+        res = sorted(res_completion, key=lambda x: x[1])
+        # res_term = [((el['_source']['columnName'], el['_source']['sourceName']), el['_score']) for el in res['suggest']['schema-suggest'][1]['options']]
+        return [r for r, score in res]
+
 
     def get_all_fields_entities(self):
         """

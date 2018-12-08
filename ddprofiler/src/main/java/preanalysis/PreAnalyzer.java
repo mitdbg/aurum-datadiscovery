@@ -17,15 +17,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.config.ProfilerConfig;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.Connector;
+import sources.Source;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
 
 public class PreAnalyzer implements PreAnalysis, IO {
 
     final private Logger LOG = LoggerFactory.getLogger(PreAnalyzer.class.getName());
 
-    private Connector c;
+    private Source task;
     private List<Attribute> attributes;
     private boolean knownDataTypes = false;
     private ProfilerConfig pc;
@@ -55,7 +55,7 @@ public class PreAnalyzer implements PreAnalysis, IO {
     public Map<Attribute, Values> readRows(int num) {
 	Map<Attribute, List<String>> data = null;
 	try {
-	    data = c.readRows(num);
+	    data = task.readRows(num);
 	    if (data == null)
 		return null;
 	} catch (IOException | SQLException e) {
@@ -250,10 +250,10 @@ public class PreAnalyzer implements PreAnalysis, IO {
      */
 
     @Override
-    public void composeConnector(Connector c) {
-	this.c = c;
+    public void assignSourceTask(Source task) {
+	this.task = task;
 	try {
-	    this.attributes = c.getAttributes();
+	    this.attributes = task.getAttributes();
 	} catch (IOException | SQLException e) {
 	    e.printStackTrace();
 	}

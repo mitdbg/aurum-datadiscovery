@@ -9,11 +9,11 @@ import java.util.Map.Entry;
 import org.junit.Test;
 
 import analysis.modules.RangeAnalyzer;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
+import sources.implementations.CSVSource;
 
 public class RangeAnalyzerTest {
 
@@ -26,9 +26,9 @@ public class RangeAnalyzerTest {
     public void RangeTest() throws IOException {
 
 	// FIXME: create config on the fly
-	CSVConnector fc = new CSVConnector(null);
+	CSVSource fc = new CSVSource();
 	PreAnalyzer pa = new PreAnalyzer(null);
-	pa.composeConnector(fc);
+	pa.assignSourceTask(fc);
 
 	Map<Attribute, Values> data = pa.readRows(numRecords);
 

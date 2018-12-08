@@ -16,13 +16,12 @@ import analysis.NumericalAnalysis;
 import analysis.TextualAnalysis;
 import analysis.modules.EntityAnalyzer;
 import core.config.ProfilerConfig;
-import core.tasks.ProfileTask;
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
-import inputoutput.connectors.BenchmarkingData;
-import inputoutput.connectors.Connector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.Source;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
+import sources.deprecated.BenchmarkingData;
 import store.Store;
 
 public class Worker implements Runnable {
@@ -35,11 +34,11 @@ public class Worker implements Runnable {
     private Conductor conductor;
     private boolean doWork = true;
     private String workerName;
-    private ProfileTask task;
+    private Source task;
     private int numRecordChunk;
     private Store store;
 
-    private BlockingQueue<ProfileTask> taskQueue;
+    private BlockingQueue<Source> taskQueue;
     private BlockingQueue<ErrorPackage> errorQueue;
 
     // Benchmark variables
@@ -49,7 +48,7 @@ public class Worker implements Runnable {
     // cached object
     private EntityAnalyzer ea;
 
-    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<ProfileTask> taskQueue,
+    public Worker(Conductor conductor, ProfilerConfig pc, String workerName, BlockingQueue<Source> taskQueue,
 	    BlockingQueue<ErrorPackage> errorQueue, Store store, EntityAnalyzer cached) {
 	this.conductor = conductor;
 	this.numRecordChunk = pc.getInt(ProfilerConfig.NUM_RECORD_READ);
@@ -65,18 +64,18 @@ public class Worker implements Runnable {
 	this.doWork = false;
     }
 
-    private ProfileTask pullTask() {
+    private Source pullTask() {
 	// Attempt to consume new task
-	ProfileTask pt = null;
+	Source task = null;
 	try {
-	    pt = taskQueue.poll(500, TimeUnit.MILLISECONDS);
-	    if (pt == null) {
+	    task = taskQueue.poll(500, TimeUnit.MILLISECONDS);
+	    if (task == null) {
 		return null;
 	    }
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
-	return pt;
+	return task;
     }
 
     @Override
@@ -93,16 +92,15 @@ public class Worker implements Runnable {
 		    continue;
 		}
 
-		String path = task.getSourceConfig().getPath();
+		String path = task.getPath();
 		DataIndexer indexer = new FilterAndBatchDataIndexer(store, task.getSourceConfig().getSourceName(), path,
-			task.getSourceConfig().getRelationName());
+			task.getRelationName());
 
 		// Access attributes and attribute type through first read
-		Connector c = task.getConnector();
 		PreAnalyzer pa = new PreAnalyzer(pc);
-		pa.composeConnector(c);
+		pa.assignSourceTask(task);
 
-		LOG.info("Worker: {} processing: {}", workerName, task.getSourceConfig().getRelationName());
+		LOG.info("Worker: {} processing: {}", workerName, task.getRelationName());
 
 		Map<Attribute, Values> initData = pa.readRows(numRecordChunk);
 		if (initData == null) {
@@ -134,7 +132,7 @@ public class Worker implements Runnable {
 		// WorkerTaskResultHolder(c.getSourceName(), c.getAttributes(),
 		// analyzers);
 		WorkerTaskResultHolder wtrf = new WorkerTaskResultHolder(task.getSourceConfig().getSourceName(), path,
-			task.getSourceConfig().getRelationName(), c.getAttributes(), analyzers);
+			task.getRelationName(), task.getAttributes(), analyzers);
 
 		// List<WorkerTaskResult> rs =
 		// WorkerTaskResultHolder.makeFakeOne();

@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import inputoutput.Attribute;
-import inputoutput.Attribute.AttributeType;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
+import sources.deprecated.Attribute.AttributeType;
 import store.Store;
 
 public class FilterAndBatchDataIndexer implements DataIndexer {

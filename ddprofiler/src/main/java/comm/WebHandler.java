@@ -19,9 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import core.Conductor;
-import core.config.sources.CSVSourceConfig;
-import core.tasks.ProfileTask;
-import core.tasks.ProfileTaskFactory;
+import sources.config.CSVSourceConfig;
 
 public class WebHandler extends HttpServlet {
 
@@ -91,7 +89,8 @@ public class WebHandler extends HttpServlet {
 	csvConfig.setSourceName(dbName);
 	csvConfig.setPath(path);
 	csvConfig.setSeparator(separator);
-	ProfileTask pt = ProfileTaskFactory.makeCSVProfileTask(csvConfig);
+	// FIXME: make a source task for csv files
+
 	boolean success = true; // c.submitTask(wt);
 	if (success)
 	    return "OK";

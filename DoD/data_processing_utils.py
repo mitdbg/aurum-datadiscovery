@@ -1,6 +1,5 @@
 import pandas as pd
 from collections import defaultdict
-import editdistance
 
 from DoD.utils import FilterType
 import config as C
@@ -17,6 +16,21 @@ def configure_csv_separator(separator):
 
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+    joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
+    return joined
+
+
+def read_relation(relation_path):
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+    return df
+
+
+def _join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
     # TODO: Generate data event if nan values are found
     a_valid_index = (a[a_key].dropna()).index
@@ -40,6 +54,15 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suf
     return joined
 
 
+def apply_filter(relation_path, attribute, cell_value):
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+    df = df[df[attribute] == cell_value]
+    return df
+
+
 def find_key_for(relation_path, key, attribute, value):
     """
     select key from relation where attribute = value;
@@ -56,8 +79,10 @@ def find_key_for(relation_path, key, attribute, value):
     try:
         key_value_df = df[df[attribute].map(lambda x: str(x).lower()) == value][[key]]
     except KeyError:
-        print("wtf")
-        a = 1
+        print("!!!")
+        print("Attempt to access attribute: '" + str(attribute) + "' from relation: " + str(df.columns))
+        print("Attempt to project attribute: '" + str(key) + "' from relation: " + str(df.columns))
+        print("!!!")
     return {x[0] for x in key_value_df.values}
 
 
@@ -73,7 +98,18 @@ def is_value_in_column(value, relation_path, column):
     return value in df[column].map(lambda x: str(x).lower()).unique()
 
 
-def obtain_attributes_to_project(jp_with_filters):
+def obtain_attributes_to_project(filters):
+    attributes_to_project = set()
+    for f in filters:
+        f_type = f[1].value
+        if f_type is FilterType.ATTR.value:
+            attributes_to_project.add(f[0][0])
+        elif f_type is FilterType.CELL.value:
+            attributes_to_project.add(f[0][1])
+    return attributes_to_project
+
+
+def _obtain_attributes_to_project(jp_with_filters):
     filters, jp = jp_with_filters
     attributes_to_project = set()
     for f in filters:
@@ -86,17 +122,6 @@ def obtain_attributes_to_project(jp_with_filters):
 
 
 def project(df, attributes_to_project):
-    # print("Project requested: " + str(attributes_to_project))
-    # actual_attribute_names = df.columns
-    # mapping = dict()
-    # for req in attributes_to_project:
-    #     candidate, score = None, 1000
-    #     for c in actual_attribute_names:
-    #         d = editdistance.eval(req, c)
-    #         if d < score:
-    #             candidate, score = c, d
-    #     mapping[req] = candidate
-    # print("Projecting on: " + str(mapping.values()))
     print("Project: " + str(attributes_to_project))
     df = df[list(attributes_to_project)]
     return df
@@ -114,7 +139,7 @@ class InTreeNode:
     def set_payload(self, payload: pd.DataFrame):
         self.payload = payload
 
-    def get_payload(self):
+    def get_payload(self) -> pd.DataFrame:
         return self.payload
 
     def get_parent(self):
@@ -131,56 +156,62 @@ class InTreeNode:
             return self.node == other.node
 
 
-def materialize_join_graph(jg_with_filters, dod):
+def materialize_join_graph(jg, dod):
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
         leaves = []
-        for l, r in jg:
-            if len(intree) == 0:
-                node = InTreeNode(l.source_name)
-                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                df = get_dataframe(node_path)
-                node.set_payload(df)
-                intree[l.source_name] = node
-                leaves.append(node)
-            # now either l or r should be in intree
-            if l.source_name in intree.keys():
-                rnode = InTreeNode(r.source_name)  # create node for r
-                node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
-                df = get_dataframe(node_path)
-                rnode.set_payload(df)
-                r_parent = intree[l.source_name]
-                rnode.add_parent(r_parent)  # add ref
-                # r becomes a leave, and l stops being one
-                if r_parent in leaves:
-                    leaves.remove(r_parent)
-                leaves.append(rnode)
-                intree[r.source_name] = rnode
-            elif r.source_name in intree.keys():
-                lnode = InTreeNode(l.source_name)  # create node for l
-                node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                df = get_dataframe(node_path)
-                lnode.set_payload(df)
-                l_parent = intree[r.source_name]
-                lnode.add_parent(l_parent)  # add ref
-                if l_parent in leaves:
-                    leaves.remove(l_parent)
-                leaves.append(lnode)
-                intree[l.source_name] = lnode
-            else:
-                # FIXME: to implement
-                print("disjoint pair on assembling join in-tree... fix")
-                exit()
+
+        hops = jg
+
+        while len(hops) > 0:
+            pending_hops = []  # we use this variable to maintain the temporarily disconnected hops
+            for l, r in hops:
+                if len(intree) == 0:
+                    node = InTreeNode(l.source_name)
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = get_dataframe(node_path)
+                    node.set_payload(df)
+                    intree[l.source_name] = node
+                    leaves.append(node)
+                # now either l or r should be in intree
+                if l.source_name in intree.keys():
+                    rnode = InTreeNode(r.source_name)  # create node for r
+                    node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                    df = get_dataframe(node_path)
+                    rnode.set_payload(df)
+                    r_parent = intree[l.source_name]
+                    rnode.add_parent(r_parent)  # add ref
+                    # r becomes a leave, and l stops being one
+                    if r_parent in leaves:
+                        leaves.remove(r_parent)
+                    leaves.append(rnode)
+                    intree[r.source_name] = rnode
+                elif r.source_name in intree.keys():
+                    lnode = InTreeNode(l.source_name)  # create node for l
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = get_dataframe(node_path)
+                    lnode.set_payload(df)
+                    l_parent = intree[r.source_name]
+                    lnode.add_parent(l_parent)  # add ref
+                    if l_parent in leaves:
+                        leaves.remove(l_parent)
+                    leaves.append(lnode)
+                    intree[l.source_name] = lnode
+                else:
+                    # temporarily disjoint hop which we store for subsequent iteration
+                    pending_hops.append((l, r))
+            hops = pending_hops
         return intree, leaves
 
-    def get_join_info_pair(t1, t2, jg):
-        # t1 and t2 won't never be the same
+    def find_l_r_key(l_source_name, r_source_name, jg):
+        # print(l_source_name + " -> " + r_source_name)
         for l, r in jg:
-            if (t1 == l.source_name or t1 == r.source_name) and (t2 == l.source_name or t2 == r.source_name):
-                return l, r
+            if l.source_name == l_source_name and r.source_name == r_source_name:
+                return l.field_name, r.field_name
+            elif l.source_name == r_source_name and r.source_name == l_source_name:
+                return r.field_name, l.field_name
 
-    filters, jg = jg_with_filters
     intree, leaves = build_tree(jg)
     # find groups of leaves with same common ancestor
     suffix_str = '_x'
@@ -196,11 +227,10 @@ def materialize_join_graph(jg_with_filters, dod):
         # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
         for k, v in leave_ancestor.items():
             for child in v:
-                l_info, r_info = get_join_info_pair(k, child, jg)
-                l_key = l_info.field_name
-                r_key = r_info.field_name
                 l = k.get_payload()
                 r = child.get_payload()
+                l_key, r_key = find_l_r_key(k.node, child.node, jg)
+
                 df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
@@ -213,37 +243,16 @@ def materialize_join_graph(jg_with_filters, dod):
     return materialized_view
 
 
-def materialize_join_path(jp_with_filters, dod):
-    filters, jp = jp_with_filters
-    df = None
-    suffix = '_x'
-    for l, r in jp:
-        l_path = dod.aurum_api.helper.get_path_nid(l.nid)
-        r_path = dod.aurum_api.helper.get_path_nid(r.nid)
-        l_key = l.field_name
-        r_key = r.field_name
-        print("Joining: " + str(l.source_name) + "." + str(l_key) + " with: " + str(r.source_name) + "." + str(r_key))
-        if df is None:  # first iteration
-            path = l_path + '/' + l.source_name
-            if path in cache:
-                l = cache[path]
-            else:
-                l = pd.read_csv(path, encoding='latin1', sep=data_separator)
-            path = r_path + '/' + r.source_name
-            if path in cache:
-                r = cache[path]
-            else:
-                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
-        else:  # roll the partially joint
-            l = df
-            path = r_path + '/' + r.source_name
-            if path in cache:
-                r = cache[path]
-            else:
-                r = pd.read_csv(path, encoding='latin1', sep=data_separator)
-        df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix)
-        suffix += '_x'  # this is to make sure we don't end up with repeated columns
-    return df
+def compute_table_cleanliness_profile(table_df: pd.DataFrame) -> dict:
+    columns = table_df.columns
+    # TODO: return a dict with a col profile. perhaps do some aggr at the end to return table-wide stats as well
+    # unique / total
+    # num null values
+    # uniqueness column in the whole dataset -> information
+    # FIXME: cardinality of the join - this is specific to a pair and not the invidivual
+    #
+
+    return columns
 
 
 def get_dataframe(path):

@@ -9,10 +9,10 @@ import java.util.Properties;
 import org.junit.Test;
 
 import core.config.ProfilerConfig;
-import inputoutput.Attribute;
-import inputoutput.connectors.CSVConnector;
 import preanalysis.PreAnalyzer;
 import preanalysis.Values;
+import sources.deprecated.Attribute;
+import sources.implementations.CSVSource;
 
 public class JustReadTest {
 
@@ -35,16 +35,16 @@ public class JustReadTest {
 		if (Files.isRegularFile(filePath)) {
 		    String name = filePath.getFileName().toString();
 		    // FIXME: create config on the fly
-		    CSVConnector fc = new CSVConnector(null);
+		    CSVSource fc = new CSVSource();
 		    try {
-			fc = new CSVConnector(null);
+			fc = new CSVSource();
 		    } catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		    }
-		    CSVConnector c = fc;
+		    CSVSource c = fc;
 		    PreAnalyzer pa = new PreAnalyzer(null);
-		    pa.composeConnector(c);
+		    pa.assignSourceTask(c);
 
 		    // Consume all remaining records from the connector
 		    Map<Attribute, Values> data = pa.readRows(numRecordChunk);

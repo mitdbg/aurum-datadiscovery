@@ -12,7 +12,7 @@ import analysis.modules.Cardinality;
 import analysis.modules.CardinalityAnalyzer;
 import analysis.modules.Range;
 import analysis.modules.RangeAnalyzer;
-import inputoutput.Attribute.AttributeType;
+import sources.deprecated.Attribute.AttributeType;
 
 public class NumericalAnalyzer implements NumericalAnalysis {
 
