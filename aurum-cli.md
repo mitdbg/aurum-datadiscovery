@@ -71,14 +71,14 @@ To make interactions easy, we tag each model with a name (e.g `my_model`).
 ./aurum_cli.py build-model my_model
 ``` 
 
-Once it's beuilt we can export it to other formats & databses (e.g. Neo4j).
+Once it's built we can export it to other formats & databses (e.g. Neo4j).
 *(This may take some time for complex models but you have a nice tqdm-powered progress bar :-) )* 
 
 ```bash
 ./aurum_cli.py export-model my_model neo4j localhost 7687 neo4j n304j
 ``` 
 
-To run discovery queries in an *interactive mode you can just type
+To run discovery queries in *interactive* mode you can just type
 ```bash
 ./aurum_cli.py explore-model my_model
 ```
