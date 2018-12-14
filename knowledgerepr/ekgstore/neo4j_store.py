@@ -1,36 +1,46 @@
-from knowledgerepr import fieldnetwork
 from neo4j.v1 import GraphDatabase
+from tqdm import tqdm
+
 from api.apiutils import Relation
-import sys
+from knowledgerepr import fieldnetwork
 
 
-def serialize_network_to_neo4j(path_to_serialized_model,server="bolt://neo4j:7687",user="neo4j",pwd="aurum"):
-    ## read the network
-    network=filednetwork.deserialize_network(path_to_serialized_model)
-    
-    ## connect to neo4j bolt
-    driver = GraphDatabase.driver(server, auth=(user, pwd))
+class Neo4jExporter(object):
+    def __init__(self,
+                 host='localhost',
+                 port=7687,
+                 user="neo4j",
+                 pwd="aurum"):
+        self._server = f"bolt://{host}:{port}"
+        self._user = user
+        self._pwd = pwd
 
-    hit_pattern=re.compile("Hit\(nid='(.*)', db_name='.*', source_name='(.*)', field_name='(.*)', score=(.*)\)")
-    nid_hash={}
+        self._driver = GraphDatabase.driver(self._server, auth=(user, pwd))
 
-    ## insert CONTENT_SIM
-    for x in network.enumerate_relation(Relation.CONTENT_SIM):
-        a=hit_pattern.match(x.split("-")[0].lstrip())
-        b=hit_pattern.match(x.split("-")[1].lstrip())
-    
-        ## insert to neo4j, open a session
-        with driver.session() as session:
-            if a.groups()[0] not in nid_hash.keys():
-                session.run("CREATE (n:Node {nid:$nid,source:$source,field:$field,score:$score}) RETURN id(n)", 
-                           nid=a.groups()[0],source=a.groups()[1],field=a.groups()[2],score=a.groups()[3],)
-                nid_hash[a.groups()[0]]=nid_hash.get(a.groups()[0],0)+1
-            if b.groups()[0] not in nid_hash.keys():
-                session.run("CREATE (n:Node {nid:$nid,source:$source,field:$field,score:$score}) RETURN id(n)", 
-                           nid=b.groups()[0],source=b.groups()[1],field=b.groups()[2],score=b.groups()[3],)
-                nid_hash[b.groups()[0]]=nid_hash.get(b.groups()[0],0)+1
+    def export(self, path_to_model):
+        field_network = fieldnetwork.deserialize_network(path_to_model)
 
-            ## insert relation
-            session.run("MATCH (a:Node),(b:Node) WHERE a.nid=$nid_a AND b.nid=$nid_b CREATE (a)-[r1:CONTENT_SIM]->(b) RETURN type(r1)",nid_a=a.groups()[0],nid_b=b.groups()[0]).single().value()
+        # Create index to speed up MATCHes
+        with self._driver.session() as session:
+            session.run("CREATE INDEX ON :Node(nid)")
 
+        for relation_label in Relation:
 
+            # relation_hits is a generator. We could consume it to a list and then iterate over it,
+            # but this would probably consume too much memory in most scenarios
+            relation_hits = field_network.enumerate_relation(relation_label, as_str=False)
+            for a, b in tqdm(relation_hits, desc=f'Storing {relation_label} relations to Neo4j', unit='relation'):
+                with self._driver.session() as session:
+                    # Step 1: add nodes
+                    session.run(
+                        "CREATE (n:Node {nid:$nid,db_name:$db_name,source:$source,field:$field,score:$score}) RETURN id(n)",
+                        nid=a.nid, db_name=a.db_name, source=a.source_name, field=a.field_name, score=a.score)
+                    session.run("CREATE (n:Node {nid:$nid,source:$source,field:$field,score:$score}) RETURN id(n)",
+                                nid=b.nid, db_name=b.db_name, source=b.source_name, field=b.field_name, score=b.score)
+
+                    session.run(
+                        f"MATCH (a:Node),(b:Node)"
+                        " WHERE a.nid=$nid_a AND b.nid=$nid_b "
+                        "CREATE (a)-[r: {relation_label}]->(b) RETURN type(r)".format(
+                            relation_label=str(relation_label).replace('Relation.', '')),
+                        nid_a=a.nid, nid_b=b.nid)  # .single().value()

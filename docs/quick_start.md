@@ -134,7 +134,7 @@ main. Something like:
 
 ```python
 from main import init_system
-api, reporting = init_system(<path_to_serialized_model>, reporting=False)
+api, reporting = init_system(<path_to_serialized_model>, create_reporting=False)
 ```
 
 The last parameter of init_system, reporting, controls whether you want to
