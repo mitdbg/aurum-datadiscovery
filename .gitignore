@@ -82,6 +82,7 @@ UI/node_modules/*
 data/*
 
 *.pkl
+*.pickle
 
 # Store for models and glove
 models/

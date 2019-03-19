@@ -159,7 +159,7 @@ class FieldNetwork:
         topk_nodes = sorted_degree[:topk]
         return topk_nodes
 
-    def enumerate_relation(self, relation):
+    def enumerate_relation(self, relation, as_str=True):
         seen_pairs = set()
         for nid in self.iterate_ids():
             db_name, source_name, field_name, data_type = self.__id_names[nid]
@@ -168,8 +168,11 @@ class FieldNetwork:
             for n2 in neighbors:
                 if not (n2.nid, nid) in seen_pairs:
                     seen_pairs.add((nid, n2.nid))
-                    string = str(hit) + " - " + str(n2)
-                    yield string
+                    if as_str:
+                        string = str(hit) + " - " + str(n2)
+                        yield string
+                    else:
+                        yield hit, n2
 
     def print_relations(self, relation):
         total_relationships = 0

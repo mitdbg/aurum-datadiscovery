@@ -40,6 +40,9 @@ def init_system(path_to_serialized_model, create_reporting=False):
     api = API(network=network, store_client=store_client)
     if create_reporting:
         reporting = Report(network)
+    else:
+        # Better always return a tuple even if second element is `None`
+        reporting = None
     api.helper.help()
     el = time.time()
     print("Took " + str(el - sl) + " to load model")
