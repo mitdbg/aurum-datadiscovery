@@ -550,9 +550,9 @@ def obtain_table_paths(set_nids, dod):
     return table_path
 
 
-def test_e2e(dod, number_jps=5, output_path=None, full_view=True, interactive=True):
+def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=False):
 
-    # tests equivalence and containment - did not finish executing though
+    # tests equivalence and containment - did not finish executing though (out of memory)
     # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
     # values = ["968548423", "kimball", "Mechanical Engineering"]
 
@@ -560,9 +560,9 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=True, interactive=Tr
     # attrs = ["s_name", "s_address", "ps_availqty"]
     # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
 
-    attrs = ["s_name", "s_address", "ps_comment"]
-    values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
-              "dly final packages haggle blithely according to the pending packages. slyly regula"]
+    # attrs = ["s_name", "s_address", "ps_comment"]
+    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
+    #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
 
     # attrs = ["n_name", "s_name", "c_name", "o_clerk"]
     # values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
@@ -573,25 +573,33 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=True, interactive=Tr
     # attrs = ["Subject", "Title", "Publisher"]
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
 
+    # EVAL - ONE
     # attrs = ["Iap Category Name", "Person Name", "Person Email"]
     # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
     # values = ["Engineering", "", ""]
 
+    # EVAL - TWO
     # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
     # values = ["", "", "", ""]
 
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
+    # EVAL - THREE
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
     # values = ["Cambridgeport", "", ""]
 
+    # EVAL - FOUR
     # tests equivalence and containment
     # attrs = ["Email Address", "Department Full Name"]
     # values = ["madden@csail.mit.edu", ""]
+
+    # EVAL - FIVE
+    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    values = ["", "", "", ""]
 
     i = 0
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
@@ -722,10 +730,10 @@ if __name__ == "__main__":
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
     # Fclt_building_list.csv and short_course_catalog_subject_offered.csv
-    pe_paths(dod)
+    # pe_paths(dod)
 
     # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
-    # test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/")
+    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/five/")
 
     # debug intree mat join
     # test_intree(dod)
