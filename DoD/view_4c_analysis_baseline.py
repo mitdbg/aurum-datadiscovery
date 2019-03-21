@@ -5,6 +5,8 @@ import pandas as pd
 from pandas.util import hash_pandas_object
 from DoD import material_view_analysis as mva
 
+from tqdm import tqdm
+
 
 def normalize(df):
     for c in df.columns:
@@ -87,7 +89,7 @@ def brute_force_4c(dataframes_with_metadata):
     for t1, path1, md1 in dataframes_with_metadata:
         hashes1 = hash_pandas_object(t1)
         ht1 = hashes1.sum()
-        if ht1 in t_to_remove:
+        if path1 in t_to_remove:
             continue
         for t2, path2, md2 in dataframes_with_metadata:
             if path1 == path2:  # same table
@@ -124,8 +126,13 @@ def brute_force_4c(dataframes_with_metadata):
                     idx2 = [idx for idx, value in enumerate(hashes2) if value in s2_complement]
                     candidate_complementary_group.append((t1, md1, path1, idx1, t2, md2, path2, idx2))
 
+    contradictory_pairs = set()
+    complementary_pairs = set()
+
     # now we'd check contradictory
-    for t1, md1, path1, idx1, t2, md2, path2, idx2 in candidate_complementary_group:
+    for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
+        if path1 in t_to_remove or path2 in t_to_remove:
+            continue  # this will be removed, no need to worry about them
         selection1 = t1.iloc[idx1]
         selection2 = t2.iloc[idx2]
         mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
@@ -134,9 +141,9 @@ def brute_force_4c(dataframes_with_metadata):
         candidate_k2 = mlk2[0]
         # pick only one key so we make sure the group-by is compatible
         if candidate_k1 >= candidate_k2:
-            k = candidate_k1
+            k = candidate_k1[0]
         else:
-            k = candidate_k2
+            k = candidate_k2[0]
 
         complementary_key1 = set()
         complementary_key2 = set()
@@ -147,35 +154,48 @@ def brute_force_4c(dataframes_with_metadata):
         s2 = set(selection2[k])
         for key in s1:
             for c in selection1.columns:
-                cell_value1 = selection1[k == key][c]
+                cell_value1 = set(selection1[selection1[k] == key][c])
                 if key in s2:
-                    cell_value2 = selection2[k == key][c]
-                    if cell_value1 != cell_value2:
+                    cell_value2 = set(selection2[selection2[k] == key][c])
+                    if len(cell_value1 - cell_value2) != 0:
                         contradictory_key1.add(key)
+                        break  # one contradictory example is sufficient
                 else:
                     complementary_key1.add(key)
-        s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
-        s1 = set(selection1[k])
-        for key in s2:
-            for c in selection2.columns:
-                cell_value2 = selection2[k == key][c]
-                if key in s1:
-                    cell_value1 = selection1[k == key][c]
-                    if cell_value2 != cell_value1:
-                        contradictory_key2.add(key)
-                else:
-                    complementary_key2.add(key)
+        if len(contradictory_key1) == 0:  # if we found a contradictory example, no need to go on
+            s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
+            s1 = set(selection1[k])
+            for key in s2:
+                for c in selection2.columns:
+                    cell_value2 = set(selection2[selection2[k] == key][c])
+                    if key in s1:
+                        cell_value1 = set(selection1[selection1[k] == key][c])
+                        if len(cell_value2 - cell_value1) != 0:
+                            contradictory_key2.add(key)
+                            break
+                    else:
+                        complementary_key2.add(key)
         if len(contradictory_key1) > 0:
-            for ck1 in contradictory_key1:
-                contradictory_group.append((path1, k, ck1, path2))
+            contradictory_group.append((path1, k, contradictory_key1, path2))
+            contradictory_pairs.add(path1 + "%$%" + path2)
+            contradictory_pairs.add(path2 + "%$%" + path1)
+            # for ck1 in contradictory_key1:
+            #     contradictory_group.append((path1, k, ck1, path2))
         if len(contradictory_key2) > 0:
-            for ck2 in contradictory_key2:
-                contradictory_group.append((path2, k, ck2, path1))
+            contradictory_group.append((path2, k, contradictory_key2, path1))
+            contradictory_pairs.add(path1 + "%$%" + path2)
+            contradictory_pairs.add(path2 + "%$%" + path1)
+            # for ck2 in contradictory_key2:
+            #     contradictory_group.append((path2, k, ck2, path1))
         if len(contradictory_key1) == 0 and len(contradictory_key2) == 0:
-            for cmk1 in complementary_key1:
-                complementary_group.append((path1, k, cmk1))
-            for cmk2 in complementary_key2:
-                complementary_group.append((path2, k, cmk2))
+            if path1 + "%$%" + path2 in contradictory_group or path2 + "%$%" + path1 in contradictory_group:
+                continue
+            else:
+                complementary_group.append((path1, path2, complementary_key1, complementary_key2))
+            # for cmk1 in complementary_key1:
+            #     complementary_group.append((path1, k, cmk1))
+            # for cmk2 in complementary_key2:
+            #     complementary_group.append((path2, k, cmk2))
 
     # summarize out contained and compatible views
     for t, path, md in dataframes_with_metadata:
@@ -268,6 +288,23 @@ if __name__ == "__main__":
         dfs_with_metadata = get_df_metadata(group_dfs)
 
         summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+
+        print("Non-summary views: " + str(len(summarized_group)))
+        print("Complementary views: " + str(len(complementary_group)))
+        print("Contradictory views: " + str(len(contradictory_group)))
+
+        print("Summarized views")
+        print(summarized_group)
+
+        print("Complementary views: ")
+        for path1, path2, _, _ in complementary_group:
+            print(path1 + " - " + path2)
+
+        print("Contradictory views: ")
+        for path1, _, _, path2 in contradictory_group:
+            print(path1 + " - " + path2)
+
+
 
     # group by how well they fulfill definition - and maybe cleanliness
 
