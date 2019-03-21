@@ -122,10 +122,60 @@ def brute_force_4c(dataframes_with_metadata):
                 if len(s1_complement) > 0 or len(s2_complement) > 0:
                     idx1 = [idx for idx, value in enumerate(hashes1) if value in s1_complement]
                     idx2 = [idx for idx, value in enumerate(hashes2) if value in s2_complement]
-                    candidate_complementary_group.append((path1, path2, idx1, idx2))
+                    candidate_complementary_group.append((t1, md1, path1, idx1, t2, md2, path2, idx2))
 
-    # now we'd check contradictory TODO
-    complementary_group = candidate_complementary_group
+    # now we'd check contradictory
+    for t1, md1, path1, idx1, t2, md2, path2, idx2 in candidate_complementary_group:
+        selection1 = t1.iloc[idx1]
+        selection2 = t2.iloc[idx2]
+        mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
+        mlk2 = sorted(md2.items(), key=lambda x: x[1], reverse=True)
+        candidate_k1 = mlk1[0]
+        candidate_k2 = mlk2[0]
+        # pick only one key so we make sure the group-by is compatible
+        if candidate_k1 >= candidate_k2:
+            k = candidate_k1
+        else:
+            k = candidate_k2
+
+        complementary_key1 = set()
+        complementary_key2 = set()
+        contradictory_key1 = set()
+        contradictory_key2 = set()
+
+        s1 = selection1[k]
+        s2 = set(selection2[k])
+        for key in s1:
+            for c in selection1.columns:
+                cell_value1 = selection1[k == key][c]
+                if key in s2:
+                    cell_value2 = selection2[k == key][c]
+                    if cell_value1 != cell_value2:
+                        contradictory_key1.add(key)
+                else:
+                    complementary_key1.add(key)
+        s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
+        s1 = set(selection1[k])
+        for key in s2:
+            for c in selection2.columns:
+                cell_value2 = selection2[k == key][c]
+                if key in s1:
+                    cell_value1 = selection1[k == key][c]
+                    if cell_value2 != cell_value1:
+                        contradictory_key2.add(key)
+                else:
+                    complementary_key2.add(key)
+        if len(contradictory_key1) > 0:
+            for ck1 in contradictory_key1:
+                contradictory_group.append((path1, k, ck1, path2))
+        if len(contradictory_key2) > 0:
+            for ck2 in contradictory_key2:
+                contradictory_group.append((path2, k, ck2, path1))
+        if len(contradictory_key1) == 0 and len(contradictory_key2) == 0:
+            for cmk1 in complementary_key1:
+                complementary_group.append((path1, k, cmk1))
+            for cmk2 in complementary_key2:
+                complementary_group.append((path2, k, cmk2))
 
     # summarize out contained and compatible views
     for t, path, md in dataframes_with_metadata:
