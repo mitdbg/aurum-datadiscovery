@@ -380,9 +380,12 @@ class FieldNetwork:
 
         def dfs_explore(sources, targets, max_hops, paths):
 
+            target_nid_set = set([x.nid for x in targets])
+
             # Check if sources have reached targets
             for (s, sibling) in sources:
-                if s in targets:
+                if s.nid in target_nid_set:  # faster than using the generic __eq__ of Hit
+                #if s in targets:
                     # Append successful paths to found_paths
                     # T1.A join T2.B, and T2.C may join with other tables T3.D
                     # get_table_neighbors returns next_candidates (s, sibling) (C,B)

@@ -296,7 +296,7 @@ class DoD:
                 print("Finding paths between " + str(table1) + " and " + str(table2))
                 print("max hops: " + str(max_hops))
                 s = time.time()
-                drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops)
+                drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops, lean_search=True)
                 e = time.time()
                 print("Total time: " + str((e-s)))
                 self.place_paths_in_cache(table1, table2, drs)
@@ -586,8 +586,8 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=F
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
 
     # EVAL - THREE
-    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
+    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
 
     # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
     # values = ["Cambridgeport", "", ""]
@@ -598,8 +598,8 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=F
     # values = ["madden@csail.mit.edu", ""]
 
     # EVAL - FIVE
-    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    values = ["", "", "", ""]
+    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    # values = ["", "", "", ""]
 
     i = 0
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
@@ -733,7 +733,7 @@ if __name__ == "__main__":
     # pe_paths(dod)
 
     # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
-    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/five/")
+    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/test/")
 
     # debug intree mat join
     # test_intree(dod)
