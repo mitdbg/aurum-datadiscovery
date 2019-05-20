@@ -59,6 +59,8 @@ def apply_filter(relation_path, attribute, cell_value):
         df = cache[relation_path]
     else:
         df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+        # store in cache
+        cache[relation_path] = df
     df = df[df[attribute] == cell_value]
     return df
 
