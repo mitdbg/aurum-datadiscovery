@@ -134,27 +134,55 @@ def pick_most_likely_key_of_pair(md1, md2):
     return k
 
 
-def brute_force_4c(dataframes_with_metadata):
+def find_contradiction_pair(t1, idx1, t2, idx2, k):
+    complementary_key1 = set()
+    complementary_key2 = set()
+    contradictory_key1 = set()
+    contradictory_key2 = set()
 
-    # sort relations by cardinality to avoid reverse containment
-    dataframes_with_metadata = sorted(dataframes_with_metadata, key=lambda x: len(x[0]), reverse=True)
+    selection1 = t1.iloc[idx1]
+    selection2 = t2.iloc[idx2]
 
-    summarized_group = list()
+    s1 = selection1[k]
+    s2 = set(selection2[k])
+    for key in s1:
+        if len(contradictory_key1) > 0:  # check this condition for early skip
+            break
+        for c in selection1.columns:
+            cell_value1 = set(selection1[selection1[k] == key][c])
+            if key in s2:
+                cell_value2 = set(selection2[selection2[k] == key][c])
+                if len(cell_value1 - cell_value2) != 0:
+                    contradictory_key1.add(key)
+                    break  # one contradictory example is sufficient
+            else:
+                complementary_key1.add(key)
+    if len(contradictory_key1) == 0:  # if we found a contradictory example, no need to go on
+        s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
+        s1 = set(selection1[k])
+        for key in s2:
+            if len(contradictory_key2) > 0:  # check this condition for early skip
+                break
+            for c in selection2.columns:
+                cell_value2 = set(selection2[selection2[k] == key][c])
+                if key in s1:
+                    cell_value1 = set(selection1[selection1[k] == key][c])
+                    if len(cell_value2 - cell_value1) != 0:
+                        contradictory_key2.add(key)
+                        break
+                else:
+                    complementary_key2.add(key)
+    return complementary_key1, complementary_key2, contradictory_key1, contradictory_key2
+
+
+def tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove):
     complementary_group = list()
     contradictory_group = list()
 
-    t_to_remove, candidate_complementary_group = summarize_views_and_find_candidate_complementary(dataframes_with_metadata)
-
     contradictory_pairs = set()
+    complementary_pairs = set()
 
-    times = []
-
-    # now we'd check contradictory
-    print("Pairs of candidate complementary: " + str(len(candidate_complementary_group)))
     for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
-        print(path1 + " -> " + path2)
-    for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
-        s = time.time()
         if path1 in t_to_remove or path2 in t_to_remove:
             continue  # this will be removed, no need to worry about them
 
@@ -206,19 +234,131 @@ def brute_force_4c(dataframes_with_metadata):
             contradictory_pairs.add(path1 + "%$%" + path2)
             contradictory_pairs.add(path2 + "%$%" + path1)
         if len(contradictory_key1) == 0 and len(contradictory_key2) == 0:
-            if path1 + "%$%" + path2 in contradictory_group or path2 + "%$%" + path1 in contradictory_group:
+            if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs:
                 continue
             else:
                 complementary_group.append((path1, path2, complementary_key1, complementary_key2))
+                complementary_pairs.add(path1 + "%$%" + path2)
+                complementary_pairs.add(path2 + "%$%" + path1)
+    return complementary_group, contradictory_group
 
-        e = time.time()
-        t = e - s
-        times.append(t)
+
+def tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove):
+    candidate_complementary_group = set(candidate_complementary_group)
+
+    complementary_group = list()
+    contradictory_group = list()
+
+    contradictory_pairs = set()
+    complementary_pairs = set()
+
+    graph = defaultdict(dict)
+
+    # create undirected graph
+    for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
+        # if the view is gonna be summarized, then there's no need to check this one either. Not in graph
+        if path1 in t_to_remove or path2 in t_to_remove:
+            continue  # this will be removed, no need to worry about them
+        graph[path1][path2] = (t1, md1, path1, idx1, t2, md2, path2, idx2)
+        graph[path2][path1] = (t1, md1, path1, idx1, t2, md2, path2, idx2)
+
+    there_are_unexplored_pairs = True
+
+    marked_nodes = set()
+
+    while there_are_unexplored_pairs:
+
+        while len(marked_nodes) > 0:
+
+            marked_node = marked_nodes.pop()
+            path, k_attr_name, contradictory_keys = marked_node
+            contradictory_key = contradictory_keys.pop()
+
+            neighbors_graph = graph[path]
+            # chase all neighbors of involved node
+            for neighbor_k, neighbor_v in neighbors_graph.items():
+                t1, md1, path1, idx1, t2, md2, path2, idx2 = neighbor_v
+                # skip already processed pairs
+                if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs\
+                        or path1 + "%$%" + path2 in complementary_pairs or path2 + "%$%" + path1 in complementary_pairs:
+                    continue
+                selection1 = t1.iloc[idx1]
+                selection2 = t2.iloc[idx2]
+                # s2 = set(selection2[k_attr_name])
+                for c in selection1.columns:
+                    cell_value1 = set(selection1[selection1[k_attr_name] == contradictory_key][c])
+                    cell_value2 = set(selection2[selection2[k_attr_name] == contradictory_key][c])
+                    if len(cell_value1 - cell_value2) != 0:
+                        contradictory_group.append((path1, k_attr_name, contradictory_key, path2))
+                        contradictory_pairs.add(path1 + "%$%" + path2)
+                        contradictory_pairs.add(path2 + "%$%" + path1)
+                        marked_nodes.add(neighbor_k)
+                        break  # one contradiction is enough to move on, no need to check other columns
+
+        # At this point all marked nodes are processed. If there are no more candidate pairs, then we're done
+        if len(candidate_complementary_group) == 0:
+            there_are_unexplored_pairs = False
+            break
+
+        # pick any pair (later refine hwo to choose this, e.g., pick small cardinality one)
+        t1, md1, path1, idx1, t2, md2, path2, idx2 = candidate_complementary_group.pop()  # random pair
+        # check we havent process this pair yet -- we may have done it while chasing from marked_nodes
+        if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs \
+                or path1 + "%$%" + path2 in complementary_pairs or path2 + "%$%" + path1 in complementary_pairs:
+            continue
+
+        # find contradiction in pair (if not put in complementary group and choose next pair)
+        k = pick_most_likely_key_of_pair(md1, md2)
+        complementary_key1, complementary_key2, \
+        contradictory_key1, contradictory_key2 = find_contradiction_pair(t1, idx2, t2, idx2, k)
+
+        # if contradiction found, mark keys and nodes of graph
+        if len(contradictory_key1) > 0 or len(contradictory_key2) > 0:
+            # tuple is: (path1: name of table, k: attribute_name, contradictory_key: set of contradictory keys)
+            marked_nodes.add((path1, k, contradictory_key1))
+            marked_nodes.add((path2, k, contradictory_key2))
+
+        # record the classification between complementary/contradictory of this iteration
+        if len(contradictory_key1) > 0:
+            contradictory_group.append((path1, k, contradictory_key1, path2))
+            contradictory_pairs.add(path1 + "%$%" + path2)
+            contradictory_pairs.add(path2 + "%$%" + path1)
+        if len(contradictory_key2) > 0:
+            contradictory_group.append((path2, k, contradictory_key2, path1))
+            contradictory_pairs.add(path1 + "%$%" + path2)
+            contradictory_pairs.add(path2 + "%$%" + path1)
+        if len(contradictory_key1) == 0 and len(contradictory_key2) == 0:
+            if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs:
+                continue
+            else:
+                complementary_group.append((path1, path2, complementary_key1, complementary_key2))
+                complementary_pairs.add(path1 + "%$%" + path2)
+                complementary_pairs.add(path2 + "%$%" + path1)
+
+    return complementary_group, contradictory_group
+
+
+def brute_force_4c(dataframes_with_metadata):
+
+    # sort relations by cardinality to avoid reverse containment
+    dataframes_with_metadata = sorted(dataframes_with_metadata, key=lambda x: len(x[0]), reverse=True)
+
+    summarized_group = list()
+    t_to_remove, candidate_complementary_group = summarize_views_and_find_candidate_complementary(dataframes_with_metadata)
+
+    # # now we'd check contradictory
+    # print("Pairs of candidate complementary: " + str(len(candidate_complementary_group)))
+    # for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
+    #     print(path1 + " -> " + path2)
+
+    complementary_group, contradictory_group = \
+        tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
+
     # summarize out contained and compatible views
     for t, path, md in dataframes_with_metadata:
         if path not in t_to_remove:
             summarized_group.append(path)
-    print("TIMES: " + str(times))
+    # print("TIMES: " + str(times))
     return summarized_group, complementary_group, contradictory_group
 
 
