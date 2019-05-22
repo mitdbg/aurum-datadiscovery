@@ -234,8 +234,11 @@ def tell_contradictory_and_complementary_allpairs(candidate_complementary_group,
             contradictory_pairs.add(path1 + "%$%" + path2)
             contradictory_pairs.add(path2 + "%$%" + path1)
         if len(contradictory_key1) == 0 and len(contradictory_key2) == 0:
-            if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs:
+            if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs \
+                    or path1 + "%$%" + path2 in complementary_pairs or path2 + "%$%" + path1 in complementary_pairs:
                 continue
+            # if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs:
+            #     continue
             else:
                 complementary_group.append((path1, path2, complementary_key1, complementary_key2))
                 complementary_pairs.add(path1 + "%$%" + path2)
@@ -244,8 +247,6 @@ def tell_contradictory_and_complementary_allpairs(candidate_complementary_group,
 
 
 def tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove):
-    candidate_complementary_group = set(candidate_complementary_group)
-
     complementary_group = list()
     contradictory_group = list()
 
@@ -271,8 +272,9 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
         while len(marked_nodes) > 0:
 
             marked_node = marked_nodes.pop()
-            path, k_attr_name, contradictory_keys = marked_node
-            contradictory_key = contradictory_keys.pop()
+            print(marked_node)
+            path, k_attr_name, contradictory_key = marked_node  # pop on insertion
+            # contradictory_key = contradictory_keys.pop()
 
             neighbors_graph = graph[path]
             # chase all neighbors of involved node
@@ -284,7 +286,6 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
                     continue
                 selection1 = t1.iloc[idx1]
                 selection2 = t2.iloc[idx2]
-                # s2 = set(selection2[k_attr_name])
                 for c in selection1.columns:
                     cell_value1 = set(selection1[selection1[k_attr_name] == contradictory_key][c])
                     cell_value2 = set(selection2[selection2[k_attr_name] == contradictory_key][c])
@@ -292,7 +293,7 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
                         contradictory_group.append((path1, k_attr_name, contradictory_key, path2))
                         contradictory_pairs.add(path1 + "%$%" + path2)
                         contradictory_pairs.add(path2 + "%$%" + path1)
-                        marked_nodes.add(neighbor_k)
+                        marked_nodes.add((neighbor_k, k_attr_name, contradictory_key))
                         break  # one contradiction is enough to move on, no need to check other columns
 
         # At this point all marked nodes are processed. If there are no more candidate pairs, then we're done
@@ -310,13 +311,16 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
         # find contradiction in pair (if not put in complementary group and choose next pair)
         k = pick_most_likely_key_of_pair(md1, md2)
         complementary_key1, complementary_key2, \
-        contradictory_key1, contradictory_key2 = find_contradiction_pair(t1, idx2, t2, idx2, k)
+        contradictory_key1, contradictory_key2 = find_contradiction_pair(t1, idx1, t2, idx2, k)
 
         # if contradiction found, mark keys and nodes of graph
-        if len(contradictory_key1) > 0 or len(contradictory_key2) > 0:
+        if len(contradictory_key1):
             # tuple is: (path1: name of table, k: attribute_name, contradictory_key: set of contradictory keys)
-            marked_nodes.add((path1, k, contradictory_key1))
-            marked_nodes.add((path2, k, contradictory_key2))
+            contr_key1 = contradictory_key1.pop()
+            marked_nodes.add((path1, k, contr_key1))
+        if len(contradictory_key2):
+            contr_key2 = contradictory_key2.pop()
+            marked_nodes.add((path2, k, contr_key2))
 
         # record the classification between complementary/contradictory of this iteration
         if len(contradictory_key1) > 0:
@@ -353,6 +357,9 @@ def brute_force_4c(dataframes_with_metadata):
 
     complementary_group, contradictory_group = \
         tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
+
+    # complementary_group, contradictory_group = \
+    #     tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
 
     # summarize out contained and compatible views
     for t, path, md in dataframes_with_metadata:
