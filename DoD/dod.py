@@ -14,6 +14,8 @@ from tqdm import tqdm
 from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
 import time
+from DoD import view_4c_analysis_baseline as v4c
+import os
 
 
 class DoD:
@@ -550,57 +552,11 @@ def obtain_table_paths(set_nids, dod):
     return table_path
 
 
-def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=False):
+def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False, interactive=False):
 
-    # tests equivalence and containment - did not finish executing though (out of memory)
-    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    # values = ["968548423", "kimball", "Mechanical Engineering"]
-
-    # # cannot search for numbers
-    # attrs = ["s_name", "s_address", "ps_availqty"]
-    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
-
-    # attrs = ["s_name", "s_address", "ps_comment"]
-    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
-    #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
-
-    # attrs = ["n_name", "s_name", "c_name", "o_clerk"]
-    # values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
-
-    # attrs = ["o_clerk", "o_orderpriority", "n_name"]
-    # values = ["Clerk#000000951", "5-LOW", "JAPAN"]
-
-    # attrs = ["Subject", "Title", "Publisher"]
-    # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
-
-    # EVAL - ONE
-    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
-    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
-    # values = ["Engineering", "", ""]
-
-    # EVAL - TWO
-    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
-    # values = ["", "", "", ""]
-
-    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
-    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
-
-    # EVAL - THREE
-    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
-
-    # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
-    # values = ["Cambridgeport", "", ""]
-
-    # EVAL - FOUR
-    # tests equivalence and containment
-    # attrs = ["Email Address", "Department Full Name"]
-    # values = ["madden@csail.mit.edu", ""]
-
-    # EVAL - FIVE
-    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    # values = ["", "", "", ""]
-
+    ###
+    # Run Core DoD
+    ###
     i = 0
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
                                                         debug_enumerate_all_jps=False):
@@ -612,7 +568,7 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=F
 
         proj_view = dpu.project(mjp, attrs_project)
 
-        print(str(proj_view.head(10)))
+        print(str(proj_view.head(5)))
         print("Metadata")
         print(metadata)
 
@@ -626,6 +582,11 @@ def test_e2e(dod, number_jps=5, output_path=None, full_view=False, interactive=F
         if interactive:
             print("")
             input("Press any key to continue...")
+
+    ###
+    # Run 4C
+    ###
+    output_4c = v4c.main(output_path)
 
 
 # def test_joinable(dod):
@@ -717,7 +678,9 @@ def pe_paths(dod):
 if __name__ == "__main__":
     print("DoD")
 
-    # basic test
+    ###
+    ## Setup DoD
+    ###
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
     path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
@@ -726,14 +689,74 @@ if __name__ == "__main__":
     # sep = "|"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
-
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    # Fclt_building_list.csv and short_course_catalog_subject_offered.csv
-    # pe_paths(dod)
+    ###
+    ## Query Views
+    ###
+
+    # tests equivalence and containment - did not finish executing though (out of memory)
+    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    # values = ["968548423", "kimball", "Mechanical Engineering"]
+
+    # # cannot search for numbers
+    # attrs = ["s_name", "s_address", "ps_availqty"]
+    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", "7340"]
+
+    # attrs = ["s_name", "s_address", "ps_comment"]
+    # values = ["Supplier#000000001", "N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ",
+    #           "dly final packages haggle blithely according to the pending packages. slyly regula"]
+
+    # attrs = ["n_name", "s_name", "c_name", "o_clerk"]
+    # values = ["CANADA", "Supplier#000000013", "Customer#000000005", "Clerk#000000400"]
+
+    # attrs = ["o_clerk", "o_orderpriority", "n_name"]
+    # values = ["Clerk#000000951", "5-LOW", "JAPAN"]
+
+    # attrs = ["Subject", "Title", "Publisher"]
+    # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
+
+    # EVAL - ONE
+    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    # values = ["Engineering", "", ""]
+
+    # EVAL - TWO
+    attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    values = ["", "", "", ""]
+
+    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
+    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
+
+    # EVAL - THREE
+    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
+
+    # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
+    # values = ["Cambridgeport", "", ""]
+
+    # EVAL - FOUR
+    # tests equivalence and containment
+    # attrs = ["Email Address", "Department Full Name"]
+    # values = ["madden@csail.mit.edu", ""]
+
+    # EVAL - FIVE
+    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    # values = ["", "", "", ""]
+
+    output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
+
+    # remove all files in test
+    for f in os.listdir(output_path):
+        f_path = os.path.join(output_path, f)
+        try:
+            if os.path.isfile(f_path):
+                os.unlink(f_path)
+        except Exception as e:
+            print(e)
 
     # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
-    test_e2e(dod, number_jps=10, output_path="/Users/ra-mit/development/discovery_proto/data/dod/test/")
+    test_e2e(dod, attrs, values, number_jps=10, output_path=output_path)
 
     # debug intree mat join
     # test_intree(dod)

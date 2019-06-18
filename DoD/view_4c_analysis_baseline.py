@@ -4,7 +4,6 @@ from collections import defaultdict
 import pandas as pd
 from pandas.util import hash_pandas_object
 from DoD import material_view_analysis as mva
-import time
 
 from tqdm import tqdm
 
@@ -76,31 +75,72 @@ def are_they_complementary(t1, t2, md1, md2):
     return True, sdiff
 
 
-def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
-    t_to_remove = set()
-    candidate_complementary_group = list()
+def identify_compatible_groups(dataframes_with_metadata):
+    already_classified = set()
+    compatible_groups = []
+
     for t1, path1, md1 in dataframes_with_metadata:
+        # these local variables are for this one view
+        compatible_group = [path1]
         hashes1 = hash_pandas_object(t1)
         ht1 = hashes1.sum()
-        if path1 in t_to_remove:
+        if path1 in already_classified:
             continue
         for t2, path2, md2 in dataframes_with_metadata:
             if path1 == path2:  # same table
                 continue
             # if t2 is in remove group
-            if path2 in t_to_remove:
+            if path2 in already_classified:
                 continue
             hashes2 = hash_pandas_object(t2)
             ht2 = hashes2.sum()
 
-            # are views are compatible
+            # are views compatible
             if ht1 == ht2:
-                t_to_remove.add(path2)
+                compatible_group.append(path2)
+                already_classified.add(path1)
+                already_classified.add(path2)
+        if len(compatible_group) > 1:
+            compatible_groups.append(compatible_group)
+    return compatible_groups
+
+
+def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
+    # t_to_remove = set()
+
+    # compatible_groups = []
+    contained_groups = []
+    candidate_complementary_groups = []
+
+    for t1, path1, md1 in dataframes_with_metadata:
+        # these local variables are for this one view
+        # compatible_group = [path1]
+        contained_group = [path1]
+
+        hashes1 = hash_pandas_object(t1)
+        # ht1 = hashes1.sum()
+        # if path1 in t_to_remove:
+        #     continue
+        for t2, path2, md2 in dataframes_with_metadata:
+            if path1 == path2:  # same table
+                continue
+            # if t2 is in remove group
+            # if path2 in t_to_remove:
+            #     continue
+            hashes2 = hash_pandas_object(t2)
+            # ht2 = hashes2.sum()
+
+            # are views compatible
+            # if ht1 == ht2:
+            #     compatible_group.append(path2)
+            #     t_to_remove.add(path1)
+            #     t_to_remove.add(path2)
             # are views potentially contained
-            elif len(hashes1) > len(hashes2):
+            if len(hashes1) > len(hashes2):
                 # is t2 contained in t1?
                 if len(set(hashes2) - set(hashes1)) == 0:
-                    t_to_remove.add(path2)
+                    contained_group.append(path2)
+                    # t_to_remove.add(path2)
             else:
                 # Verify that views are potentially complementary
                 s1 = set(hashes1)
@@ -117,8 +157,14 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
                 if len(s1_complement) > 0 or len(s2_complement) > 0:
                     idx1 = [idx for idx, value in enumerate(hashes1) if value in s1_complement]
                     idx2 = [idx for idx, value in enumerate(hashes2) if value in s2_complement]
-                    candidate_complementary_group.append((t1, md1, path1, idx1, t2, md2, path2, idx2))
-    return t_to_remove, candidate_complementary_group
+                    candidate_complementary_groups.append((t1, md1, path1, idx1, t2, md2, path2, idx2))
+        # if len(compatible_group) > 1:
+        #     compatible_groups.append(compatible_group)
+        if len(contained_group) > 1:
+            contained_groups.append(contained_group)
+    # return compatible_groups, contained_groups, candidate_complementary_groups, t_to_remove
+    return contained_groups, candidate_complementary_groups
+    # return t_to_remove, candidate_complementary_groups
 
 
 def pick_most_likely_key_of_pair(md1, md2):
@@ -272,7 +318,7 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
         while len(marked_nodes) > 0:
 
             marked_node = marked_nodes.pop()
-            print(marked_node)
+            # print(marked_node)
             path, k_attr_name, contradictory_key = marked_node  # pop on insertion
             # contradictory_key = contradictory_keys.pop()
 
@@ -345,28 +391,44 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
 def brute_force_4c(dataframes_with_metadata):
 
     # sort relations by cardinality to avoid reverse containment
+    # (df, path, metadata)
     dataframes_with_metadata = sorted(dataframes_with_metadata, key=lambda x: len(x[0]), reverse=True)
 
     summarized_group = list()
-    t_to_remove, candidate_complementary_group = summarize_views_and_find_candidate_complementary(dataframes_with_metadata)
+
+    # t_to_remove, candidate_complementary_group = summarize_views_and_find_candidate_complementary(dataframes_with_metadata)
+
+    compatible_groups = identify_compatible_groups(dataframes_with_metadata)
+    # We pick one representative from each compatible group
+    selection = set([x[0] for x in compatible_groups])
+    dataframes_with_metadata_selected = [(df, path, metadata) for df, path, metadata in dataframes_with_metadata
+                                         if path in selection]
+
+    # compatible_group, contained_group, candidate_complementary_group, t_to_remove = \
+
+    contained_groups, candidate_complementary_group = \
+        summarize_views_and_find_candidate_complementary(dataframes_with_metadata_selected)
 
     # # now we'd check contradictory
     # print("Pairs of candidate complementary: " + str(len(candidate_complementary_group)))
     # for t1, md1, path1, idx1, t2, md2, path2, idx2 in tqdm(candidate_complementary_group):
     #     print(path1 + " -> " + path2)
 
-    complementary_group, contradictory_group = \
-        tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
-
     # complementary_group, contradictory_group = \
-    #     tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
+    #     tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
+
+    t_to_remove = set()
+
+    complementary_group, contradictory_group = \
+        tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
 
     # summarize out contained and compatible views
     for t, path, md in dataframes_with_metadata:
         if path not in t_to_remove:
             summarized_group.append(path)
     # print("TIMES: " + str(times))
-    return summarized_group, complementary_group, contradictory_group
+    return compatible_groups, contained_groups, complementary_group, contradictory_group
+    # return summarized_group, complementary_group, contradictory_group
 
 
 def brute_force_4c_valuewise(dataframes_with_metadata):
@@ -439,28 +501,35 @@ def get_df_metadata(dfs):
     return dfs_with_metadata
 
 
-if __name__ == "__main__":
-    print("View 4C Analysis - Baseline")
-
-    input_directory = "/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/two/"
-
-    dfs = get_dataframes(input_directory)
+def main(input_path):
+    dfs = get_dataframes(input_path)
     print("Found " + str(len(dfs)) + " tables")
 
     dfs_per_column_cardinality = classify_per_column_cardinality(dfs)
-
+    print("View candidates classify into " + str(len(dfs_per_column_cardinality)) + " based on column cardinality")
+    print("")
     for key, group_dfs in dfs_per_column_cardinality.items():
         print("Num elements with: " + str(key) + " columns: " + str(len(group_dfs)))
         dfs_with_metadata = get_df_metadata(group_dfs)
 
-        summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        compatible_group, contained_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
 
-        print("Non-summary views: " + str(len(summarized_group)))
+        print("Compatible groups: " + str(len(compatible_group)))
+        print("Contained groups: " + str(len(contained_group)))
         print("Complementary views: " + str(len(complementary_group)))
         print("Contradictory views: " + str(len(contradictory_group)))
 
-        print("Summarized views")
-        print(summarized_group)
+        # print("Summarized views")
+        # print(summarized_group)
+
+        print("Compatible groups:")
+        for group in compatible_group:
+            print(group)
+
+        print("Contained groups:")
+        for group in contained_group:
+            print(group)
 
         print("Complementary views: ")
         for path1, path2, _, _ in complementary_group:
@@ -469,3 +538,11 @@ if __name__ == "__main__":
         print("Contradictory views: ")
         for path1, _, _, path2 in contradictory_group:
             print(path1 + " - " + path2)
+
+if __name__ == "__main__":
+    print("View 4C Analysis - Baseline")
+
+    # input_path = "/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/two/"
+    input_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
+
+    main(input_path)
