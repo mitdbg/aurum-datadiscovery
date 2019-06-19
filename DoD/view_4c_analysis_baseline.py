@@ -502,6 +502,13 @@ def get_df_metadata(dfs):
 
 
 def main(input_path):
+    compatible_group = None
+    contained_group = None
+    complementary_group = None
+    contradictory_group = None
+
+    groups_per_column_cardinality = defaultdict(dict)
+
     dfs = get_dataframes(input_path)
     print("Found " + str(len(dfs)) + " tables")
 
@@ -514,14 +521,31 @@ def main(input_path):
 
         # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
         compatible_group, contained_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        groups_per_column_cardinality[key]['compatible'] = compatible_group
+        groups_per_column_cardinality[key]['contained'] = contained_group
+        groups_per_column_cardinality[key]['complementary'] = complementary_group
+        groups_per_column_cardinality[key]['contradictory'] = contradictory_group
+
+    return groups_per_column_cardinality
+
+if __name__ == "__main__":
+    print("View 4C Analysis - Baseline")
+
+    # input_path = "/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/two/"
+    input_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
+
+    groups_per_column_cardinality = main(input_path)
+
+    for k, v in groups_per_column_cardinality.items():
+        compatible_group = v['compatible']
+        contained_group = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
 
         print("Compatible groups: " + str(len(compatible_group)))
         print("Contained groups: " + str(len(contained_group)))
         print("Complementary views: " + str(len(complementary_group)))
         print("Contradictory views: " + str(len(contradictory_group)))
-
-        # print("Summarized views")
-        # print(summarized_group)
 
         print("Compatible groups:")
         for group in compatible_group:
@@ -539,10 +563,12 @@ def main(input_path):
         for path1, _, _, path2 in contradictory_group:
             print(path1 + " - " + path2)
 
-if __name__ == "__main__":
-    print("View 4C Analysis - Baseline")
+        # analyzing contradictory views:
+        mapping = defaultdict(list)
+        for path1, _, _, path2 in contradictory_group:
+            mapping[path1].append(path2)
+            mapping[path2].append(path1)
+        for k, v in mapping.items():
+            print(k + " : " + str(len(v)))
 
-    # input_path = "/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/two/"
-    input_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 
-    main(input_path)
