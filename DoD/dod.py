@@ -16,6 +16,7 @@ from modelstore.elasticstore import StoreHandler
 import time
 from DoD import view_4c_analysis_baseline as v4c
 import os
+import pandas as pd
 
 
 class DoD:
@@ -453,7 +454,8 @@ class DoD:
             local_intermediates[r.source_name] = filtered_r
 
             # check if the materialized version join's cardinality > 0
-            joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
+            # joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
+            joined = dpu.join_ab_on_key_spill_disk(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
 
             if len(joined) == 0:
                 return False  # non-joinable hop enough to discard join graph
@@ -557,6 +559,7 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     ###
     # Run Core DoD
     ###
+    view_metadata_mapping = dict()
     i = 0
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
                                                         debug_enumerate_all_jps=False):
@@ -573,9 +576,14 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
         print(metadata)
 
         if output_path is not None:
+            view_path = None
             if full_view:
-                mjp.to_csv(output_path + "/raw_view_" + str(i), encoding='latin1', index=False)
-            proj_view.to_csv(output_path + "/view_" + str(i), encoding='latin1', index=False)  # always store this
+                view_path = output_path + "/raw_view_" + str(i)
+                mjp.to_csv(view_path, encoding='latin1', index=False)
+            view_path = output_path + "/view_" + str(i)
+            proj_view.to_csv(view_path, encoding='latin1', index=False)  # always store this
+            # store metadata associated to that view
+            view_metadata_mapping[view_path] = metadata
 
         i += 1
 
@@ -586,7 +594,31 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     ###
     # Run 4C
     ###
-    output_4c = v4c.main(output_path)
+    groups_per_column_cardinality = v4c.main(output_path)
+
+    for k, v in groups_per_column_cardinality.items():
+        compatible_groups = v['compatible']
+        contained_groups = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
+
+        for path1, key_column, key_value, path2 in contradictory_group[:2]:
+            df1 = pd.read_csv(path1)
+            df2 = pd.read_csv(path2)
+            row1 = df1[df1[key_column] == key_value]
+            row2 = df2[df2[key_column] == key_value]
+            print(path1 + " - " + path2)
+            print("ROW - 1")
+            print(view_metadata_mapping[path1])
+            print(row1)
+            print("ROW - 2")
+            print(view_metadata_mapping[path2])
+            print(row2)
+            print("")
+            print("")
+
+    # We can now link classified views with their metadata
+
 
 
 # def test_joinable(dod):
@@ -723,7 +755,7 @@ if __name__ == "__main__":
 
     # EVAL - TWO
     attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
-    values = ["", "", "", ""]
+    values  = ["", "", "", ""]
 
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]

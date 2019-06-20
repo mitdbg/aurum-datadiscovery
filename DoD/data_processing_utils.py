@@ -1,18 +1,85 @@
 import pandas as pd
 from collections import defaultdict
+import math
 
 from DoD.utils import FilterType
 import config as C
+import os
 
 # Cache reading and transformation of DFs
 cache = dict()
 
 data_separator = C.separator
 
+tmp_spill_file = "./tmp_spill_file.tmp"
+# tmp_df_chunk = "./chunk_df"
+
 
 def configure_csv_separator(separator):
     global data_separator
     data_separator = separator
+
+
+def join_ab_on_key_spill_disk(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None, chunksize=1000):
+    # clean up temporal stuff -- i.e., in case there was a crash
+    try:
+        # os.remove(tmp_df_chunk)
+        os.remove(tmp_spill_file)
+    except FileNotFoundError:
+        pass
+
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    try:
+        b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+    except KeyError:
+        print("COLS: " + str(b.columns))
+        print("KEY: " + str(b_key))
+
+    # Calculate target columns
+    # a_columns = set(a.columns)
+    # b_columns = pd.Index([column if column not in a_columns else column + suffix_str for column in b.columns])
+    #
+    # # Write to disk the skeleton of the target
+    # df_target = pd.DataFrame(columns=(a.columns.append(b_columns)))
+    # df_target.to_csv(tmp_spill_file, index_label=False)
+
+    # join by chunks
+    def join_chunk(chunk_df, header=False):
+        # chunk_df[b_key] = chunk_df[b_key].apply(lambda x: str(x).lower())  # transform to string for join
+        target_chunk = pd.merge(a, chunk_df, left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
+        target_chunk.to_csv(tmp_spill_file, mode="a", header=header, index=False)
+
+    def chunk_reader(df):
+        len_df = len(df)
+        init_index = 0
+        num_chunks = math.ceil(len_df / chunksize)
+        for i in range(num_chunks):
+            chunk_df = df[init_index:init_index + chunksize]
+            init_index += chunksize
+            yield chunk_df
+
+    # b.to_csv(tmp_df_chunk, index_label=False)
+    # chunk_reader = pd.read_csv(tmp_df_chunk, encoding='latin1', sep=data_separator, chunksize=chunksize)
+
+    first_chunk = True
+    for chunk in chunk_reader(b):
+        if first_chunk:
+            join_chunk(chunk, header=True)
+            first_chunk = False
+        else:
+            join_chunk(chunk)
+
+    # [join_chunk(chunk) for chunk in chunk_reader(b)]
+    joined = pd.read_csv(tmp_spill_file, encoding='latin1', sep=data_separator)
+
+    # clean up temporal stuff
+    try:
+        # os.remove(tmp_df_chunk)
+        os.remove(tmp_spill_file)
+    except FileNotFoundError:
+        pass
+
+    return joined
 
 
 def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
@@ -233,7 +300,8 @@ def materialize_join_graph(jg, dod):
                 r = child.get_payload()
                 l_key, r_key = find_l_r_key(k.node, child.node, jg)
 
-                df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
+                # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
+                df = join_ab_on_key_spill_disk(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
                 if child in leaves:
