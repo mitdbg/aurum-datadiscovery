@@ -27,3 +27,5 @@ k = 512
 ## DoD
 ###########
 separator = '|'
+join_chunksize = 3000
+memory_limit_join_processing = 0.85  # 85% of total memory

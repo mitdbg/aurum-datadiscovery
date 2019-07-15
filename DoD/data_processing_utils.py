@@ -5,9 +5,14 @@ import math
 from DoD.utils import FilterType
 import config as C
 import os
+import psutil
+from tqdm import tqdm
+import time
 
 # Cache reading and transformation of DFs
 cache = dict()
+
+memory_limit_join_processing = C.memory_limit_join_processing * psutil.virtual_memory().total
 
 data_separator = C.separator
 
@@ -20,7 +25,108 @@ def configure_csv_separator(separator):
     data_separator = separator
 
 
-def join_ab_on_key_spill_disk(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None, chunksize=1000):
+def estimate_output_row_size(a: pd.DataFrame, b: pd.DataFrame):
+    # 1. check each dataframe's size in memory and number of rows
+    a_bytes = sum(a.memory_usage(deep=True))
+    b_bytes = sum(b.memory_usage(deep=True))
+    a_len_rows = len(a)
+    b_len_rows = len(b)
+
+    # 2. estimate size per row from previous
+    a_row_size = float(a_bytes/a_len_rows)
+    b_row_size = float(b_bytes/b_len_rows)
+
+    # 3. estimate row size of output join (no selections)
+    o_row_size = a_row_size + b_row_size
+
+    return o_row_size
+
+
+def does_join_fit_in_memory(chunk, ratio, o_row_size):
+    estimated_output_num_rows = (float)((chunk / ratio))
+    estimated_output_size = estimated_output_num_rows * o_row_size
+    if estimated_output_size >= memory_limit_join_processing:
+        # eos_gb = estimated_output_size / 1024 / 1024 / 1024
+        # print("Estimated Output size in GB: " + str(eos_gb))
+        return False
+    return True
+
+
+def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str,
+                             suffix_str=None, chunksize=C.join_chunksize):
+    # clean up temporal stuff -- i.e., in case there was a crash
+    try:
+        # os.remove(tmp_df_chunk)
+        os.remove(tmp_spill_file)
+    except FileNotFoundError:
+        pass
+
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    try:
+        b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+    except KeyError:
+        print("COLS: " + str(b.columns))
+        print("KEY: " + str(b_key))
+
+    # Estimate output join row size
+    o_row_size = estimate_output_row_size(a, b)
+
+    # join by chunks
+    def join_chunk(chunk_df, header=False):
+        target_chunk = pd.merge(a, chunk_df, left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
+        if header:  # header is only activated the first time. We only want to do this check the first time
+            # sjt = time.time()
+            fits = does_join_fit_in_memory(len(target_chunk), (float)(chunksize/len(b)), o_row_size)
+            # ejt = time.time()
+            # join_time = (float)((ejt - sjt) * (float)(len(b)/chunksize))
+            # print("Est. join time: " + str(join_time))
+            if fits:
+                return True
+        target_chunk.to_csv(tmp_spill_file, mode="a", header=header, index=False)
+        return False
+
+    def chunk_reader(df):
+        len_df = len(df)
+        init_index = 0
+        num_chunks = math.ceil(len_df / chunksize)
+        for i in range(num_chunks):
+            chunk_df = df[init_index:init_index + chunksize]
+            init_index += chunksize
+            yield chunk_df
+
+    first_chunk = True
+    all_chunks = [chunk for chunk in chunk_reader(b)]
+    # for chunk in tqdm(all_chunks):
+    for chunk in all_chunks:
+        scp = time.time()
+        if first_chunk:
+            fits_in_memory = join_chunk(chunk, header=True)
+            first_chunk = False
+            if fits_in_memory:  # join in memory and exit
+                return join_ab_on_key(a, b, a_key, b_key, suffix_str=suffix_str, normalize=False)
+        else:
+            join_chunk(chunk)
+        ecp = time.time()
+        chunk_time = ecp - scp
+        estimated_total_time = chunk_time * len(all_chunks)
+        print("ETT: " + str(estimated_total_time))
+        if estimated_total_time > 60 * 3:  # no more than 3 minutes
+            return False  # cancel this join without breaking the whole pipeline
+
+    # [join_chunk(chunk) for chunk in chunk_reader(b)]
+    joined = pd.read_csv(tmp_spill_file, encoding='latin1', sep=data_separator)
+
+    # clean up temporal stuff
+    try:
+        # os.remove(tmp_df_chunk)
+        os.remove(tmp_spill_file)
+    except FileNotFoundError:
+        pass
+
+    return joined
+
+
+def join_ab_on_key_spill_disk(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None, chunksize=C.join_chunksize):
     # clean up temporal stuff -- i.e., in case there was a crash
     try:
         # os.remove(tmp_df_chunk)
@@ -82,9 +188,10 @@ def join_ab_on_key_spill_disk(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_ke
     return joined
 
 
-def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
-    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
-    b[b_key] = b[b_key].apply(lambda x: str(x).lower())
+def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None, normalize=True):
+    if normalize:
+        a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+        b[b_key] = b[b_key].apply(lambda x: str(x).lower())
     joined = pd.merge(a, b, how='inner', left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
     return joined
 
@@ -300,8 +407,17 @@ def materialize_join_graph(jg, dod):
                 r = child.get_payload()
                 l_key, r_key = find_l_r_key(k.node, child.node, jg)
 
-                # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
-                df = join_ab_on_key_spill_disk(l, r, l_key, r_key, suffix_str=suffix_str)
+                df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
+                if df is False:  # happens when join is outlier
+                    return False
+
+                # plan = estimate_join_memory(l, r)
+                # if plan:
+                #     print("In memory")
+                #     df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
+                # else:
+                #     print("Spill")
+                #     df = join_ab_on_key_spill_disk(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
                 if child in leaves:
@@ -311,6 +427,33 @@ def materialize_join_graph(jg, dod):
                 leaves.append(k)  # k becomes a new leave
     materialized_view = leaves[0].get_payload()  # the last leave is folded onto the in-tree root
     return materialized_view
+
+
+def estimate_join_memory(a: pd.DataFrame, b: pd.DataFrame):
+    # 1. check each dataframe's size in memory and number of rows
+    a_bytes = sum(a.memory_usage(deep=True))
+    b_bytes = sum(b.memory_usage(deep=True))
+    a_len_rows = len(a)
+    b_len_rows = len(b)
+
+    # 2. estimate size per row from previous
+    a_row_size = float(a_bytes/a_len_rows)
+    b_row_size = float(b_bytes/b_len_rows)
+
+    # 3. estimate row size of output join (no selections)
+    o_row_size = a_row_size + b_row_size
+
+    # 4. estimate cartesian product size in rows
+    o_num_rows = len(a) * len(b)
+
+    # 5. estimate cartesian product size in bytes
+    o_size_est = o_num_rows * o_row_size
+
+    # 6. check with memory limit and pick plan
+    if o_size_est > memory_limit_join_processing:
+        return False
+    else:
+        return True
 
 
 def compute_table_cleanliness_profile(table_df: pd.DataFrame) -> dict:

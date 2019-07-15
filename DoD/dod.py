@@ -247,6 +247,8 @@ class DoD:
                 if is_join_graph_valid:
                     attrs_to_project = dpu.obtain_attributes_to_project(filters)
                     materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
+                    if materialized_virtual_schema is False:
+                        continue  # happens when the join was an outlier
                     # Create metadata to document this view
                     view_metadata = dict()
                     view_metadata["#join_graphs"] = len(join_graphs)
@@ -455,7 +457,8 @@ class DoD:
 
             # check if the materialized version join's cardinality > 0
             # joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
-            joined = dpu.join_ab_on_key_spill_disk(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
+            joined = dpu.join_ab_on_key_optimizer(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
+            # joined = dpu.join_ab_on_key_spill_disk(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
 
             if len(joined) == 0:
                 return False  # non-joinable hop enough to discard join graph
