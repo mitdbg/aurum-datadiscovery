@@ -565,7 +565,7 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     ###
     view_metadata_mapping = dict()
     i = 0
-    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values,
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, max_hops=3,
                                                         debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
@@ -759,9 +759,9 @@ if __name__ == "__main__":
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
 
     # EVAL - ONE
-    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
-    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
-    # values = ["Engineering", "", ""]
+    attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    values = ["Engineering", "", ""]
 
     # EVAL - TWO
     # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
@@ -783,8 +783,8 @@ if __name__ == "__main__":
     # values = ["madden@csail.mit.edu", ""]
 
     # EVAL - FIVE
-    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    values = ["", "", "", ""]
+    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    # values = ["", "", "", ""]
 
     output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 
