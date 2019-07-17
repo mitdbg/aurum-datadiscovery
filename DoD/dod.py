@@ -246,7 +246,7 @@ class DoD:
 
                 if is_join_graph_valid:
                     attrs_to_project = dpu.obtain_attributes_to_project(filters)
-                    continue  # test
+                    # continue  # test
                     materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
                     if materialized_virtual_schema is False:
                         continue  # happens when the join was an outlier
@@ -598,6 +598,7 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     ###
     # Run 4C
     ###
+    # return
     groups_per_column_cardinality = v4c.main(output_path)
 
     for k, v in groups_per_column_cardinality.items():
@@ -606,20 +607,25 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
         complementary_group = v['complementary']
         contradictory_group = v['contradictory']
 
-        for path1, key_column, key_value, path2 in contradictory_group[:2]:
-            df1 = pd.read_csv(path1)
-            df2 = pd.read_csv(path2)
-            row1 = df1[df1[key_column] == key_value]
-            row2 = df2[df2[key_column] == key_value]
-            print(path1 + " - " + path2)
-            print("ROW - 1")
-            print(view_metadata_mapping[path1])
-            print(row1)
-            print("ROW - 2")
-            print(view_metadata_mapping[path2])
-            print(row2)
-            print("")
-            print("")
+        print("Compatible views: " + str(len(compatible_groups)))
+        print("Contained views: " + str(len(contained_groups)))
+        print("Complementary views: " + str(len(complementary_group)))
+        print("Contradictory views: " + str(len(contradictory_group)))
+
+        # for path1, key_column, key_value, path2 in contradictory_group[:2]:
+        #     df1 = pd.read_csv(path1)
+        #     df2 = pd.read_csv(path2)
+        #     row1 = df1[df1[key_column] == key_value]
+        #     row2 = df2[df2[key_column] == key_value]
+        #     print(path1 + " - " + path2)
+        #     print("ROW - 1")
+        #     print(view_metadata_mapping[path1])
+        #     print(row1)
+        #     print("ROW - 2")
+        #     print(view_metadata_mapping[path2])
+        #     print(row2)
+        #     print("")
+        #     print("")
 
     # We can now link classified views with their metadata
 
@@ -758,8 +764,8 @@ if __name__ == "__main__":
     # values = ["Engineering", "", ""]
 
     # EVAL - TWO
-    attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
-    values  = ["", "", "", ""]
+    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    # values = ["", "", "", ""]
 
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
@@ -777,8 +783,8 @@ if __name__ == "__main__":
     # values = ["madden@csail.mit.edu", ""]
 
     # EVAL - FIVE
-    # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
-    # values = ["", "", "", ""]
+    attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
+    values = ["", "", "", ""]
 
     output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 

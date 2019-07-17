@@ -21,7 +21,8 @@ def get_dataframes(path):
         df = pd.read_csv(f, encoding='latin1')
         df = mva.curate_view(df)
         df = normalize(df)
-        dfs.append((df, f))
+        if len(df) > 0:  # only append valid df
+            dfs.append((df, f))
     return dfs
 
 

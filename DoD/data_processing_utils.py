@@ -8,7 +8,10 @@ import os
 import psutil
 from tqdm import tqdm
 import time
+import pprint
 
+
+pp = pprint.PrettyPrinter(indent=4)
 # Cache reading and transformation of DFs
 cache = dict()
 
@@ -48,8 +51,8 @@ def does_join_fit_in_memory(chunk, ratio, o_row_size):
     if estimated_output_size >= memory_limit_join_processing:
         # eos_gb = estimated_output_size / 1024 / 1024 / 1024
         # print("Estimated Output size in GB: " + str(eos_gb))
-        return False
-    return True
+        return False, estimated_output_size/1024/1024/1024
+    return True, estimated_output_size/1024/1024/1024
 
 
 def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str,
@@ -68,20 +71,50 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
         print("COLS: " + str(b.columns))
         print("KEY: " + str(b_key))
 
+    # drop NaN/Null values
+    a.dropna(subset=[a_key], inplace=True)
+    b.dropna(subset=[b_key], inplace=True)
+    a_drop_indices = [i for i, el in enumerate(a[a_key]) if el == 'nan' or el == 'null' or el is pd.NaT]
+    b_drop_indices = [i for i, el in enumerate(b[b_key]) if el == 'nan' or el == 'null' or el is pd.NaT]
+    a.drop(a_drop_indices, inplace=True)
+    b.drop(b_drop_indices, inplace=True)
+    a.reset_index(drop=True)
+    b.reset_index(drop=True)
+
+    if len(a) == 0 or len(b) == 0:
+        return False
+
     # Estimate output join row size
     o_row_size = estimate_output_row_size(a, b)
 
     # join by chunks
     def join_chunk(chunk_df, header=False):
+        print("First chunk? : " + str(header))
+        print("a: " + str(len(a)))
+        print("b: " + str(len(chunk_df)))
+        # worst_case_estimated_join_size = chunksize * len(a) * o_row_size
+        # if worst_case_estimated_join_size >= memory_limit_join_processing:
+        #     print("Can't join sample. Size: " + str(worst_case_estimated_join_size))
+        #     return False  # can't even join a sample
+        print(a[a_key].head(10))
+        print(chunk_df[b_key].head(10))
         target_chunk = pd.merge(a, chunk_df, left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
         if header:  # header is only activated the first time. We only want to do this check the first time
             # sjt = time.time()
-            fits = does_join_fit_in_memory(len(target_chunk), (float)(chunksize/len(b)), o_row_size)
+            fits, estimated_join_size = does_join_fit_in_memory(len(target_chunk), (float)(chunksize/len(b)), o_row_size)
             # ejt = time.time()
             # join_time = (float)((ejt - sjt) * (float)(len(b)/chunksize))
             # print("Est. join time: " + str(join_time))
+            print("Estimated join size: " + str(estimated_join_size))
+            if estimated_join_size < 0.01:
+                print("TC: " + str(len(target_chunk)))
+                print("Ratio: " + str((float)(chunksize/len(b))))
+                print("row size: " + str(o_row_size))
+                print("FITS? : " + str(fits))
             if fits:
                 return True
+            else:
+                return False
         target_chunk.to_csv(tmp_spill_file, mode="a", header=header, index=False)
         return False
 
@@ -94,6 +127,8 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
             init_index += chunksize
             yield chunk_df
 
+    # swap row order of b to approximate uniform sampling
+    b = b.sample(frac=1).reset_index(drop=True)
     first_chunk = True
     all_chunks = [chunk for chunk in chunk_reader(b)]
     # for chunk in tqdm(all_chunks):
@@ -113,6 +148,7 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
         if estimated_total_time > 60 * 3:  # no more than 3 minutes
             return False  # cancel this join without breaking the whole pipeline
 
+    print("Reading written down relation: ")
     # [join_chunk(chunk) for chunk in chunk_reader(b)]
     joined = pd.read_csv(tmp_spill_file, encoding='latin1', sep=data_separator)
 
@@ -334,6 +370,8 @@ class InTreeNode:
 
 
 def materialize_join_graph(jg, dod):
+    print("Materializing:")
+    pp.pprint(jg)
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
@@ -408,6 +446,8 @@ def materialize_join_graph(jg, dod):
                 r = child.get_payload()
                 l_key, r_key = find_l_r_key(k.node, child.node, jg)
 
+                print("L: " + str(k.node) + " - " + str(l_key) + " size: " + str(len(l)))
+                print("R: " + str(child.node) + " - " + str(r_key) + " size: " + str(len(r)))
                 df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
                 if df is False:  # happens when join is outlier
                     return False
@@ -478,19 +518,45 @@ def get_dataframe(path):
 if __name__ == "__main__":
 
     # JOIN
-    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1', sep=data_separator)
-    b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1', sep=data_separator)
+    # a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Drupal_employee_directory.csv", encoding='latin1', sep=data_separator)
+    # b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Employee_directory.csv", encoding='latin1', sep=data_separator)
+    #
+    # a_key = 'Mit Id'
+    # b_key = 'Mit Id'
+    # joined = join_ab_on_key(a, b, a_key, b_key)
 
-    a_key = 'Mit Id'
-    b_key = 'Mit Id'
-    joined = join_ab_on_key(a, b, a_key, b_key)
+    # JOIN causes trouble
+    # a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Fclt_building_list.csv", encoding='latin1', sep=data_separator)
+    # b = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Fclt_building.csv", encoding='latin1', sep=data_separator)
+    # a_key = 'Building Sort'
+    # b_key = 'Building Number'
+
+    # joined = join_ab_on_key(a, b, a_key, b_key)
+    # joined = join_ab_on_key_optimizer(a, b, a_key, b_key)
+    # exit()
 
     # Find KEY
-    path = "/Users/ra-mit/data/mitdwhdata/Warehouse_users.csv"
-    attribute_name = 'Unit Name'
-    attribute_value = 'Mechanical Engineering'
-    key_attribute = 'Krb Name Uppercase'
+    # path = "/Users/ra-mit/data/mitdwhdata/Warehouse_users.csv"
+    # attribute_name = 'Unit Name'
+    # attribute_value = 'Mechanical Engineering'
+    # key_attribute = 'Krb Name Uppercase'
+    #
+    # keys = find_key_for(path, key_attribute, attribute_name, attribute_value)
+    #
+    # print(str(keys))
 
-    keys = find_key_for(path, key_attribute, attribute_name, attribute_value)
+    # Find and remove nan values
+    a = pd.read_csv("/Users/ra-mit/data/mitdwhdata/Fclt_organization.csv", encoding='latin1')
+    a_key = 'Organization Number'
+    a[a_key] = a[a_key].apply(lambda x: str(x).lower())
+    print("Original size: " + str(len(a)))
 
-    print(str(keys))
+    a.dropna(subset=[a_key], inplace=True)
+    print("After dropna: " + str(len(a)))
+
+    # pp.pprint(a[a_key])
+    # print(type(a[a_key].loc[4]))
+
+    a_null_indices = [i for i, el in enumerate(a[a_key]) if el == 'null' or el == 'nan' or el is pd.NaT]
+    a.drop(a_null_indices, inplace=True)
+    print("after individual indices: " + str(len(a)))
