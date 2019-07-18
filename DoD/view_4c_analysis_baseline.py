@@ -449,23 +449,19 @@ def brute_force_4c(dataframes_with_metadata):
     dataframes_with_metadata_selected = [(df, path, metadata) for df, path, metadata in dataframes_with_metadata
                                          if path in selection]
 
-    # # alternative find containment groups only
-    # contained_groups = find_contained_groups(dataframes_with_metadata_selected)
-    # for k, v in contained_groups.items():
-    #     print("View: " + str(k) + " contains: " + str(v))
-
     contained_groups, candidate_complementary_group = \
         summarize_views_and_find_candidate_complementary(dataframes_with_metadata_selected)
 
     # complementary_group, contradictory_group = \
     #     tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
-    print("Contained groups: " + str(len(contained_groups)))
     t_to_remove = set()
 
     complementary_group, contradictory_group = \
         tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
-    # complementary_group = None
-    # contradictory_group = None
+
+    # prepare found groups for presentation
+    compatible_groups = [cg for cg in compatible_groups if len(cg) > 1]
+
     return compatible_groups, contained_groups, complementary_group, contradictory_group
 
 

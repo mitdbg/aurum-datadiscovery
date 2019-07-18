@@ -99,5 +99,14 @@ if __name__ == "__main__":
 
         print("Compatible views: " + str(len(compatible_groups)))
         print("Contained views: " + str(len(contained_groups)))
+        if len(contained_groups) > 0:
+            for contg in contained_groups:
+                print(str(contg[0]) + " contains: " + str(contg[1::]))
         print("Complementary views: " + str(len(complementary_group)))
+        if len(complementary_group) > 0:
+            for p1, p2, _, _ in complementary_group:
+                print(str(p1) + " is complementary with: " + str(p2))
         print("Contradictory views: " + str(len(contradictory_group)))
+        if len(contradictory_group) > 0:
+            for path1, k, contradictory_key1, path2 in contradictory_group:
+                print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
