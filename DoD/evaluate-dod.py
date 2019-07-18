@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 import os
 from collections import defaultdict
+from collections import OrderedDict
 
 
 def create_folder(base_folder, name):
@@ -137,6 +138,7 @@ if __name__ == "__main__":
                     if path1 not in contradictions[path2][(k, contradictory_key1)]:
                         contradictions[path2][(k, contradictory_key1)].append(path1)
                 # print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
+            # contradictions_ordered = sorted(contradictions.items(), key=lambda x: len(x[0][x[1]]), reverse=True)
             for k, v in contradictions.items():
                 for contradiction_value, tables in v.items():
                     attr_k, value_k = contradiction_value
