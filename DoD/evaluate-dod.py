@@ -7,6 +7,7 @@ from DoD import view_4c_analysis_baseline as v4c
 from tqdm import tqdm
 
 import os
+from collections import defaultdict
 
 
 def create_folder(base_folder, name):
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     # assemble_views()
 
     # then have a way for calling 4c on each folder -- on all folders
-    path = "dod_evaluation/vassembly/many/qv4/"
+    path = "dod_evaluation/vassembly/many/qv5/"
     groups_per_column_cardinality = run_4c(path)
 
     print("RESULTS: ")
@@ -99,14 +100,56 @@ if __name__ == "__main__":
 
         print("Compatible views: " + str(len(compatible_groups)))
         print("Contained views: " + str(len(contained_groups)))
+        s_containments = dict()
         if len(contained_groups) > 0:
+            containments = defaultdict(set)
             for contg in contained_groups:
-                print(str(contg[0]) + " contains: " + str(contg[1::]))
+                contains, contained = contg[0], contg[1:]
+                containments[contains].update(contained)
+            # now summarize dict
+            to_summarize = set()
+            for k, v in containments.items():
+                for k2, v2 in containments.items():
+                    if k == k2:
+                        continue
+                    if k in v2:
+                        to_summarize.add(k)
+                        containments[k2].update(v)  # add containments of k to k2
+            for k, v in containments.items():
+                if k not in to_summarize:
+                    s_containments[k] = v
+            for k, v in s_containments.items():
+                print(str(k) + " contains: " + str(v))
         print("Complementary views: " + str(len(complementary_group)))
         if len(complementary_group) > 0:
             for p1, p2, _, _ in complementary_group:
                 print(str(p1) + " is complementary with: " + str(p2))
         print("Contradictory views: " + str(len(contradictory_group)))
         if len(contradictory_group) > 0:
+            contradictions = defaultdict(lambda: defaultdict(list))
             for path1, k, contradictory_key1, path2 in contradictory_group:
-                print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
+                if path1 not in contradictions and path2 not in contradictions:
+                    contradictions[path1][(k, contradictory_key1)].append(path2)
+                elif path1 in contradictions:
+                    if path2 not in contradictions[path1][(k, contradictory_key1)]:
+                        contradictions[path1][(k, contradictory_key1)].append(path2)
+                elif path2 in contradictions:
+                    if path1 not in contradictions[path2][(k, contradictory_key1)]:
+                        contradictions[path2][(k, contradictory_key1)].append(path1)
+                # print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
+            for k, v in contradictions.items():
+                for contradiction_value, tables in v.items():
+                    attr_k, value_k = contradiction_value
+                    print(k + " contradicts: " + str(len(tables)) + " tables when " +
+                          str(attr_k) + " = " + str(value_k))
+            print("Summarized contradictions: " + str(len(set(contradictions.keys()))))
+            # print("Relevant contradictions: " + str(len([k for k, _ in contradictions.items() if k not in s_containments])))
+            for k, v in contradictions.items():
+                if k not in s_containments:
+                    for contradiction_value, tables in v.items():
+                        attr_k, value_k = contradiction_value
+                        print(k + " contradicts: " + str(len(tables)) + " tables when " +
+                              str(attr_k) + " = " + str(value_k))
+            print("Relevant contradictions: " + str(
+                len(set([k for k, _ in contradictions.items() if k not in s_containments]))))
+
