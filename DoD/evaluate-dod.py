@@ -2,6 +2,7 @@ from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
 from DoD.dod import DoD
 from DoD import data_processing_utils as dpu
+from DoD import view_4c_analysis_baseline as v4c
 
 from tqdm import tqdm
 
@@ -46,6 +47,11 @@ def assemble_views():
         print("Out path: " + str(output_path))
         run_dod(dod, qv_attr, qv_values, output_path=output_path)
 
+
+def run_4c(path):
+    groups_per_column_cardinality = v4c.main(path)
+    return groups_per_column_cardinality
+
 if __name__ == "__main__":
     print("DoD evaluation")
 
@@ -75,6 +81,23 @@ if __name__ == "__main__":
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    assemble_views()
+    # assemble_views()
 
     # then have a way for calling 4c on each folder -- on all folders
+    path = "dod_evaluation/vassembly/many/qv4/"
+    groups_per_column_cardinality = run_4c(path)
+
+    print("RESULTS: ")
+    for k, v in groups_per_column_cardinality.items():
+        print("")
+        print("Analyzing group with columns = " + str(k))
+        print("")
+        compatible_groups = v['compatible']
+        contained_groups = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
+
+        print("Compatible views: " + str(len(compatible_groups)))
+        print("Contained views: " + str(len(contained_groups)))
+        print("Complementary views: " + str(len(complementary_group)))
+        print("Contradictory views: " + str(len(contradictory_group)))

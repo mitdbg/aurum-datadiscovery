@@ -101,13 +101,34 @@ def identify_compatible_groups(dataframes_with_metadata):
                 compatible_group.append(path2)
                 already_classified.add(path1)
                 already_classified.add(path2)
-        if len(compatible_group) > 1:
-            compatible_groups.append(compatible_group)
+        # if len(compatible_group) > 1:
+        #  cannot check this condition because now all views are analyzed from compatible groups
+        compatible_groups.append(compatible_group)
     return compatible_groups
+
+
+def find_contained_groups(dataframes_with_metadata):
+    contained_groups = defaultdict(set)  # elements in the set are contained in the key
+    for df1, path1, md1 in dataframes_with_metadata:
+        hashes1 = hash_pandas_object(df1)
+        for df2, path2, md2 in dataframes_with_metadata:
+            if path1 == path2:  # same table
+                continue
+            hashes2 = hash_pandas_object(df2)
+            if len(hashes1) > len(hashes2):
+                # is t2 contained in t1?
+                if len(set(hashes2) - set(hashes1)) == 0:
+                    # contained_group.append(path2)
+                    contained_groups[path1].add(path2)
+            elif len(hashes2) > len(hashes1):
+                if len(set(hashes1) - set(hashes2)) == 0:
+                    contained_groups[path2].add(path1)
+    return contained_groups
 
 
 def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
     # t_to_remove = set()
+    already_processed_complementary_pairs = set()
 
     # compatible_groups = []
     contained_groups = []
@@ -143,6 +164,9 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
                     contained_group.append(path2)
                     # t_to_remove.add(path2)
             else:
+                if (path1 + "%%%" + path2) in already_processed_complementary_pairs\
+                        or (path2 + "%%%" + path1) in already_processed_complementary_pairs:
+                    continue  # already processed, skip computation
                 # Verify that views are potentially complementary
                 s1 = set(hashes1)
                 s2 = set(hashes2)
@@ -155,10 +179,12 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
                 s2_complement = set()
                 if len(s21) > 0:
                     s2_complement.update((s21))
-                if len(s1_complement) > 0 or len(s2_complement) > 0:
+                if len(s1_complement) > 0 and len(s2_complement) > 0:  # and, otherwise it's a containment rel
                     idx1 = [idx for idx, value in enumerate(hashes1) if value in s1_complement]
                     idx2 = [idx for idx, value in enumerate(hashes2) if value in s2_complement]
                     candidate_complementary_groups.append((df1, md1, path1, idx1, df2, md2, path2, idx2))
+                    already_processed_complementary_pairs.add((path1 + "%%%" + path2))
+                    already_processed_complementary_pairs.add((path2 + "%%%" + path1))
         # if len(compatible_group) > 1:
         #     compatible_groups.append(compatible_group)
         if len(contained_group) > 1:
@@ -421,17 +447,23 @@ def brute_force_4c(dataframes_with_metadata):
     dataframes_with_metadata_selected = [(df, path, metadata) for df, path, metadata in dataframes_with_metadata
                                          if path in selection]
 
+    # alternative find containment groups only
+    # contained_groups = find_contained_groups(dataframes_with_metadata_selected)
+    # for k, v in contained_groups.items():
+    #     print("View: " + str(k) + " contains: " + str(v))
+
     contained_groups, candidate_complementary_group = \
         summarize_views_and_find_candidate_complementary(dataframes_with_metadata_selected)
 
     # complementary_group, contradictory_group = \
     #     tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
-
+    print("Contained groups: " + str(len(contained_groups)))
     t_to_remove = set()
 
     complementary_group, contradictory_group = \
         tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
-
+    # complementary_group = None
+    # contradictory_group = None
     return compatible_groups, contained_groups, complementary_group, contradictory_group
 
 
@@ -489,12 +521,25 @@ def brute_force_4c_valuewise(dataframes_with_metadata):
     return summarized_group, complementary_group, contradictory_group
 
 
-def classify_per_column_cardinality(dataframes):
-    per_column_cardinality = defaultdict(list)
+def classify_per_table_schema(dataframes):
+    """
+    Two schemas are the same if they have the exact same number and type of columns
+    :param dataframes:
+    :return:
+    """
+    schema_to_dataframes = defaultdict(list)
     for df, path in dataframes:
-        num_col = len(df.columns)
-        per_column_cardinality[num_col].append((df, path))
-    return per_column_cardinality
+        schema_id = sum([hash(el) for el in df.columns])
+        schema_to_dataframes[schema_id].append((df, path))
+    return schema_to_dataframes
+
+
+# def classify_per_column_cardinality(dataframes):
+#     per_column_cardinality = defaultdict(list)
+#     for df, path in dataframes:
+#         num_col = len(df.columns)
+#         per_column_cardinality[num_col].append((df, path))
+#     return per_column_cardinality
 
 
 def get_df_metadata(dfs):
@@ -509,13 +554,13 @@ def main(input_path):
     groups_per_column_cardinality = defaultdict(dict)
 
     dfs = get_dataframes(input_path)
-    print("Found " + str(len(dfs)) + " tables")
+    print("Found " + str(len(dfs)) + " valid tables")
 
-    dfs_per_column_cardinality = classify_per_column_cardinality(dfs)
-    print("View candidates classify into " + str(len(dfs_per_column_cardinality)) + " based on column cardinality")
+    dfs_per_schema = classify_per_table_schema(dfs)
+    print("View candidates classify into " + str(len(dfs_per_schema)) + " groups based on schema")
     print("")
-    for key, group_dfs in dfs_per_column_cardinality.items():
-        print("Num elements with: " + str(key) + " columns: " + str(len(group_dfs)))
+    for key, group_dfs in dfs_per_schema.items():
+        print("Num elements with schema " + str(key) + " is: " + str(len(group_dfs)))
         dfs_with_metadata = get_df_metadata(group_dfs)
 
         # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
