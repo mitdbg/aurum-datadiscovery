@@ -107,23 +107,23 @@ def identify_compatible_groups(dataframes_with_metadata):
     return compatible_groups
 
 
-def find_contained_groups(dataframes_with_metadata):
-    contained_groups = defaultdict(set)  # elements in the set are contained in the key
-    for df1, path1, md1 in dataframes_with_metadata:
-        hashes1 = hash_pandas_object(df1)
-        for df2, path2, md2 in dataframes_with_metadata:
-            if path1 == path2:  # same table
-                continue
-            hashes2 = hash_pandas_object(df2)
-            if len(hashes1) > len(hashes2):
-                # is t2 contained in t1?
-                if len(set(hashes2) - set(hashes1)) == 0:
-                    # contained_group.append(path2)
-                    contained_groups[path1].add(path2)
-            elif len(hashes2) > len(hashes1):
-                if len(set(hashes1) - set(hashes2)) == 0:
-                    contained_groups[path2].add(path1)
-    return contained_groups
+# def find_contained_groups(dataframes_with_metadata):
+#     contained_groups = defaultdict(set)  # elements in the set are contained in the key
+#     for df1, path1, md1 in dataframes_with_metadata:
+#         hashes1 = hash_pandas_object(df1)
+#         for df2, path2, md2 in dataframes_with_metadata:
+#             if path1 == path2:  # same table
+#                 continue
+#             hashes2 = hash_pandas_object(df2)
+#             if len(hashes1) > len(hashes2):
+#                 # is t2 contained in t1?
+#                 if len(set(hashes2) - set(hashes1)) == 0:
+#                     # contained_group.append(path2)
+#                     contained_groups[path1].add(path2)
+#             elif len(hashes2) > len(hashes1):
+#                 if len(set(hashes1) - set(hashes2)) == 0:
+#                     contained_groups[path2].add(path1)
+#     return contained_groups
 
 
 def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
@@ -139,8 +139,9 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
         # compatible_group = [path1]
         contained_group = [path1]
 
-        hashes1 = hash_pandas_object(df1)
-        # ht1 = hashes1.sum()
+        hashes1_list = hash_pandas_object(df1, index=False)  # we only consider content
+        hashes1_set = set(hashes1_list)
+        # ht1 = hashes1_list.sum()
         # if path1 in t_to_remove:
         #     continue
         for df2, path2, md2 in dataframes_with_metadata:
@@ -149,8 +150,9 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
             # if t2 is in remove group
             # if path2 in t_to_remove:
             #     continue
-            hashes2 = hash_pandas_object(df2)
-            # ht2 = hashes2.sum()
+            hashes2_list = hash_pandas_object(df2, index=False)
+            hashes2_set = set(hashes2_list)
+            # ht2 = hashes2_list.sum()
 
             # are views compatible
             # if ht1 == ht2:
@@ -158,9 +160,9 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
             #     t_to_remove.add(path1)
             #     t_to_remove.add(path2)
             # are views potentially contained
-            if len(hashes1) > len(hashes2):
+            if len(hashes1_set) > len(hashes2_set):
                 # is t2 contained in t1?
-                if len(set(hashes2) - set(hashes1)) == 0:
+                if len(hashes2_set - hashes1_set) == 0:
                     contained_group.append(path2)
                     # t_to_remove.add(path2)
             else:
@@ -168,20 +170,20 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
                         or (path2 + "%%%" + path1) in already_processed_complementary_pairs:
                     continue  # already processed, skip computation
                 # Verify that views are potentially complementary
-                s1 = set(hashes1)
-                s2 = set(hashes2)
+                # s1 = set(hashes1_list)
+                # s2 = set(hashes2_list)
 
-                s12 = (s1 - s2)
+                s12 = (hashes1_set - hashes2_set)
                 s1_complement = set()
                 if len(s12) > 0:
                     s1_complement.update((s12))
-                s21 = (s2 - s1)
+                s21 = (hashes2_set - hashes1_set)
                 s2_complement = set()
                 if len(s21) > 0:
                     s2_complement.update((s21))
                 if len(s1_complement) > 0 and len(s2_complement) > 0:  # and, otherwise it's a containment rel
-                    idx1 = [idx for idx, value in enumerate(hashes1) if value in s1_complement]
-                    idx2 = [idx for idx, value in enumerate(hashes2) if value in s2_complement]
+                    idx1 = [idx for idx, value in enumerate(hashes1_list) if value in s1_complement]
+                    idx2 = [idx for idx, value in enumerate(hashes2_list) if value in s2_complement]
                     candidate_complementary_groups.append((df1, md1, path1, idx1, df2, md2, path2, idx2))
                     already_processed_complementary_pairs.add((path1 + "%%%" + path2))
                     already_processed_complementary_pairs.add((path2 + "%%%" + path1))
@@ -218,7 +220,7 @@ def find_contradiction_pair(t1, idx1, t2, idx2, k):
 
     s1 = selection1[k]
     s2 = set(selection2[k])
-    for key in s1:
+    for key in tqdm(s1):
         if len(contradictory_key1) > 0:  # check this condition for early skip
             break
         if key in s2:
@@ -243,7 +245,7 @@ def find_contradiction_pair(t1, idx1, t2, idx2, k):
     if len(contradictory_key1) == 0:  # if we found a contradictory example, no need to go on
         s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
         s1 = set(selection1[k])
-        for key in s2:
+        for key in tqdm(s2):
             if len(contradictory_key2) > 0:  # check this condition for early skip
                 break
             if key in s1:
@@ -447,7 +449,7 @@ def brute_force_4c(dataframes_with_metadata):
     dataframes_with_metadata_selected = [(df, path, metadata) for df, path, metadata in dataframes_with_metadata
                                          if path in selection]
 
-    # alternative find containment groups only
+    # # alternative find containment groups only
     # contained_groups = find_contained_groups(dataframes_with_metadata_selected)
     # for k, v in contained_groups.items():
     #     print("View: " + str(k) + " contains: " + str(v))
