@@ -17,6 +17,10 @@ import time
 from DoD import view_4c_analysis_baseline as v4c
 import os
 import pandas as pd
+import pprint
+
+
+pp = pprint.PrettyPrinter(indent=4)
 
 
 class DoD:
@@ -72,15 +76,18 @@ class DoD:
             filter_id += 1
         return filter_drs
 
-    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], max_hops=2, debug_enumerate_all_jps=False):
+    def virtual_schema_iterative_search(self, list_attributes: [str], list_samples: [str], perf_stats, max_hops=2, debug_enumerate_all_jps=False):
         # Align schema definition and samples
+        st_stage1 = time.time()
         assert len(list_attributes) == len(list_samples)
         sch_def = {attr: value for attr, value in zip(list_attributes, list_samples)}
 
         sch_def = OrderedDict(sorted(sch_def.items(), key=lambda x: x[0], reverse=True))
 
         filter_drs = self.joint_filters(sch_def)
-
+        et_stage1 = time.time()
+        perf_stats['t_stage1'] = (et_stage1 - st_stage1)
+        st_stage2 = time.time()
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
         table_fulfilled_filters = defaultdict(list)
@@ -189,9 +196,13 @@ class DoD:
                     yield (candidate_group, candidate_group_filters_covered)
                 go_on = False  # finished exploring all groups
 
+        all_candidate_groups = [cg for cg in eager_candidate_exploration()]
+        et_stage2 = time.time()
+        perf_stats['t_stage2'] = (et_stage2 - st_stage2)
+        perf_stats["num_candidate_groups"] = len(all_candidate_groups)
         # Find ways of joining together each group
         cache_unjoinable_pairs = defaultdict(int)
-        for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
+        for candidate_group, candidate_group_filters_covered in all_candidate_groups:
             print("")
             print("Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
@@ -224,13 +235,22 @@ class DoD:
 
             # if not graphs skip next
             if len(join_graphs) == 0:
+                if 'unjoinable_candidate_group' not in perf_stats:
+                    perf_stats['unjoinable_candidate_group'] = 0
+                perf_stats['unjoinable_candidate_group'] += 1
                 print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
                 continue
+            if 'joinable_candidate_group' not in perf_stats:
+                perf_stats['joinable_candidate_group'] = 0
+            perf_stats['joinable_candidate_group'] += 1
+            if 'num_join_graphs_per_candidate_group' not in perf_stats:
+                perf_stats['num_join_graphs_per_candidate_group'] = []
+            perf_stats['num_join_graphs_per_candidate_group'].append(len(join_graphs))
 
             # Now we need to check every join graph individually and see if it's materializable. Only once we've
             # exhausted these join graphs we move on to the next candidate group. We know already that each of the
             # join graphs covers all tables in candidate_group, so if they're materializable we're good.
-            # materializable_join_graphs = []
+            total_valid_join_graphs = 0
             for jpg in join_graphs:
                 # Obtain filters that apply to this join graph
                 filters = set()
@@ -245,6 +265,7 @@ class DoD:
                 is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
 
                 if is_join_graph_valid:
+                    total_valid_join_graphs += 1
                     attrs_to_project = dpu.obtain_attributes_to_project(filters)
                     # continue  # test
                     materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
@@ -256,6 +277,9 @@ class DoD:
                     # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
                     view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(jpg)
                     yield materialized_virtual_schema, attrs_to_project, view_metadata
+            if 'materializable_join_graphs' not in perf_stats:
+                perf_stats['materializable_join_graphs'] = []
+            perf_stats['materializable_join_graphs'].append(total_valid_join_graphs)
 
         print("Finished enumerating groups")
         cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
@@ -565,7 +589,8 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     ###
     view_metadata_mapping = dict()
     i = 0
-    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, max_hops=3,
+    perf_stats = dict()
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=3,
                                                         debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
@@ -594,6 +619,8 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
         if interactive:
             print("")
             input("Press any key to continue...")
+    pp.pprint(perf_stats)
+    exit()
 
     ###
     # Run 4C
@@ -779,8 +806,8 @@ if __name__ == "__main__":
 
     # EVAL - FOUR
     # tests equivalence and containment
-    # attrs = ["Email Address", "Department Full Name"]
-    # values = ["madden@csail.mit.edu", ""]
+    attrs = ["Email Address", "Department Full Name"]
+    values = ["madden@csail.mit.edu", ""]
 
     # EVAL - FIVE
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]

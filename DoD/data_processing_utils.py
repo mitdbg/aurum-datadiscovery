@@ -266,12 +266,13 @@ def _join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, su
 
 
 def apply_filter(relation_path, attribute, cell_value):
-    if relation_path in cache:
-        df = cache[relation_path]
-    else:
-        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
-        # store in cache
-        cache[relation_path] = df
+    # if relation_path in cache:
+    #     df = cache[relation_path]
+    # else:
+    #     df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+    #     # store in cache
+    #     cache[relation_path] = df
+    df = read_relation(relation_path)
     df = df[df[attribute] == cell_value]
     return df
 

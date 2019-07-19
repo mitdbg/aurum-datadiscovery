@@ -7,8 +7,8 @@ from DoD import view_4c_analysis_baseline as v4c
 from tqdm import tqdm
 
 import os
+import time
 from collections import defaultdict
-from collections import OrderedDict
 
 
 def create_folder(base_folder, name):
@@ -54,41 +54,18 @@ def run_4c(path):
     groups_per_column_cardinality = v4c.main(path)
     return groups_per_column_cardinality
 
-if __name__ == "__main__":
-    print("DoD evaluation")
 
-    # Eval parameters
-    eval_folder = "dod_evaluation/vassembly/"
+def run_4c_nochasing(path):
+    groups_per_column_cardinality = v4c.nochasing_main(path)
+    return groups_per_column_cardinality
 
-    query_view_definitions_many = [
-        ("qv2", ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"],
-         ["", "", "", ""]),
-        ("qv4", ["Email Address", "Department Full Name"],
-         ["madden@csail.mit.edu", ""]),
-        ("qv5", ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"],
-         ["", "", "", ""])
-    ]
 
-    query_view_definitions_few = [
-        ("qv1", ["Iap Category Name", "Person Name", "Person Email"],
-         ["Engineering", "", ""]),
-        ("qv3", ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"],
-         ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]),
-    ]
+def run_4c_valuewise_main(path):
+    groups_per_column_cardinality = v4c.valuewise_main(path)
+    return groups_per_column_cardinality
 
-    # Configure DoD
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
-    sep = ","
-    store_client = StoreHandler()
-    network = fieldnetwork.deserialize_network(path_to_serialized_model)
-    dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
-    # assemble_views()
-
-    # then have a way for calling 4c on each folder -- on all folders
-    path = "dod_evaluation/vassembly/many/qv5/"
-    groups_per_column_cardinality = run_4c(path)
-
+def output_4c_results(groups_per_column_cardinality):
     print("RESULTS: ")
     for k, v in groups_per_column_cardinality.items():
         print("")
@@ -137,7 +114,7 @@ if __name__ == "__main__":
                 elif path2 in contradictions:
                     if path1 not in contradictions[path2][(k, contradictory_key1)]:
                         contradictions[path2][(k, contradictory_key1)].append(path1)
-                # print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
+                        # print(path1 + " contradicts: " + path2 + " when " + str(k) + " = " + str(contradictory_key1))
             # contradictions_ordered = sorted(contradictions.items(), key=lambda x: len(x[0][x[1]]), reverse=True)
             for k, v in contradictions.items():
                 for contradiction_value, tables in v.items():
@@ -154,4 +131,67 @@ if __name__ == "__main__":
                               str(attr_k) + " = " + str(value_k))
             print("Relevant contradictions: " + str(
                 len(set([k for k, _ in contradictions.items() if k not in s_containments]))))
+
+
+def compare_4c_baselines(path):
+    s = time.time()
+    run_4c(path)
+    e = time.time()
+    print("Chasing: " + str((e-s)))
+
+    s = time.time()
+    run_4c_nochasing(path)
+    e = time.time()
+    print("No Chasing: " + str((e - s)))
+
+    s = time.time()
+    run_4c_valuewise_main(path)
+    e = time.time()
+    print("Value Wise: " + str((e - s)))
+
+
+if __name__ == "__main__":
+    print("DoD evaluation")
+
+    # Eval parameters
+    eval_folder = "dod_evaluation/vassembly/"
+
+    query_view_definitions_many = [
+        ("qv2", ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"],
+         ["", "", "", ""]),
+        ("qv4", ["Email Address", "Department Full Name"],
+         ["madden@csail.mit.edu", ""]),
+        ("qv5", ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"],
+         ["", "", "", ""])
+    ]
+
+    query_view_definitions_few = [
+        ("qv1", ["Iap Category Name", "Person Name", "Person Email"],
+         ["Engineering", "", ""]),
+        ("qv3", ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"],
+         ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]),
+    ]
+
+    # Configure DoD
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
+    sep = ","
+    store_client = StoreHandler()
+    network = fieldnetwork.deserialize_network(path_to_serialized_model)
+    dod = DoD(network=network, store_client=store_client, csv_separwator=sep)
+
+    # Assemble views for query views
+    # assemble_views()
+
+    # then have a way for calling 4c on each folder -- on all folders
+    # path = "dod_evaluation/vassembly/many/qv5/"
+    # groups_per_column_cardinality = run_4c(path)
+    # output_4c_results(groups_per_column_cardinality)
+
+    # 4c efficienty
+    # 1- with many views to show advantage with respect to other less sophisticated baselines
+    # 2- with few views to show that the overhead it adds is negligible
+    path = "dod_evaluation/vassembly/many/qv4/"
+    compare_4c_baselines(path)
+
+
 

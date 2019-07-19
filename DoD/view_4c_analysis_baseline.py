@@ -26,56 +26,6 @@ def get_dataframes(path):
     return dfs
 
 
-def are_views_contradictory(t1, t2, md1, md2):
-    mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
-    mlk2 = sorted(md2.items(), key=lambda x: x[1], reverse=True)
-    candidate_k1 = mlk1[0]
-    candidate_k2 = mlk2[0]
-    # pick only one key so we make sure the group-by is compatible
-    if candidate_k1 >= candidate_k2:
-        k = candidate_k1
-    else:
-        k = candidate_k2
-    vg1 = t1.groupby([k[0]])
-    vg2 = t2.groupby([k[0]])
-    if len(vg1.groups) > len(vg2.groups):
-        vref = vg1
-        voth = vg2
-    else:
-        vref = vg2
-        voth = vg1
-    contradictions = []
-    for gn, gv in vref:
-        if gn not in voth:  # this cannot be accounted for contradiction -> could be complementary
-            continue
-        v = voth.get_group(gn)
-        are_equivalent, equivalency_type = mva.equivalent(gv, v)  # local group
-        if not are_equivalent:
-            contradictions.append((k, gn))
-    if len(contradictions) != 0:
-        return True, contradictions
-    return False, []
-
-
-def are_they_complementary(t1, t2, md1, md2):
-    mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
-    mlk2 = sorted(md2.items(), key=lambda x: x[1], reverse=True)
-    k1 = mlk1[0]
-    k2 = mlk2[0]
-    s1 = set(t1[k1[0]])
-    s2 = set(t2[k2[0]])
-    s12 = (s1 - s2)
-    sdiff = set()
-    if len(s12) > 0:
-        sdiff.update((s12))
-    s21 = (s2 - s1)
-    if len(s21) > 0:
-        sdiff.update((s21))
-    if len(sdiff) == 0:
-        return False, set([])
-    return True, sdiff
-
-
 def identify_compatible_groups(dataframes_with_metadata):
     already_classified = set()
     compatible_groups = []
@@ -107,72 +57,33 @@ def identify_compatible_groups(dataframes_with_metadata):
     return compatible_groups
 
 
-# def find_contained_groups(dataframes_with_metadata):
-#     contained_groups = defaultdict(set)  # elements in the set are contained in the key
-#     for df1, path1, md1 in dataframes_with_metadata:
-#         hashes1 = hash_pandas_object(df1)
-#         for df2, path2, md2 in dataframes_with_metadata:
-#             if path1 == path2:  # same table
-#                 continue
-#             hashes2 = hash_pandas_object(df2)
-#             if len(hashes1) > len(hashes2):
-#                 # is t2 contained in t1?
-#                 if len(set(hashes2) - set(hashes1)) == 0:
-#                     # contained_group.append(path2)
-#                     contained_groups[path1].add(path2)
-#             elif len(hashes2) > len(hashes1):
-#                 if len(set(hashes1) - set(hashes2)) == 0:
-#                     contained_groups[path2].add(path1)
-#     return contained_groups
-
-
 def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
-    # t_to_remove = set()
     already_processed_complementary_pairs = set()
 
-    # compatible_groups = []
     contained_groups = []
     candidate_complementary_groups = []
 
     for df1, path1, md1 in dataframes_with_metadata:
         # these local variables are for this one view
-        # compatible_group = [path1]
         contained_group = [path1]
 
         hashes1_list = hash_pandas_object(df1, index=False)  # we only consider content
         hashes1_set = set(hashes1_list)
-        # ht1 = hashes1_list.sum()
-        # if path1 in t_to_remove:
-        #     continue
         for df2, path2, md2 in dataframes_with_metadata:
             if path1 == path2:  # same table
                 continue
-            # if t2 is in remove group
-            # if path2 in t_to_remove:
-            #     continue
             hashes2_list = hash_pandas_object(df2, index=False)
             hashes2_set = set(hashes2_list)
-            # ht2 = hashes2_list.sum()
-
-            # are views compatible
-            # if ht1 == ht2:
-            #     compatible_group.append(path2)
-            #     t_to_remove.add(path1)
-            #     t_to_remove.add(path2)
             # are views potentially contained
             if len(hashes1_set) > len(hashes2_set):
                 # is t2 contained in t1?
                 if len(hashes2_set - hashes1_set) == 0:
                     contained_group.append(path2)
-                    # t_to_remove.add(path2)
             else:
                 if (path1 + "%%%" + path2) in already_processed_complementary_pairs\
                         or (path2 + "%%%" + path1) in already_processed_complementary_pairs:
                     continue  # already processed, skip computation
                 # Verify that views are potentially complementary
-                # s1 = set(hashes1_list)
-                # s2 = set(hashes2_list)
-
                 s12 = (hashes1_set - hashes2_set)
                 s1_complement = set()
                 if len(s12) > 0:
@@ -187,13 +98,9 @@ def summarize_views_and_find_candidate_complementary(dataframes_with_metadata):
                     candidate_complementary_groups.append((df1, md1, path1, idx1, df2, md2, path2, idx2))
                     already_processed_complementary_pairs.add((path1 + "%%%" + path2))
                     already_processed_complementary_pairs.add((path2 + "%%%" + path1))
-        # if len(compatible_group) > 1:
-        #     compatible_groups.append(compatible_group)
         if len(contained_group) > 1:
             contained_groups.append(contained_group)
-    # return compatible_groups, contained_groups, candidate_complementary_groups, t_to_remove
     return contained_groups, candidate_complementary_groups
-    # return t_to_remove, candidate_complementary_groups
 
 
 def pick_most_likely_key_of_pair(md1, md2):
@@ -232,16 +139,6 @@ def find_contradiction_pair(t1, idx1, t2, idx2, k):
                     break  # one contradictory example is sufficient
         else:
             complementary_key1.add(key)
-
-        # for c in selection1.columns:
-        #     cell_value1 = set(selection1[selection1[k] == key][c])
-        #     if key in s2:
-        #         cell_value2 = set(selection2[selection2[k] == key][c])
-        #         if len(cell_value1 - cell_value2) != 0:
-        #             contradictory_key1.add(key)
-        #             break  # one contradictory example is sufficient
-        #     else:
-        #         complementary_key1.add(key)
     if len(contradictory_key1) == 0:  # if we found a contradictory example, no need to go on
         s2 = set(selection2[k]) - set(s1)  # we only check the set difference to save some lookups
         s1 = set(selection1[k])
@@ -257,16 +154,6 @@ def find_contradiction_pair(t1, idx1, t2, idx2, k):
                         break
             else:
                 complementary_key2.add(key)
-
-            # for c in selection2.columns:
-            #     cell_value2 = set(selection2[selection2[k] == key][c])
-            #     if key in s1:
-            #         cell_value1 = set(selection1[selection1[k] == key][c])
-            #         if len(cell_value2 - cell_value1) != 0:
-            #             contradictory_key2.add(key)
-            #             break
-            #     else:
-            #         complementary_key2.add(key)
     return complementary_key1, complementary_key2, contradictory_key1, contradictory_key2
 
 
@@ -332,8 +219,6 @@ def tell_contradictory_and_complementary_allpairs(candidate_complementary_group,
             if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs \
                     or path1 + "%$%" + path2 in complementary_pairs or path2 + "%$%" + path1 in complementary_pairs:
                 continue
-            # if path1 + "%$%" + path2 in contradictory_pairs or path2 + "%$%" + path1 in contradictory_pairs:
-            #     continue
             else:
                 complementary_group.append((path1, path2, complementary_key1, complementary_key2))
                 complementary_pairs.add(path1 + "%$%" + path2)
@@ -437,7 +322,7 @@ def tell_contradictory_and_complementary_chasing(candidate_complementary_group, 
     return complementary_group, contradictory_group
 
 
-def brute_force_4c(dataframes_with_metadata):
+def chasing_4c(dataframes_with_metadata):
 
     # sort relations by cardinality to avoid reverse containment
     # (df, path, metadata)
@@ -465,7 +350,83 @@ def brute_force_4c(dataframes_with_metadata):
     return compatible_groups, contained_groups, complementary_group, contradictory_group
 
 
+def no_chasing_4c(dataframes_with_metadata):
+
+    # sort relations by cardinality to avoid reverse containment
+    # (df, path, metadata)
+    dataframes_with_metadata = sorted(dataframes_with_metadata, key=lambda x: len(x[0]), reverse=True)
+
+    compatible_groups = identify_compatible_groups(dataframes_with_metadata)
+    # We pick one representative from each compatible group
+    selection = set([x[0] for x in compatible_groups])
+    dataframes_with_metadata_selected = [(df, path, metadata) for df, path, metadata in dataframes_with_metadata
+                                         if path in selection]
+
+    contained_groups, candidate_complementary_group = \
+        summarize_views_and_find_candidate_complementary(dataframes_with_metadata_selected)
+
+    t_to_remove = set()
+    complementary_group, contradictory_group = \
+        tell_contradictory_and_complementary_allpairs(candidate_complementary_group, t_to_remove)
+
+    # complementary_group, contradictory_group = \
+    #     tell_contradictory_and_complementary_chasing(candidate_complementary_group, t_to_remove)
+
+    # prepare found groups for presentation
+    compatible_groups = [cg for cg in compatible_groups if len(cg) > 1]
+
+    return compatible_groups, contained_groups, complementary_group, contradictory_group
+
+
 def brute_force_4c_valuewise(dataframes_with_metadata):
+    def are_views_contradictory(t1, t2, md1, md2):
+        mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
+        mlk2 = sorted(md2.items(), key=lambda x: x[1], reverse=True)
+        candidate_k1 = mlk1[0]
+        candidate_k2 = mlk2[0]
+        # pick only one key so we make sure the group-by is compatible
+        if candidate_k1 >= candidate_k2:
+            k = candidate_k1
+        else:
+            k = candidate_k2
+        vg1 = t1.groupby([k[0]])
+        vg2 = t2.groupby([k[0]])
+        if len(vg1.groups) > len(vg2.groups):
+            vref = vg1
+            voth = vg2
+        else:
+            vref = vg2
+            voth = vg1
+        contradictions = []
+        for gn, gv in vref:
+            if gn not in voth:  # this cannot be accounted for contradiction -> could be complementary
+                continue
+            v = voth.get_group(gn)
+            are_equivalent, equivalency_type = mva.equivalent(gv, v)  # local group
+            if not are_equivalent:
+                contradictions.append((k, gn))
+                break # one contradiction is enough to stop
+        if len(contradictions) != 0:
+            return True, contradictions
+        return False, []
+
+    def are_they_complementary(t1, t2, md1, md2):
+        mlk1 = sorted(md1.items(), key=lambda x: x[1], reverse=True)
+        mlk2 = sorted(md2.items(), key=lambda x: x[1], reverse=True)
+        k1 = mlk1[0]
+        k2 = mlk2[0]
+        s1 = set(t1[k1[0]])
+        s2 = set(t2[k2[0]])
+        s12 = (s1 - s2)
+        sdiff = set()
+        if len(s12) > 0:
+            sdiff.update((s12))
+        s21 = (s2 - s1)
+        if len(s21) > 0:
+            sdiff.update((s21))
+        if len(sdiff) == 0:
+            return False, set([])
+        return True, sdiff
 
     summarized_group = list()
     complementary_group = list()
@@ -532,14 +493,6 @@ def classify_per_table_schema(dataframes):
     return schema_to_dataframes
 
 
-# def classify_per_column_cardinality(dataframes):
-#     per_column_cardinality = defaultdict(list)
-#     for df, path in dataframes:
-#         num_col = len(df.columns)
-#         per_column_cardinality[num_col].append((df, path))
-#     return per_column_cardinality
-
-
 def get_df_metadata(dfs):
     dfs_with_metadata = []
     for df, path in dfs:
@@ -562,11 +515,57 @@ def main(input_path):
         dfs_with_metadata = get_df_metadata(group_dfs)
 
         # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
-        compatible_group, contained_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        compatible_group, contained_group, complementary_group, contradictory_group = chasing_4c(dfs_with_metadata)
         groups_per_column_cardinality[key]['compatible'] = compatible_group
         groups_per_column_cardinality[key]['contained'] = contained_group
         groups_per_column_cardinality[key]['complementary'] = complementary_group
         groups_per_column_cardinality[key]['contradictory'] = contradictory_group
+
+    return groups_per_column_cardinality
+
+
+def nochasing_main(input_path):
+    groups_per_column_cardinality = defaultdict(dict)
+
+    dfs = get_dataframes(input_path)
+    print("Found " + str(len(dfs)) + " valid tables")
+
+    dfs_per_schema = classify_per_table_schema(dfs)
+    print("View candidates classify into " + str(len(dfs_per_schema)) + " groups based on schema")
+    print("")
+    for key, group_dfs in dfs_per_schema.items():
+        print("Num elements with schema " + str(key) + " is: " + str(len(group_dfs)))
+        dfs_with_metadata = get_df_metadata(group_dfs)
+
+        # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        compatible_group, contained_group, complementary_group, contradictory_group = no_chasing_4c(dfs_with_metadata)
+        groups_per_column_cardinality[key]['compatible'] = compatible_group
+        groups_per_column_cardinality[key]['contained'] = contained_group
+        groups_per_column_cardinality[key]['complementary'] = complementary_group
+        groups_per_column_cardinality[key]['contradictory'] = contradictory_group
+
+    return groups_per_column_cardinality
+
+
+def valuewise_main(input_path):
+    groups_per_column_cardinality = defaultdict(dict)
+
+    dfs = get_dataframes(input_path)
+    print("Found " + str(len(dfs)) + " valid tables")
+
+    dfs_per_schema = classify_per_table_schema(dfs)
+    print("View candidates classify into " + str(len(dfs_per_schema)) + " groups based on schema")
+    print("")
+    for key, group_dfs in dfs_per_schema.items():
+        print("Num elements with schema " + str(key) + " is: " + str(len(group_dfs)))
+        dfs_with_metadata = get_df_metadata(group_dfs)
+
+        # summarized_group, complementary_group, contradictory_group = brute_force_4c(dfs_with_metadata)
+        summarized_group, complementary_group, contradictory_group = brute_force_4c_valuewise(dfs_with_metadata)
+        # groups_per_column_cardinality[key]['compatible'] = compatible_group
+        # groups_per_column_cardinality[key]['contained'] = contained_group
+        # groups_per_column_cardinality[key]['complementary'] = complementary_group
+        # groups_per_column_cardinality[key]['contradictory'] = contradictory_group
 
     return groups_per_column_cardinality
 
