@@ -30,8 +30,10 @@ def configure_csv_separator(separator):
 
 def estimate_output_row_size(a: pd.DataFrame, b: pd.DataFrame):
     # 1. check each dataframe's size in memory and number of rows
-    a_bytes = sum(a.memory_usage(deep=True))
-    b_bytes = sum(b.memory_usage(deep=True))
+    # a_bytes = sum(a.memory_usage(deep=True))
+    # b_bytes = sum(b.memory_usage(deep=True))
+    a_bytes = sum(a.memory_usage(deep=False))
+    b_bytes = sum(b.memory_usage(deep=False))
     a_len_rows = len(a)
     b_len_rows = len(b)
 
@@ -56,7 +58,7 @@ def does_join_fit_in_memory(chunk, ratio, o_row_size):
 
 
 def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str,
-                             suffix_str=None, chunksize=C.join_chunksize):
+                             suffix_str=None, chunksize=C.join_chunksize, normalize=True):
     # clean up temporal stuff -- i.e., in case there was a crash
     try:
         # os.remove(tmp_df_chunk)
@@ -64,6 +66,7 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
     except FileNotFoundError:
         pass
 
+    # if normalize:
     a[a_key] = a[a_key].apply(lambda x: str(x).lower())
     try:
         b[b_key] = b[b_key].apply(lambda x: str(x).lower())
@@ -89,15 +92,15 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
 
     # join by chunks
     def join_chunk(chunk_df, header=False):
-        print("First chunk? : " + str(header))
-        print("a: " + str(len(a)))
-        print("b: " + str(len(chunk_df)))
+        # print("First chunk? : " + str(header))
+        # print("a: " + str(len(a)))
+        # print("b: " + str(len(chunk_df)))
         # worst_case_estimated_join_size = chunksize * len(a) * o_row_size
         # if worst_case_estimated_join_size >= memory_limit_join_processing:
         #     print("Can't join sample. Size: " + str(worst_case_estimated_join_size))
         #     return False  # can't even join a sample
-        print(a[a_key].head(10))
-        print(chunk_df[b_key].head(10))
+        # print(a[a_key].head(10))
+        # print(chunk_df[b_key].head(10))
         target_chunk = pd.merge(a, chunk_df, left_on=a_key, right_on=b_key, sort=False, suffixes=('', suffix_str))
         if header:  # header is only activated the first time. We only want to do this check the first time
             # sjt = time.time()
@@ -106,11 +109,11 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
             # join_time = (float)((ejt - sjt) * (float)(len(b)/chunksize))
             # print("Est. join time: " + str(join_time))
             print("Estimated join size: " + str(estimated_join_size))
-            if estimated_join_size < 0.01:
-                print("TC: " + str(len(target_chunk)))
-                print("Ratio: " + str((float)(chunksize/len(b))))
-                print("row size: " + str(o_row_size))
-                print("FITS? : " + str(fits))
+            # if estimated_join_size < 0.01:
+            #     print("TC: " + str(len(target_chunk)))
+            #     print("Ratio: " + str((float)(chunksize/len(b))))
+            #     print("row size: " + str(o_row_size))
+            #     print("FITS? : " + str(fits))
             if fits:
                 return True
             else:
@@ -232,6 +235,11 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suf
     return joined
 
 
+def update_relation_cache(relation_path, df):
+    if relation_path in cache:
+        cache[relation_path] = df
+
+
 def read_relation(relation_path):
     if relation_path in cache:
         df = cache[relation_path]
@@ -273,6 +281,8 @@ def apply_filter(relation_path, attribute, cell_value):
     #     # store in cache
     #     cache[relation_path] = df
     df = read_relation(relation_path)
+    df[attribute] = df[attribute].apply(lambda x: str(x).lower())
+    # update_relation_cache(relation_path, df)
     df = df[df[attribute] == cell_value]
     return df
 
@@ -386,6 +396,7 @@ def materialize_join_graph(jg, dod):
                 if len(intree) == 0:
                     node = InTreeNode(l.source_name)
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    # df = read_relation(node_path)
                     df = get_dataframe(node_path)
                     node.set_payload(df)
                     intree[l.source_name] = node
@@ -394,6 +405,7 @@ def materialize_join_graph(jg, dod):
                 if l.source_name in intree.keys():
                     rnode = InTreeNode(r.source_name)  # create node for r
                     node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                    # df = read_relation(node_path)
                     df = get_dataframe(node_path)
                     rnode.set_payload(df)
                     r_parent = intree[l.source_name]
@@ -407,6 +419,7 @@ def materialize_join_graph(jg, dod):
                     lnode = InTreeNode(l.source_name)  # create node for l
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
                     df = get_dataframe(node_path)
+                    # df = read_relation(node_path)
                     lnode.set_payload(df)
                     l_parent = intree[r.source_name]
                     lnode.add_parent(l_parent)  # add ref
@@ -450,6 +463,7 @@ def materialize_join_graph(jg, dod):
                 print("L: " + str(k.node) + " - " + str(l_key) + " size: " + str(len(l)))
                 print("R: " + str(child.node) + " - " + str(r_key) + " size: " + str(len(r)))
                 df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
+                # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
                 if df is False:  # happens when join is outlier
                     return False
 

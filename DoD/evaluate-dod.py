@@ -179,19 +179,21 @@ if __name__ == "__main__":
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     dod = DoD(network=network, store_client=store_client, csv_separwator=sep)
 
-    # Assemble views for query views
+    # 0- Assemble views for query views. To have raw number of views
     # assemble_views()
 
-    # then have a way for calling 4c on each folder -- on all folders
+    # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
     # path = "dod_evaluation/vassembly/many/qv5/"
     # groups_per_column_cardinality = run_4c(path)
     # output_4c_results(groups_per_column_cardinality)
 
-    # 4c efficienty
-    # 1- with many views to show advantage with respect to other less sophisticated baselines
-    # 2- with few views to show that the overhead it adds is negligible
+    # 2- 4c efficienty
+    # 2.1- with many views to show advantage with respect to other less sophisticated baselines
+    # 2.2- with few views to show that the overhead it adds is negligible
     path = "dod_evaluation/vassembly/many/qv4/"
     compare_4c_baselines(path)
+
+    # 3- Measure average time per join attempt. Add total times as well
 
 
 

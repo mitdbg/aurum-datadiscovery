@@ -202,6 +202,9 @@ class DoD:
         perf_stats["num_candidate_groups"] = len(all_candidate_groups)
         # Find ways of joining together each group
         cache_unjoinable_pairs = defaultdict(int)
+        perf_stats['time_joinable'] = 0
+        perf_stats['time_is_materializable'] = 0
+        perf_stats['time_materialize'] = 0
         for candidate_group, candidate_group_filters_covered in all_candidate_groups:
             print("")
             print("Candidate group: " + str(candidate_group))
@@ -211,12 +214,16 @@ class DoD:
             if len(candidate_group) == 1:
                 table = candidate_group[0]
                 path = table_path[table]
-                materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
+                # materialized_virtual_schema = dpu.get_dataframe(path + "/" + table)
+                materialized_virtual_schema = dpu.read_relation(path + "/" + table)
                 attrs_to_project = dpu.obtain_attributes_to_project(candidate_group_filters_covered)
                 # Create metadata to document this view
                 view_metadata = dict()
                 view_metadata["#join_graphs"] = 1
                 view_metadata["join_graph"] = {"nodes": [{"id": -101010, "label": table}], "edges": []}
+                if 'single_relation_group' not in perf_stats:
+                    perf_stats['single_relation_group'] = 0
+                perf_stats['single_relation_group'] += 1
                 yield materialized_virtual_schema, attrs_to_project, view_metadata
                 continue  # to go to the next group
 
@@ -225,7 +232,10 @@ class DoD:
             #group_with_all_relations, join_path_groups = self.joinable(candidate_group, cache_unjoinable_pairs)
             max_hops = max_hops
             # We find the different join graphs that would join the candidate_group
+            st_joinable = time.time()
             join_graphs = self.joinable(candidate_group, cache_unjoinable_pairs, max_hops=max_hops)
+            et_joinable = time.time()
+            perf_stats['time_joinable'] += (et_joinable - st_joinable)
             if debug_enumerate_all_jps:
                 for i, group in enumerate(join_graphs):
                     print("Group: " + str(i))
@@ -251,6 +261,7 @@ class DoD:
             # exhausted these join graphs we move on to the next candidate group. We know already that each of the
             # join graphs covers all tables in candidate_group, so if they're materializable we're good.
             total_valid_join_graphs = 0
+            materializable_join_graphs = []
             for jpg in join_graphs:
                 # Obtain filters that apply to this join graph
                 filters = set()
@@ -262,21 +273,21 @@ class DoD:
 
                 # TODO: obtain join_graph score for diff metrics. useful for ranking later
                 # rank_materializable_join_graphs(materializable_join_paths, table_path, dod)
+                st_is_materializable = time.time()
                 is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
-
+                et_is_materializable = time.time()
+                perf_stats['time_is_materializable'] += (et_is_materializable - st_is_materializable)
+                # Obtain all materializable graphs, then materialize
                 if is_join_graph_valid:
                     total_valid_join_graphs += 1
-                    attrs_to_project = dpu.obtain_attributes_to_project(filters)
-                    # continue  # test
-                    materialized_virtual_schema = dpu.materialize_join_graph(jpg, self)
-                    if materialized_virtual_schema is False:
-                        continue  # happens when the join was an outlier
-                    # Create metadata to document this view
-                    view_metadata = dict()
-                    view_metadata["#join_graphs"] = len(join_graphs)
-                    # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
-                    view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(jpg)
-                    yield materialized_virtual_schema, attrs_to_project, view_metadata
+                    materializable_join_graphs.append((jpg, filters))
+            st_materialize = time.time()
+            to_return = self.materialize_join_graphs(materializable_join_graphs)
+            et_materialize = time.time()
+            perf_stats['time_materialize'] += (et_materialize - st_materialize)
+            for el in to_return:
+                yield el
+
             if 'materializable_join_graphs' not in perf_stats:
                 perf_stats['materializable_join_graphs'] = []
             perf_stats['materializable_join_graphs'].append(total_valid_join_graphs)
@@ -294,6 +305,24 @@ class DoD:
             all_nids.append(hop_l.nid)
         path_id = frozenset(all_nids)
         return path_id
+
+    def materialize_join_graphs(self, materializable_join_graphs):
+        to_return = []
+        for mjg, filters in materializable_join_graphs:
+            # if is_join_graph_valid:
+            attrs_to_project = dpu.obtain_attributes_to_project(filters)
+            # continue  # test
+            materialized_virtual_schema = dpu.materialize_join_graph(mjg, self)
+            if materialized_virtual_schema is False:
+                continue  # happens when the join was an outlier
+            # Create metadata to document this view
+            view_metadata = dict()
+            view_metadata["#join_graphs"] = len(materializable_join_graphs)
+            # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
+            view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(mjg)
+            to_return.append((materialized_virtual_schema, attrs_to_project, view_metadata))
+            # yield materialized_virtual_schema, attrs_to_project, view_metadata
+        return to_return
 
     def joinable(self, group_tables: [str], cache_unjoinable_pairs: defaultdict(int), max_hops=2):
         """
@@ -482,6 +511,7 @@ class DoD:
 
             # check if the materialized version join's cardinality > 0
             joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
+
             # joined = dpu.join_ab_on_key_optimizer(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
             # joined = dpu.join_ab_on_key_spill_disk(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
 
@@ -600,9 +630,9 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
 
         proj_view = dpu.project(mjp, attrs_project)
 
-        print(str(proj_view.head(5)))
-        print("Metadata")
-        print(metadata)
+        # print(str(proj_view.head(5)))
+        # print("Metadata")
+        # print(metadata)
 
         if output_path is not None:
             view_path = None
@@ -825,6 +855,7 @@ if __name__ == "__main__":
             print(e)
 
     # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
+    output_path = None
     test_e2e(dod, attrs, values, number_jps=10, output_path=output_path)
 
     # debug intree mat join
