@@ -9,6 +9,10 @@ from tqdm import tqdm
 import os
 import time
 from collections import defaultdict
+import pprint
+
+
+pp = pprint.PrettyPrinter(indent=4)
 
 
 def create_folder(base_folder, name):
@@ -17,20 +21,31 @@ def create_folder(base_folder, name):
     return op
 
 
-def run_dod(dod, attrs, values, output_path, max_hops=2):
+def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
     view_metadata_mapping = dict()
     i = 0
-    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, max_hops=max_hops,
+    perf_stats = dict()
+    st_runtime = time.time()
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=max_hops,
                                                                             debug_enumerate_all_jps=False):
-        proj_view = dpu.project(mjp, attrs_project)
-
-        if output_path is not None:
-            view_path = output_path + "/view_" + str(i)
-            proj_view.to_csv(view_path, encoding='latin1', index=False)  # always store this
-            # store metadata associated to that view
-            view_metadata_mapping[view_path] = metadata
+        # proj_view = dpu.project(mjp, attrs_project)
+        #
+        # if output_path is not None:
+        #     view_path = output_path + "/view_" + str(i)
+        #     proj_view.to_csv(view_path, encoding='latin1', index=False)  # always store this
+        #     # store metadata associated to that view
+        #     view_metadata_mapping[view_path] = metadata
 
         i += 1
+    et_runtime = time.time()
+    perf_stats['et_runtime'] = (et_runtime - st_runtime)
+    print("#$# " + name)
+    print("#$# ")
+    print("")
+    pp.pprint(perf_stats)
+    print("")
+    print("Total views: " + str(i))
+    print("#$# ")
 
 
 def assemble_views():
@@ -48,6 +63,15 @@ def assemble_views():
         output_path = create_folder(eval_folder, "few/" + qv_name)
         print("Out path: " + str(output_path))
         run_dod(dod, qv_attr, qv_values, output_path=output_path)
+
+
+def measure_dod_performance(qv_name, qv_attr, qv_values):
+    # for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_many):
+    print("Running query: " + str(qv_name))
+    # Create a folder for each query-view
+    # output_path = create_folder(eval_folder, "many/" + qv_name)
+    # print("Out path: " + str(output_path))
+    run_dod(dod, qv_attr, qv_values, output_path=None, name=qv_name)
 
 
 def run_4c(path):
@@ -133,21 +157,38 @@ def output_4c_results(groups_per_column_cardinality):
                 len(set([k for k, _ in contradictions.items() if k not in s_containments]))))
 
 
-def compare_4c_baselines(path):
-    s = time.time()
-    run_4c(path)
-    e = time.time()
-    print("Chasing: " + str((e-s)))
+def compare_4c_baselines(many_views, few_views):
+    for num_views, path in tqdm(many_views):
+        print("#$# " + str(path))
+        s = time.time()
+        run_4c(path)
+        e = time.time()
+        print("#$# Chasing")
+        print("#$# " + str(num_views) + " " + str((e-s)))
 
-    s = time.time()
-    run_4c_nochasing(path)
-    e = time.time()
-    print("No Chasing: " + str((e - s)))
+        s = time.time()
+        run_4c_nochasing(path)
+        e = time.time()
+        print("#$# No Chasing")
+        print("#$# " + str(num_views) + " " + str((e - s)))
+    for num_views, path in tqdm(few_views):
+        print("#$# " + str(path))
+        s = time.time()
+        run_4c(path)
+        e = time.time()
+        print("#$# Chasing")
+        print("#$# " + str(num_views) + " " + str((e - s)))
 
-    s = time.time()
-    run_4c_valuewise_main(path)
-    e = time.time()
-    print("Value Wise: " + str((e - s)))
+        s = time.time()
+        run_4c_nochasing(path)
+        e = time.time()
+        print("#$# No Chasing")
+        print("#$# " + str(num_views) + " " + str((e - s)))
+
+    # s = time.time()
+    # run_4c_valuewise_main(path)
+    # e = time.time()
+    # print("Value Wise: " + str((e - s)))
 
 
 if __name__ == "__main__":
@@ -177,10 +218,17 @@ if __name__ == "__main__":
     sep = ","
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
-    dod = DoD(network=network, store_client=store_client, csv_separwator=sep)
+    dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
     # 0- Assemble views for query views. To have raw number of views
     # assemble_views()
+
+    # 1- measure dod performance
+    qv_name, qv_attr, qv_values = query_view_definitions_many[0]
+    print(qv_name)
+    print(qv_attr)
+    print(qv_values)
+    measure_dod_performance(qv_name, qv_attr, qv_values)
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
     # path = "dod_evaluation/vassembly/many/qv5/"
@@ -190,8 +238,15 @@ if __name__ == "__main__":
     # 2- 4c efficienty
     # 2.1- with many views to show advantage with respect to other less sophisticated baselines
     # 2.2- with few views to show that the overhead it adds is negligible
-    path = "dod_evaluation/vassembly/many/qv4/"
-    compare_4c_baselines(path)
+    # path1 = "dod_evaluation/vassembly/many/qv4/"
+    # path2 = "dod_evaluation/vassembly/many/qv2/"
+    # path3 = "dod_evaluation/vassembly/many/qv5/"
+    # path4 = "dod_evaluation/vassembly/few/qv1/"
+    # path5 = "dod_evaluation/vassembly/few/qv3/"
+    # # compare_4c_baselines(many_views=[('9', path1), ('177', path2), ('99', path3)],
+    # #                      few_views=[('2', path4), ('2', path5)])
+    # compare_4c_baselines(many_views=[('99', path3)],
+    #                      few_views=[('2', path4), ('2', path5)])
 
     # 3- Measure average time per join attempt. Add total times as well
 

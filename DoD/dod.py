@@ -358,12 +358,12 @@ class DoD:
                 drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops, lean_search=True)
                 e = time.time()
                 print("Total time: " + str((e-s)))
-                self.place_paths_in_cache(table1, table2, drs)
+                self.place_paths_in_cache(table1, table2, drs)  # FIXME FIXME FIXME
             paths = drs.paths()  # list of lists
             # If we didn't find paths, update unjoinable_pairs cache with this pair
-            if len(paths) == 0:  # then store this info, these tables do not join
-                cache_unjoinable_pairs[(table1, table2)] += 1
-                cache_unjoinable_pairs[(table2, table1)] += 1
+            if len(paths) == 0:  # then store this info, these tables do not join # FIXME FIXME FIXME
+                cache_unjoinable_pairs[(table1, table2)] += 1 # FIXME FIXME
+                cache_unjoinable_pairs[(table2, table1)] += 1 # FIXME FIXME FIXME
             for p in paths:
                 tables_covered = set()
                 tables_in_group = set(group_tables)

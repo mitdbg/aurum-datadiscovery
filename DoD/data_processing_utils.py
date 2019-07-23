@@ -235,9 +235,9 @@ def join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suf
     return joined
 
 
-def update_relation_cache(relation_path, df):
-    if relation_path in cache:
-        cache[relation_path] = df
+# def update_relation_cache(relation_path, df):
+#     if relation_path in cache:
+#         cache[relation_path] = df
 
 
 def read_relation(relation_path):
