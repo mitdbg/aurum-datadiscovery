@@ -28,7 +28,7 @@ def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
     st_runtime = time.time()
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=max_hops,
                                                                             debug_enumerate_all_jps=False):
-        # proj_view = dpu.project(mjp, attrs_project)
+        proj_view = dpu.project(mjp, attrs_project)
         #
         # if output_path is not None:
         #     view_path = output_path + "/view_" + str(i)

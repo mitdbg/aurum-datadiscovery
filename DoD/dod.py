@@ -196,16 +196,17 @@ class DoD:
                     yield (candidate_group, candidate_group_filters_covered)
                 go_on = False  # finished exploring all groups
 
-        all_candidate_groups = [cg for cg in eager_candidate_exploration()]
+        # all_candidate_groups = [cg for cg in eager_candidate_exploration()]
         et_stage2 = time.time()
         perf_stats['t_stage2'] = (et_stage2 - st_stage2)
-        perf_stats["num_candidate_groups"] = len(all_candidate_groups)
         # Find ways of joining together each group
         cache_unjoinable_pairs = defaultdict(int)
         perf_stats['time_joinable'] = 0
         perf_stats['time_is_materializable'] = 0
         perf_stats['time_materialize'] = 0
-        for candidate_group, candidate_group_filters_covered in all_candidate_groups:
+        num_candidate_groups = 0
+        for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
+            num_candidate_groups += 1
             print("")
             print("Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
@@ -281,6 +282,8 @@ class DoD:
                 if is_join_graph_valid:
                     total_valid_join_graphs += 1
                     materializable_join_graphs.append((jpg, filters))
+            # At this point we can empty is-join-graph-materializable cache and create a new one
+            # dpu.empty_relation_cache()  # TODO: If df.copy() works, then this is a nice reuse
             st_materialize = time.time()
             to_return = self.materialize_join_graphs(materializable_join_graphs)
             et_materialize = time.time()
@@ -292,6 +295,7 @@ class DoD:
                 perf_stats['materializable_join_graphs'] = []
             perf_stats['materializable_join_graphs'].append(total_valid_join_graphs)
 
+        perf_stats["num_candidate_groups"] = num_candidate_groups
         print("Finished enumerating groups")
         cache_unjoinable_pairs = OrderedDict(sorted(cache_unjoinable_pairs.items(),
                                                     key=lambda x: x[1], reverse=True))
@@ -470,17 +474,19 @@ class DoD:
                     filtered_l = None
                     for info, filter_type, filter_id in filters_l:
                         if filter_type == FilterType.ATTR:
-                            filtered_l = dpu.read_relation(l_path + l.source_name)
+                            filtered_l = dpu.read_relation(l_path + l.source_name)  # FIXME FIXME FIXME
+                            # filtered_l = dpu.get_dataframe(l_path + l.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
                         cell_value = info[0]
-                        filtered_l = dpu.apply_filter(l_path + l.source_name, attribute, cell_value)
+                        filtered_l = dpu.apply_filter(l_path + l.source_name, attribute, cell_value)# FIXME FIXME FIXME
 
                     if len(filtered_l) == 0:
                         return False  # filter does not leave any data => non-joinable
                 # If there are not filters, then do not apply them
                 else:
-                    filtered_l = dpu.read_relation(l_path + l.source_name)
+                    filtered_l = dpu.read_relation(l_path + l.source_name)# FIXME FIXME FIXME
+                    # filtered_l = dpu.get_dataframe(l_path + l.source_name)
             else:
                 filtered_l = local_intermediates[l.source_name]
             local_intermediates[l.source_name] = filtered_l
@@ -494,7 +500,8 @@ class DoD:
                     filtered_r = None
                     for info, filter_type, filter_id in filters_r:
                         if filter_type == FilterType.ATTR:
-                            filtered_r = dpu.read_relation(r_path + r.source_name)
+                            filtered_r = dpu.read_relation(r_path + r.source_name)# FIXME FIXME FIXME
+                            # filtered_r = dpu.get_dataframe(r_path + r.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
                         cell_value = info[0]
@@ -504,7 +511,8 @@ class DoD:
                         return False  # filter does not leave any data => non-joinable
                 # If there are not filters, then do not apply them
                 else:
-                    filtered_r = dpu.read_relation(r_path + r.source_name)
+                    filtered_r = dpu.read_relation(r_path + r.source_name)# FIXME FIXME FIXME
+                    # filtered_r = dpu.get_dataframe(r_path + r.source_name)
             else:
                 filtered_r = local_intermediates[r.source_name]
             local_intermediates[r.source_name] = filtered_r
@@ -620,7 +628,8 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     view_metadata_mapping = dict()
     i = 0
     perf_stats = dict()
-    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=3,
+    st_runtime = time.time()
+    for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=2,
                                                         debug_enumerate_all_jps=False):
         print("JP: " + str(i))
         # i += 1
@@ -649,7 +658,11 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
         if interactive:
             print("")
             input("Press any key to continue...")
+    et_runtime = time.time()
+    perf_stats['runtime'] = (et_runtime - st_runtime)
     pp.pprint(perf_stats)
+
+    print("Total views: " + str(i))
     exit()
 
     ###
@@ -816,9 +829,9 @@ if __name__ == "__main__":
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
 
     # EVAL - ONE
-    attrs = ["Iap Category Name", "Person Name", "Person Email"]
-    # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
-    values = ["Engineering", "", ""]
+    # attrs = ["Iap Category Name", "Person Name", "Person Email"]
+    # # values = ["", "Meghan Kenney", "mkenney@mit.edu"]
+    # values = ["Engineering", "", ""]
 
     # EVAL - TWO
     # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]

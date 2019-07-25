@@ -142,6 +142,8 @@ def join_ab_on_key_optimizer(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key
             first_chunk = False
             if fits_in_memory:  # join in memory and exit
                 return join_ab_on_key(a, b, a_key, b_key, suffix_str=suffix_str, normalize=False)
+            else:  # just ignore no-fit in memory chunks
+                return False
         else:
             join_chunk(chunk)
         ecp = time.time()
@@ -249,6 +251,32 @@ def read_relation(relation_path):
     return df
 
 
+def read_relation_on_copy(relation_path):
+    """
+    This is assuming than copying a DF is cheaper than reading it back from disk
+    :param relation_path:
+    :return:
+    """
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+        cache[relation_path] = df
+    return df.copy()
+
+
+def empty_relation_cache():
+    global cache
+    cache = dict()
+
+
+def get_dataframe(path):
+    # TODO: only csv is supported
+    df = pd.read_csv(path, encoding='latin1', sep=data_separator)
+    return df
+
+
+
 def _join_ab_on_key(a: pd.DataFrame, b: pd.DataFrame, a_key: str, b_key: str, suffix_str=None):
     # First make sure to remove empty/nan values from join columns
     # TODO: Generate data event if nan values are found
@@ -280,7 +308,8 @@ def apply_filter(relation_path, attribute, cell_value):
     #     df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
     #     # store in cache
     #     cache[relation_path] = df
-    df = read_relation(relation_path)
+    df = read_relation(relation_path)  # FIXME FIXE FIXME
+    # df = get_dataframe(relation_path)
     df[attribute] = df[attribute].apply(lambda x: str(x).lower())
     # update_relation_cache(relation_path, df)
     df = df[df[attribute] == cell_value]
@@ -383,6 +412,7 @@ class InTreeNode:
 def materialize_join_graph(jg, dod):
     print("Materializing:")
     pp.pprint(jg)
+
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
@@ -396,8 +426,8 @@ def materialize_join_graph(jg, dod):
                 if len(intree) == 0:
                     node = InTreeNode(l.source_name)
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                    # df = read_relation(node_path)
-                    df = get_dataframe(node_path)
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
                     node.set_payload(df)
                     intree[l.source_name] = node
                     leaves.append(node)
@@ -405,8 +435,8 @@ def materialize_join_graph(jg, dod):
                 if l.source_name in intree.keys():
                     rnode = InTreeNode(r.source_name)  # create node for r
                     node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
-                    # df = read_relation(node_path)
-                    df = get_dataframe(node_path)
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
                     rnode.set_payload(df)
                     r_parent = intree[l.source_name]
                     rnode.add_parent(r_parent)  # add ref
@@ -418,8 +448,8 @@ def materialize_join_graph(jg, dod):
                 elif r.source_name in intree.keys():
                     lnode = InTreeNode(l.source_name)  # create node for l
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                    df = get_dataframe(node_path)
-                    # df = read_relation(node_path)
+                    # df = get_dataframe(node_path)
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
                     lnode.set_payload(df)
                     l_parent = intree[r.source_name]
                     lnode.add_parent(l_parent)  # add ref
@@ -522,12 +552,6 @@ def compute_table_cleanliness_profile(table_df: pd.DataFrame) -> dict:
     #
 
     return columns
-
-
-def get_dataframe(path):
-    # TODO: only csv is supported
-    df = pd.read_csv(path, encoding='latin1', sep=data_separator)
-    return df
 
 
 if __name__ == "__main__":
