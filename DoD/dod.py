@@ -261,7 +261,7 @@ class DoD:
             # Now we need to check every join graph individually and see if it's materializable. Only once we've
             # exhausted these join graphs we move on to the next candidate group. We know already that each of the
             # join graphs covers all tables in candidate_group, so if they're materializable we're good.
-            total_valid_join_graphs = 0
+            total_materializable_join_graphs = 0
             materializable_join_graphs = []
             for jpg in join_graphs:
                 # Obtain filters that apply to this join graph
@@ -280,7 +280,7 @@ class DoD:
                 perf_stats['time_is_materializable'] += (et_is_materializable - st_is_materializable)
                 # Obtain all materializable graphs, then materialize
                 if is_join_graph_valid:
-                    total_valid_join_graphs += 1
+                    total_materializable_join_graphs += 1
                     materializable_join_graphs.append((jpg, filters))
             # At this point we can empty is-join-graph-materializable cache and create a new one
             # dpu.empty_relation_cache()  # TODO: If df.copy() works, then this is a nice reuse
@@ -289,11 +289,14 @@ class DoD:
             et_materialize = time.time()
             perf_stats['time_materialize'] += (et_materialize - st_materialize)
             for el in to_return:
+                if 'actually_materialized' not in perf_stats:
+                    perf_stats['actually_materialized'] = 0
+                perf_stats['actually_materialized'] += 1
                 yield el
 
             if 'materializable_join_graphs' not in perf_stats:
                 perf_stats['materializable_join_graphs'] = []
-            perf_stats['materializable_join_graphs'].append(total_valid_join_graphs)
+            perf_stats['materializable_join_graphs'].append(total_materializable_join_graphs)
 
         perf_stats["num_candidate_groups"] = num_candidate_groups
         print("Finished enumerating groups")
@@ -303,6 +306,14 @@ class DoD:
             print(str(k) + " => " + str(v))
 
     def compute_join_graph_id(self, join_graph):
+        all_nids = []
+        for hop_l, hop_r in join_graph:
+            all_nids.append(hop_r.nid)
+            all_nids.append(hop_l.nid)
+        path_id = sum([hash(el) for el in all_nids])
+        return path_id
+
+    def __compute_join_graph_id(self, join_graph):
         all_nids = []
         for hop_l, hop_r in join_graph:
             all_nids.append(hop_r.nid)
@@ -354,20 +365,22 @@ class DoD:
             t1.set_table_mode()
             t2.set_table_mode()
             # Check cache first, if not in cache then do the search
-            drs = self.are_paths_in_cache(table1, table2)
-            if drs is None:
+            # drs = self.are_paths_in_cache(table1, table2)
+            paths = self.are_paths_in_cache(table1, table2)  # list of lists
+            if paths is None:
                 print("Finding paths between " + str(table1) + " and " + str(table2))
                 print("max hops: " + str(max_hops))
                 s = time.time()
                 drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops, lean_search=True)
                 e = time.time()
                 print("Total time: " + str((e-s)))
-                self.place_paths_in_cache(table1, table2, drs)  # FIXME FIXME FIXME
-            paths = drs.paths()  # list of lists
+                paths = drs.paths()  # list of lists
+                self.place_paths_in_cache(table1, table2, paths)  # FIXME FIXME FIXME
+            # paths = drs.paths()  # list of lists
             # If we didn't find paths, update unjoinable_pairs cache with this pair
             if len(paths) == 0:  # then store this info, these tables do not join # FIXME FIXME FIXME
-                cache_unjoinable_pairs[(table1, table2)] += 1 # FIXME FIXME
-                cache_unjoinable_pairs[(table2, table1)] += 1 # FIXME FIXME FIXME
+                cache_unjoinable_pairs[(table1, table2)] += 1  # FIXME FIXME
+                cache_unjoinable_pairs[(table2, table1)] += 1  # FIXME FIXME FIXME
             for p in paths:
                 tables_covered = set()
                 tables_in_group = set(group_tables)
@@ -661,6 +674,10 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     et_runtime = time.time()
     perf_stats['runtime'] = (et_runtime - st_runtime)
     pp.pprint(perf_stats)
+    total_join_graphs = sum(perf_stats['num_join_graphs_per_candidate_group'])
+    total_materializable_join_graphs = sum(perf_stats['materializable_join_graphs'])
+    print("Total join graphs: " + str(total_join_graphs))
+    print("Total materializable join graphs: " + str(total_materializable_join_graphs))
 
     print("Total views: " + str(i))
     exit()

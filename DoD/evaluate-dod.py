@@ -29,12 +29,12 @@ def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
     for mjp, attrs_project, metadata in dod.virtual_schema_iterative_search(attrs, values, perf_stats, max_hops=max_hops,
                                                                             debug_enumerate_all_jps=False):
         proj_view = dpu.project(mjp, attrs_project)
-        #
-        # if output_path is not None:
-        #     view_path = output_path + "/view_" + str(i)
-        #     proj_view.to_csv(view_path, encoding='latin1', index=False)  # always store this
-        #     # store metadata associated to that view
-        #     view_metadata_mapping[view_path] = metadata
+
+        if output_path is not None:
+            view_path = output_path + "/view_" + str(i)
+            proj_view.to_csv(view_path, encoding='latin1', index=False)  # always store this
+            # store metadata associated to that view
+            view_metadata_mapping[view_path] = metadata
 
         i += 1
     et_runtime = time.time()
@@ -43,6 +43,10 @@ def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
     print("#$# ")
     print("")
     pp.pprint(perf_stats)
+    total_join_graphs = sum(perf_stats['num_join_graphs_per_candidate_group'])
+    total_materializable_join_graphs = sum(perf_stats['materializable_join_graphs'])
+    print("Total join graphs: " + str(total_join_graphs))
+    print("Total materializable join graphs: " + str(total_materializable_join_graphs))
     print("")
     print("Total views: " + str(i))
     print("#$# ")
@@ -70,8 +74,9 @@ def measure_dod_performance(qv_name, qv_attr, qv_values):
     print("Running query: " + str(qv_name))
     # Create a folder for each query-view
     # output_path = create_folder(eval_folder, "many/" + qv_name)
-    # print("Out path: " + str(output_path))
-    run_dod(dod, qv_attr, qv_values, output_path=None, name=qv_name)
+    output_path = None
+    print("Out path: " + str(output_path))
+    run_dod(dod, qv_attr, qv_values, output_path=output_path, name=qv_name)
 
 
 def run_4c(path):
@@ -87,6 +92,117 @@ def run_4c_nochasing(path):
 def run_4c_valuewise_main(path):
     groups_per_column_cardinality = v4c.valuewise_main(path)
     return groups_per_column_cardinality
+
+
+def brancher(groups_per_column_cardinality):
+    """
+    Given the 4C output, determine how many interactions this demands
+    :param groups_per_column_cardinality:
+    :return:
+    """
+    # interactions_per_group_optimistic = []
+    pruned_groups_per_column_cardinality = defaultdict(dict)
+    for k, v in groups_per_column_cardinality.items():
+        compatible_groups = v['compatible']
+        contained_groups = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
+
+        # Optimistic path
+        contradictions = defaultdict(list)
+        if len(contradictory_group) > 0:
+            for path1, _, _, path2 in contradictory_group:
+                if path1 not in contradictions and path2 not in contradictions:
+                    contradictions[path1].append(path2)
+                    contradictions[path2].append(path1)
+                elif path1 in contradictions:
+                    if path2 not in contradictions[path1]:
+                        contradictions[path1].append(path2)
+                elif path2 in contradictions:
+                    if path1 not in contradictions[path2]:
+                        contradictions[path2].append(path1)
+        # Now we sort contradictions by value length
+        contradictions = sorted(contradictions.items(), key=lambda x: len(x[1]), reverse=True)
+
+        if len(contradictions) > 0:
+            # Now we loop per each contradiction, after making a decision we prune space of views
+            human_selection = 0
+            while len(contradictions) > 0:
+                pruned_compatible_groups = []
+                pruned_contained_groups = []
+                pruned_complementary_groups = []
+                human_selection += 1
+                path1, path2 = contradictions.pop()
+                # We assume path1 is good. Therefore, path2 tables are bad. Prune away all path2
+                for cg in compatible_groups:
+                    valid = True
+                    for p2 in path2:
+                        if p2 in set(cg):
+                            # remove this compatible group
+                            valid = False
+                            break  # cg is not valid
+                    if valid:
+                        pruned_compatible_groups.append(cg)
+                for contg in tqdm(contained_groups):
+                    valid = True
+                    for p2 in path2:
+                        if p2 in set(contg):
+                            valid = False
+                            break
+                    if valid:
+                        pruned_contained_groups.append(contg)
+
+                invalid_paths = set(path2)  # assist lookup for next two blocks
+                for compg in complementary_group:
+                    compp1, compp2, _, _ = compg
+                    if compp1 not in invalid_paths and compp2 not in invalid_paths:
+                        pruned_complementary_groups.append((compp1, compp2, "", ""))
+                pruned_contradiction_group = []  # remove those with keys in invalid group
+                for other_path1, other_path2 in contradictions:
+                    if other_path1 not in invalid_paths:  # only check the key
+                        pruned_contradiction_group.append((other_path1, other_path2))
+                # update all groups with the pruned versions
+                contradictions = [el for el in pruned_contradiction_group]
+                compatible_groups = [el for el in pruned_compatible_groups]
+                contained_groups = [el for el in pruned_contained_groups]
+                complementary_group = [el for el in pruned_complementary_groups]
+            # total_interactions = len(compatible_groups) + len(contained_groups) + \
+            #                  len(complementary_group) + human_selection
+        # else:
+        #     total_interactions = len(compatible_groups) + len(contained_groups) + len(complementary_group)
+        # interactions_per_group_optimistic.append(total_interactions)
+        pruned_groups_per_column_cardinality[k]['compatible'] = compatible_groups
+        pruned_groups_per_column_cardinality[k]['contained'] = contained_groups
+        pruned_groups_per_column_cardinality[k]['complementary'] = complementary_group
+        pruned_groups_per_column_cardinality[k]['contradictory'] = {p1: p2 for p1, p2 in contradictions}
+    return pruned_groups_per_column_cardinality
+
+
+def summarize_4c_output(groups_per_column_cardinality):
+    interactions_per_group = []
+    for k, v in groups_per_column_cardinality.items():
+        print("")
+        print("Analyzing group with columns = " + str(k))
+        print("")
+        compatible_groups = v['compatible']
+        contained_groups = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
+
+        # summary complements:
+        complementary_summary = defaultdict(set)
+        for compg in complementary_group:
+            compp1, compp2, _, _ = compg
+            if compp1 in complementary_summary:
+                complementary_summary[compp1].add(compp2)
+            elif compp2 in complementary_group:
+                complementary_summary[compp2].add(compp1)
+            else:
+                complementary_summary[compp1].add(compp2)
+        total_interactions = len(compatible_groups) + len(contained_groups) \
+                             + len(complementary_summary.keys()) + len(contradictory_group)
+        interactions_per_group.append(total_interactions)
+    return interactions_per_group
 
 
 def output_4c_results(groups_per_column_cardinality):
@@ -224,16 +340,28 @@ if __name__ == "__main__":
     # assemble_views()
 
     # 1- measure dod performance
-    qv_name, qv_attr, qv_values = query_view_definitions_many[0]
-    print(qv_name)
-    print(qv_attr)
-    print(qv_values)
-    measure_dod_performance(qv_name, qv_attr, qv_values)
+    # qv_name, qv_attr, qv_values = query_view_definitions_many[2]
+    # print(qv_name)
+    # print(qv_attr)
+    # print(qv_values)
+    # measure_dod_performance(qv_name, qv_attr, qv_values)
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
-    # path = "dod_evaluation/vassembly/many/qv5/"
+    path = "dod_evaluation/vassembly/many/qv2/"
     # groups_per_column_cardinality = run_4c(path)
-    # output_4c_results(groups_per_column_cardinality)
+    import pickle
+    # with open("./tmp-4c-serial", 'wb') as f:
+    #     pickle.dump(groups_per_column_cardinality, f)
+    with open("./tmp-4c-serial", 'rb') as f:
+        groups_per_column_cardinality = pickle.load(f)
+    output_4c_results(groups_per_column_cardinality)
+    pruned_groups_per_column_cardinality = brancher(groups_per_column_cardinality)
+
+    i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality)
+
+    print("Pruned!!!")
+    pp.pprint(pruned_groups_per_column_cardinality)
+    print("Total interactions: " + str(i_per_group))
 
     # 2- 4c efficienty
     # 2.1- with many views to show advantage with respect to other less sophisticated baselines
