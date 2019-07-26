@@ -308,7 +308,7 @@ def apply_filter(relation_path, attribute, cell_value):
     #     df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
     #     # store in cache
     #     cache[relation_path] = df
-    df = read_relation(relation_path)  # FIXME FIXE FIXME
+    df = read_relation_on_copy(relation_path)  # FIXME FIXE FIXME
     # df = get_dataframe(relation_path)
     df[attribute] = df[attribute].apply(lambda x: str(x).lower())
     # update_relation_cache(relation_path, df)
@@ -490,20 +490,14 @@ def materialize_join_graph(jg, dod):
                 r = child.get_payload()
                 l_key, r_key = find_l_r_key(k.node, child.node, jg)
 
-                print("L: " + str(k.node) + " - " + str(l_key) + " size: " + str(len(l)))
-                print("R: " + str(child.node) + " - " + str(r_key) + " size: " + str(len(r)))
+                # print("L: " + str(k.node) + " - " + str(l_key) + " size: " + str(len(l)))
+                # print("R: " + str(child.node) + " - " + str(r_key) + " size: " + str(len(r)))
+
                 df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
                 # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
-                if df is False:  # happens when join is outlier
+                if df is False:  # happens when join is outlier - (causes run out of memory)
                     return False
 
-                # plan = estimate_join_memory(l, r)
-                # if plan:
-                #     print("In memory")
-                #     df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
-                # else:
-                #     print("Spill")
-                #     df = join_ab_on_key_spill_disk(l, r, l_key, r_key, suffix_str=suffix_str)
                 suffix_str += '_x'
                 k.set_payload(df)  # update payload
                 if child in leaves:

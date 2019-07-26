@@ -487,7 +487,7 @@ class DoD:
                     filtered_l = None
                     for info, filter_type, filter_id in filters_l:
                         if filter_type == FilterType.ATTR:
-                            filtered_l = dpu.read_relation(l_path + l.source_name)  # FIXME FIXME FIXME
+                            filtered_l = dpu.read_relation_on_copy(l_path + l.source_name)  # FIXME FIXME FIXME
                             # filtered_l = dpu.get_dataframe(l_path + l.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
@@ -498,7 +498,7 @@ class DoD:
                         return False  # filter does not leave any data => non-joinable
                 # If there are not filters, then do not apply them
                 else:
-                    filtered_l = dpu.read_relation(l_path + l.source_name)# FIXME FIXME FIXME
+                    filtered_l = dpu.read_relation_on_copy(l_path + l.source_name)# FIXME FIXME FIXME
                     # filtered_l = dpu.get_dataframe(l_path + l.source_name)
             else:
                 filtered_l = local_intermediates[l.source_name]
@@ -513,7 +513,7 @@ class DoD:
                     filtered_r = None
                     for info, filter_type, filter_id in filters_r:
                         if filter_type == FilterType.ATTR:
-                            filtered_r = dpu.read_relation(r_path + r.source_name)# FIXME FIXME FIXME
+                            filtered_r = dpu.read_relation_on_copy(r_path + r.source_name)# FIXME FIXME FIXME
                             # filtered_r = dpu.get_dataframe(r_path + r.source_name)
                             continue  # no need to filter anything if the filter is only attribute type
                         attribute = info[1]
@@ -524,7 +524,7 @@ class DoD:
                         return False  # filter does not leave any data => non-joinable
                 # If there are not filters, then do not apply them
                 else:
-                    filtered_r = dpu.read_relation(r_path + r.source_name)# FIXME FIXME FIXME
+                    filtered_r = dpu.read_relation_on_copy(r_path + r.source_name)# FIXME FIXME FIXME
                     # filtered_r = dpu.get_dataframe(r_path + r.source_name)
             else:
                 filtered_r = local_intermediates[r.source_name]
@@ -532,9 +532,6 @@ class DoD:
 
             # check if the materialized version join's cardinality > 0
             joined = dpu.join_ab_on_key(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
-
-            # joined = dpu.join_ab_on_key_optimizer(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
-            # joined = dpu.join_ab_on_key_spill_disk(filtered_l, filtered_r, l.field_name, r.field_name, suffix_str="_x")
 
             if len(joined) == 0:
                 return False  # non-joinable hop enough to discard join graph
@@ -851,8 +848,8 @@ if __name__ == "__main__":
     # values = ["Engineering", "", ""]
 
     # EVAL - TWO
-    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
-    # values = ["", "", "", ""]
+    attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    values = ["", "", "", ""]
 
     # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
     # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
@@ -866,8 +863,8 @@ if __name__ == "__main__":
 
     # EVAL - FOUR
     # tests equivalence and containment
-    attrs = ["Email Address", "Department Full Name"]
-    values = ["madden@csail.mit.edu", ""]
+    # attrs = ["Email Address", "Department Full Name"]
+    # values = ["madden@csail.mit.edu", ""]
 
     # EVAL - FIVE
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]

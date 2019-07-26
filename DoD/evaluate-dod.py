@@ -386,7 +386,7 @@ if __name__ == "__main__":
     # measure_dod_performance(qv_name, qv_attr, qv_values)
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
-    path = "dod_evaluation/vassembly/many/qv2/"
+    path = "dod_evaluation/vassembly/many/qv5/"
     groups_per_column_cardinality, schema_id_info = run_4c(path)
     import pickle
     with open("./tmp-4c-serial", 'wb') as f:
