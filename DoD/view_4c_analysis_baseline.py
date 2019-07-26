@@ -33,7 +33,7 @@ def identify_compatible_groups(dataframes_with_metadata):
     for t1, path1, md1 in dataframes_with_metadata:
         # these local variables are for this one view
         compatible_group = [path1]
-        hashes1 = hash_pandas_object(t1)
+        hashes1 = hash_pandas_object(t1, index=False)
         ht1 = hashes1.sum()
         if path1 in already_classified:
             continue
@@ -43,7 +43,7 @@ def identify_compatible_groups(dataframes_with_metadata):
             # if t2 is in remove group
             if path2 in already_classified:
                 continue
-            hashes2 = hash_pandas_object(t2)
+            hashes2 = hash_pandas_object(t2, index=False)
             ht2 = hashes2.sum()
 
             # are views compatible
@@ -486,11 +486,14 @@ def classify_per_table_schema(dataframes):
     :param dataframes:
     :return:
     """
+    schema_id_info = dict()
     schema_to_dataframes = defaultdict(list)
     for df, path in dataframes:
-        schema_id = sum([hash(el) for el in df.columns])
+        the_hashes = [hash(el) for el in df.columns]
+        schema_id = sum(the_hashes)
+        schema_id_info[schema_id] = len(the_hashes)
         schema_to_dataframes[schema_id].append((df, path))
-    return schema_to_dataframes
+    return schema_to_dataframes, schema_id_info
 
 
 def get_df_metadata(dfs):
@@ -507,7 +510,7 @@ def main(input_path):
     dfs = get_dataframes(input_path)
     print("Found " + str(len(dfs)) + " valid tables")
 
-    dfs_per_schema = classify_per_table_schema(dfs)
+    dfs_per_schema, schema_id_info = classify_per_table_schema(dfs)
     print("View candidates classify into " + str(len(dfs_per_schema)) + " groups based on schema")
     print("")
     for key, group_dfs in dfs_per_schema.items():
@@ -521,7 +524,7 @@ def main(input_path):
         groups_per_column_cardinality[key]['complementary'] = complementary_group
         groups_per_column_cardinality[key]['contradictory'] = contradictory_group
 
-    return groups_per_column_cardinality
+    return groups_per_column_cardinality, schema_id_info
 
 
 def nochasing_main(input_path):
@@ -571,6 +574,19 @@ def valuewise_main(input_path):
 
 if __name__ == "__main__":
     print("View 4C Analysis - Baseline")
+
+    # SNIPPET of CODE TO FIGURE OUT HASH ERROR BECAUSE USE OF INDEX
+    # import pandas as pd
+    #
+    # df7 = pd.read_csv("/Users/ra-mit/development/discovery_proto/DoD/dod_evaluation/vassembly/many/qv2/view_7",
+    #                   encoding='latin1')
+    # df21 = pd.read_csv("/Users/ra-mit/development/discovery_proto/DoD/dod_evaluation/vassembly/many/qv2/view_21",
+    #                    encoding='latin1')
+    # dfs_with_metadata = get_df_metadata([(df7, 'path7'), (df21, 'path21')])
+    # compatible_groups = identify_compatible_groups(dfs_with_metadata)
+    # contained_groups, candidate_complementary_group = \
+    #     summarize_views_and_find_candidate_complementary(dfs_with_metadata)
+    # exit()
 
     # input_path = "/Users/ra-mit/development/discovery_proto/data/dod/mitdwh/two/"
     input_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"

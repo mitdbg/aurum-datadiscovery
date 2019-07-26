@@ -102,36 +102,38 @@ def brancher(groups_per_column_cardinality):
     """
     # interactions_per_group_optimistic = []
     pruned_groups_per_column_cardinality = defaultdict(dict)
+    human_selection = 0
     for k, v in groups_per_column_cardinality.items():
         compatible_groups = v['compatible']
         contained_groups = v['contained']
         complementary_group = v['complementary']
+        complementary_group = [(a, b, "", "") for a, b, _, _ in complementary_group]
         contradictory_group = v['contradictory']
 
         # Optimistic path
         contradictions = defaultdict(list)
         if len(contradictory_group) > 0:
             for path1, _, _, path2 in contradictory_group:
-                if path1 not in contradictions and path2 not in contradictions:
+                if path1 not in contradictions:
                     contradictions[path1].append(path2)
+                if path2 not in contradictions:
                     contradictions[path2].append(path1)
-                elif path1 in contradictions:
-                    if path2 not in contradictions[path1]:
-                        contradictions[path1].append(path2)
-                elif path2 in contradictions:
-                    if path1 not in contradictions[path2]:
-                        contradictions[path2].append(path1)
-        # Now we sort contradictions by value length
-        contradictions = sorted(contradictions.items(), key=lambda x: len(x[1]), reverse=True)
+                if path1 not in contradictions[path2]:
+                    contradictions[path2].append(path1)
+                if path2 not in contradictions[path1]:
+                    contradictions[path1].append(path2)
+        # Now we sort contradictions by value length. Second sort key for determinism
+        contradictions = sorted(contradictions.items(), key=lambda x: (len(x[1]), x[0]), reverse=True)
 
         if len(contradictions) > 0:
             # Now we loop per each contradiction, after making a decision we prune space of views
-            human_selection = 0
             while len(contradictions) > 0:
+                human_selection += 1
+
                 pruned_compatible_groups = []
                 pruned_contained_groups = []
                 pruned_complementary_groups = []
-                human_selection += 1
+
                 path1, path2 = contradictions.pop()
                 # We assume path1 is good. Therefore, path2 tables are bad. Prune away all path2
                 for cg in compatible_groups:
@@ -165,20 +167,57 @@ def brancher(groups_per_column_cardinality):
                 contradictions = [el for el in pruned_contradiction_group]
                 compatible_groups = [el for el in pruned_compatible_groups]
                 contained_groups = [el for el in pruned_contained_groups]
-                complementary_group = [el for el in pruned_complementary_groups]
-            # total_interactions = len(compatible_groups) + len(contained_groups) + \
-            #                  len(complementary_group) + human_selection
-        # else:
-        #     total_interactions = len(compatible_groups) + len(contained_groups) + len(complementary_group)
-        # interactions_per_group_optimistic.append(total_interactions)
+                complementary_group = [(a, b, "", "") for a, b, _, _ in pruned_complementary_groups]
+
+        # Now removed contained views
+        # 1- from complementary groups
+        contained_views = set()  # all contained views across contained groups
+        for contained_group in contained_groups:
+            if len(contained_group) >= 2:
+                contained_views.update(set(contained_group[1:]))
+        pruned_complementary_groups = []
+        for compp1, compp2, _, _ in complementary_group:
+            if compp1 not in contained_views and compp2 not in contained_views:
+                pruned_complementary_groups.append((compp1, compp2, "", ""))
+        complementary_group = [(a, b, "", "") for a, b, _, _ in pruned_complementary_groups]
+
+        # 2- from contanied groups
+        pruned_compatible_groups = []
+        for cg in compatible_groups:
+            valid = True
+            for el in cg:
+                if el in contained_views:
+                    # remove this compatible group
+                    valid = False
+                    break  # cg is not valid
+            if valid:
+                pruned_compatible_groups.append(cg)
+        compatible_groups = [el for el in pruned_compatible_groups]
+
+        # Now union complementary with compatible and coalesce contained with compatible
+        compatible_views = set()
+        pruned_complementary_groups = []
+        for cg in compatible_groups:
+            compatible_views.update(cg)
+        for compp1, compp2, _, _ in complementary_group:
+            if compp1 not in compatible_views and compp2 not in compatible_views:
+                pruned_complementary_groups.append((compp1, compp2, "", ""))
+        complementary_group = [(a, b, "", "") for a, b, _, _ in pruned_complementary_groups]
+
+        pruned_contained_groups = []
+        for contained_group in contained_groups:
+            if contained_group[0] not in compatible_views:
+                pruned_contained_groups.append(contained_group)
+        contained_groups = [el for el in pruned_contained_groups]
+
         pruned_groups_per_column_cardinality[k]['compatible'] = compatible_groups
         pruned_groups_per_column_cardinality[k]['contained'] = contained_groups
         pruned_groups_per_column_cardinality[k]['complementary'] = complementary_group
         pruned_groups_per_column_cardinality[k]['contradictory'] = {p1: p2 for p1, p2 in contradictions}
-    return pruned_groups_per_column_cardinality
+    return pruned_groups_per_column_cardinality, human_selection
 
 
-def summarize_4c_output(groups_per_column_cardinality):
+def summarize_4c_output(groups_per_column_cardinality, schema_id_info):
     interactions_per_group = []
     for k, v in groups_per_column_cardinality.items():
         print("")
@@ -201,7 +240,7 @@ def summarize_4c_output(groups_per_column_cardinality):
                 complementary_summary[compp1].add(compp2)
         total_interactions = len(compatible_groups) + len(contained_groups) \
                              + len(complementary_summary.keys()) + len(contradictory_group)
-        interactions_per_group.append(total_interactions)
+        interactions_per_group.append((schema_id_info[k], total_interactions))
     return interactions_per_group
 
 
@@ -348,20 +387,58 @@ if __name__ == "__main__":
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
     path = "dod_evaluation/vassembly/many/qv2/"
-    # groups_per_column_cardinality = run_4c(path)
+    groups_per_column_cardinality, schema_id_info = run_4c(path)
     import pickle
-    # with open("./tmp-4c-serial", 'wb') as f:
-    #     pickle.dump(groups_per_column_cardinality, f)
-    with open("./tmp-4c-serial", 'rb') as f:
-        groups_per_column_cardinality = pickle.load(f)
-    output_4c_results(groups_per_column_cardinality)
-    pruned_groups_per_column_cardinality = brancher(groups_per_column_cardinality)
+    with open("./tmp-4c-serial", 'wb') as f:
+        pickle.dump(groups_per_column_cardinality, f)
+        pickle.dump(schema_id_info, f)
+    # with open("./tmp-4c-serial", 'rb') as f:
+    #     groups_per_column_cardinality = pickle.load(f)
+    #     schema_id_info = pickle.load(f)
 
-    i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality)
+    # print("!!!")
+    # for k, v in groups_per_column_cardinality.items():
+    #     print(k)
+    #     compatible_groups = v['compatible']
+    #     contained_groups = v['contained']
+    #     complementary_group = v['complementary']
+    #     contradictory_group = v['contradictory']
+    #     print("Compatible: " + str(len(compatible_groups)))
+    #     print("Contained: " + str(len(contained_groups)))
+    #     print("Complementary: " + str(len(complementary_group)))
+    #     print("Contradictory: " + str(len(contradictory_group)))
+    # print("!!!")
 
-    print("Pruned!!!")
-    pp.pprint(pruned_groups_per_column_cardinality)
-    print("Total interactions: " + str(i_per_group))
+    # output_4c_results(groups_per_column_cardinality)
+    # print("")
+    # print("")
+    # print("PRUNING...")
+    # print("")
+    # print("")
+    pruned_groups_per_column_cardinality, human_selection = brancher(groups_per_column_cardinality)
+
+    print("!!!")
+    for k, v in pruned_groups_per_column_cardinality.items():
+        print(k)
+        compatible_groups = v['compatible']
+        contained_groups = v['contained']
+        complementary_group = v['complementary']
+        contradictory_group = v['contradictory']
+        print("Compatible: " + str(len(compatible_groups)))
+        print("Contained: " + str(len(contained_groups)))
+        print("Complementary: " + str(len(complementary_group)))
+        print("Contradictory: " + str(len(contradictory_group)))
+    print("!!!")
+
+    i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality, schema_id_info)
+    #
+    # print("Pruned!!!")
+    # pp.pprint(pruned_groups_per_column_cardinality)
+    print("Total interactions: " + str(sorted(i_per_group, key=lambda x: x[0], reverse=True)))
+    print("+ human selections: " + str(human_selection))
+
+
+
 
     # 2- 4c efficienty
     # 2.1- with many views to show advantage with respect to other less sophisticated baselines
