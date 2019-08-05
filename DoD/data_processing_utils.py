@@ -448,8 +448,8 @@ def materialize_join_graph(jg, dod):
                 elif r.source_name in intree.keys():
                     lnode = InTreeNode(l.source_name)  # create node for l
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                    # df = get_dataframe(node_path)
                     df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
                     lnode.set_payload(df)
                     l_parent = intree[r.source_name]
                     lnode.add_parent(l_parent)  # add ref
@@ -496,6 +496,147 @@ def materialize_join_graph(jg, dod):
                 df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
                 # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
                 if df is False:  # happens when join is outlier - (causes run out of memory)
+                    return False
+
+                suffix_str += '_x'
+                k.set_payload(df)  # update payload
+                if child in leaves:
+                    leaves.remove(child)  # removed merged children
+            # joined all children, now we include joint df on leaves
+            if k not in leaves:  # avoid re-adding parent element
+                leaves.append(k)  # k becomes a new leave
+    materialized_view = leaves[0].get_payload()  # the last leave is folded onto the in-tree root
+    return materialized_view
+
+
+def apply_consistent_sample(dfa, dfb, a_key, b_key, sample_size):
+    # Normalize values
+    dfa[a_key] = dfa[a_key].apply(lambda x: str(x).lower())
+    dfb[b_key] = dfb[b_key].apply(lambda x: str(x).lower())
+    # Chose consistently sample of IDs
+    a_len = len(set(dfa[a_key]))
+    b_len = len(set(dfb[b_key]))
+    if a_len > b_len:
+        sampling_side = dfa
+        sampling_key = a_key
+    else:
+        sampling_side = dfb
+        sampling_key = b_key
+    id_to_hash = dict()
+    for el in set(sampling_side[sampling_key]):  # make sure you don't draw repetitions
+        h = hash(el)
+        id_to_hash[h] = el
+    sorted_hashes = sorted(id_to_hash.items(), key=lambda x: x[1], reverse=True)  # reverse or not does not matter
+    chosen_ids = [id for hash, id in sorted_hashes[:sample_size]]
+
+    # Apply selection on both DFs
+    dfa = dfa[dfa[a_key].isin(chosen_ids)]
+    dfb = dfb[dfb[b_key].isin(chosen_ids)]
+
+    # Remove duplicate keys before returning
+    dfa = dfa.drop_duplicates(subset=a_key)
+    dfb = dfb.drop_duplicates(subset=b_key)
+    dfa.reset_index(drop=True)
+    dfb.reset_index(drop=True)
+
+    return dfa, dfb
+
+
+def materialize_join_graph_sample(jg, dod, sample_size=100):
+    print("Materializing:")
+    pp.pprint(jg)
+
+    def build_tree(jg):
+        # Build in-tree (leaves to root)
+        intree = dict()  # keep reference to all nodes here
+        leaves = []
+
+        hops = jg
+
+        while len(hops) > 0:
+            pending_hops = []  # we use this variable to maintain the temporarily disconnected hops
+            for l, r in hops:
+                if len(intree) == 0:
+                    node = InTreeNode(l.source_name)
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
+                    node.set_payload(df)
+                    intree[l.source_name] = node
+                    leaves.append(node)
+                # now either l or r should be in intree
+                if l.source_name in intree.keys():
+                    rnode = InTreeNode(r.source_name)  # create node for r
+                    node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
+                    rnode.set_payload(df)
+                    r_parent = intree[l.source_name]
+                    rnode.add_parent(r_parent)  # add ref
+                    # r becomes a leave, and l stops being one
+                    if r_parent in leaves:
+                        leaves.remove(r_parent)
+                    leaves.append(rnode)
+                    intree[r.source_name] = rnode
+                elif r.source_name in intree.keys():
+                    lnode = InTreeNode(l.source_name)  # create node for l
+                    node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
+                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    # df = get_dataframe(node_path)
+                    lnode.set_payload(df)
+                    l_parent = intree[r.source_name]
+                    lnode.add_parent(l_parent)  # add ref
+                    if l_parent in leaves:
+                        leaves.remove(l_parent)
+                    leaves.append(lnode)
+                    intree[l.source_name] = lnode
+                else:
+                    # temporarily disjoint hop which we store for subsequent iteration
+                    pending_hops.append((l, r))
+            hops = pending_hops
+        return intree, leaves
+
+    def find_l_r_key(l_source_name, r_source_name, jg):
+        # print(l_source_name + " -> " + r_source_name)
+        for l, r in jg:
+            if l.source_name == l_source_name and r.source_name == r_source_name:
+                return l.field_name, r.field_name
+            elif l.source_name == r_source_name and r.source_name == l_source_name:
+                return r.field_name, l.field_name
+
+    intree, leaves = build_tree(jg)
+    # find groups of leaves with same common ancestor
+    suffix_str = '_x'
+    go_on = True
+    while go_on:
+        if len(leaves) == 1 and leaves[0].get_parent() is None:
+            go_on = False
+            continue  # we have now converged
+        leave_ancestor = defaultdict(list)
+        for leave in leaves:
+            if leave.get_parent() is not None:  # never add the parent's parent, which does not exist
+                leave_ancestor[leave.get_parent()].append(leave)
+        # pick ancestor and find its join info with each children, then join, then add itself to leaves (remove others)
+        for k, v in leave_ancestor.items():
+            for child in v:
+                l = k.get_payload()
+                r = child.get_payload()
+                l_key, r_key = find_l_r_key(k.node, child.node, jg)
+
+                # print("L: " + str(k.node) + " - " + str(l_key) + " size: " + str(len(l)))
+                # print("R: " + str(child.node) + " - " + str(r_key) + " size: " + str(len(r)))
+
+                l, r = apply_consistent_sample(l, r, l_key, r_key, sample_size)
+
+                # normalize false because I ensure it happens in the apply-consistent-sample function above
+                df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str, normalize=True)
+
+                # df = join_ab_on_key_optimizer(l, r, l_key, r_key, suffix_str=suffix_str)
+                # df = join_ab_on_key(l, r, l_key, r_key, suffix_str=suffix_str)
+                if len(df) == 0:
+                    df = False
+                if df is False:  # happens when join is outlier - (causes run out of memory)
+                    print("FALSE")
                     return False
 
                 suffix_str += '_x'

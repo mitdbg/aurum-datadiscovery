@@ -386,15 +386,15 @@ if __name__ == "__main__":
     # measure_dod_performance(qv_name, qv_attr, qv_values)
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
-    path = "dod_evaluation/vassembly/many/qv5/"
-    groups_per_column_cardinality, schema_id_info = run_4c(path)
-    import pickle
-    with open("./tmp-4c-serial", 'wb') as f:
-        pickle.dump(groups_per_column_cardinality, f)
-        pickle.dump(schema_id_info, f)
-    # with open("./tmp-4c-serial", 'rb') as f:
-    #     groups_per_column_cardinality = pickle.load(f)
-    #     schema_id_info = pickle.load(f)
+    # path = "dod_evaluation/vassembly/many/qv5/"
+    # groups_per_column_cardinality, schema_id_info = run_4c(path)
+    # import pickle
+    # with open("./tmp-4c-serial", 'wb') as f:
+    #     pickle.dump(groups_per_column_cardinality, f)
+    #     pickle.dump(schema_id_info, f)
+    # # with open("./tmp-4c-serial", 'rb') as f:
+    # #     groups_per_column_cardinality = pickle.load(f)
+    # #     schema_id_info = pickle.load(f)
 
     # print("!!!")
     # for k, v in groups_per_column_cardinality.items():
@@ -415,43 +415,40 @@ if __name__ == "__main__":
     # print("PRUNING...")
     # print("")
     # print("")
-    pruned_groups_per_column_cardinality, human_selection = brancher(groups_per_column_cardinality)
-
-    print("!!!")
-    for k, v in pruned_groups_per_column_cardinality.items():
-        print(k)
-        compatible_groups = v['compatible']
-        contained_groups = v['contained']
-        complementary_group = v['complementary']
-        contradictory_group = v['contradictory']
-        print("Compatible: " + str(len(compatible_groups)))
-        print("Contained: " + str(len(contained_groups)))
-        print("Complementary: " + str(len(complementary_group)))
-        print("Contradictory: " + str(len(contradictory_group)))
-    print("!!!")
-
-    i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality, schema_id_info)
+    # pruned_groups_per_column_cardinality, human_selection = brancher(groups_per_column_cardinality)
     #
-    # print("Pruned!!!")
-    # pp.pprint(pruned_groups_per_column_cardinality)
-    print("Total interactions: " + str(sorted(i_per_group, key=lambda x: x[0], reverse=True)))
-    print("+ human selections: " + str(human_selection))
-
-
-
+    # print("!!!")
+    # for k, v in pruned_groups_per_column_cardinality.items():
+    #     print(k)
+    #     compatible_groups = v['compatible']
+    #     contained_groups = v['contained']
+    #     complementary_group = v['complementary']
+    #     contradictory_group = v['contradictory']
+    #     print("Compatible: " + str(len(compatible_groups)))
+    #     print("Contained: " + str(len(contained_groups)))
+    #     print("Complementary: " + str(len(complementary_group)))
+    #     print("Contradictory: " + str(len(contradictory_group)))
+    # print("!!!")
+    #
+    # i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality, schema_id_info)
+    # #
+    # # print("Pruned!!!")
+    # # pp.pprint(pruned_groups_per_column_cardinality)
+    # print("Total interactions: " + str(sorted(i_per_group, key=lambda x: x[0], reverse=True)))
+    # print("+ human selections: " + str(human_selection))
 
     # 2- 4c efficienty
     # 2.1- with many views to show advantage with respect to other less sophisticated baselines
     # 2.2- with few views to show that the overhead it adds is negligible
     # path1 = "dod_evaluation/vassembly/many/qv4/"
-    # path2 = "dod_evaluation/vassembly/many/qv2/"
+    path2 = "dod_evaluation/vassembly/many/qv2-50/"
     # path3 = "dod_evaluation/vassembly/many/qv5/"
     # path4 = "dod_evaluation/vassembly/few/qv1/"
     # path5 = "dod_evaluation/vassembly/few/qv3/"
     # # compare_4c_baselines(many_views=[('9', path1), ('177', path2), ('99', path3)],
     # #                      few_views=[('2', path4), ('2', path5)])
-    # compare_4c_baselines(many_views=[('99', path3)],
-    #                      few_views=[('2', path4), ('2', path5)])
+    compare_4c_baselines(many_views=[('51', path2)],
+                         few_views=[])
 
     # 3- Measure average time per join attempt. Add total times as well
 

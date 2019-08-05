@@ -196,7 +196,20 @@ class DoD:
                     yield (candidate_group, candidate_group_filters_covered)
                 go_on = False  # finished exploring all groups
 
-        # all_candidate_groups = [cg for cg in eager_candidate_exploration()]
+        # """
+        # # FIXME: obtaining pairs of tables to join?
+        # """
+        # all_candidate_groups = [cg for cg, _ in eager_candidate_exploration()]
+        # all_pairs_to_join = [len([el for el in list(itertools.combinations(group_tables, 2))])
+        #                      for group_tables in all_candidate_groups]
+        # print([el for el in all_candidate_groups])
+        # print("all pairs to join: " + str(all_pairs_to_join))
+        # print("TOTAL: " + str(sum(all_pairs_to_join)))
+        # exit()
+        # """
+        # # FIXME
+        # """
+
         et_stage2 = time.time()
         perf_stats['t_stage2'] = (et_stage2 - st_stage2)
         # Find ways of joining together each group
@@ -275,7 +288,10 @@ class DoD:
                 # TODO: obtain join_graph score for diff metrics. useful for ranking later
                 # rank_materializable_join_graphs(materializable_join_paths, table_path, dod)
                 st_is_materializable = time.time()
-                is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
+                # FIXME: if query view is all attributes, then it's always materializable
+                # FIXME: or we could join on a small sample and see -- we can have 2 different impls.
+                # is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
+                is_join_graph_valid = True
                 et_is_materializable = time.time()
                 perf_stats['time_is_materializable'] += (et_is_materializable - st_is_materializable)
                 # Obtain all materializable graphs, then materialize
@@ -288,6 +304,7 @@ class DoD:
             to_return = self.materialize_join_graphs(materializable_join_graphs)
             et_materialize = time.time()
             perf_stats['time_materialize'] += (et_materialize - st_materialize)
+            # yield to_return
             for el in to_return:
                 if 'actually_materialized' not in perf_stats:
                     perf_stats['actually_materialized'] = 0
@@ -327,7 +344,8 @@ class DoD:
             # if is_join_graph_valid:
             attrs_to_project = dpu.obtain_attributes_to_project(filters)
             # continue  # test
-            materialized_virtual_schema = dpu.materialize_join_graph(mjg, self)
+            materialized_virtual_schema = dpu.materialize_join_graph_sample(mjg, self, sample_size=1000)
+            # materialized_virtual_schema = dpu.materialize_join_graph(mjg, self)
             if materialized_virtual_schema is False:
                 continue  # happens when the join was an outlier
             # Create metadata to document this view
@@ -356,10 +374,12 @@ class DoD:
         # for each pair of tables in group keep list of (path, tables_covered)
         paths_per_pair = defaultdict(list)
 
-        for table1, table2 in itertools.combinations(group_tables, 2):
+        table_combinations = [el for el in itertools.combinations(group_tables, 2)]
+
+        for table1, table2 in tqdm(table_combinations):
             # Check if tables are already known to be unjoinable
             if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
-                continue
+                continue  # FIXME FIXME FIXME
             t1 = self.aurum_api.make_drs(table1)
             t2 = self.aurum_api.make_drs(table2)
             t1.set_table_mode()
@@ -671,10 +691,12 @@ def test_e2e(dod, attrs, values, number_jps=5, output_path=None, full_view=False
     et_runtime = time.time()
     perf_stats['runtime'] = (et_runtime - st_runtime)
     pp.pprint(perf_stats)
-    total_join_graphs = sum(perf_stats['num_join_graphs_per_candidate_group'])
-    total_materializable_join_graphs = sum(perf_stats['materializable_join_graphs'])
-    print("Total join graphs: " + str(total_join_graphs))
-    print("Total materializable join graphs: " + str(total_materializable_join_graphs))
+    if 'num_join_graphs_per_candidate_group' in perf_stats:
+        total_join_graphs = sum(perf_stats['num_join_graphs_per_candidate_group'])
+        print("Total join graphs: " + str(total_join_graphs))
+    if 'materializable_join_graphs' in perf_stats:
+        total_materializable_join_graphs = sum(perf_stats['materializable_join_graphs'])
+        print("Total materializable join graphs: " + str(total_materializable_join_graphs))
 
     print("Total views: " + str(i))
     exit()
@@ -808,11 +830,13 @@ if __name__ == "__main__":
     ## Setup DoD
     ###
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/tpch/"
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/massdata/"
-    sep = ","
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/chembl21/"
+    # sep = ","
     # sep = "|"
+    sep = ";"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
@@ -821,9 +845,7 @@ if __name__ == "__main__":
     ## Query Views
     ###
 
-    # tests equivalence and containment - did not finish executing though (out of memory)
-    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
-    # values = ["968548423", "kimball", "Mechanical Engineering"]
+    ### TPCH
 
     # # cannot search for numbers
     # attrs = ["s_name", "s_address", "ps_availqty"]
@@ -839,6 +861,15 @@ if __name__ == "__main__":
     # attrs = ["o_clerk", "o_orderpriority", "n_name"]
     # values = ["Clerk#000000951", "5-LOW", "JAPAN"]
 
+    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
+    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
+
+    ## MIT DWH
+
+    # tests equivalence and containment - did not finish executing though (out of memory)
+    # attrs = ["Mit Id", "Krb Name", "Hr Org Unit Title"]
+    # values = ["968548423", "kimball", "Mechanical Engineering"]
+
     # attrs = ["Subject", "Title", "Publisher"]
     # values = ["", "Man who would be king and other stories", "Oxford university press, incorporated"]
 
@@ -848,18 +879,12 @@ if __name__ == "__main__":
     # values = ["Engineering", "", ""]
 
     # EVAL - TWO
-    attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
-    values = ["", "", "", ""]
-
-    # attrs = ["c_name", "c_phone", "n_name", "l_tax"]
-    # values = ["Customer#000000001", "25-989-741-2988", "BRAZIL", ""]
+    # attrs = ["Building Name Long", "Ext Gross Area", "Building Room", "Room Square Footage"]
+    # values = ["", "", "", ""]
 
     # EVAL - THREE
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]
-
-    # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
-    # values = ["Cambridgeport", "", ""]
 
     # EVAL - FOUR
     # tests equivalence and containment
@@ -869,6 +894,21 @@ if __name__ == "__main__":
     # EVAL - FIVE
     # attrs = ["Last Name", "Building Name", "Bldg Gross Square Footage", "Department Name"]
     # values = ["", "", "", ""]
+
+    ## MASSDATA
+
+    # ONE (3 + 4)
+    # attrs = ["Neighborhood ", "Total Population ", "Graduate Degree %"]
+    # values = ["Cambridgeport", "", ""]
+
+    #
+    # attrs = ['CASE_TITLE', 'SUBJECT', 'Graduate Degree %']
+    # values = ['', 'Public Works Department', '']
+
+    ## CHEMBL22
+
+    attrs = ['assay_test_type', 'assay_category', 'journal', 'year', 'volume']
+    values = ['', '', '', '', '']
 
     output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 
@@ -882,10 +922,11 @@ if __name__ == "__main__":
             print(e)
 
     # test_e2e(dod, number_jps=10, output_path=None, interactive=False)
-    output_path = None
+    # output_path = None
     test_e2e(dod, attrs, values, number_jps=10, output_path=output_path)
 
     # debug intree mat join
     # test_intree(dod)
 
     # test_joinable(dod)
+

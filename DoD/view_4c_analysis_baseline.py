@@ -533,7 +533,7 @@ def nochasing_main(input_path):
     dfs = get_dataframes(input_path)
     print("Found " + str(len(dfs)) + " valid tables")
 
-    dfs_per_schema = classify_per_table_schema(dfs)
+    dfs_per_schema, schema_id_info = classify_per_table_schema(dfs)
     print("View candidates classify into " + str(len(dfs_per_schema)) + " groups based on schema")
     print("")
     for key, group_dfs in dfs_per_schema.items():
