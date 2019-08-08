@@ -597,7 +597,6 @@ def materialize_join_graph_sample(jg, dod, sample_size=100):
         return intree, leaves
 
     def find_l_r_key(l_source_name, r_source_name, jg):
-        # print(l_source_name + " -> " + r_source_name)
         for l, r in jg:
             if l.source_name == l_source_name and r.source_name == r_source_name:
                 return l.field_name, r.field_name

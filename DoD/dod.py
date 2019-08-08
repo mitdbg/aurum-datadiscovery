@@ -288,10 +288,12 @@ class DoD:
                 # TODO: obtain join_graph score for diff metrics. useful for ranking later
                 # rank_materializable_join_graphs(materializable_join_paths, table_path, dod)
                 st_is_materializable = time.time()
-                # FIXME: if query view is all attributes, then it's always materializable
-                # FIXME: or we could join on a small sample and see -- we can have 2 different impls.
-                # is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
-                is_join_graph_valid = True
+                # if query view is all attributes, then it's always materializable or we could
+                # join on a small sample and see -- we can have 2 different impls.
+                if sum([0] + [1 for el in values if el != '']) > 0:
+                    is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
+                else:
+                    is_join_graph_valid = True
                 et_is_materializable = time.time()
                 perf_stats['time_is_materializable'] += (et_is_materializable - st_is_materializable)
                 # Obtain all materializable graphs, then materialize
@@ -833,7 +835,7 @@ if __name__ == "__main__":
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/debug_sb_bug/"
     # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/massdata/"
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/chembl21/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/chembl_and_drugcentral/"
     # sep = ","
     # sep = "|"
     sep = ";"
@@ -907,8 +909,25 @@ if __name__ == "__main__":
 
     ## CHEMBL22
 
-    attrs = ['assay_test_type', 'assay_category', 'journal', 'year', 'volume']
-    values = ['', '', '', '', '']
+    # ONE
+    # attrs = ['assay_test_type', 'assay_category', 'journal', 'year', 'volume']
+    # values = ['', '', '', '', '']
+
+    # TWO (100-)
+    # attrs = ['accession', 'sequence', 'organism', 'start_position', 'end_position']
+    # values = ['', '', '', '', '']
+
+    # THREE (27)
+    # attrs = ['accession', 'sequence', 'organism', 'start_position', 'end_position']
+    # values = ['O09028', '', 'Rattus norvegicus', '', '']
+
+    # FOUR (50)
+    # attrs = ['ref_type', 'ref_url', 'enzyme_name', 'organism']
+    # values = ['', '', '', '']
+
+    # FIVE (54)
+    attrs = ['hba', 'hbd', 'parenteral', 'topical']
+    values = ['', '', '', '']
 
     output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 
