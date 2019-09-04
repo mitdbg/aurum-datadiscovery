@@ -199,12 +199,18 @@ class DoD:
         # """
         # # FIXME: obtaining pairs of tables to join?
         # """
-        # all_candidate_groups = [cg for cg, _ in eager_candidate_exploration()]
-        # all_pairs_to_join = [len([el for el in list(itertools.combinations(group_tables, 2))])
-        #                      for group_tables in all_candidate_groups]
-        # print([el for el in all_candidate_groups])
-        # print("all pairs to join: " + str(all_pairs_to_join))
-        # print("TOTAL: " + str(sum(all_pairs_to_join)))
+        # all_pairs = 0
+        # candidate_groups = 0
+        # for cg, _ in eager_candidate_exploration():
+        #     candidate_groups += 1
+        #     all_pairs += len([el for el in list(itertools.combinations(cg, 2))])
+        #     # all_pairs_to_join = [len([el for el in list(itertools.combinations(group_tables, 2))])
+        #     #                  for group_tables in all_candidate_groups]
+        #     # all_pairs += all_pairs_to_join[0]
+        # # print([el for el in all_candidate_groups])
+        # # print("all pairs to join: " + str(all_pairs))
+        # print("CG: " + str(candidate_groups))
+        # print("TOTAL: " + str(all_pairs))
         # exit()
         # """
         # # FIXME
@@ -290,7 +296,7 @@ class DoD:
                 st_is_materializable = time.time()
                 # if query view is all attributes, then it's always materializable or we could
                 # join on a small sample and see -- we can have 2 different impls.
-                if sum([0] + [1 for el in values if el != '']) > 0:
+                if sum([0] + [1 for el in list_samples if el != '']) > 0:
                     is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
                 else:
                     is_join_graph_valid = True
@@ -909,25 +915,25 @@ if __name__ == "__main__":
 
     ## CHEMBL22
 
-    # ONE
-    # attrs = ['assay_test_type', 'assay_category', 'journal', 'year', 'volume']
-    # values = ['', '', '', '', '']
+    # ONE (12)
+    attrs = ['assay_test_type', 'assay_category', 'journal', 'year', 'volume']
+    values = ['', '', '', '', '']
 
-    # TWO (100-)
-    # attrs = ['accession', 'sequence', 'organism', 'start_position', 'end_position']
-    # values = ['', '', '', '', '']
-
-    # THREE (27)
+    # TWO (27)
     # attrs = ['accession', 'sequence', 'organism', 'start_position', 'end_position']
     # values = ['O09028', '', 'Rattus norvegicus', '', '']
 
-    # FOUR (50)
+    # THREE (50)
     # attrs = ['ref_type', 'ref_url', 'enzyme_name', 'organism']
     # values = ['', '', '', '']
 
-    # FIVE (54)
-    attrs = ['hba', 'hbd', 'parenteral', 'topical']
-    values = ['', '', '', '']
+    # FOUR (54)
+    # attrs = ['hba', 'hbd', 'parenteral', 'topical']
+    # values = ['', '', '', '']
+
+    # FIVE (100-)
+    # attrs = ['accession', 'sequence', 'organism', 'start_position', 'end_position']
+    # values = ['', '', '', '', '']
 
     output_path = "/Users/ra-mit/development/discovery_proto/data/dod/test/"
 

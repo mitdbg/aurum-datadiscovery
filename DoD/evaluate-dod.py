@@ -5,6 +5,7 @@ from DoD import data_processing_utils as dpu
 from DoD import view_4c_analysis_baseline as v4c
 
 from tqdm import tqdm
+import pandas as pd
 
 import os
 import time
@@ -39,7 +40,7 @@ def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
         i += 1
     et_runtime = time.time()
     perf_stats['et_runtime'] = (et_runtime - st_runtime)
-    print("#$# " + name)
+    print("#$# " + str(name))
     print("#$# ")
     print("")
     pp.pprint(perf_stats)
@@ -54,17 +55,24 @@ def run_dod(dod, attrs, values, output_path, max_hops=2, name=None):
 
 def assemble_views():
     # have a way of generating the views for each query-view in a different folder
-    for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_many):
-        print("Running query: " + str(qv_name))
-        # Create a folder for each query-view
-        output_path = create_folder(eval_folder, "many/" + qv_name)
-        print("Out path: " + str(output_path))
-        run_dod(dod, qv_attr, qv_values, output_path=output_path)
+    # for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_many):
+    #     print("Running query: " + str(qv_name))
+    #     # Create a folder for each query-view
+    #     output_path = create_folder(eval_folder, "many/" + qv_name)
+    #     print("Out path: " + str(output_path))
+    #     run_dod(dod, qv_attr, qv_values, output_path=output_path)
+    #
+    # for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_few):
+    #     print("Running query: " + str(qv_name))
+    #     # Create a folder for each query-view
+    #     output_path = create_folder(eval_folder, "few/" + qv_name)
+    #     print("Out path: " + str(output_path))
+    #     run_dod(dod, qv_attr, qv_values, output_path=output_path)
 
-    for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_few):
+    for qv_name, qv_attr, qv_values in tqdm(query_view_definitions_chembl):
         print("Running query: " + str(qv_name))
         # Create a folder for each query-view
-        output_path = create_folder(eval_folder, "few/" + qv_name)
+        output_path = create_folder(eval_folder, "chembl/" + qv_name)
         print("Out path: " + str(output_path))
         run_dod(dod, qv_attr, qv_values, output_path=output_path)
 
@@ -346,8 +354,48 @@ def compare_4c_baselines(many_views, few_views):
     # print("Value Wise: " + str((e - s)))
 
 
+def eval_sampling_join():
+    sep = ';'
+    base = "/Users/ra-mit/data/chembl_21/chembl/"
+    r1 = 'public.assays.csv'
+    r2 = 'public.activities.csv'
+    a1 = 'assay_id'
+    a2 = 'assay_id'
+
+    # have pairs of tables to join as input -- large tables, which is when this makes sense
+
+    # read tables in memory - dataframes
+    df1 = pd.read_csv(base + r1, encoding='latin1', sep=sep)
+    df2 = pd.read_csv(base + r2, encoding='latin1', sep=sep)
+
+    s = time.time()
+    # perform materialize, and sampling-materialize (with a given % sample size?)
+    df_a = dpu.join_ab_on_key(df1, df2, a1, a2, suffix_str='_x')
+    e = time.time()
+    print("Join: " + str((e-s)))
+
+    # force gc
+    import gc
+    df_a = None
+    gc.collect()
+    time.sleep(15)
+
+    s = time.time()
+    # sampling
+    sample_size = 1000
+    l, r = dpu.apply_consistent_sample(df1, df2, a1, a2, sample_size)
+    df_b = dpu.join_ab_on_key(l, r, a1, a2, normalize=False, suffix_str='_x')
+    e = time.time()
+    print("s-Join: " + str((e - s)))
+
+    return
+
+
 if __name__ == "__main__":
     print("DoD evaluation")
+
+    # eval_sampling_join()
+    # exit()
 
     # Eval parameters
     eval_folder = "dod_evaluation/vassembly/"
@@ -368,15 +416,32 @@ if __name__ == "__main__":
          ["Madden", "Ray and Maria Stata Center", "", "Dept of Electrical Engineering & Computer Science"]),
     ]
 
+    query_view_definitions_chembl = [
+        ("qv1", ['assay_test_type', 'assay_category', 'journal', 'year', 'volume'],
+         ['', '', '', '', '']),
+        ("qv2", ['accession', 'sequence', 'organism', 'start_position', 'end_position'],
+         ['O09028', '', 'Rattus norvegicus', '', '']),
+        ("qv3", ['ref_type', 'ref_url', 'enzyme_name', 'organism'],
+         ['', '', '', '']),
+        ("qv4", ['hba', 'hbd', 'parenteral', 'topical'],
+         ['', '', '', '']),
+        ("qv5", ['accession', 'sequence', 'organism', 'start_position', 'end_position'],
+         ['', '', '', '', ''])
+    ]
+
     # Configure DoD
-    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
-    sep = ","
+    # path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/mitdwh/"
+    path_to_serialized_model = "/Users/ra-mit/development/discovery_proto/models/chembl_and_drugcentral/"
+    # sep = ","
+    sep = ";"
     store_client = StoreHandler()
     network = fieldnetwork.deserialize_network(path_to_serialized_model)
     dod = DoD(network=network, store_client=store_client, csv_separator=sep)
 
     # 0- Assemble views for query views. To have raw number of views
     # assemble_views()
+    #
+    # exit()
 
     # 1- measure dod performance
     # qv_name, qv_attr, qv_values = query_view_definitions_many[2]
@@ -386,15 +451,15 @@ if __name__ == "__main__":
     # measure_dod_performance(qv_name, qv_attr, qv_values)
 
     # 1.5- then have a way for calling 4c on each folder -- on all folders. To compare savings (create strategy here)
-    # path = "dod_evaluation/vassembly/many/qv5/"
-    # groups_per_column_cardinality, schema_id_info = run_4c(path)
-    # import pickle
-    # with open("./tmp-4c-serial", 'wb') as f:
-    #     pickle.dump(groups_per_column_cardinality, f)
-    #     pickle.dump(schema_id_info, f)
-    # # with open("./tmp-4c-serial", 'rb') as f:
-    # #     groups_per_column_cardinality = pickle.load(f)
-    # #     schema_id_info = pickle.load(f)
+    path = "dod_evaluation/vassembly/chembl/qv5/"
+    groups_per_column_cardinality, schema_id_info = run_4c(path)
+    import pickle
+    with open("./tmp-4c-serial", 'wb') as f:
+        pickle.dump(groups_per_column_cardinality, f)
+        pickle.dump(schema_id_info, f)
+    # with open("./tmp-4c-serial", 'rb') as f:
+    #     groups_per_column_cardinality = pickle.load(f)
+    #     schema_id_info = pickle.load(f)
 
     # print("!!!")
     # for k, v in groups_per_column_cardinality.items():
@@ -415,7 +480,7 @@ if __name__ == "__main__":
     # print("PRUNING...")
     # print("")
     # print("")
-    # pruned_groups_per_column_cardinality, human_selection = brancher(groups_per_column_cardinality)
+    pruned_groups_per_column_cardinality, human_selection = brancher(groups_per_column_cardinality)
     #
     # print("!!!")
     # for k, v in pruned_groups_per_column_cardinality.items():
@@ -430,27 +495,29 @@ if __name__ == "__main__":
     #     print("Contradictory: " + str(len(contradictory_group)))
     # print("!!!")
     #
-    # i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality, schema_id_info)
+    i_per_group = summarize_4c_output(pruned_groups_per_column_cardinality, schema_id_info)
     # #
     # # print("Pruned!!!")
     # # pp.pprint(pruned_groups_per_column_cardinality)
-    # print("Total interactions: " + str(sorted(i_per_group, key=lambda x: x[0], reverse=True)))
-    # print("+ human selections: " + str(human_selection))
+    print("Total interactions: " + str(sorted(i_per_group, key=lambda x: x[0], reverse=True)))
+    print("+ human selections: " + str(human_selection))
+    exit()
 
     # 2- 4c efficienty
     # 2.1- with many views to show advantage with respect to other less sophisticated baselines
     # 2.2- with few views to show that the overhead it adds is negligible
     # path1 = "dod_evaluation/vassembly/many/qv4/"
-    path2 = "dod_evaluation/vassembly/many/qv2-50/"
+    # path2 = "dod_evaluation/vassembly/many/qv2-50/"
     # path3 = "dod_evaluation/vassembly/many/qv5/"
     # path4 = "dod_evaluation/vassembly/few/qv1/"
     # path5 = "dod_evaluation/vassembly/few/qv3/"
     # # compare_4c_baselines(many_views=[('9', path1), ('177', path2), ('99', path3)],
     # #                      few_views=[('2', path4), ('2', path5)])
-    compare_4c_baselines(many_views=[('51', path2)],
+
+    path = "dod_evaluation/vassembly/many/qv5/"
+    compare_4c_baselines(many_views=[('12', path)],
                          few_views=[])
 
     # 3- Measure average time per join attempt. Add total times as well
-
 
 
