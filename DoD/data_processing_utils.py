@@ -310,9 +310,9 @@ def apply_filter(relation_path, attribute, cell_value):
     #     cache[relation_path] = df
     df = read_relation_on_copy(relation_path)  # FIXME FIXE FIXME
     # df = get_dataframe(relation_path)
-    df[attribute] = df[attribute].apply(lambda x: str(x).lower())
+    df[attribute] = df[attribute].apply(lambda x: str(x).lower().strip())
     # update_relation_cache(relation_path, df)
-    df = df[df[attribute] == cell_value]
+    df = df[df[attribute] == str(cell_value).lower()]
     return df
 
 
