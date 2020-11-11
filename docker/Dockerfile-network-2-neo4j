@@ -1,5 +1,5 @@
 # network=>neo4j
-FROM buildpack-deps:jessie
+FROM buildpack-deps:buster
 
 RUN apt-get update && apt-get install -y \
     python3-pip \

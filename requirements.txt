@@ -16,8 +16,8 @@ decorator==4.0.11
 defusedxml==0.5.0
 Django==1.10.5
 editdistance==0.2
-elasticsearch==6.0.0
-elasticsearch-dsl==2.0.0
+elasticsearch==7.0.0
+elasticsearch-dsl==7.2.1
 entrypoints==0.2.3
 Flask==1.0.2
 Flask-Cors==2.1.2
@@ -91,7 +91,7 @@ testpath==0.3.1
 tornado==4.3
 tqdm==4.26.0
 traitlets==4.3.2
-urllib3==1.15.1
+urllib3==1.21.1
 uWSGI==2.0.12
 webencodings==0.5
 Werkzeug==0.14.1
