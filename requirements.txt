@@ -63,7 +63,7 @@ prometheus-client==0.3.1
 psycopg2==2.7.1
 ptyprocess==0.5
 pyfiglet==0.7.5
-Pygments==2.0.2
+Pygments==2.7.4
 pymongo==3.2
 pyparsing==2.0.6
 python-dateutil==2.4.2
