@@ -20,7 +20,7 @@ elasticsearch==7.0.0
 elasticsearch-dsl==7.2.1
 entrypoints==0.2.3
 Flask==1.0.2
-Flask-Cors==2.1.2
+Flask-Cors==3.0.9
 gnureadline==6.3.3
 html5lib==0.999999999
 ipykernel==4.2.1
